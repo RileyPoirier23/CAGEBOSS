@@ -380,3 +380,36 @@ export function dimmer(alpha = 0.6, onClick?: () => void): Graphics {
 }
 
 export { C, PAL };
+
+/**
+ * Make `target` draggable by `handle`. Position is clamped so at least a
+ * strip of the target stays on screen. onEnd receives the final position.
+ */
+export function makeDraggable(handle: Container, target: Container, onEnd?: (x: number, y: number) => void, size?: { w: number; h: number }): void {
+  handle.eventMode = 'static';
+  handle.cursor = 'grab';
+  let drag: { ox: number; oy: number } | null = null;
+  handle.on('pointerdown', (e: FederatedPointerEvent) => {
+    e.stopPropagation();
+    const p = target.parent ? target.parent.toLocal(e.global) : e.global;
+    drag = { ox: p.x - target.x, oy: p.y - target.y };
+    handle.cursor = 'grabbing';
+  });
+  handle.on('globalpointermove', (e: FederatedPointerEvent) => {
+    if (!drag) return;
+    const p = target.parent ? target.parent.toLocal(e.global) : e.global;
+    const w = (size?.w ?? 40) * target.scale.x;
+    const h = (size?.h ?? 20) * target.scale.y;
+    target.x = Math.round(Math.max(-w + 30, Math.min(W - 30, p.x - drag.ox)));
+    target.y = Math.round(Math.max(0, Math.min(H - 14, p.y - drag.oy)));
+    void h;
+  });
+  const end = () => {
+    if (!drag) return;
+    drag = null;
+    handle.cursor = 'grab';
+    onEnd?.(target.x, target.y);
+  };
+  handle.on('pointerup', end);
+  handle.on('pointerupoutside', end);
+}
