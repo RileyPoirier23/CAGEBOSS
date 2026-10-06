@@ -1,0 +1,4377 @@
+{
+ "note": "Retired legends. Available for comebacks, commentary and the Hall of Fame.",
+ "fighters": [
+  {
+   "id": "andersun_silvah",
+   "first": "Andersun",
+   "last": "Silvah",
+   "nick": "The Spider (Daddy Long Legs)",
+   "gender": "M",
+   "age": 44,
+   "division": "middle",
+   "country": "Brazil",
+   "hometown": "Curitiba",
+   "look": {
+    "head": 3,
+    "skin": 3,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 0
+   },
+   "skills": {
+    "striking": 82,
+    "power": 74,
+    "wrestling": 52,
+    "grappling": 64,
+    "cardio": 62,
+    "chin": 64,
+    "fightIQ": 92,
+    "durability": 62,
+    "heart": 80,
+    "weightCut": 50
+   },
+   "styles": [
+    "Counter Striker",
+    "Showboat"
+   ],
+   "traits": [
+    "Showman",
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Comeback Legend",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "handsLow",
+    "signature": [
+     "matrixLean",
+     "frontKick"
+    ],
+    "celebration": "dances"
+   },
+   "record": {
+    "w": 34,
+    "l": 11,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 92,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "One more fight. Always one more fight. Fifty years old and still insists he's 'feeling 25'.",
+   "hiddenTraits": [],
+   "parody": "Anderson Silva",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "georges_stpierrot",
+   "first": "Georges",
+   "last": "St-Pierrot",
+   "nick": "Rush (Hour)",
+   "gender": "M",
+   "age": 42,
+   "division": "welter",
+   "country": "Canada",
+   "hometown": "Montreal, QC",
+   "look": {
+    "head": 3,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 72,
+    "wrestling": 90,
+    "grappling": 84,
+    "cardio": 80,
+    "chin": 78,
+    "fightIQ": 96,
+    "durability": 78,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Point Fighter"
+   ],
+   "traits": [
+    "Perfectionist",
+    "Wholesome",
+    "Business Savvy"
+   ],
+   "marquee": {
+    "archetype": "The Perfect Retiree",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "karate",
+    "signature": [
+     "superman",
+     "doubleLeg"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 26,
+    "l": 2,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 96,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "The most polite champion in history. Retired at the top and is 'definitely, absolutely not' coming back. (He might be coming back.)",
+   "hiddenTraits": [],
+   "parody": "Georges St-Pierre",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "fyodor_emelianankle",
+   "first": "Fyodor",
+   "last": "Emelian-Ankle",
+   "nick": "The Last Emperor (Of Sweaters)",
+   "gender": "M",
+   "age": 47,
+   "division": "heavy",
+   "country": "Russia",
+   "hometown": "Stary Oskol",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 1,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 78,
+    "power": 84,
+    "wrestling": 74,
+    "grappling": 84,
+    "cardio": 60,
+    "chin": 70,
+    "fightIQ": 90,
+    "durability": 68,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Shy",
+    "Devout",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Quiet Emperor",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "russianHook"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 40,
+    "l": 7,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 90,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "prayer emojis"
+   },
+   "bio": "Undefeated for a decade in an era before anyone kept track. Wears a sweater that has its own legend.",
+   "hiddenTraits": [],
+   "parody": "Fedor Emelianenko",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "chuck_lidd",
+   "first": "Chuck",
+   "last": "Lid-Dell",
+   "nick": "The Iceman (Cometh Back)",
+   "gender": "M",
+   "age": 54,
+   "division": "lightheavy",
+   "country": "USA",
+   "hometown": "Santa Barbara, CA",
+   "look": {
+    "head": 3,
+    "skin": 0,
+    "hair": 4,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 76,
+    "power": 84,
+    "wrestling": 60,
+    "grappling": 52,
+    "cardio": 50,
+    "chin": 56,
+    "fightIQ": 72,
+    "durability": 58,
+    "heart": 80,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler",
+    "Counter Striker"
+   ],
+   "traits": [
+    "Party Animal",
+    "Showman"
+   ],
+   "marquee": {
+    "archetype": "The Mohawk Legend",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "overhandRight"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 21,
+    "l": 9,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Mohawk, tattoo on the head, and an overhand right that defined an era. Comebacks have not gone well.",
+   "hiddenTraits": [],
+   "parody": "Chuck Liddell",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "randy_couturealy",
+   "first": "Randy",
+   "last": "Couture-Al",
+   "nick": "The Natural (Flavors)",
+   "gender": "M",
+   "age": 60,
+   "division": "heavy",
+   "country": "USA",
+   "hometown": "Everett, WA",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 6,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 3,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 68,
+    "power": 64,
+    "wrestling": 82,
+    "grappling": 72,
+    "cardio": 62,
+    "chin": 62,
+    "fightIQ": 92,
+    "durability": 64,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Boring But Effective"
+   ],
+   "traits": [
+    "Wholesome",
+    "Business Savvy"
+   ],
+   "marquee": {
+    "archetype": "The Ageless Grinder",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "dirtyBoxing"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 19,
+    "l": 11,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 92,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Won a title in his forties and acted in movies with explosions. Still does dirty boxing on unsuspecting gym members.",
+   "hiddenTraits": [],
+   "parody": "Randy Couture",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "tito_orteez",
+   "first": "Tito",
+   "last": "Orteez",
+   "nick": "The Huntington Beach Bad Boy (Now Mayor-ish)",
+   "gender": "M",
+   "age": 50,
+   "division": "lightheavy",
+   "country": "USA",
+   "hometown": "Huntington Beach, CA",
+   "look": {
+    "head": 1,
+    "skin": 2,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 1,
+    "build": 2
+   },
+   "skills": {
+    "striking": 66,
+    "power": 74,
+    "wrestling": 82,
+    "grappling": 66,
+    "cardio": 62,
+    "chin": 74,
+    "fightIQ": 64,
+    "durability": 70,
+    "heart": 80,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Ground & Pound"
+   ],
+   "traits": [
+    "Showman",
+    "Trash Talker",
+    "Political",
+    "Conspiracy Poster"
+   ],
+   "marquee": {
+    "archetype": "The Grave-Digger",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "groundAndPound"
+    ],
+    "celebration": "graveDig"
+   },
+   "record": {
+    "w": 21,
+    "l": 12,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "all caps rants"
+   },
+   "bio": "Digs an imaginary grave after every win. Has opinions about everything, most of them loud.",
+   "hiddenTraits": [],
+   "parody": "Tito Ortiz",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "brock_lesmar",
+   "first": "Brock",
+   "last": "Lesmar",
+   "nick": "The Beast (Incarnate Farm)",
+   "gender": "M",
+   "age": 47,
+   "division": "heavy",
+   "country": "USA",
+   "hometown": "Webster, SD",
+   "look": {
+    "head": 1,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 4,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 2,
+    "build": 2
+   },
+   "skills": {
+    "striking": 62,
+    "power": 92,
+    "wrestling": 94,
+    "grappling": 64,
+    "cardio": 58,
+    "chin": 68,
+    "fightIQ": 60,
+    "durability": 80,
+    "heart": 80,
+    "weightCut": 70
+   },
+   "styles": [
+    "Wrestler",
+    "Ground & Pound"
+   ],
+   "traits": [
+    "Showman",
+    "Mercenary",
+    "Shy"
+   ],
+   "marquee": {
+    "archetype": "The Crossover Monster",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "suplex"
+    ],
+    "celebration": "roar"
+   },
+   "record": {
+    "w": 5,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 94,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Pro wrestling superstar who walked into a cage and became champion. Lives on a farm, hates press, loves money.",
+   "hiddenTraits": [],
+   "parody": "Brock Lesnar",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "bj_pennandpaper",
+   "first": "BJ",
+   "last": "Penn-and-Paper",
+   "nick": "The Prodigy (Retired)",
+   "gender": "M",
+   "age": 45,
+   "division": "light",
+   "country": "USA",
+   "hometown": "Hilo, HI",
+   "look": {
+    "head": 3,
+    "skin": 2,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 76,
+    "power": 68,
+    "wrestling": 70,
+    "grappling": 92,
+    "cardio": 48,
+    "chin": 72,
+    "fightIQ": 82,
+    "durability": 66,
+    "heart": 82,
+    "weightCut": 55
+   },
+   "styles": [
+    "Sub Hunter",
+    "Counter Striker"
+   ],
+   "traits": [
+    "Party Animal",
+    "Hothead"
+   ],
+   "marquee": {
+    "archetype": "The Hawaiian Prodigy",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "bouncy",
+    "signature": [
+     "bloodLick"
+    ],
+    "celebration": "licksGloves"
+   },
+   "record": {
+    "w": 16,
+    "l": 14,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 92,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Black belt in record time, champion in two divisions, and the most famous blood-licking celebration in history. Kept fighting long past the point anyone wanted him to.",
+   "hiddenTraits": [],
+   "parody": "BJ Penn",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "matt_huge",
+   "first": "Matt",
+   "last": "Huge",
+   "nick": "The Farm Boy Powerbomb",
+   "gender": "M",
+   "age": 50,
+   "division": "welter",
+   "country": "USA",
+   "hometown": "Hillsboro, IL",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 64,
+    "power": 72,
+    "wrestling": 90,
+    "grappling": 78,
+    "cardio": 72,
+    "chin": 72,
+    "fightIQ": 78,
+    "durability": 72,
+    "heart": 84,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Ground & Pound"
+   ],
+   "traits": [
+    "Devout",
+    "Family First"
+   ],
+   "marquee": {
+    "archetype": "The Old-School Champ",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "slam"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 45,
+    "l": 9,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 90,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "prayer emojis"
+   },
+   "bio": "Slammed people for a living before slamming was cool. Farm-strong, faith-strong, and not a fan of trash talk.",
+   "hiddenTraits": [],
+   "parody": "Matt Hughes",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "junior_dossantaclaus",
+   "first": "Junior",
+   "last": "Dos Santa-Claus",
+   "nick": "Cigano (Gypsy Jazz)",
+   "gender": "M",
+   "age": 40,
+   "division": "heavy",
+   "country": "Brazil",
+   "hometown": "Cacador",
+   "look": {
+    "head": 2,
+    "skin": 2,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 86,
+    "power": 88,
+    "wrestling": 62,
+    "grappling": 64,
+    "cardio": 66,
+    "chin": 70,
+    "fightIQ": 74,
+    "durability": 74,
+    "heart": 82,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler",
+    "Counter Striker"
+   ],
+   "traits": [
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Smiling Boxer",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "overhandRight"
+    ],
+    "celebration": "smiles"
+   },
+   "record": {
+    "w": 21,
+    "l": 9,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 88,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Heavyweight boxer with a permanent smile and an overhand right that ended careers. Nicest heavyweight to ever knock you out.",
+   "hiddenTraits": [],
+   "parody": "Junior dos Santos",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "wanderlie_silvah",
+   "first": "Wanderlie",
+   "last": "Silvah",
+   "nick": "The Axe Murderer (Hatchet)",
+   "gender": "M",
+   "age": 48,
+   "division": "middle",
+   "country": "Brazil",
+   "hometown": "Curitiba",
+   "look": {
+    "head": 2,
+    "skin": 2,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 2,
+    "ears": 3,
+    "scar": 1,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 78,
+    "power": 84,
+    "wrestling": 58,
+    "grappling": 62,
+    "cardio": 60,
+    "chin": 64,
+    "fightIQ": 64,
+    "durability": 64,
+    "heart": 92,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler",
+    "Muay Thai"
+   ],
+   "traits": [
+    "Showman",
+    "Hothead"
+   ],
+   "marquee": {
+    "archetype": "The Pride Legend",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "soccerKick",
+     "muayThaiKnees"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 35,
+    "l": 14,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "A legend of the old Japanese rings where stomping was legal and knees were a love language. His stare-downs could curdle milk.",
+   "hiddenTraits": [],
+   "parody": "Wanderlei Silva",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "shogun_ruah",
+   "first": "Shogun",
+   "last": "Ruah",
+   "nick": "The Leg Kick Grandpa",
+   "gender": "M",
+   "age": 42,
+   "division": "lightheavy",
+   "country": "Brazil",
+   "hometown": "Curitiba",
+   "look": {
+    "head": 3,
+    "skin": 2,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 78,
+    "power": 82,
+    "wrestling": 62,
+    "grappling": 72,
+    "cardio": 60,
+    "chin": 66,
+    "fightIQ": 76,
+    "durability": 64,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Muay Thai",
+    "Brawler"
+   ],
+   "traits": [
+    "Wholesome",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Pride Legend",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "legKicks",
+     "soccerKick"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 27,
+    "l": 13,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Destroyed legs for a living and never once complained about his own knees, which are held together by staples and optimism.",
+   "hiddenTraits": [],
+   "parody": "Mauricio Rua",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "lyoto_matchada",
+   "first": "Lyoto",
+   "last": "Matcha-Da",
+   "nick": "The Dragon (Tea)",
+   "gender": "M",
+   "age": 46,
+   "division": "lightheavy",
+   "country": "Brazil",
+   "hometown": "Salvador",
+   "look": {
+    "head": 0,
+    "skin": 1,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 0
+   },
+   "skills": {
+    "striking": 86,
+    "power": 74,
+    "wrestling": 72,
+    "grappling": 76,
+    "cardio": 74,
+    "chin": 72,
+    "fightIQ": 90,
+    "durability": 72,
+    "heart": 80,
+    "weightCut": 55
+   },
+   "styles": [
+    "Counter Striker",
+    "Kickboxer"
+   ],
+   "traits": [
+    "Devout",
+    "Shy"
+   ],
+   "marquee": {
+    "archetype": "The Karate Mystic",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "karate",
+    "signature": [
+     "craneKick",
+     "frontKick"
+    ],
+    "celebration": "bows"
+   },
+   "record": {
+    "w": 26,
+    "l": 12,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 90,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "prayer emojis"
+   },
+   "bio": "Karate master who drank... a famous morning beverage for health reasons that we will not describe. Front kicks you in the face with a peaceful expression.",
+   "hiddenTraits": [],
+   "parody": "Lyoto Machida",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "rashad_even",
+   "first": "Rashad",
+   "last": "Even",
+   "nick": "Suga (Free)",
+   "gender": "M",
+   "age": 45,
+   "division": "lightheavy",
+   "country": "USA",
+   "hometown": "Niagara Falls, NY",
+   "look": {
+    "head": 1,
+    "skin": 4,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 74,
+    "power": 76,
+    "wrestling": 84,
+    "grappling": 70,
+    "cardio": 68,
+    "chin": 74,
+    "fightIQ": 78,
+    "durability": 74,
+    "heart": 80,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler"
+   ],
+   "traits": [
+    "Showman",
+    "Business Savvy"
+   ],
+   "marquee": {
+    "archetype": "The Smooth Talker",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "bouncy",
+    "signature": [
+     "overhandRight"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 19,
+    "l": 8,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Smooth talker, smooth wrestler, smooth transition to broadcasting.",
+   "hiddenTraits": [],
+   "parody": "Rashad Evans",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "rampage_jaxon",
+   "first": "Rampage",
+   "last": "Jaxon",
+   "nick": "Rampage (Howling)",
+   "gender": "M",
+   "age": 46,
+   "division": "lightheavy",
+   "country": "USA",
+   "hometown": "Memphis, TN",
+   "look": {
+    "head": 3,
+    "skin": 5,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 2
+   },
+   "skills": {
+    "striking": 72,
+    "power": 86,
+    "wrestling": 66,
+    "grappling": 54,
+    "cardio": 58,
+    "chin": 76,
+    "fightIQ": 62,
+    "durability": 76,
+    "heart": 82,
+    "weightCut": 70
+   },
+   "styles": [
+    "Brawler"
+   ],
+   "traits": [
+    "Prankster",
+    "Showman"
+   ],
+   "marquee": {
+    "archetype": "The Chain-Wearing Howler",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "slam"
+    ],
+    "celebration": "howls"
+   },
+   "record": {
+    "w": 38,
+    "l": 14,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 86,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Howls at the crowd, wears a giant chain, and once slammed a man so hard the arena felt it. A legendary practical joker with terrible impulse control.",
+   "hiddenTraits": [],
+   "parody": "Quinton Jackson",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "forrest_griffon",
+   "first": "Forrest",
+   "last": "Griffon",
+   "nick": "The Accidental Legend",
+   "gender": "M",
+   "age": 44,
+   "division": "lightheavy",
+   "country": "USA",
+   "hometown": "Athens, GA",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 1,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 70,
+    "power": 68,
+    "wrestling": 72,
+    "grappling": 68,
+    "cardio": 74,
+    "chin": 74,
+    "fightIQ": 70,
+    "durability": 74,
+    "heart": 92,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler"
+   ],
+   "traits": [
+    "Prankster",
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Everyman Hero",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "volume"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 19,
+    "l": 7,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 74,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Won a reality show with a fight so bloody it made the sport mainstream. Writes self-deprecating books. The most relatable champion ever.",
+   "hiddenTraits": [],
+   "parody": "Forrest Griffin",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "dan_hendoson",
+   "first": "Dan",
+   "last": "Hendo-Son",
+   "nick": "The H-Bomb (Hydrogen)",
+   "gender": "M",
+   "age": 53,
+   "division": "middle",
+   "country": "USA",
+   "hometown": "Downey, CA",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 6,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 70,
+    "power": 90,
+    "wrestling": 82,
+    "grappling": 62,
+    "cardio": 62,
+    "chin": 70,
+    "fightIQ": 78,
+    "durability": 70,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Brawler"
+   ],
+   "traits": [
+    "Loyal",
+    "Shy"
+   ],
+   "marquee": {
+    "archetype": "The H-Bomb",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "overhandRight"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 32,
+    "l": 15,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 90,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Olympic wrestler with the most famous right hand in history. Retired at 46 after nearly winning the belt one last time.",
+   "hiddenTraits": [],
+   "parody": "Dan Henderson",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "nick_diazz",
+   "first": "Nick",
+   "last": "Diazz",
+   "nick": "The Original Stockton Slapper",
+   "gender": "M",
+   "age": 40,
+   "division": "welter",
+   "country": "USA",
+   "hometown": "Stockton, CA",
+   "look": {
+    "head": 3,
+    "skin": 1,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 2,
+    "build": 0
+   },
+   "skills": {
+    "striking": 82,
+    "power": 68,
+    "wrestling": 50,
+    "grappling": 88,
+    "cardio": 94,
+    "chin": 82,
+    "fightIQ": 76,
+    "durability": 78,
+    "heart": 92,
+    "weightCut": 40
+   },
+   "styles": [
+    "Brawler",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Hothead",
+    "Trash Talker",
+    "Paranoid",
+    "Party Animal"
+   ],
+   "marquee": {
+    "archetype": "The Original Bad Boy",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "stocktonSlap",
+     "mockery"
+    ],
+    "celebration": "shrug"
+   },
+   "record": {
+    "w": 26,
+    "l": 10,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 94,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "all caps rants"
+   },
+   "bio": "The older brother and the original. Mocked opponents mid-fight, skipped every press event he could, and somehow became a legend for it.",
+   "hiddenTraits": [],
+   "parody": "Nick Diaz",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "frankie_edgy",
+   "first": "Frankie",
+   "last": "Edgy",
+   "nick": "The Answer (Unclear)",
+   "gender": "M",
+   "age": 42,
+   "division": "feather",
+   "country": "USA",
+   "hometown": "Toms River, NJ",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 0
+   },
+   "skills": {
+    "striking": 80,
+    "power": 64,
+    "wrestling": 84,
+    "grappling": 74,
+    "cardio": 92,
+    "chin": 80,
+    "fightIQ": 86,
+    "durability": 78,
+    "heart": 96,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Point Fighter"
+   ],
+   "traits": [
+    "Wholesome",
+    "Family First"
+   ],
+   "marquee": {
+    "archetype": "The Undersized Warrior",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "bouncy",
+    "signature": [
+     "comebacks"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 24,
+    "l": 11,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 92,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Fought giants his whole career and never once complained. The definition of 'heart over size'.",
+   "hiddenTraits": [],
+   "parody": "Frankie Edgar",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "jose_aldough",
+   "first": "Jose",
+   "last": "Aldough",
+   "nick": "Scarface (Smaller Face)",
+   "gender": "M",
+   "age": 38,
+   "division": "feather",
+   "country": "Brazil",
+   "hometown": "Manaus",
+   "look": {
+    "head": 1,
+    "skin": 3,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 0
+   },
+   "skills": {
+    "striking": 92,
+    "power": 82,
+    "wrestling": 74,
+    "grappling": 74,
+    "cardio": 78,
+    "chin": 80,
+    "fightIQ": 90,
+    "durability": 80,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Muay Thai",
+    "Counter Striker"
+   ],
+   "traits": [
+    "Loyal",
+    "Shy"
+   ],
+   "marquee": {
+    "archetype": "The Featherweight King",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "legKicks"
+    ],
+    "celebration": "runsIntoCrowd"
+   },
+   "record": {
+    "w": 31,
+    "l": 8,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 92,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "The original featherweight king. Leg kicks that ended careers and a famous sprint into the crowd after a home win.",
+   "hiddenTraits": [],
+   "parody": "Jose Aldo",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "urijah_fibber",
+   "first": "Urijah",
+   "last": "Fibber",
+   "nick": "The California Kid (Adult)",
+   "gender": "M",
+   "age": 45,
+   "division": "bantam",
+   "country": "USA",
+   "hometown": "Sacramento, CA",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 0
+   },
+   "skills": {
+    "striking": 76,
+    "power": 70,
+    "wrestling": 82,
+    "grappling": 84,
+    "cardio": 82,
+    "chin": 76,
+    "fightIQ": 78,
+    "durability": 74,
+    "heart": 86,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Business Savvy",
+    "Showman",
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Team Builder",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "bouncy",
+    "signature": [
+     "guillotine"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 35,
+    "l": 11,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Built a gym empire and a hairstyle that has not moved since 2006.",
+   "hiddenTraits": [],
+   "parody": "Urijah Faber",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "dominick_crews",
+   "first": "Dominick",
+   "last": "Crews",
+   "nick": "The Dominator (Analyst)",
+   "gender": "M",
+   "age": 39,
+   "division": "bantam",
+   "country": "USA",
+   "hometown": "San Diego, CA",
+   "look": {
+    "head": 1,
+    "skin": 2,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 0
+   },
+   "skills": {
+    "striking": 88,
+    "power": 64,
+    "wrestling": 72,
+    "grappling": 66,
+    "cardio": 86,
+    "chin": 76,
+    "fightIQ": 94,
+    "durability": 66,
+    "heart": 86,
+    "weightCut": 55
+   },
+   "styles": [
+    "Point Fighter",
+    "Counter Striker"
+   ],
+   "traits": [
+    "Perfectionist",
+    "Business Savvy"
+   ],
+   "marquee": {
+    "archetype": "The Footwork Genius",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "sway",
+    "signature": [
+     "footwork"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 24,
+    "l": 4,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 94,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Moves in angles that confused opponents and scientists. Now explains footwork on television for forty-minute stretches.",
+   "hiddenTraits": [],
+   "parody": "Dominick Cruz",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "demetrious_johnsun",
+   "first": "Demetrious",
+   "last": "Johnsun",
+   "nick": "Mighty Mouse (Mighty Mild)",
+   "gender": "M",
+   "age": 38,
+   "division": "fly",
+   "country": "USA",
+   "hometown": "Kirkland, WA",
+   "look": {
+    "head": 2,
+    "skin": 4,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 0
+   },
+   "skills": {
+    "striking": 88,
+    "power": 64,
+    "wrestling": 88,
+    "grappling": 90,
+    "cardio": 96,
+    "chin": 80,
+    "fightIQ": 99,
+    "durability": 80,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Gym Rat",
+    "Wholesome",
+    "Shy"
+   ],
+   "marquee": {
+    "archetype": "The Flyweight GOAT",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "bouncy",
+    "signature": [
+     "suplexToArmbar"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 31,
+    "l": 4,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 99,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "So technically perfect that his greatest weakness was 'being too small for people to notice'. Streams video games and is better at those too.",
+   "hiddenTraits": [],
+   "parody": "Demetrious Johnson",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "daniel_cornmayor",
+   "first": "Daniel",
+   "last": "Corn-Mayor",
+   "nick": "DC (Dad Comedian)",
+   "gender": "M",
+   "age": 45,
+   "division": "heavy",
+   "country": "USA",
+   "hometown": "Lafayette, LA",
+   "look": {
+    "head": 1,
+    "skin": 5,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 3,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 76,
+    "power": 76,
+    "wrestling": 94,
+    "grappling": 78,
+    "cardio": 72,
+    "chin": 80,
+    "fightIQ": 88,
+    "durability": 78,
+    "heart": 90,
+    "weightCut": 60
+   },
+   "styles": [
+    "Wrestler"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Wholesome",
+    "Showman"
+   ],
+   "marquee": {
+    "archetype": "The Commentator Champ",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "doubleLeg"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 22,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 94,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "all caps rants"
+   },
+   "bio": "Two-division champion turned commentator who will remind you he's a two-division champion during unrelated commercial breaks.",
+   "hiddenTraits": [],
+   "parody": "Daniel Cormier",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "stipe_miosick",
+   "first": "Stipe",
+   "last": "Mio-Sick",
+   "nick": "The Firefighter (Part-Time)",
+   "gender": "M",
+   "age": 42,
+   "division": "heavy",
+   "country": "USA",
+   "hometown": "Euclid, OH",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 1,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 82,
+    "power": 82,
+    "wrestling": 82,
+    "grappling": 70,
+    "cardio": 76,
+    "chin": 84,
+    "fightIQ": 84,
+    "durability": 82,
+    "heart": 92,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Brawler"
+   ],
+   "traits": [
+    "Wholesome",
+    "Loyal",
+    "Family First"
+   ],
+   "marquee": {
+    "archetype": "The Working-Class Hero",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "overhandRight"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 20,
+    "l": 4,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "The most successful heavyweight champion in history, who also kept his job as a part-time firefighter, which is the most Ohio thing ever.",
+   "hiddenTraits": [],
+   "parody": "Stipe Miocic",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "amanda_nunez",
+   "first": "Amanda",
+   "last": "Nunez",
+   "nick": "The Lioness (Kitten)",
+   "gender": "W",
+   "age": 37,
+   "division": "wbantam",
+   "country": "Brazil",
+   "hometown": "Salvador",
+   "look": {
+    "head": 1,
+    "skin": 3,
+    "hair": 6,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 90,
+    "power": 92,
+    "wrestling": 80,
+    "grappling": 86,
+    "cardio": 80,
+    "chin": 84,
+    "fightIQ": 86,
+    "durability": 86,
+    "heart": 90,
+    "weightCut": 60
+   },
+   "styles": [
+    "Brawler",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Showman",
+    "Family First"
+   ],
+   "marquee": {
+    "archetype": "The Women's GOAT",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "rightHand"
+    ],
+    "celebration": "roar"
+   },
+   "record": {
+    "w": 23,
+    "l": 5,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 92,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Two-division champion widely considered the greatest female fighter ever. Retired on top to raise her family.",
+   "hiddenTraits": [],
+   "parody": "Amanda Nunes",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "ronda_rowdysey",
+   "first": "Ronda",
+   "last": "Rowdysey",
+   "nick": "Rowdy (Retired)",
+   "gender": "W",
+   "age": 37,
+   "division": "wbantam",
+   "country": "USA",
+   "hometown": "Riverside, CA",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 5,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 60,
+    "power": 70,
+    "wrestling": 88,
+    "grappling": 94,
+    "cardio": 72,
+    "chin": 58,
+    "fightIQ": 72,
+    "durability": 64,
+    "heart": 82,
+    "weightCut": 60
+   },
+   "styles": [
+    "Judoka",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Showman",
+    "Trash Talker",
+    "Mercenary"
+   ],
+   "marquee": {
+    "archetype": "The Pioneer",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "armbar"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 12,
+    "l": 2,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 94,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "all caps rants"
+   },
+   "bio": "Made the sport take women's MMA seriously with an armbar nobody could stop. Then left for movies and pro wrestling.",
+   "hiddenTraits": [],
+   "parody": "Ronda Rousey",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "holly_home",
+   "first": "Holly",
+   "last": "Home",
+   "nick": "The Preacher's Daughter",
+   "gender": "W",
+   "age": 42,
+   "division": "wbantam",
+   "country": "USA",
+   "hometown": "Albuquerque, NM",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 5,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 0
+   },
+   "skills": {
+    "striking": 88,
+    "power": 74,
+    "wrestling": 64,
+    "grappling": 62,
+    "cardio": 80,
+    "chin": 80,
+    "fightIQ": 86,
+    "durability": 74,
+    "heart": 86,
+    "weightCut": 55
+   },
+   "styles": [
+    "Kickboxer",
+    "Counter Striker"
+   ],
+   "traits": [
+    "Devout",
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Head-Kick Hero",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "headKick"
+    ],
+    "celebration": "prays"
+   },
+   "record": {
+    "w": 15,
+    "l": 7,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 88,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "prayer emojis"
+   },
+   "bio": "World champion boxer who pulled off one of the biggest upsets in sports history with a head kick.",
+   "hiddenTraits": [],
+   "parody": "Holly Holm",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "miesha_tater",
+   "first": "Miesha",
+   "last": "Tater",
+   "nick": "Cupcake (Muffin)",
+   "gender": "W",
+   "age": 37,
+   "division": "wbantam",
+   "country": "USA",
+   "hometown": "Tacoma, WA",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 5,
+    "hairColor": 2,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 68,
+    "power": 64,
+    "wrestling": 82,
+    "grappling": 84,
+    "cardio": 80,
+    "chin": 76,
+    "fightIQ": 74,
+    "durability": 76,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Showman",
+    "Trash Talker"
+   ],
+   "marquee": {
+    "archetype": "The Rivalry Queen",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "rearNakedChoke"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 19,
+    "l": 9,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "all caps rants"
+   },
+   "bio": "Built a career on rivalries and comebacks, including choking out a champion in the last minute of a title fight.",
+   "hiddenTraits": [],
+   "parody": "Miesha Tate",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "joanna_jedrzewhat",
+   "first": "Joanna",
+   "last": "Jedrze-What",
+   "nick": "Joanna Champion (Of Spelling)",
+   "gender": "W",
+   "age": 36,
+   "division": "wstraw",
+   "country": "Poland",
+   "hometown": "Olsztyn",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 5,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 0
+   },
+   "skills": {
+    "striking": 92,
+    "power": 70,
+    "wrestling": 62,
+    "grappling": 62,
+    "cardio": 90,
+    "chin": 76,
+    "fightIQ": 86,
+    "durability": 72,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Muay Thai",
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Showman"
+   ],
+   "marquee": {
+    "archetype": "The Volume Queen",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "volumeStriking"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 16,
+    "l": 5,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 92,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "all caps rants"
+   },
+   "bio": "Muay Thai world champion whose name defeated more commentators than opponents. Volume striking, terrifying stare-downs.",
+   "hiddenTraits": [],
+   "parody": "Joanna Jedrzejczyk",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "mark_coalman",
+   "first": "Mark",
+   "last": "Coalman",
+   "nick": "The Hammer (Ground & Pound Inventor)",
+   "gender": "M",
+   "age": 59,
+   "division": "heavy",
+   "country": "USA",
+   "hometown": "Fremont, OH",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 54,
+    "power": 70,
+    "wrestling": 86,
+    "grappling": 60,
+    "cardio": 52,
+    "chin": 64,
+    "fightIQ": 66,
+    "durability": 64,
+    "heart": 82,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Ground & Pound"
+   ],
+   "traits": [
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Godfather of Ground & Pound",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "groundAndPound"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 16,
+    "l": 10,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 86,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Basically invented lying on people and punching them. The sport owes him a royalty check.",
+   "hiddenTraits": [],
+   "parody": "Mark Coleman",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "ken_shamwow",
+   "first": "Ken",
+   "last": "Shamwow",
+   "nick": "The World's Most Dangerous Man (Sunday Brunch Edition)",
+   "gender": "M",
+   "age": 60,
+   "division": "lightheavy",
+   "country": "USA",
+   "hometown": "Susanville, CA",
+   "look": {
+    "head": 1,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 56,
+    "power": 66,
+    "wrestling": 74,
+    "grappling": 76,
+    "cardio": 52,
+    "chin": 60,
+    "fightIQ": 70,
+    "durability": 60,
+    "heart": 84,
+    "weightCut": 55
+   },
+   "styles": [
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Showman",
+    "Mercenary"
+   ],
+   "marquee": {
+    "archetype": "The Old-School Legend",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "kneebar"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 28,
+    "l": 17,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 76,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "The original 'World's Most Dangerous Man'. Still fights in exhibitions at an age when most people fight with their HOA.",
+   "hiddenTraits": [],
+   "parody": "Ken Shamrock",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "royce_grazie",
+   "first": "Royce",
+   "last": "Grazie",
+   "nick": "The Original (Gi)",
+   "gender": "M",
+   "age": 57,
+   "division": "middle",
+   "country": "Brazil",
+   "hometown": "Rio de Janeiro",
+   "look": {
+    "head": 0,
+    "skin": 1,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 0
+   },
+   "skills": {
+    "striking": 48,
+    "power": 48,
+    "wrestling": 70,
+    "grappling": 96,
+    "cardio": 70,
+    "chin": 62,
+    "fightIQ": 92,
+    "durability": 58,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Loyal",
+    "Devout"
+   ],
+   "marquee": {
+    "archetype": "The Founding Father",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "triangle"
+    ],
+    "celebration": "bows"
+   },
+   "record": {
+    "w": 15,
+    "l": 2,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 96,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "prayer emojis"
+   },
+   "bio": "Skinny guy in a gi who beat everyone at the very first tournament and changed martial arts forever.",
+   "hiddenTraits": [],
+   "parody": "Royce Gracie",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "dan_severe",
+   "first": "Dan",
+   "last": "Severe",
+   "nick": "The Beast (Moustache Edition)",
+   "gender": "M",
+   "age": 66,
+   "division": "heavy",
+   "country": "USA",
+   "hometown": "Coldwater, MI",
+   "look": {
+    "head": 3,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 6,
+    "beard": 4,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 48,
+    "power": 58,
+    "wrestling": 84,
+    "grappling": 64,
+    "cardio": 50,
+    "chin": 60,
+    "fightIQ": 64,
+    "durability": 62,
+    "heart": 80,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler"
+   ],
+   "traits": [
+    "Wholesome",
+    "Shy"
+   ],
+   "marquee": {
+    "archetype": "The Moustache",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "suplex"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 101,
+    "l": 19,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Has more fights than most promotions. Has the most respectable moustache in combat sports history.",
+   "hiddenTraits": [],
+   "parody": "Dan Severn",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "mark_hunted",
+   "first": "Mark",
+   "last": "Hunted",
+   "nick": "Super Samoan (Walk-Off Edition)",
+   "gender": "M",
+   "age": 50,
+   "division": "heavy",
+   "country": "New Zealand",
+   "hometown": "Auckland",
+   "look": {
+    "head": 2,
+    "skin": 4,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 2,
+    "build": 2
+   },
+   "skills": {
+    "striking": 84,
+    "power": 94,
+    "wrestling": 52,
+    "grappling": 52,
+    "cardio": 48,
+    "chin": 96,
+    "fightIQ": 72,
+    "durability": 90,
+    "heart": 90,
+    "weightCut": 70
+   },
+   "styles": [
+    "Brawler"
+   ],
+   "traits": [
+    "Wholesome",
+    "Shy"
+   ],
+   "marquee": {
+    "archetype": "The Walk-Off King",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "walkOffKO"
+    ],
+    "celebration": "walksAway"
+   },
+   "record": {
+    "w": 13,
+    "l": 14,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 96,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Famous for knocking people out and walking away before they hit the ground. Chin made of volcanic rock.",
+   "hiddenTraits": [],
+   "parody": "Mark Hunt",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "alistair_overeat",
+   "first": "Alistair",
+   "last": "Overeat",
+   "nick": "The Reem (Ream)",
+   "gender": "M",
+   "age": 44,
+   "division": "heavy",
+   "country": "Netherlands",
+   "hometown": "Hounslow",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 2,
+    "build": 2
+   },
+   "skills": {
+    "striking": 86,
+    "power": 86,
+    "wrestling": 62,
+    "grappling": 74,
+    "cardio": 62,
+    "chin": 58,
+    "fightIQ": 80,
+    "durability": 62,
+    "heart": 78,
+    "weightCut": 60
+   },
+   "styles": [
+    "Kickboxer",
+    "Muay Thai"
+   ],
+   "traits": [
+    "Showman",
+    "Business Savvy"
+   ],
+   "marquee": {
+    "archetype": "The Kickboxing Giant",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "knees"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 47,
+    "l": 19,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 86,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Won every belt in every promotion on earth, often looking like a different person each time.",
+   "hiddenTraits": [],
+   "parody": "Alistair Overeem",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "andrei_arlovski",
+   "first": "Andrei",
+   "last": "Arlov-Ski",
+   "nick": "The Pitbull (Chihuahua)",
+   "gender": "M",
+   "age": 45,
+   "division": "heavy",
+   "country": "Belarus",
+   "hometown": "Babruysk",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 1,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 82,
+    "power": 80,
+    "wrestling": 60,
+    "grappling": 62,
+    "cardio": 70,
+    "chin": 58,
+    "fightIQ": 80,
+    "durability": 64,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Kickboxer",
+    "Brawler"
+   ],
+   "traits": [
+    "Wholesome",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Iron Veteran",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "straightRight"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 34,
+    "l": 22,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Has fought in every decade of the sport's existence and simply refuses to stop.",
+   "hiddenTraits": [],
+   "parody": "Andrei Arlovski",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "big_noggin",
+   "first": "Antonio",
+   "last": "Noggin",
+   "nick": "Big Nog (Bigger Noggin)",
+   "gender": "M",
+   "age": 48,
+   "division": "heavy",
+   "country": "Brazil",
+   "hometown": "Vitoria da Conquista",
+   "look": {
+    "head": 3,
+    "skin": 2,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 70,
+    "power": 72,
+    "wrestling": 70,
+    "grappling": 94,
+    "cardio": 60,
+    "chin": 82,
+    "fightIQ": 86,
+    "durability": 74,
+    "heart": 96,
+    "weightCut": 55
+   },
+   "styles": [
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Wholesome",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Comeback Submission King",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "armbar"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 34,
+    "l": 10,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 94,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Got beaten up for two rounds every fight and then submitted you in the third with a smile.",
+   "hiddenTraits": [],
+   "parody": "Antonio Rodrigo Nogueira",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "vitor_bellfort",
+   "first": "Vitor",
+   "last": "Bellfort",
+   "nick": "The Phenom (Phenomenally Jacked)",
+   "gender": "M",
+   "age": 47,
+   "division": "middle",
+   "country": "Brazil",
+   "hometown": "Rio de Janeiro",
+   "look": {
+    "head": 3,
+    "skin": 2,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 90,
+    "wrestling": 68,
+    "grappling": 74,
+    "cardio": 62,
+    "chin": 64,
+    "fightIQ": 72,
+    "durability": 70,
+    "heart": 80,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler"
+   ],
+   "traits": [
+    "Devout",
+    "Conspiracy Poster",
+    "Showman"
+   ],
+   "marquee": {
+    "archetype": "The Blitz",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "blitz",
+     "spinningHeelKick"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 26,
+    "l": 14,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 90,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "prayer emojis"
+   },
+   "bio": "Fastest hands of his era and a spinning heel kick everybody still remembers.",
+   "hiddenTraits": [],
+   "parody": "Vitor Belfort",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "rich_frankfurter",
+   "first": "Rich",
+   "last": "Frankfurter",
+   "nick": "Ace (Of Spades)",
+   "gender": "M",
+   "age": 49,
+   "division": "middle",
+   "country": "USA",
+   "hometown": "Cincinnati, OH",
+   "look": {
+    "head": 1,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 80,
+    "power": 74,
+    "wrestling": 66,
+    "grappling": 70,
+    "cardio": 76,
+    "chin": 74,
+    "fightIQ": 84,
+    "durability": 72,
+    "heart": 86,
+    "weightCut": 55
+   },
+   "styles": [
+    "Kickboxer"
+   ],
+   "traits": [
+    "Wholesome",
+    "Business Savvy"
+   ],
+   "marquee": {
+    "archetype": "The Math Teacher Champion",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "kneesInClinch"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 29,
+    "l": 7,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Former high-school math teacher who became champion and stayed exactly that nice.",
+   "hiddenTraits": [],
+   "parody": "Rich Franklin",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "chris_wideman",
+   "first": "Chris",
+   "last": "Wideman",
+   "nick": "The All-American (Shin Edition)",
+   "gender": "M",
+   "age": 40,
+   "division": "middle",
+   "country": "USA",
+   "hometown": "Baldwin, NY",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 1,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 72,
+    "power": 74,
+    "wrestling": 86,
+    "grappling": 82,
+    "cardio": 74,
+    "chin": 66,
+    "fightIQ": 78,
+    "durability": 62,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler"
+   ],
+   "traits": [
+    "Family First",
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Upset Artist",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "doubleLeg"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 16,
+    "l": 7,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 86,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Ended an all-time great reign, then suffered more misfortune than anyone deserved. Keeps showing up.",
+   "hiddenTraits": [],
+   "parody": "Chris Weidman",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "luke_rockhole",
+   "first": "Luke",
+   "last": "Rockhole",
+   "nick": "Rock-Hole (Model Edition)",
+   "gender": "M",
+   "age": 39,
+   "division": "middle",
+   "country": "USA",
+   "hometown": "Santa Cruz, CA",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 3,
+    "hairColor": 1,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 0
+   },
+   "skills": {
+    "striking": 80,
+    "power": 74,
+    "wrestling": 76,
+    "grappling": 84,
+    "cardio": 76,
+    "chin": 58,
+    "fightIQ": 80,
+    "durability": 62,
+    "heart": 78,
+    "weightCut": 55
+   },
+   "styles": [
+    "Kickboxer",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Diva",
+    "Trash Talker",
+    "Showman"
+   ],
+   "marquee": {
+    "archetype": "The Model Fighter",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "bodyKick"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 16,
+    "l": 6,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "all caps rants"
+   },
+   "bio": "Champion, model, and the most strongly opinionated man about other people's training methods.",
+   "hiddenTraits": [],
+   "parody": "Luke Rockhold",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "robbie_lawlessr",
+   "first": "Robbie",
+   "last": "Lawless-er",
+   "nick": "Ruthless (Mostly)",
+   "gender": "M",
+   "age": 42,
+   "division": "welter",
+   "country": "USA",
+   "hometown": "Bettendorf, IA",
+   "look": {
+    "head": 3,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 86,
+    "wrestling": 66,
+    "grappling": 64,
+    "cardio": 76,
+    "chin": 84,
+    "fightIQ": 78,
+    "durability": 84,
+    "heart": 98,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler",
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Shy",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Ruthless Veteran",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "leftHand"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 29,
+    "l": 16,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 86,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Fought the bloodiest five-round war in history and then smiled with a split lip. Says nothing. Means everything.",
+   "hiddenTraits": [],
+   "parody": "Robbie Lawler",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "donald_cerrownie",
+   "first": "Donald",
+   "last": "Cerrownie",
+   "nick": "Cowboy (Ranch Dressing)",
+   "gender": "M",
+   "age": 41,
+   "division": "light",
+   "country": "USA",
+   "hometown": "Denver, CO",
+   "look": {
+    "head": 3,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 2,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 80,
+    "power": 74,
+    "wrestling": 62,
+    "grappling": 82,
+    "cardio": 72,
+    "chin": 72,
+    "fightIQ": 76,
+    "durability": 72,
+    "heart": 84,
+    "weightCut": 55
+   },
+   "styles": [
+    "Kickboxer",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Party Animal",
+    "Wholesome",
+    "Gambler"
+   ],
+   "marquee": {
+    "archetype": "The Anytime Fighter",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "headKick"
+    ],
+    "celebration": "tipsHat"
+   },
+   "record": {
+    "w": 36,
+    "l": 17,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Would fight anyone, anywhere, on two weeks' notice, then go wakeboarding the next morning.",
+   "hiddenTraits": [],
+   "parody": "Donald Cerrone",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "joe_lozenge",
+   "first": "Joe",
+   "last": "Lozenge",
+   "nick": "J-Lo (Not That One)",
+   "gender": "M",
+   "age": 40,
+   "division": "light",
+   "country": "USA",
+   "hometown": "Bridgewater, MA",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 5,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 70,
+    "power": 66,
+    "wrestling": 66,
+    "grappling": 86,
+    "cardio": 70,
+    "chin": 70,
+    "fightIQ": 76,
+    "durability": 74,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Wholesome",
+    "Gym Rat"
+   ],
+   "marquee": {
+    "archetype": "The Bonus Machine",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "kneebar"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 28,
+    "l": 16,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 86,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Holds the record for most fight-night bonuses by a man who also works in IT.",
+   "hiddenTraits": [],
+   "parody": "Joe Lauzon",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "clay_guidance",
+   "first": "Clay",
+   "last": "Guidance",
+   "nick": "The Carpenter (Hair)",
+   "gender": "M",
+   "age": 42,
+   "division": "light",
+   "country": "USA",
+   "hometown": "Johnsburg, IL",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 5,
+    "hairColor": 2,
+    "beard": 3,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 0
+   },
+   "skills": {
+    "striking": 64,
+    "power": 62,
+    "wrestling": 82,
+    "grappling": 74,
+    "cardio": 96,
+    "chin": 80,
+    "fightIQ": 70,
+    "durability": 80,
+    "heart": 96,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Wholesome",
+    "Gym Rat"
+   ],
+   "marquee": {
+    "archetype": "The Human Energy Drink",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "bouncy",
+    "signature": [
+     "bounce"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 37,
+    "l": 17,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 96,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "The most cardio in human history and the most hair. Literally never stops moving.",
+   "hiddenTraits": [],
+   "parody": "Clay Guida",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "diego_sanchezyes",
+   "first": "Diego",
+   "last": "Sanchez-YES",
+   "nick": "The Nightmare (YES Cartel)",
+   "gender": "M",
+   "age": 43,
+   "division": "welter",
+   "country": "USA",
+   "hometown": "Albuquerque, NM",
+   "look": {
+    "head": 3,
+    "skin": 2,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 66,
+    "power": 66,
+    "wrestling": 74,
+    "grappling": 76,
+    "cardio": 82,
+    "chin": 72,
+    "fightIQ": 58,
+    "durability": 78,
+    "heart": 99,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler",
+    "Wrestler"
+   ],
+   "traits": [
+    "Showman",
+    "Conspiracy Poster",
+    "Devout"
+   ],
+   "marquee": {
+    "archetype": "The Spiritual Warrior",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "yesChant"
+    ],
+    "celebration": "yesChant"
+   },
+   "record": {
+    "w": 31,
+    "l": 13,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "prayer emojis"
+   },
+   "bio": "Walks out screaming 'YES', trains on mountaintops, and once fought with a cut so bad the doctor needed a doctor.",
+   "hiddenTraits": [],
+   "parody": "Diego Sanchez",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "anthony_petis",
+   "first": "Anthony",
+   "last": "Pet-Is",
+   "nick": "Showtime (Showtime Kick)",
+   "gender": "M",
+   "age": 37,
+   "division": "light",
+   "country": "USA",
+   "hometown": "Milwaukee, WI",
+   "look": {
+    "head": 2,
+    "skin": 2,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 0
+   },
+   "skills": {
+    "striking": 86,
+    "power": 76,
+    "wrestling": 58,
+    "grappling": 78,
+    "cardio": 72,
+    "chin": 70,
+    "fightIQ": 80,
+    "durability": 68,
+    "heart": 82,
+    "weightCut": 55
+   },
+   "styles": [
+    "Kickboxer",
+    "Showboat"
+   ],
+   "traits": [
+    "Showman",
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Highlight Kicker",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "karate",
+    "signature": [
+     "showtimeKick",
+     "spinningBackKick"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 25,
+    "l": 13,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 86,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Ran up the cage and kicked a man in the face. The sport has been trying to recreate it ever since.",
+   "hiddenTraits": [],
+   "parody": "Anthony Pettis",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "benson_hendersun",
+   "first": "Benson",
+   "last": "Hender-Sun",
+   "nick": "Smooth (Toothpick)",
+   "gender": "M",
+   "age": 40,
+   "division": "light",
+   "country": "USA",
+   "hometown": "Glendale, AZ",
+   "look": {
+    "head": 3,
+    "skin": 3,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 78,
+    "power": 66,
+    "wrestling": 82,
+    "grappling": 82,
+    "cardio": 90,
+    "chin": 80,
+    "fightIQ": 84,
+    "durability": 80,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Point Fighter"
+   ],
+   "traits": [
+    "Devout",
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Toothpick Champ",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "guillotine"
+    ],
+    "celebration": "pointsUp"
+   },
+   "record": {
+    "w": 30,
+    "l": 12,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 90,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "prayer emojis"
+   },
+   "bio": "Fought with a toothpick in his mouth and won a lot of very close decisions. Nobody knows what happened to the toothpicks.",
+   "hiddenTraits": [],
+   "parody": "Benson Henderson",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "eddie_alvarezz",
+   "first": "Eddie",
+   "last": "Alvarezz",
+   "nick": "The Underground King (Basement)",
+   "gender": "M",
+   "age": 40,
+   "division": "light",
+   "country": "USA",
+   "hometown": "Philadelphia, PA",
+   "look": {
+    "head": 1,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 1,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 80,
+    "power": 82,
+    "wrestling": 76,
+    "grappling": 72,
+    "cardio": 76,
+    "chin": 80,
+    "fightIQ": 80,
+    "durability": 78,
+    "heart": 92,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler",
+    "Wrestler"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Philly Brawler",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "leftHook"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 30,
+    "l": 8,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "all caps rants"
+   },
+   "bio": "Philadelphia street fighter who won titles in multiple promotions and refuses to stop throwing hands.",
+   "hiddenTraits": [],
+   "parody": "Eddie Alvarez",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "rafael_dosangels",
+   "first": "Rafael",
+   "last": "Dos Angels",
+   "nick": "RDA (Really Dangerous Anytime)",
+   "gender": "M",
+   "age": 40,
+   "division": "light",
+   "country": "Brazil",
+   "hometown": "Niteroi",
+   "look": {
+    "head": 0,
+    "skin": 2,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 80,
+    "power": 74,
+    "wrestling": 74,
+    "grappling": 86,
+    "cardio": 84,
+    "chin": 78,
+    "fightIQ": 82,
+    "durability": 80,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Muay Thai",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Loyal",
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Veteran Grinder",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "legKicks"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 32,
+    "l": 15,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 86,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Former champion who has fought everyone in three divisions and is still asking for more.",
+   "hiddenTraits": [],
+   "parody": "Rafael dos Anjos",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "mirko_crowcop",
+   "first": "Mirko",
+   "last": "Crow Cop",
+   "nick": "Right Leg Hospital, Left Leg Cemetery",
+   "gender": "M",
+   "age": 50,
+   "division": "heavy",
+   "country": "Croatia",
+   "hometown": "Vinkovci",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 1,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 86,
+    "wrestling": 62,
+    "grappling": 60,
+    "cardio": 62,
+    "chin": 70,
+    "fightIQ": 80,
+    "durability": 70,
+    "heart": 84,
+    "weightCut": 55
+   },
+   "styles": [
+    "Kickboxer"
+   ],
+   "traits": [
+    "Shy",
+    "Political"
+   ],
+   "marquee": {
+    "archetype": "The Head-Kick Legend",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "leftHeadKick"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 38,
+    "l": 11,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 86,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Former police officer and politician whose left head kick had its own obituary section.",
+   "hiddenTraits": [],
+   "parody": "Mirko Cro Cop",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "gegard_mooseasi",
+   "first": "Gegard",
+   "last": "Moose-Asi",
+   "nick": "The Dreamcatcher (Nightmare Edition)",
+   "gender": "M",
+   "age": 39,
+   "division": "middle",
+   "country": "Netherlands",
+   "hometown": "Leiden",
+   "look": {
+    "head": 2,
+    "skin": 1,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 76,
+    "wrestling": 74,
+    "grappling": 84,
+    "cardio": 72,
+    "chin": 78,
+    "fightIQ": 90,
+    "durability": 78,
+    "heart": 82,
+    "weightCut": 55
+   },
+   "styles": [
+    "Counter Striker",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Shy",
+    "Business Savvy"
+   ],
+   "marquee": {
+    "archetype": "The Unbothered Veteran",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "jab"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 49,
+    "l": 8,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 90,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "So calm he looks like he's sleepwalking. Has beaten everyone, everywhere, while looking mildly inconvenienced.",
+   "hiddenTraits": [],
+   "parody": "Gegard Mousasi",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "bas_rotten",
+   "first": "Bas",
+   "last": "Rotten",
+   "nick": "El Guapo (El Gross)",
+   "gender": "M",
+   "age": 59,
+   "division": "heavy",
+   "country": "Netherlands",
+   "hometown": "Tilburg",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 76,
+    "power": 78,
+    "wrestling": 60,
+    "grappling": 74,
+    "cardio": 60,
+    "chin": 74,
+    "fightIQ": 82,
+    "durability": 72,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Kickboxer",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Showman",
+    "Prankster",
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Legendary Storyteller",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "liverShot"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 28,
+    "l": 4,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Never lost in his last 22 fights. Now tells stories about bar fights that may or may not have happened, with sound effects.",
+   "hiddenTraits": [],
+   "parody": "Bas Rutten",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "pat_milewitch",
+   "first": "Pat",
+   "last": "Mile-Witch",
+   "nick": "The Croatian Sensation (Iowa)",
+   "gender": "M",
+   "age": 56,
+   "division": "welter",
+   "country": "USA",
+   "hometown": "Bettendorf, IA",
+   "look": {
+    "head": 1,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 4,
+    "beard": 4,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 70,
+    "power": 64,
+    "wrestling": 76,
+    "grappling": 80,
+    "cardio": 70,
+    "chin": 72,
+    "fightIQ": 88,
+    "durability": 70,
+    "heart": 84,
+    "weightCut": 55
+   },
+   "styles": [
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Mentor",
+    "Shy"
+   ],
+   "marquee": {
+    "archetype": "The Coach",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "guillotine"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 29,
+    "l": 7,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 88,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Early welterweight champion who built the most feared gym in the Midwest.",
+   "hiddenTraits": [],
+   "parody": "Pat Miletich",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "jens_pulverize",
+   "first": "Jens",
+   "last": "Pulverize",
+   "nick": "Little Evil (Medium Evil)",
+   "gender": "M",
+   "age": 49,
+   "division": "light",
+   "country": "USA",
+   "hometown": "Sunnyside, WA",
+   "look": {
+    "head": 1,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 0
+   },
+   "skills": {
+    "striking": 80,
+    "power": 78,
+    "wrestling": 58,
+    "grappling": 52,
+    "cardio": 70,
+    "chin": 70,
+    "fightIQ": 70,
+    "durability": 70,
+    "heart": 86,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler"
+   ],
+   "traits": [
+    "Wholesome",
+    "Paranoid"
+   ],
+   "marquee": {
+    "archetype": "The First Lightweight",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "leftHand"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 27,
+    "l": 20,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 80,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "The first lightweight champion of the modern era, with a left hand that hit far above its weight.",
+   "hiddenTraits": [],
+   "parody": "Jens Pulver",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "kazushi_sakuraba",
+   "first": "Kazushi",
+   "last": "Sakura-Baba",
+   "nick": "The Gracie Hunter (Gracie Hobbyist)",
+   "gender": "M",
+   "age": 55,
+   "division": "middle",
+   "country": "Japan",
+   "hometown": "Akita",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 64,
+    "power": 62,
+    "wrestling": 74,
+    "grappling": 92,
+    "cardio": 68,
+    "chin": 72,
+    "fightIQ": 92,
+    "durability": 70,
+    "heart": 96,
+    "weightCut": 55
+   },
+   "styles": [
+    "Sub Hunter",
+    "Showboat"
+   ],
+   "traits": [
+    "Showman",
+    "Prankster"
+   ],
+   "marquee": {
+    "archetype": "The Showman Grappler",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "kimura",
+     "windmillPunches"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 26,
+    "l": 17,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 92,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Wore masks to the ring, fought for 90 minutes straight, and made submission grappling look like improv comedy.",
+   "hiddenTraits": [],
+   "parody": "Kazushi Sakuraba",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "cung_lee",
+   "first": "Cung",
+   "last": "Lee-ish",
+   "nick": "The Kickboxing Movie Star",
+   "gender": "M",
+   "age": 52,
+   "division": "middle",
+   "country": "USA",
+   "hometown": "San Jose, CA",
+   "look": {
+    "head": 0,
+    "skin": 1,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 76,
+    "wrestling": 66,
+    "grappling": 56,
+    "cardio": 66,
+    "chin": 70,
+    "fightIQ": 78,
+    "durability": 70,
+    "heart": 80,
+    "weightCut": 55
+   },
+   "styles": [
+    "Kickboxer",
+    "Showboat"
+   ],
+   "traits": [
+    "Showman"
+   ],
+   "marquee": {
+    "archetype": "The Spinning Kicker",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "karate",
+    "signature": [
+     "spinningBackKick"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 9,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "San shou champion whose spinning back kicks were so fast that VCR tapes couldn't keep up.",
+   "hiddenTraits": [],
+   "parody": "Cung Le",
+   "legend": true,
+   "status": "retired"
+  },
+  {
+   "id": "gina_carry-no",
+   "first": "Gina",
+   "last": "Carry-No",
+   "nick": "Conviction (Hollywood)",
+   "gender": "W",
+   "age": 42,
+   "division": "wbantam",
+   "country": "USA",
+   "hometown": "Dallas, TX",
+   "look": {
+    "head": 1,
+    "skin": 1,
+    "hair": 5,
+    "hairColor": 1,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 76,
+    "power": 70,
+    "wrestling": 62,
+    "grappling": 58,
+    "cardio": 64,
+    "chin": 68,
+    "fightIQ": 70,
+    "durability": 64,
+    "heart": 78,
+    "weightCut": 55
+   },
+   "styles": [
+    "Muay Thai"
+   ],
+   "traits": [
+    "Showman",
+    "Political"
+   ],
+   "marquee": {
+    "archetype": "The Face of Women's MMA (First Draft)",
+    "arc": "legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "muayThaiClinch"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 7,
+    "l": 1,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 76,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Before anyone took women's MMA seriously, she was on magazine covers and action movie sets.",
+   "hiddenTraits": [],
+   "parody": "Gina Carano",
+   "legend": true,
+   "status": "retired"
+  }
+ ]
+}

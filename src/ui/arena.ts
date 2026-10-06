@@ -1,254 +1,112 @@
 /**
- * Mini side-on arena for spectating fights: animated pixel fighters driven by
- * the fight sim's ticker cues, a flickering pixel crowd, the cage, hit sparks,
- * HP bars and the round clock. Also draws the between-round corner cutaway
- * and the ring-card walk.
+ * Side-on arena for spectating fights. Skeletal fighters (rig.ts) trade
+ * shots at real striking range: lunges, recoils, clinches against the fence,
+ * takedowns and ground work, knockdowns and KOs. Pixel crowd, octagon fence,
+ * spotlights, sweat/blood/impact particles, HP bars and the round clock.
+ * Also: the between-round corner cutaway and the ring-card walk.
  */
 import { Container, Graphics } from 'pixi.js';
-import type { Fighter, FightResult, TickerLine, CornerReport } from '../core/types';
-import { PAL, SKIN_TONES, HAIR_COLORS, shade, lerpColor } from '../art/palette';
+import type { Fighter, TickerLine, CornerReport } from '../core/types';
+import { PAL, shade, lerpColor } from '../art/palette';
 import { text } from './kit';
 import { PixelText } from './text';
 import { portrait } from './sprites';
 import { sfx } from '../audio/sfx';
-
-export type Pose =
-  | 'idle' | 'jab' | 'punch' | 'hook' | 'uppercut' | 'kick' | 'legkick' | 'headkick' | 'knee' | 'elbow' | 'shoot' | 'sprawl'
-  | 'clinch' | 'top' | 'bottom' | 'sub' | 'hurt' | 'down' | 'ko' | 'celebrate' | 'taunt' | 'stool' | 'walk' | 'spin' | 'flyknee';
-
-interface Look2 {
-  skin: number;
-  hair: number;
-  hairColor: number;
-  hairStyle: number;
-  build: number;
-  shorts: number;
-  stance: string;
-  female: boolean;
-}
+import { Rig, Pose, POSES, drawRig, lerpRig, lookFor, stanceGuard, Look2 } from './rig';
 
 export const AW = 480;
 export const AH = 150;
-const FLOOR = 128;
+const FLOOR = 136;
+const CAGE_L = 34;
+const CAGE_R = 446;
 
-function lookOf(f: Fighter, corner: 0 | 1): Look2 {
-  return {
-    skin: SKIN_TONES[f.look.skin % SKIN_TONES.length],
-    hair: f.look.hair,
-    hairColor: lerpColor(HAIR_COLORS[f.look.hairColor % HAIR_COLORS.length], 0x9a9790, Math.max(0, Math.min(1, (f.age - 36) / 14))),
-    hairStyle: f.look.hair,
-    build: f.look.build,
-    shorts: corner === 0 ? 0xa83232 : 0x2f4f8f,
-    stance: f.anim?.stance ?? (f.styles.includes('Wrestler') ? 'wrestler' : f.styles.includes('Kickboxer') || f.styles.includes('Muay Thai') ? 'upright' : f.styles.includes('Brawler') ? 'brawler' : f.styles.includes('Showboat') ? 'handsLow' : f.styles.includes('Counter Striker') ? 'sway' : 'bouncy'),
-    female: f.gender === 'W',
-  };
-}
-
-/** Draw a fighter at feet position (x, y). facing 1 = right. */
-export function drawFighter(g: Graphics, x: number, y: number, facing: 1 | -1, pose: Pose, t: number, L: Look2): void {
-  const sk = L.skin;
-  const skD = shade(sk, -0.2);
-  const glove = shade(L.shorts, -0.1);
-  const wide = L.build; // 0..2
-  const tw = 8 + wide * 2; // torso width
-  const R = (dx: number, dy: number, w: number, h: number, c: number) => {
-    // dx relative to facing
-    const xx = facing === 1 ? x + dx : x - dx - w;
-    g.rect(Math.round(xx), Math.round(y + dy), w, h).fill(c);
-  };
-  const head = (dx: number, dy: number) => {
-    R(dx - 3, dy - 6, 7, 7, sk);
-    R(dx + 2, dy - 4, 1, 1, 0x1c1714); // eye
-    if (L.hairStyle > 0) R(dx - 3, dy - 7, 7, L.hairStyle === 1 ? 1 : 2, L.hairColor);
-    if (L.hairStyle === 4) R(dx - 1, dy - 9, 3, 3, L.hairColor);
-    if (L.hairStyle === 5 || (L.female && L.hairStyle >= 5)) R(dx - 4, dy - 6, 2, 7, L.hairColor);
-    if (L.hairStyle === 7) R(dx - 4, dy - 8, 3, 3, L.hairColor);
-  };
-  const bob = pose === 'idle' ? (L.stance === 'bouncy' ? Math.round(Math.sin(t * 9) * 1.2) : L.stance === 'sway' ? 0 : Math.round(Math.sin(t * 4) * 0.6)) : 0;
-  const sway = L.stance === 'sway' && pose === 'idle' ? Math.round(Math.sin(t * 3) * 2) : 0;
-  const crouch = L.stance === 'wrestler' || L.stance === 'crouch' ? 3 : 0;
-  const yy = y;
-  switch (pose) {
-    case 'top': {
-      // horizontal on top of opponent
-      R(-10, -10, 20, 6, sk);
-      R(-12, -8, 6, 6, L.shorts);
-      head(12, -6);
-      R(6, -4, 3, 6, skD);
-      R(-16, -6, 5, 3, skD);
-      if (Math.sin(t * 14) > 0) R(10, -2, 4, 3, glove);
-      return;
-    }
-    case 'bottom':
-    case 'sub': {
-      R(-12, -4, 20, 5, sk);
-      R(-14, -4, 6, 5, L.shorts);
-      head(10, -1);
-      // legs up in guard
-      R(-18, -12, 3, 9, skD);
-      R(-14, -14, 3, 10, skD);
-      if (pose === 'sub') {
-        R(-6, -14, 14, 3, skD);
-        R(4, -12, 3, 6, glove);
-      }
-      return;
-    }
-    case 'down':
-    case 'ko': {
-      R(-14, -4, 22, 5, sk);
-      R(-16, -4, 6, 5, L.shorts);
-      head(11, 1);
-      R(-20, -3, 5, 3, skD);
-      if (pose === 'ko') {
-        R(2, -7, 8, 2, skD);
-        R(2, 1, 8, 2, skD);
-      } else R(4, -6, 3, 4, glove);
-      return;
-    }
-    case 'stool': {
-      R(-4, -18, tw, 10, sk);
-      R(-5, -8, tw + 2, 4, L.shorts);
-      R(-3, -4, 3, 4, skD);
-      R(3, -4, 3, 4, skD);
-      head(0, -18);
-      R(-8, -16, 3, 6, skD);
-      R(tw - 2, -16, 3, 6, skD);
-      return;
-    }
-    case 'shoot': {
-      R(-6, -14, 16, 7, sk);
-      R(-10, -12, 6, 7, L.shorts);
-      head(14, -10);
-      R(-14, -8, 3, 8, skD);
-      R(-8, -5, 3, 5, skD);
-      R(8, -8, 4, 3, glove);
-      return;
-    }
-    case 'sprawl': {
-      R(-8, -10, 16, 6, sk);
-      R(-16, -8, 8, 5, L.shorts);
-      head(10, -6);
-      R(-24, -6, 9, 3, skD);
-      return;
-    }
-    default:
-      break;
-  }
-  // upright poses
-  const hy = yy - 34 + bob + crouch;
-  // legs
-  const legC = skD;
-  const lean = pose === 'hurt' ? -2 : 0;
-  if (pose === 'kick' || pose === 'legkick' || pose === 'headkick') {
-    const kh = pose === 'legkick' ? -8 : pose === 'kick' ? -16 : -26;
-    R(-2, hy + 22 - yy, 3, 12, legC); // standing leg
-    R(2, kh, 14, 3, legC); // kicking leg
-    R(14, kh - 1, 3, 4, sk);
-  } else if (pose === 'knee' || pose === 'flyknee') {
-    R(-2, hy + 22 - yy, 3, 12, legC);
-    R(3, -18 - (pose === 'flyknee' ? 6 : 0), 4, 8, legC);
-  } else if (pose === 'walk') {
-    const s = Math.sin(t * 8) * 3;
-    R(-2 + s, -12, 3, 12, legC);
-    R(2 - s, -12, 3, 12, legC);
-  } else {
-    const spread = L.stance === 'karate' ? 6 : L.stance === 'wrestler' ? 5 : 3;
-    R(-spread + lean, -12 + crouch, 3, 12 - crouch, legC);
-    R(spread + lean, -12 + crouch, 3, 12 - crouch, legC);
-  }
-  // shorts
-  R(-tw / 2 + lean + sway, hy + 18 - yy, tw, 5, L.shorts);
-  // torso
-  R(-tw / 2 + lean + sway, hy + 7 - yy, tw, 11, sk);
-  if (L.female) R(-tw / 2 + lean + sway, hy + 8 - yy, tw, 4, 0x2a2a2a);
-  // head
-  const headDX = lean + sway + (pose === 'hurt' ? -2 : 0);
-  head(headDX, hy + 7 - yy);
-  // arms
-  const ax = tw / 2 + sway;
-  const shoulderY = hy + 9 - yy;
-  const lowHands = L.stance === 'handsLow' && pose === 'idle';
-  switch (pose) {
-    case 'jab':
-      R(ax, shoulderY, 12, 3, sk);
-      R(ax + 12, shoulderY - 1, 4, 4, glove);
-      R(ax - 2, shoulderY + 2, 3, 3, glove);
-      break;
-    case 'punch':
-    case 'elbow':
-      R(ax, shoulderY + 1, pose === 'elbow' ? 6 : 13, 3, sk);
-      R(ax + (pose === 'elbow' ? 5 : 13), shoulderY, 4, 4, pose === 'elbow' ? sk : glove);
-      R(ax - 1, shoulderY - 2, 3, 3, glove);
-      break;
-    case 'hook':
-      R(ax, shoulderY - 1, 8, 3, sk);
-      R(ax + 7, shoulderY - 3, 4, 5, glove);
-      R(ax - 1, shoulderY - 2, 3, 3, glove);
-      break;
-    case 'uppercut':
-      R(ax, shoulderY - 4, 3, 7, sk);
-      R(ax, shoulderY - 8, 4, 4, glove);
-      break;
-    case 'spin':
-      R(-ax - 12, shoulderY, 12, 3, sk);
-      R(-ax - 15, shoulderY - 1, 4, 4, glove);
-      break;
-    case 'clinch':
-      R(ax, shoulderY, 10, 3, sk);
-      R(ax, shoulderY + 4, 10, 3, sk);
-      break;
-    case 'celebrate':
-      R(ax - 2, shoulderY - 10, 3, 10, sk);
-      R(-ax - 1, shoulderY - 10, 3, 10, sk);
-      R(ax - 3, shoulderY - 13, 4, 4, glove);
-      R(-ax - 2, shoulderY - 13, 4, 4, glove);
-      break;
-    case 'taunt':
-      R(ax, shoulderY + 2, 8, 3, sk);
-      R(-ax - 8, shoulderY + 2, 8, 3, sk);
-      break;
-    case 'hurt':
-      R(ax - 2, shoulderY + 4, 3, 7, sk);
-      R(ax - 3, shoulderY + 10, 4, 4, glove);
-      break;
-    case 'walk':
-      R(ax - 1, shoulderY - 12, 3, 12, sk);
-      break;
-    default: {
-      const gy = lowHands ? shoulderY + 7 : shoulderY - 3;
-      R(ax, gy + 2, 3, 3, sk);
-      R(ax + 2, gy, 4, 4, glove);
-      R(ax - 3, gy + 1, 4, 4, glove);
-      if (L.stance === 'brawler') R(ax + 4, gy + 3, 3, 3, glove);
-    }
-  }
-}
-
-interface Spark {
+interface Part {
   x: number;
   y: number;
   vx: number;
   vy: number;
   life: number;
   c: number;
+  s: number;
+  grav: number;
 }
 
+interface FState {
+  rig: Rig;
+  pose: Pose;
+  poseT: number;
+  x: number;
+  lunge: number;
+  recoil: number;
+  facing: 1 | -1;
+}
+
+export type CamMode = 'side' | 'tv' | 'top';
+type ArenaScene = 'intro' | 'fight' | 'ceremony';
+
+interface Actor {
+  rig: Rig;
+  pose: Pose;
+  x: number;
+  tx: number;
+  facing: 1 | -1;
+  look: Look2;
+  visible: boolean;
+  spin: number; // >0 while doing the Buffer 360
+}
+
+const REF_LOOK: Look2 = {
+  skin: 0x8d5a3b, hairStyle: 0, hairColor: 0x1a1412, beard: 2, build: 1, trunks: 0x111111, trim: 0x111111, glove: 0x2a5aa8,
+  stance: 'upright', female: false, tattoo: 0, outfit: { top: 0x1a1a1e, bottom: 0x22222a, bulk: 0 },
+};
+const BUTLER_LOOK: Look2 = {
+  skin: 0xe0b48c, hairStyle: 0, hairColor: 0x2a2020, beard: 0, build: 2, trunks: 0x111111, trim: 0x111111, glove: 0xe0b48c,
+  stance: 'upright', female: false, tattoo: 0, outfit: { top: 0x15151a, bottom: 0x15151a, shirt: 0xf2efe6, tie: 0x8e2f2f, bulk: 4, mic: true },
+};
+
+// top-down octagon geometry
+const TCX = AW / 2;
+const TCY = 76;
+const TR = 66;
+
 export class ArenaView extends Container {
+  private world = new Container();
   private bg = new Graphics();
   private crowd = new Graphics();
-  private fx = new Graphics();
+  private lights = new Graphics();
   private fighters = new Graphics();
+  private fx = new Graphics();
+  private front = new Graphics();
+  private top = new Graphics();
+  private topFx = new Graphics();
   private hud = new Container();
-  private nameA: PixelText;
-  private nameB: PixelText;
+  private hudG = new Graphics();
+  private tv = new Container();
+  private tvG = new Graphics();
+  private tvLower: PixelText;
+  private tvLower2: PixelText;
+  private tvTag: PixelText;
+  private topLabels = new Container();
   private clock: PixelText;
   private callout: PixelText;
-  private sparks: Spark[] = [];
+  private parts: Part[] = [];
+  private tparts: Part[] = [];
   private t = 0;
   private L: [Look2, Look2];
-  posX: [number, number] = [170, 310];
-  pose: [Pose, Pose] = ['idle', 'idle'];
-  poseT: [number, number] = [0, 0];
+  private F: [FState, FState];
+  private ref: Actor;
+  private butler: Actor;
+  private center = AW / 2;
+  private drift = 0;
+  // camera
+  mode: CamMode = 'side';
+  private cam = { x: AW / 2, y: AH / 2, z: 1 };
+  private shot = { x: AW / 2, y: AH / 2, z: 1, hold: 0, slowZoom: 0 };
+  private lowerT = 0;
+  // top-down state
+  private tc = { x: TCX, y: TCY, ang: 0 };
+  scene: ArenaScene = 'fight';
+  private introFocus: -1 | 0 | 1 = -1;
   hp: [number, number] = [100, 100];
   intensity = 1;
   flash = 0;
@@ -258,154 +116,480 @@ export class ArenaView extends Container {
   calloutT = 0;
   ground: 'stand' | 'clinch' | 'atop' | 'btop' = 'stand';
   winnerSide = -1;
+  finished = false;
 
   constructor(
     public A: Fighter,
     public B: Fighter,
     public rounds: number,
+    private info: { network?: string; event?: string; promo?: string } = {},
   ) {
     super();
-    this.L = [lookOf(A, 0), lookOf(B, 1)];
-    this.addChild(this.bg, this.crowd, this.fighters, this.fx, this.hud);
+    this.L = [lookFor(A, 0), lookFor(B, 1)];
+    this.F = [
+      { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: AW / 2 - 24, lunge: 0, recoil: 0, facing: 1 },
+      { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: AW / 2 + 24, lunge: 0, recoil: 0, facing: -1 },
+    ];
+    this.ref = { rig: { ...POSES.stand }, pose: 'stand', x: AW / 2 + 70, tx: AW / 2 + 70, facing: -1, look: REF_LOOK, visible: true, spin: 0 };
+    this.butler = { rig: { ...POSES.mic }, pose: 'mic', x: AW / 2, tx: AW / 2, facing: 1, look: BUTLER_LOOK, visible: false, spin: 0 };
+    this.world.addChild(this.bg, this.crowd, this.lights, this.fighters, this.fx, this.front);
+    this.addChild(this.world, this.top, this.topFx, this.topLabels, this.hudG, this.hud, this.tv);
     this.drawBg();
-    this.nameA = text(`${A.first[0]}. ${A.last}`, 6, 4, { color: PAL.bone });
-    this.nameB = text(`${B.first[0]}. ${B.last}`, AW - 6 - 120, 4, { color: PAL.bone, width: 120, align: 'right' });
-    this.clock = text('R1 5:00', 0, 4, { width: AW, align: 'center', color: PAL.gold });
-    this.callout = text('', 0, 40, { width: AW, align: 'center', color: PAL.gold, scale: 2, shadow: PAL.ink });
-    this.hud.addChild(this.nameA, this.nameB, this.clock, this.callout);
+    this.drawTopStatic();
+    this.hud.addChild(text(`${A.first[0]}. ${A.last}`, 6, 3, { color: PAL.bone }));
+    this.hud.addChild(text(`${B.first[0]}. ${B.last}`, AW - 126, 3, { color: PAL.bone, width: 120, align: 'right' }));
+    this.clock = text('R1 5:00', 0, 3, { width: AW, align: 'center', color: PAL.gold });
+    this.callout = text('', 0, 46, { width: AW, align: 'center', color: PAL.gold, scale: 2, shadow: PAL.ink });
+    this.hud.addChild(this.clock, this.callout);
+    // TV graphics
+    this.tv.addChild(this.tvG);
+    this.tvTag = text('● LIVE', AW - 50, 26, { small: true, color: 0xffffff });
+    this.tv.addChild(text((info.event ?? '').toUpperCase(), 6, 26, { small: true, color: PAL.gold, shadow: PAL.ink }));
+    this.tvLower = text('', 18, AH - 27, { color: PAL.bone });
+    this.tvLower2 = text('', 18, AH - 16, { small: true, color: PAL.ash, width: 300 });
+    this.tv.addChild(this.tvTag, this.tvLower, this.tvLower2);
+    this.setMode('side');
   }
+
+  setMode(m: CamMode): void {
+    this.mode = m;
+    const top = m === 'top' && this.scene === 'fight';
+    this.world.visible = !top;
+    this.top.visible = top;
+    this.topFx.visible = top;
+    this.topLabels.visible = top;
+    this.tv.visible = m === 'tv';
+    if (m !== 'tv') this.applyCam(AW / 2, AH / 2, 1, true);
+    else this.shot.hold = 0;
+  }
+
+  // ------------------------------------------------------------ backgrounds
 
   private drawBg(): void {
     const g = this.bg;
     g.clear();
-    g.rect(0, 0, AW, AH).fill(0x141018);
-    // arena lights
-    for (let i = 0; i < 8; i++) g.rect(30 + i * 60, 0, 20, 3).fill(0x4a4030);
-    // floor / canvas
-    g.rect(0, FLOOR, AW, AH - FLOOR).fill(0x2a2a30);
-    g.rect(60, FLOOR - 2, 360, 6).fill(0xd8d4cc);
-    g.rect(60, FLOOR + 4, 360, AH - FLOOR - 4).fill(0xb8b4ac);
-    g.ellipse(AW / 2, FLOOR + 10, 50, 6).fill({ color: PAL.blood, alpha: 0.35 });
-    // cage posts & mesh behind fighters
-    g.rect(58, 50, 4, 80).fill(0x1b1b1e);
-    g.rect(418, 50, 4, 80).fill(0x1b1b1e);
-    g.rect(58, 48, 364, 3).fill(0x2b2b30);
-    for (let x = 62; x < 418; x += 8) {
-      g.moveTo(x, 51).lineTo(x + 8, FLOOR - 2).stroke({ color: 0x3a3a42, width: 1, alpha: 0.6 });
-      g.moveTo(x + 8, 51).lineTo(x, FLOOR - 2).stroke({ color: 0x3a3a42, width: 1, alpha: 0.6 });
+    // arena darkness with a warm gradient toward the cage
+    for (let y = 0; y < AH; y += 2) g.rect(0, y, AW, 2).fill(lerpColor(0x0c090d, 0x1d151b, y / AH));
+    // rafters & lighting rig
+    g.rect(0, 14, AW, 2).fill(0x2a2228);
+    for (let i = 0; i < 10; i++) {
+      g.rect(18 + i * 48, 10, 12, 5).fill(0x3a3032);
+      g.rect(21 + i * 48, 15, 6, 2).fill(0xe8d8a0);
     }
+    // big screens
+    g.rect(150, 1, 60, 8).fill(0x0e1420).rect(270, 1, 60, 8).fill(0x0e1420);
+    // the canvas (mat) in perspective
+    g.poly([CAGE_L - 20, FLOOR + 14, CAGE_R + 20, FLOOR + 14, CAGE_R - 4, FLOOR - 10, CAGE_L + 4, FLOOR - 10]).fill(0xc9c3b6);
+    g.poly([CAGE_L - 20, FLOOR + 14, CAGE_R + 20, FLOOR + 14, AW, AH, 0, AH]).fill(0x1a1416);
+    // mat logo & centre circle
+    g.ellipse(AW / 2, FLOOR + 2, 70, 9).stroke({ color: 0xa83232, width: 2, alpha: 0.6 });
+    g.ellipse(AW / 2, FLOOR + 2, 40, 5).fill({ color: 0xa83232, alpha: 0.25 });
+    // sponsor decals on the mat
+    g.rect(80, FLOOR + 6, 40, 4).fill({ color: 0x2a4a86, alpha: 0.35 });
+    g.rect(360, FLOOR + 6, 40, 4).fill({ color: 0x2a4a86, alpha: 0.35 });
+    // back fence: posts + chain-link mesh
+    const top = 46;
+    g.rect(CAGE_L, top, CAGE_R - CAGE_L, 3).fill(0x2a2a30);
+    g.rect(CAGE_L, FLOOR - 12, CAGE_R - CAGE_L, 3).fill(0x1d1d22);
+    for (let x = CAGE_L; x <= CAGE_R; x += 82) {
+      g.rect(x - 2, top - 2, 5, FLOOR - top - 8).fill(0x111114);
+      g.rect(x - 3, top - 4, 7, 4).fill(0x3a3a42);
+    }
+    for (let y = top + 3; y < FLOOR - 12; y += 4) {
+      for (let x = CAGE_L + ((y >> 2) % 2) * 2; x < CAGE_R; x += 4) g.rect(x, y, 1, 1).fill(0x44444e);
+    }
+    // padding on top rail
+    g.rect(CAGE_L, top - 1, CAGE_R - CAGE_L, 2).fill(0x8a1e1e);
   }
 
   private drawCrowd(): void {
     const g = this.crowd;
     g.clear();
-    const rows = 5;
-    for (let r = 0; r < rows; r++) {
-      const y = 14 + r * 7;
-      for (let x = (r % 2) * 3; x < AW; x += 6) {
-        const n = Math.sin(x * 12.9898 + r * 78.233 + Math.floor(this.t * (2 + this.intensity * 3)) * 3.1) * 43758.5453;
-        const on = n - Math.floor(n);
-        const c = on > 0.5 + 0.12 * (3 - this.intensity) ? lerpColor(0x4a3a40, 0xc0a890, on * (0.3 + this.intensity * 0.2)) : 0x2a2228;
-        const jump = this.intensity >= 3 && on > 0.7 ? -1 : 0;
-        g.rect(x, y + jump, 3, 4).fill(c);
+    for (let r = 0; r < 4; r++) {
+      const y = 22 + r * 7;
+      for (let x = (r % 2) * 4; x < AW; x += 8) {
+        const n = Math.sin(x * 12.9898 + r * 78.233) * 43758.5453;
+        const v = n - Math.floor(n);
+        const excite = this.intensity >= 3 ? Math.round(Math.abs(Math.sin(this.t * 9 + x)) * -2) : 0;
+        const head = lerpColor(0x1e171c, 0x4a3a40, v * 0.7);
+        g.circle(x + 3, y + excite, 2.5).fill(head);
+        g.rect(x, y + 2 + excite, 7, 5).fill(shade(head, -0.2));
+        if (this.intensity >= 2 && v > 0.93) g.rect(x + 2, y - 4 + excite, 2, 4).fill(shade(head, 0.2)); // fist up
+        if (v > 0.97 && Math.sin(this.t * 2 + x) > 0) g.rect(x + 3, y - 2, 1, 2).fill(0xbfd8ff); // phone screen
       }
     }
-    // camera flashes
-    if (this.intensity >= 2 && Math.random() < 0.08 * this.intensity) g.rect(Math.random() * AW, 14 + Math.random() * 30, 2, 2).fill(0xffffff);
+    if (this.intensity >= 2 && Math.random() < 0.06 * this.intensity) {
+      const fx = Math.random() * AW;
+      g.circle(fx, 24 + Math.random() * 20, 2).fill(0xffffff);
+    }
+    // jumbotrons show the action
+    const sc = this.scene === 'intro' ? 0x3a2a14 : this.intensity >= 3 ? 0x5a1a1a : 0x1a2a40;
+    g.rect(152, 2, 56, 6).fill(sc).rect(272, 2, 56, 6).fill(sc);
+    // spotlights over the cage
+    const l = this.lights;
+    l.clear();
+    l.poly([AW / 2 - 30, 16, AW / 2 + 30, 16, AW / 2 + 150, FLOOR, AW / 2 - 150, FLOOR]).fill({ color: 0xfff2d0, alpha: 0.05 + this.intensity * 0.01 });
+    l.ellipse(AW / 2 + this.drift, FLOOR + 1, 110, 10).fill({ color: 0xfff2d0, alpha: 0.08 });
+    if (this.scene === 'intro') {
+      const fx = this.introFocus < 0 ? this.butler.x : this.F[this.introFocus as 0 | 1].x;
+      l.poly([fx - 6, 16, fx + 6, 16, fx + 30, FLOOR + 4, fx - 30, FLOOR + 4]).fill({ color: 0xfff2d0, alpha: 0.12 });
+    }
   }
 
-  /** Apply a ticker line: sets poses, positions, sparks, sounds. */
+  /** Top-down octagon: mat, fence, crowd, commentary desk, judges. */
+  private drawTopStatic(): void {
+    const g = this.top;
+    g.clear();
+    g.rect(0, 0, AW, AH).fill(0x110d11);
+    // crowd ring
+    for (let i = 0; i < 520; i++) {
+      const n = Math.sin(i * 91.7) * 43758.5453;
+      const v = n - Math.floor(n);
+      const a = (i / 520) * Math.PI * 2 * 7;
+      const rr = 92 + (i % 7) * 9 + v * 4;
+      const x = TCX + Math.cos(a) * rr * 1.6;
+      const y = TCY + Math.sin(a) * rr * 0.62;
+      if (y < 2 || y > AH - 2) continue;
+      g.circle(x, y, 2).fill(lerpColor(0x241c22, 0x4a3a40, v));
+    }
+    // floor around the cage
+    const oct = (r: number) => {
+      const pts: number[] = [];
+      for (let k = 0; k < 8; k++) {
+        const a = Math.PI / 8 + (k * Math.PI) / 4;
+        pts.push(TCX + Math.cos(a) * r, TCY + Math.sin(a) * r);
+      }
+      return pts;
+    };
+    g.poly(oct(TR + 14)).fill(0x1c171b);
+    g.poly(oct(TR + 3)).fill(0x2a2a30);
+    g.poly(oct(TR)).fill(0xcfc9bc);
+    // mat art
+    g.circle(TCX, TCY, 26).stroke({ color: 0xa83232, width: 2, alpha: 0.55 });
+    g.circle(TCX, TCY, 14).fill({ color: 0xa83232, alpha: 0.18 });
+    g.rect(TCX - 46, TCY - 40, 26, 6).fill({ color: 0x2a4a86, alpha: 0.3 });
+    g.rect(TCX + 20, TCY + 34, 26, 6).fill({ color: 0x2a4a86, alpha: 0.3 });
+    // fence & posts
+    g.poly(oct(TR + 1)).stroke({ color: 0x0c0c0e, width: 3 });
+    const p = oct(TR + 1);
+    for (let k = 0; k < 8; k++) g.circle(p[k * 2], p[k * 2 + 1], 3).fill(0x8a1e1e);
+    // corners: red (left-up) and blue (right-down) stools
+    g.rect(p[10] - 6, p[11] - 4, 8, 8).fill(0x9e2a2a);
+    g.rect(p[2] - 2, p[3] - 4, 8, 8).fill(0x284a86);
+    // commentary desk
+    g.rect(24, 112, 116, 16).fill(0x2a2228).rect(24, 112, 116, 3).fill(0x4a3a40);
+    for (let k = 0; k < 3; k++) {
+      const hx = 44 + k * 38;
+      g.circle(hx, 122, 6).fill(0x15151a);
+      g.circle(hx, 120, 3.5).fill([0xe0b48c, 0xd8a47c, 0x6e4630][k]);
+      g.rect(hx - 6, 112, 12, 3).fill(0xc4a04a); // monitors
+    }
+    // judges
+    for (let k = 0; k < 3; k++) {
+      const jy = 28 + k * 46;
+      g.rect(AW - 70, jy - 6, 40, 12).fill(0x2a2228);
+      g.circle(AW - 50, jy + 6, 4).fill(0x15151a);
+      g.circle(AW - 50, jy + 5, 2.5).fill(0xc8a080);
+    }
+    this.topLabels.removeChildren().forEach((c) => c.destroy());
+    this.topLabels.addChild(text('ANIK  •  HOGAN  •  SANDWICH', 24, 131, { small: true, color: PAL.ash }));
+    this.topLabels.addChild(text('JUDGES', AW - 66, AH - 12, { small: true, color: PAL.ash }));
+    this.topLabels.addChild(text('RED', TCX - TR - 8, 22, { small: true, color: 0xc85a5a }));
+    this.topLabels.addChild(text('BLUE', TCX + TR - 8, AH - 30, { small: true, color: 0x6a8ad8 }));
+  }
+
+  // ------------------------------------------------------------ scenes
+
+  /** Juiced Butler time: fighters in their corners, announcer centre stage. */
+  startIntro(): void {
+    this.scene = 'intro';
+    this.F[0].x = CAGE_L + 60;
+    this.F[1].x = CAGE_R - 60;
+    this.butler.visible = true;
+    this.butler.x = this.butler.tx = AW / 2;
+    this.ref.x = this.ref.tx = AW / 2 + 90;
+    this.setMode(this.mode);
+  }
+
+  introCue(corner: 0 | 1 | undefined, stage: boolean, line: string): void {
+    const b = this.butler;
+    if (stage) {
+      if (/360|spin|180/i.test(line)) b.spin = 0.7;
+      else if (/flex|lats|bicep|pose/i.test(line)) this.setActor(b, 'flex');
+      this.introFocus = -1;
+      return;
+    }
+    if (corner === undefined) {
+      this.setActor(b, 'mic');
+      b.facing = 1;
+      this.introFocus = -1;
+      return;
+    }
+    // the Buffer 180: whip around and point at the corner being introduced
+    const want = corner === 0 ? -1 : 1;
+    if (b.facing !== want) b.spin = 0.35;
+    b.facing = want as 1 | -1;
+    this.setActor(b, /!!!$/.test(line) ? 'point' : 'mic');
+    this.introFocus = corner;
+    if (/!!!$/.test(line)) {
+      this.F[corner].pose = 'taunt';
+      this.F[corner].poseT = 1.2;
+      this.intensity = 3;
+      this.flash = 0.15;
+      if (this.mode === 'tv') this.lowerThird(corner);
+    }
+  }
+
+  startFight(): void {
+    this.scene = 'fight';
+    this.butler.visible = false;
+    this.introFocus = -1;
+    this.setActor(this.ref, 'stand');
+    this.setMode(this.mode);
+  }
+
+  /** Both fighters to the centre, referee between them holding their wrists. */
+  startCeremony(): void {
+    this.scene = 'ceremony';
+    this.butler.visible = true;
+    this.butler.x = this.butler.tx = AW / 2 + 78;
+    this.butler.facing = -1;
+    this.setActor(this.butler, 'mic');
+    this.ref.tx = AW / 2;
+    this.ref.facing = 1;
+    this.setActor(this.ref, 'refHold');
+    for (const i of [0, 1] as const) {
+      this.F[i].pose = 'stand';
+      this.F[i].poseT = 9999;
+    }
+    this.ground = 'stand';
+    this.setMode(this.mode);
+  }
+
+  ceremonyCue(line: string): void {
+    this.setActor(this.butler, /!!!$/.test(line) ? 'point' : 'mic');
+  }
+
+  /** The moment: referee raises the winner's hand. */
+  raiseHand(side: -1 | 0 | 1): void {
+    if (side < 0) {
+      this.setActor(this.ref, 'flex');
+      for (const i of [0, 1] as const) this.F[i].pose = 'armUp';
+      return;
+    }
+    const w = side as 0 | 1;
+    this.ref.facing = w === 1 ? 1 : -1;
+    this.setActor(this.ref, 'refRaise');
+    this.F[w].pose = 'armUp';
+    this.F[(1 - w) as 0 | 1].pose = 'headDown';
+    this.winnerSide = w;
+    this.intensity = 3;
+    this.flash = 0.2;
+    this.burst(this.F[w].x, FLOOR - 100, 24, PAL.gold, 90, 0.9, 2, 60);
+    this.burst(this.F[w].x, FLOOR - 100, 18, 0xffffff, 90, 0.9, 1, 60);
+    if (this.mode === 'tv') this.lowerThird(w, 'WINNER');
+  }
+
+  private setActor(a: Actor, p: Pose): void {
+    a.pose = p;
+  }
+
+  private lowerThird(i: 0 | 1, tag?: string): void {
+    const f = i === 0 ? this.A : this.B;
+    this.tvLower.setText(`${tag ? tag + ': ' : ''}${f.first} ${f.nick ? `"${f.nick}" ` : ''}${f.last}`.toUpperCase());
+    this.tvLower2.setText(`${f.record.w}-${f.record.l}${f.record.d ? '-' + f.record.d : ''}  •  ${f.hometown.split('|')[0]}, ${f.country}  •  ${f.gym}`);
+    this.lowerT = 3.2;
+  }
+
+  // ------------------------------------------------------------ cues
+
+  private setPose(i: 0 | 1, p: Pose, dur = 0.35): void {
+    this.F[i].pose = p;
+    this.F[i].poseT = dur;
+  }
+
+  private handPos(i: 0 | 1, which: 'haF' | 'haB' | 'ftB' | 'knB' | 'elB' = 'haF'): [number, number] {
+    const f = this.F[i];
+    const j = f.rig[which];
+    return [f.x + (f.lunge + j[0]) * f.facing, FLOOR + j[1]];
+  }
+
+  private burst(x: number, y: number, n: number, color: number, speed = 70, life = 0.35, size = 2, grav = 220, top = false): void {
+    const arr = top ? this.tparts : this.parts;
+    for (let k = 0; k < n; k++) {
+      arr.push({ x, y, vx: (Math.random() - 0.5) * speed * 2, vy: top ? (Math.random() - 0.5) * speed * 2 : -Math.random() * speed, life: life * (0.6 + Math.random() * 0.6), c: color, s: size, grav: top ? 0 : grav });
+    }
+  }
+
+  private impact(attacker: 0 | 1, joint: 'haF' | 'haB' | 'ftB' | 'knB' | 'elB', big: boolean, bloody: boolean): void {
+    const def = (1 - attacker) as 0 | 1;
+    this.F[attacker].lunge = 7;
+    this.F[def].recoil = big ? 9 : 5;
+    const [x, y] = this.handPos(attacker, joint);
+    this.burst(x, y, big ? 16 : 7, big ? PAL.gold : 0xffffff, big ? 110 : 60, 0.3, big ? 2 : 1);
+    this.burst(x, y, 4, 0xbfe0ff, 40, 0.5, 1, 120); // sweat
+    if (bloody) this.burst(x, y, 6, 0xa01818, 45, 0.9, 2);
+    // same hit, top-down
+    const [hx, hy] = this.topPos(def);
+    this.burst(hx, hy, big ? 12 : 5, big ? PAL.gold : 0xffffff, big ? 60 : 35, 0.3, big ? 2 : 1, 0, true);
+    if (bloody) this.burst(hx, hy, 5, 0xa01818, 25, 1.5, 2, 0, true);
+    if (big) this.shakeT = 0.25;
+    if (big && this.mode === 'tv') this.cutTo('close', 0.25);
+  }
+
   cue(line: TickerLine): void {
+    if (line.speaker) return; // booth chatter doesn't move anybody
     this.round = line.round;
     this.sec = line.t;
     this.hp = [line.hp[0], line.hp[1]];
     this.intensity = Math.max(1, line.intensity);
+    const prevGround = this.ground;
     this.ground = line.pos;
-    const a = line.side;
-    const d = a === 0 ? 1 : 0;
-    const act = line.act;
-    const setPose = (i: 0 | 1, p: Pose, dur = 0.45) => {
-      this.pose[i] = p;
-      this.poseT[i] = dur;
-    };
-    const hit = (target: 0 | 1, big = false) => {
-      const x = this.posX[target];
-      for (let i = 0; i < (big ? 14 : 6); i++)
-        this.sparks.push({ x, y: FLOOR - 26, vx: (Math.random() - 0.5) * 80, vy: -Math.random() * 60, life: 0.4, c: big ? PAL.gold : 0xffffff });
-      if (big) this.shakeT = 0.25;
-    };
-    const blood = (target: 0 | 1) => {
-      for (let i = 0; i < 5; i++) this.sparks.push({ x: this.posX[target], y: FLOOR - 28, vx: (Math.random() - 0.5) * 40, vy: -Math.random() * 30, life: 0.8, c: 0xa01818 });
-    };
-    // signature move flavour
-    const sig = a >= 0 ? (a === 0 ? this.A : this.B).anim?.signature ?? [] : [];
-    if (a >= 0 && sig.length && ['punch', 'kick', 'headkick', 'knee', 'elbow'].includes(act) && Math.random() < 0.25) {
-      const name = sig[Math.floor(Math.random() * sig.length)];
-      this.showCallout(name.replace(/([A-Z])/g, ' $1').toUpperCase() + '!');
+    if (prevGround !== this.ground && (this.ground === 'stand')) {
+      this.setPose(0, 'guard', 0);
+      this.setPose(1, 'guard', 0);
     }
-    switch (act) {
+    const a = line.side;
+    if (a < 0) {
+      if (line.act === 'bell') sfx('bell');
+      if (line.act === 'standup') {
+        this.showCallout('STAND UP!');
+        this.ref.tx = this.center;
+      }
+      return;
+    }
+    const A = a as 0 | 1;
+    const D = (1 - a) as 0 | 1;
+    const ground = this.ground === 'atop' || this.ground === 'btop';
+    const bloody = this.hp[D] < 55 && Math.random() < 0.5;
+    const sig = (A === 0 ? this.A : this.B).anim?.signature ?? [];
+    switch (line.act) {
       case 'jab':
-      case 'punch':
+        this.setPose(A, 'jab', 0.22);
+        this.setPose(D, Math.random() < 0.3 ? 'slip' : 'hurt', 0.2);
+        this.impact(A, 'haF', false, false);
+        sfx('punch');
+        break;
+      case 'punch': {
+        const p: Pose = Math.random() < 0.35 ? 'hook' : Math.random() < 0.25 ? 'uppercut' : Math.random() < 0.2 ? 'body' : 'cross';
+        if (ground) {
+          this.setPose(A, 'topPunch', 0.25);
+          this.impact(A, 'haB', false, bloody);
+        } else {
+          this.setPose(A, p, 0.3);
+          this.setPose(D, 'hurt', 0.28);
+          this.impact(A, 'haB', line.intensity >= 2, bloody);
+        }
+        sfx('punch');
+        break;
+      }
       case 'elbow':
-      case 'kick':
+        this.setPose(A, ground ? 'topPunch' : 'elbow', 0.3);
+        this.setPose(D, 'hurt', 0.3);
+        this.impact(A, 'elB', line.intensity >= 2, true);
+        sfx('punch');
+        break;
       case 'legkick':
+        this.setPose(A, 'legkick', 0.35);
+        this.impact(A, 'ftB', false, false);
+        sfx('kick');
+        break;
+      case 'kick':
+        this.setPose(A, 'bodykick', 0.38);
+        this.setPose(D, 'hurt', 0.3);
+        this.impact(A, 'ftB', line.intensity >= 2, false);
+        sfx('kick');
+        break;
       case 'headkick':
+        this.setPose(A, 'headkick', 0.45);
+        this.setPose(D, 'rocked', 0.5);
+        this.impact(A, 'ftB', true, bloody);
+        sfx('kick');
+        break;
       case 'knee':
-        if (a < 0) break;
-        setPose(a as 0 | 1, act === 'punch' ? (Math.random() < 0.4 ? 'hook' : Math.random() < 0.3 ? 'uppercut' : 'punch') : (act as Pose));
-        setPose(d as 0 | 1, 'hurt', 0.25);
-        hit(d as 0 | 1, act === 'headkick');
-        sfx(act.includes('kick') ? 'kick' : 'punch');
+        this.setPose(A, sig.includes('flyingKnee') && Math.random() < 0.5 ? 'flyknee' : 'knee', 0.35);
+        this.setPose(D, 'hurt', 0.3);
+        this.impact(A, 'knB', line.intensity >= 2, bloody);
+        sfx('kick');
+        break;
+      case 'rocked':
+        this.setPose(D, 'rocked', 0.9);
+        this.ref.tx = this.center + (D === 0 ? -30 : 30);
+        sfx('crowd');
         break;
       case 'kd':
-        setPose(a as 0 | 1, 'punch');
-        setPose(d as 0 | 1, 'down', 1.4);
-        hit(d as 0 | 1, true);
+        this.setPose(A, Math.random() < 0.5 ? 'hook' : 'cross', 0.35);
+        this.setPose(D, 'down', 1.6);
+        this.impact(A, 'haB', true, true);
         this.flash = 0.25;
         this.showCallout('KNOCKDOWN!');
+        this.ref.tx = this.center;
+        if (this.mode === 'tv') this.cutTo('close', 0.6, true);
         sfx('roar');
         break;
       case 'ko':
-        setPose(a as 0 | 1, Math.random() < 0.5 ? 'hook' : 'headkick', 0.6);
-        setPose(d as 0 | 1, 'ko', 999);
-        hit(d as 0 | 1, true);
+        this.setPose(A, Math.random() < 0.4 ? 'headkick' : 'hook', 0.6);
+        this.setPose(D, 'ko', 9999);
+        this.impact(A, Math.random() < 0.4 ? 'ftB' : 'haB', true, true);
+        this.F[D].recoil = 22;
         this.flash = 0.6;
+        this.winnerSide = A;
+        this.finished = true;
         this.showCallout('KNOCKOUT!');
-        this.winnerSide = a;
+        this.ref.tx = this.F[D].x;
+        if (this.mode === 'tv') this.cutTo('close', 1.5, true);
         sfx('roar');
         break;
       case 'tko':
-        setPose(d as 0 | 1, 'down', 999);
-        setPose(a as 0 | 1, 'celebrate', 999);
-        this.showCallout('IT\'S STOPPED!');
-        this.winnerSide = a;
+        this.setPose(D, ground ? 'bottom' : 'down', 9999);
+        this.setPose(A, 'celebrate', 9999);
+        this.winnerSide = A;
+        this.finished = true;
+        this.showCallout("IT'S STOPPED!");
+        this.ref.tx = this.center;
         sfx('roar');
         break;
-      case 'tap':
-        this.showCallout('TAP! TAP! TAP!');
-        this.winnerSide = a;
-        sfx('roar');
-        break;
-      case 'rocked':
-        setPose(d as 0 | 1, 'hurt', 0.9);
-        sfx('crowd');
+      case 'gnp':
+        this.setPose(A, 'topPunch', 0.25);
+        this.impact(A, 'haB', false, bloody);
+        sfx('punch');
         break;
       case 'td':
-        setPose(a as 0 | 1, 'shoot', 0.4);
+        this.setPose(A, 'shoot', 0.3);
+        this.setPose(D, 'lifted', 0.25);
+        this.burst(this.center, FLOOR, 10, 0xd8d0c0, 50, 0.4, 2, 60); // mat dust
+        this.burst(this.tc.x, this.tc.y, 8, 0xe8e0d0, 30, 0.5, 2, 0, true);
+        this.shakeT = 0.15;
         sfx('thud');
         break;
       case 'sprawl':
-        if (a >= 0) setPose(a as 0 | 1, 'sprawl', 0.4);
+        this.setPose(D, 'shoot', 0.35);
+        this.setPose(A, 'sprawl', 0.5);
         break;
-      case 'gnp':
-        hit(d as 0 | 1);
-        sfx('punch');
+      case 'sub':
+        this.setPose(A, ground ? (this.isTop(A) ? 'top' : 'bottomSub') : 'clinch', 0.8);
+        if (this.mode === 'tv') this.cutTo('close', 0.2);
         break;
-      case 'cut':
-        blood(d as 0 | 1);
+      case 'tap':
+        this.setPose(A, this.isTop(A) ? 'top' : 'bottomSub', 9999);
+        this.winnerSide = A;
+        this.finished = true;
+        this.showCallout('TAP! TAP! TAP!');
+        this.ref.tx = this.center;
+        sfx('roar');
+        break;
+      case 'sweep':
+        this.burst(this.center, FLOOR, 8, 0xd8d0c0, 40, 0.4, 2, 60);
+        sfx('thud');
+        break;
+      case 'clinch':
+      case 'ctrl':
         break;
       case 'taunt':
-        if (a >= 0) setPose(a as 0 | 1, 'taunt', 0.9);
+        this.setPose(A, 'taunt', 1.0);
+        break;
+      case 'cut':
+        this.burst(this.F[D].x + 6 * this.F[D].facing, FLOOR - 74, 10, 0xa01818, 50, 1.0, 2);
         break;
       case 'injury':
         this.showCallout('INJURY!');
@@ -413,64 +597,384 @@ export class ArenaView extends Container {
         break;
       case 'foul':
         this.showCallout('FOUL!');
+        this.setPose(D, 'hurt', 0.8);
+        this.ref.tx = this.center;
         break;
       case 'stool':
         this.showCallout('RETIRED ON THE STOOL');
+        this.finished = true;
         break;
-      case 'bell':
-        sfx('bell');
+      case 'stop':
+        this.finished = true;
+        break;
+      case 'escape':
+      case 'getup':
         break;
     }
+    if (sig.length && ['punch', 'kick', 'headkick', 'knee', 'elbow'].includes(line.act) && line.intensity >= 2 && Math.random() < 0.35) {
+      const name = sig[Math.floor(Math.random() * sig.length)];
+      if (name === 'spinningElbow' || name === 'spinningBackfist') this.setPose(A, 'spin', 0.4);
+      this.showCallout(name.replace(/([A-Z])/g, ' $1').toUpperCase() + '!');
+    }
+    if (line.act === 'bell' || /round_start/.test(line.key ?? '')) this.ref.tx = this.center + 60;
+  }
+
+  private isTop(i: 0 | 1): boolean {
+    return (this.ground === 'atop' && i === 0) || (this.ground === 'btop' && i === 1);
   }
 
   showCallout(s: string): void {
     this.callout.setText(s);
-    this.calloutT = 1.2;
+    this.calloutT = 1.3;
   }
+
+  // ------------------------------------------------------------ camera
+
+  private cutTo(kind: 'close' | 'medium' | 'wide', hold = 0, slow = false): void {
+    const z = kind === 'close' ? 1.75 : kind === 'medium' ? 1.35 : 1;
+    this.shot.z = z;
+    this.shot.hold = Math.max(hold, 2 + Math.random() * 3);
+    this.shot.slowZoom = slow ? 0.25 : 0;
+    this.applyCam(this.focusX(), this.focusY(z), z, true);
+  }
+
+  private focusX(): number {
+    if (this.scene === 'intro') return this.introFocus < 0 ? this.butler.x : this.F[this.introFocus as 0 | 1].x;
+    return (this.F[0].x + this.F[1].x) / 2;
+  }
+
+  private focusY(z: number): number {
+    const ground = this.ground === 'atop' || this.ground === 'btop';
+    if (z <= 1.01) return AH / 2;
+    return ground ? FLOOR - 26 : FLOOR - 56;
+  }
+
+  private applyCam(x: number, y: number, z: number, snap = false): void {
+    const c = this.cam;
+    if (snap) {
+      c.x = x;
+      c.y = y;
+      c.z = z;
+    }
+    const hw = AW / (2 * c.z);
+    const hh = AH / (2 * c.z);
+    c.x = Math.max(hw, Math.min(AW - hw, c.x));
+    c.y = Math.max(hh, Math.min(AH - hh, c.y));
+    this.world.scale.set(c.z);
+    this.world.position.set(Math.round(AW / 2 - c.x * c.z), Math.round(AH / 2 - c.y * c.z));
+  }
+
+  private updateCam(dt: number): void {
+    if (this.mode !== 'tv') return;
+    const s = this.shot;
+    s.hold -= dt;
+    if (s.hold <= 0) {
+      // director: alternate shots, tighter when the action heats up
+      const r = Math.random();
+      const kind = this.scene === 'ceremony' ? 'medium' : this.ground !== 'stand' ? (r < 0.6 ? 'close' : 'medium') : r < 0.45 ? 'medium' : r < 0.8 ? 'close' : 'wide';
+      this.cutTo(kind);
+    }
+    if (s.slowZoom > 0) s.z = Math.min(2.3, s.z + s.slowZoom * dt);
+    const c = this.cam;
+    const k = Math.min(1, dt * 3);
+    c.x += (this.focusX() - c.x) * k;
+    c.y += (this.focusY(s.z) - c.y) * k;
+    c.z += (s.z - c.z) * Math.min(1, dt * 4);
+    this.applyCam(c.x, c.y, c.z);
+  }
+
+  // ------------------------------------------------------------ frame
 
   update(dt: number): void {
     this.t += dt;
-    for (const i of [0, 1] as const) {
-      if (this.poseT[i] > 0) {
-        this.poseT[i] -= dt;
-        if (this.poseT[i] <= 0 && this.pose[i] !== 'ko') this.pose[i] = 'idle';
-      }
-    }
-    // spacing by position
-    const target: [number, number] =
-      this.ground === 'clinch' ? [226, 254] : this.ground === 'atop' || this.ground === 'btop' ? [236, 244] : [200 - Math.sin(this.t * 0.7) * 20, 280 + Math.sin(this.t * 0.9) * 20];
-    for (const i of [0, 1] as const) this.posX[i] += (target[i] - this.posX[i]) * Math.min(1, dt * 4);
     this.drawCrowd();
+    const ground = this.ground === 'atop' || this.ground === 'btop';
+    if (this.scene === 'fight') {
+      // the action drifts around the cage; clinches end up on the fence
+      const targetCenter =
+        this.ground === 'clinch' ? (Math.sin(this.round * 1.7) > 0 ? CAGE_R - 40 : CAGE_L + 40) : ground ? AW / 2 + Math.sin(this.round * 2.3) * 60 : AW / 2 + Math.sin(this.t * 0.35) * 70;
+      this.center += (targetCenter - this.center) * Math.min(1, dt * 1.5);
+    } else this.center += (AW / 2 - this.center) * Math.min(1, dt * 2);
+    this.drift = this.center - AW / 2;
+    const gap = this.ground === 'clinch' ? 12 : ground ? 0 : 23 + Math.sin(this.t * 1.3) * 3;
+    for (const i of [0, 1] as const) {
+      const f = this.F[i];
+      const side = i === 0 ? -1 : 1;
+      let tx = this.center + side * gap;
+      if (this.scene === 'intro') tx = i === 0 ? CAGE_L + 60 : CAGE_R - 60;
+      else if (this.scene === 'ceremony') tx = AW / 2 + side * 26;
+      else if (ground) {
+        const top = this.isTop(i);
+        const topIdx = this.ground === 'atop' ? 0 : 1;
+        f.facing = (top ? (topIdx === 0 ? 1 : -1) : topIdx === 0 ? -1 : 1) as 1 | -1;
+        tx = top ? this.center - 18 * f.facing : this.center - 22 * f.facing;
+      }
+      if (!ground || this.scene !== 'fight') f.facing = i === 0 ? 1 : -1;
+      if (this.scene === 'fight' && this.F[1 - i].pose === 'ko' && f.pose === 'celebrate') tx = this.center + side * 40;
+      f.x += (tx - f.x) * Math.min(1, dt * (this.scene === 'fight' ? 8 : 3));
+      f.lunge *= Math.pow(0.001, dt);
+      f.recoil *= Math.pow(0.003, dt);
+      if (f.poseT > 0) {
+        f.poseT -= dt;
+        if (f.poseT <= 0 && f.pose !== 'ko') f.pose = this.scene === 'ceremony' ? 'stand' : 'guard';
+      }
+      let pose = f.pose;
+      if (this.scene === 'fight') {
+        if (ground && !['ko', 'tap', 'celebrate', 'topPunch', 'bottomSub', 'top'].includes(pose)) pose = this.isTop(i) ? 'top' : 'bottom';
+        if (ground && pose === 'bottomSub' && this.isTop(i)) pose = 'top';
+        if (this.ground === 'clinch' && pose === 'guard') pose = 'clinch';
+        if (this.winnerSide === i && this.finished && f.poseT <= 0) pose = 'celebrate';
+      }
+      const walking = Math.abs(tx - f.x) > 3 && this.scene !== 'fight';
+      const target = walking ? (Math.floor(this.t * 6) % 2 ? POSES.walk1 : POSES.walk2) : pose === 'guard' ? stanceGuard(this.L[i], this.t + i * 1.3) : POSES[pose as Pose] ?? POSES.guard;
+      f.rig = lerpRig(f.rig, target, Math.min(1, dt * (f.poseT > 0 ? 22 : 12)));
+    }
+    // referee & announcer
+    for (const a of [this.ref, this.butler]) {
+      if (!a.visible) continue;
+      if (a === this.ref && this.scene === 'fight') {
+        // the ref circles the action, keeping a sightline
+        if (Math.abs(a.tx - this.center) > 70 || Math.random() < dt * 0.3) a.tx = this.center + (Math.random() < 0.5 ? -1 : 1) * (48 + Math.random() * 20);
+        a.facing = a.x < this.center ? 1 : -1;
+      }
+      const moving = Math.abs(a.tx - a.x) > 2;
+      a.x += (a.tx - a.x) * Math.min(1, dt * 4);
+      if (a.spin > 0) {
+        a.spin -= dt;
+        if (Math.floor(a.spin * 20) % 2 === 0) a.facing = (a.facing * -1) as 1 | -1;
+      }
+      const tgt = moving ? (Math.floor(this.t * 7) % 2 ? POSES.walk1 : POSES.walk2) : POSES[a.pose];
+      a.rig = lerpRig(a.rig, tgt, Math.min(1, dt * 10));
+    }
+    this.updateCam(dt);
+    if (this.mode === 'top' && this.scene === 'fight') this.drawTop(dt);
+    else this.drawSide(dt, ground);
+    this.drawHud(dt);
+  }
+
+  private drawSide(dt: number, ground: boolean): void {
     const g = this.fighters;
     g.clear();
-    const shake = this.shakeT > 0 ? Math.round((Math.random() - 0.5) * 3) : 0;
+    const shake = this.shakeT > 0 ? Math.round((Math.random() - 0.5) * 4) : 0;
     this.shakeT -= dt;
-    const ground = this.ground === 'atop' || this.ground === 'btop';
-    for (const i of [0, 1] as const) {
-      let pose = this.pose[i];
-      if (ground && pose !== 'ko' && pose !== 'down') {
-        const onTop = (this.ground === 'atop' && i === 0) || (this.ground === 'btop' && i === 1);
-        pose = onTop ? 'top' : this.pose[i] === 'idle' || this.pose[i] === 'hurt' ? 'bottom' : this.pose[i] === 'sub' ? 'sub' : 'bottom';
-      }
-      if (this.winnerSide === i && this.pose[1 - i] === 'ko' && this.poseT[i] <= 0) pose = 'celebrate';
-      drawFighter(g, Math.round(this.posX[i]) + shake, FLOOR - (ground && pose === 'top' ? 4 : 0), i === 0 ? 1 : -1, pose, this.t + i, this.L[i]);
+    // ref & announcer stand behind the fighters
+    for (const a of [this.ref, this.butler]) {
+      if (!a.visible) continue;
+      const sc = a === this.butler ? 1.05 : this.scene === 'fight' ? 0.9 : 1;
+      const fy = this.scene === 'fight' && a === this.ref ? FLOOR - 6 : FLOOR;
+      g.ellipse(a.x, fy + 1, 12, 2.5).fill({ color: 0x000000, alpha: 0.3 });
+      drawRig(g, a.rig, Math.round(a.x), fy, a.facing, a.look, sc);
     }
-    // sparks
-    const f = this.fx;
-    f.clear();
-    this.sparks = this.sparks.filter((s) => (s.life -= dt) > 0);
-    for (const s of this.sparks) {
+    for (const f of this.F) g.ellipse(f.x, FLOOR + 1, 16, 3).fill({ color: 0x000000, alpha: 0.35 });
+    const order: (0 | 1)[] = ground ? (this.isTop(0) ? [1, 0] : [0, 1]) : this.F[0].poseT > this.F[1].poseT ? [1, 0] : [0, 1];
+    for (const i of order) {
+      const f = this.F[i];
+      const x = f.x + (f.lunge - f.recoil) * f.facing + shake;
+      drawRig(g, f.rig, Math.round(x), FLOOR, f.facing, this.L[i]);
+    }
+    // particles
+    const p = this.fx;
+    p.clear();
+    this.parts = this.parts.filter((s) => (s.life -= dt) > 0);
+    for (const s of this.parts) {
       s.x += s.vx * dt;
       s.y += s.vy * dt;
-      s.vy += 200 * dt;
-      f.rect(Math.round(s.x), Math.round(s.y), 2, 2).fill(s.c);
+      s.vy += s.grav * dt;
+      if (s.y > FLOOR + 6 && s.c === 0xa01818) {
+        s.vy = 0;
+        s.vx = 0;
+        s.grav = 0;
+      }
+      p.rect(Math.round(s.x), Math.round(s.y), s.s, s.s).fill(s.c);
     }
-    // HP bars
-    f.rect(6, 14, 120, 5).fill(PAL.ink).rect(7, 15, Math.round(118 * this.hp[0] / 100), 3).fill(this.hp[0] > 40 ? PAL.moss : PAL.blood);
-    f.rect(AW - 126, 14, 120, 5).fill(PAL.ink).rect(AW - 7 - Math.round(118 * this.hp[1] / 100), 15, Math.round(118 * this.hp[1] / 100), 3).fill(this.hp[1] > 40 ? PAL.moss : PAL.blood);
-    f.rect(6, 20, 6, 2).fill(this.L[0].shorts).rect(AW - 12, 20, 6, 2).fill(this.L[1].shorts);
+    // front fence posts
+    const fr = this.front;
+    fr.clear();
+    fr.rect(CAGE_L - 6, 40, 6, FLOOR - 26).fill({ color: 0x0c0c0e, alpha: 0.9 });
+    fr.rect(CAGE_R, 40, 6, FLOOR - 26).fill({ color: 0x0c0c0e, alpha: 0.9 });
+  }
+
+  // ------------------------------------------------------------ top-down
+
+  /** Head position of fighter i in the top-down view. */
+  private topPos(i: 0 | 1): [number, number] {
+    const { x, y, ang } = this.topBody(i);
+    return [x + Math.cos(ang) * 2, y + Math.sin(ang) * 2];
+  }
+
+  private topBody(i: 0 | 1): { x: number; y: number; ang: number } {
+    const c = this.tc;
+    const ground = this.ground === 'atop' || this.ground === 'btop';
+    const d = this.ground === 'clinch' ? 10 : ground ? 4 : 26 + Math.sin(this.t * 1.3) * 3;
+    const dir = i === 0 ? -1 : 1;
+    const f = this.F[i];
+    const push = (f.lunge - f.recoil) * 0.8;
+    const ang = c.ang + (i === 0 ? 0 : Math.PI);
+    const x = c.x + Math.cos(c.ang) * (dir * d / 2) + Math.cos(ang) * push;
+    const y = c.y + Math.sin(c.ang) * (dir * d / 2) + Math.sin(ang) * push;
+    return { x, y, ang };
+  }
+
+  private drawTop(dt: number): void {
+    // action centre wanders; clinches drift to the fence
+    const c = this.tc;
+    const ground = this.ground === 'atop' || this.ground === 'btop';
+    let tx = TCX + Math.sin(this.t * 0.31) * 28;
+    let ty = TCY + Math.cos(this.t * 0.23) * 22;
+    if (this.ground === 'clinch') {
+      const a = Math.sin(this.round * 1.7) * Math.PI;
+      tx = TCX + Math.cos(a) * (TR - 16);
+      ty = TCY + Math.sin(a) * (TR - 16);
+    }
+    if (ground) {
+      tx = TCX + Math.sin(this.round * 2.3) * 20;
+      ty = TCY + Math.cos(this.round * 1.1) * 14;
+    }
+    c.x += (tx - c.x) * Math.min(1, dt * 1.2);
+    c.y += (ty - c.y) * Math.min(1, dt * 1.2);
+    if (!ground && this.ground !== 'clinch') c.ang += dt * 0.25 * Math.sin(this.t * 0.4 + 1); // circling
+    const g = this.topFx;
+    g.clear();
+    // referee
+    const ra = c.ang + Math.PI / 2;
+    const rx = c.x + Math.cos(ra) * 34;
+    const ry = c.y + Math.sin(ra) * 34;
+    g.circle(rx + 1, ry + 2, 6).fill({ color: 0, alpha: 0.3 });
+    g.circle(rx, ry, 5.5).fill(0x18181c);
+    g.circle(rx, ry, 3.2).fill(REF_LOOK.skin);
+    // fighters: bottom one first
+    const order: (0 | 1)[] = ground ? (this.isTop(0) ? [1, 0] : [0, 1]) : [0, 1];
+    for (const i of order) this.drawTopFighter(g, i);
+    // particles
+    this.tparts = this.tparts.filter((s) => (s.life -= dt) > 0);
+    for (const s of this.tparts) {
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      s.vx *= Math.pow(0.05, dt);
+      s.vy *= Math.pow(0.05, dt);
+      g.rect(Math.round(s.x), Math.round(s.y), s.s, s.s).fill(s.c);
+    }
+  }
+
+  private drawTopFighter(g: Graphics, i: 0 | 1): void {
+    const L = this.L[i];
+    const f = this.F[i];
+    const { x, y, ang } = this.topBody(i);
+    const cos = Math.cos(ang);
+    const sin = Math.sin(ang);
+    const P = (lx: number, ly: number): [number, number] => [x + lx * cos - ly * sin, y + lx * sin + ly * cos];
+    const OUT = 0x120d10;
+    const bulk = L.build === 2 ? 2 : L.build === 1 ? 1 : 0;
+    const pose = f.pose;
+    const lying = pose === 'down' || pose === 'ko' || (this.ground !== 'stand' && this.ground !== 'clinch' && !this.isTop(i)) || pose === 'bottom' || pose === 'bottomSub';
+    // shadow
+    g.ellipse(x + 2, y + 3, 11, 8).fill({ color: 0, alpha: 0.28 });
+    if (lying) {
+      // flat on the mat: body stretched back along the facing axis
+      const back = pose === 'ko' ? -1 : -0.6;
+      const [hx, hy] = P(back * 22, 0);
+      const [fx1, fy1] = P(back * -14, -5);
+      const [fx2, fy2] = P(back * -14, 5);
+      const [hip1, hip2] = P(back * -2, 0);
+      g.moveTo(hip1, hip2).lineTo(fx1, fy1).stroke({ color: OUT, width: 6, cap: 'round' }).moveTo(hip1, hip2).lineTo(fx2, fy2).stroke({ color: OUT, width: 6, cap: 'round' });
+      g.moveTo(hip1, hip2).lineTo(fx1, fy1).stroke({ color: L.skin, width: 4, cap: 'round' }).moveTo(hip1, hip2).lineTo(fx2, fy2).stroke({ color: L.skin, width: 4, cap: 'round' });
+      g.moveTo(hip1, hip2).lineTo(hx, hy).stroke({ color: OUT, width: 13 + bulk, cap: 'round' });
+      g.moveTo(hip1, hip2).lineTo(hx, hy).stroke({ color: L.skin, width: 11 + bulk, cap: 'round' });
+      const [tx1, ty1] = P(back * -2, 0);
+      g.circle(tx1, ty1, 5).fill(L.trunks);
+      if (pose === 'bottomSub') {
+        // legs up, hunting a triangle/armbar
+        const [l1x, l1y] = P(10, -8);
+        const [l2x, l2y] = P(10, 8);
+        g.moveTo(hip1, hip2).lineTo(l1x, l1y).stroke({ color: L.skin, width: 4, cap: 'round' }).moveTo(hip1, hip2).lineTo(l2x, l2y).stroke({ color: L.skin, width: 4, cap: 'round' });
+      }
+      g.circle(hx, hy, 5.5).fill(OUT);
+      g.circle(hx, hy, 4.5).fill(L.hairStyle === 0 ? L.skin : L.hairColor);
+      const [g1x, g1y] = P(back * 14, -8);
+      const [g2x, g2y] = P(back * 14, 8);
+      g.circle(g1x, g1y, 2.6).fill(L.glove).circle(g2x, g2y, 2.6).fill(L.glove);
+      return;
+    }
+    // gloves (lead = -y side) per pose
+    let lead: [number, number] = [9, -4];
+    let rear: [number, number] = [7, 4];
+    let leg: [number, number] | null = null;
+    let lean = 0;
+    switch (pose) {
+      case 'jab': lead = [22, -3]; break;
+      case 'cross': rear = [22, 1]; lean = 2; break;
+      case 'hook': rear = [15, 9]; lean = 1; break;
+      case 'uppercut': rear = [15, 3]; break;
+      case 'body': rear = [14, 6]; lean = 2; break;
+      case 'elbow': rear = [12, 4]; lean = 2; break;
+      case 'spin': rear = [6, 18]; break;
+      case 'legkick': leg = [18, 9]; break;
+      case 'bodykick': leg = [22, 5]; break;
+      case 'headkick': leg = [25, 1]; lean = -2; break;
+      case 'knee': case 'flyknee': leg = [14, 2]; lean = 2; break;
+      case 'shoot': lead = [16, -6]; rear = [16, 6]; lean = 7; break;
+      case 'sprawl': lead = [10, -7]; rear = [10, 7]; lean = -5; break;
+      case 'clinch': lead = [13, -5]; rear = [13, 5]; lean = 2; break;
+      case 'top': case 'topPunch': lead = pose === 'topPunch' ? [16, -1] : [10, -5]; rear = [10, 5]; lean = 4; break;
+      case 'hurt': lean = -3; lead = [6, -5]; rear = [6, 5]; break;
+      case 'rocked': lean = -4 + Math.sin(this.t * 9) * 2; lead = [3, -7]; rear = [3, 7]; break;
+      case 'celebrate': case 'flex': case 'armUp': lead = [0, -10]; rear = [0, 10]; break;
+      case 'taunt': lead = [2, -13]; rear = [2, 13]; break;
+    }
+    const [bx, by] = P(lean, 0);
+    if (leg) {
+      const [hx, hy] = P(-1, 3);
+      const [lx, ly] = P(leg[0], leg[1]);
+      g.moveTo(hx, hy).lineTo(lx, ly).stroke({ color: OUT, width: 7, cap: 'round' });
+      g.moveTo(hx, hy).lineTo(lx, ly).stroke({ color: L.skin, width: 5, cap: 'round' });
+    }
+    // shoulders (rotated ellipse)
+    const pts: number[] = [];
+    for (let k = 0; k < 14; k++) {
+      const a = (k / 14) * Math.PI * 2;
+      const [px, py] = P(lean + Math.cos(a) * (5 + bulk * 0.5), Math.sin(a) * (9 + bulk));
+      pts.push(px, py);
+    }
+    g.poly(pts).fill(OUT);
+    const inner: number[] = [];
+    for (let k = 0; k < 14; k++) {
+      const a = (k / 14) * Math.PI * 2;
+      const [px, py] = P(lean + Math.cos(a) * (4 + bulk * 0.5), Math.sin(a) * (8 + bulk));
+      inner.push(px, py);
+    }
+    g.poly(inner).fill(L.skin);
+    // arms to gloves
+    for (const [side, hand] of [[-1, lead], [1, rear]] as [number, [number, number]][]) {
+      const [sx, sy] = P(lean, side * (7 + bulk));
+      const [hx, hy] = P(hand[0] + lean * 0.5, hand[1]);
+      g.moveTo(sx, sy).lineTo(hx, hy).stroke({ color: OUT, width: 5, cap: 'round' });
+      g.moveTo(sx, sy).lineTo(hx, hy).stroke({ color: shade(L.skin, side < 0 ? 0 : -0.12), width: 3.4, cap: 'round' });
+      g.circle(hx, hy, 3.6).fill(OUT);
+      g.circle(hx, hy, 2.8).fill(L.glove);
+    }
+    // head from above: hair crown
+    const [hx, hy] = P(lean + 1, 0);
+    g.circle(hx, hy, 5).fill(OUT);
+    g.circle(hx, hy, 4.2).fill(L.skin);
+    if (L.hairStyle !== 0) g.circle(hx - cos * 0.8, hy - sin * 0.8, 3.4).fill(L.hairColor);
+    void bx;
+    void by;
+  }
+
+  // ------------------------------------------------------------ HUD
+
+  private drawHud(dt: number): void {
+    const h = this.hudG;
+    h.clear();
+    const tv = this.mode === 'tv';
+    this.clock.visible = this.scene === 'fight';
+    if (this.scene === 'fight') {
+      h.rect(4, 13, 140, 6).fill(PAL.ink).rect(5, 14, Math.round((138 * this.hp[0]) / 100), 4).fill(this.hp[0] > 40 ? PAL.moss : PAL.blood);
+      h.rect(AW - 144, 13, 140, 6).fill(PAL.ink).rect(AW - 5 - Math.round((138 * this.hp[1]) / 100), 14, Math.round((138 * this.hp[1]) / 100), 4).fill(this.hp[1] > 40 ? PAL.moss : PAL.blood);
+      h.rect(4, 20, 10, 2).fill(this.L[0].trunks).rect(AW - 14, 20, 10, 2).fill(this.L[1].trunks);
+    }
     if (this.flash > 0) {
-      f.rect(0, 0, AW, AH).fill({ color: 0xffffff, alpha: Math.min(0.5, this.flash) });
+      h.rect(0, 0, AW, AH).fill({ color: 0xffffff, alpha: Math.min(0.5, this.flash) });
       this.flash -= dt;
     }
     const left = Math.max(0, 300 - this.sec);
@@ -479,6 +983,23 @@ export class ArenaView extends Container {
       this.calloutT -= dt;
       this.callout.alpha = Math.min(1, this.calloutT * 2);
     } else this.callout.alpha = 0;
+    // broadcast graphics
+    if (tv) {
+      const t = this.tvG;
+      t.clear();
+      t.rect(AW - 54, 24, 48, 10).fill(0xa01818);
+      if (this.lowerT > 0) {
+        this.lowerT -= dt;
+        const a = Math.min(1, this.lowerT * 3);
+        t.rect(12, AH - 30, 320, 24).fill({ color: 0x0a0a10, alpha: 0.82 * a }).rect(12, AH - 30, 4, 24).fill({ color: PAL.gold, alpha: a });
+        this.tvLower.alpha = a;
+        this.tvLower2.alpha = a;
+      } else {
+        this.tvLower.alpha = 0;
+        this.tvLower2.alpha = 0;
+      }
+      this.tvTag.setText(Math.floor(this.t * 1.5) % 2 ? '● LIVE' : '  LIVE');
+    }
   }
 }
 
@@ -494,8 +1015,9 @@ export function cornerView(A: Fighter, B: Fighter, reports: CornerReport[], roun
     const rep = reports.find((r) => r.side === i);
     const ox = i === 0 ? 0 : AW / 2;
     const corner = new Graphics();
-    corner.rect(ox + 6, 16, AW / 2 - 12, AH - 22).fill(i === 0 ? 0x2a1818 : 0x18202e);
-    corner.rect(ox + 6, AH - 30, AW / 2 - 12, 2).fill(i === 0 ? PAL.blood : PAL.steel);
+    corner.rect(ox + 6, 14, AW / 2 - 12, AH - 18).fill(i === 0 ? 0x2a1818 : 0x18202e);
+    // corner post & pads
+    corner.rect(ox + (i === 0 ? 8 : AW / 2 - 14), 14, 6, AH - 18).fill(i === 0 ? 0x8a1e1e : 0x1e3a8a);
     c.addChild(corner);
     const wounds = {
       cuts: Math.min(3, Math.ceil((rep?.cut ?? 0) / 3)),
@@ -505,19 +1027,22 @@ export function cornerView(A: Fighter, B: Fighter, reports: CornerReport[], roun
       noseBleed: (rep?.hp ?? 100) < 45,
     };
     const p = portrait({ id: f.id, look: f.look, gender: f.gender, age: f.age, damage: f.damage, wounds, variant: 'corner' }, 64);
-    p.position.set(ox + 12, 22);
+    p.position.set(ox + 18, 20);
     c.addChild(p);
-    // stool + cutman silhouette
+    // seated fighter, cutman crouched in front, coach behind the fence
     const st = new Graphics();
-    drawFighter(st, ox + 110, 92, i === 0 ? 1 : -1, 'stool', 0, lookOf(f, i as 0 | 1));
-    st.rect(ox + 100, 92, 22, 3).fill(0x3a3030);
-    st.rect(ox + 132, 58, 8, 22).fill(0x2a2a2a).rect(ox + 133, 52, 6, 6).fill(0xc08e64);
+    const L = lookFor(f, i as 0 | 1);
+    st.rect(ox + 140, 92, 26, 4).fill(0x3a3030);
+    st.rect(ox + 144, 96, 3, 10).fill(0x2a2020).rect(ox + 159, 96, 3, 10).fill(0x2a2020);
+    drawRig(st, POSES.stool, ox + 152, 108, i === 0 ? 1 : -1, L, 0.85);
+    const cut: Look2 = { ...L, trunks: 0x2a2a2a, trim: 0x444444, glove: 0xe0e0e0, hairStyle: 0, beard: 3, build: 2, skin: 0xc08e64 };
+    drawRig(st, POSES.clinch, ox + (i === 0 ? 186 : 118), 108, i === 0 ? -1 : 1, cut, 0.7);
     c.addChild(st);
-    c.addChild(text(f.last.toUpperCase(), ox + 82, 20, { color: PAL.bone }));
-    c.addChild(text(`HP ${rep?.hp ?? '?'}  ${rep?.scoreGuess ?? ''}${rep?.injury ? '  • ' + rep.injury.toUpperCase() : ''}`, ox + 82, 30, { small: true, color: rep && rep.hp < 40 ? PAL.blood : PAL.ash, width: AW / 2 - 90 }));
-    c.addChild(text(`COACH: "${rep?.coach ?? 'Breathe.'}"`, ox + 10, 96, { small: true, width: AW / 2 - 20, color: PAL.bone, maxLines: 3 }));
-    c.addChild(text(`CUTMAN (${f.cutman.name}, ${f.cutman.rating}): ${rep?.cutman ?? ''}`, ox + 10, 120, { small: true, width: AW / 2 - 20, color: PAL.ash, maxLines: 3 }));
-    if (rep?.quit) c.addChild(text('NOT COMING OUT!', ox + 10, 80, { color: PAL.blood }));
+    c.addChild(text(f.last.toUpperCase(), ox + 88, 18, { color: PAL.bone }));
+    c.addChild(text(`HP ${rep?.hp ?? '?'}  ${rep?.scoreGuess ?? ''}${rep?.injury ? '  • ' + rep.injury.toUpperCase() : ''}`, ox + 88, 28, { small: true, color: rep && rep.hp < 40 ? PAL.blood : PAL.ash, width: AW / 2 - 96 }));
+    c.addChild(text(`COACH: "${rep?.coach ?? 'Breathe.'}"`, ox + 10, 110, { small: true, width: AW / 2 - 20, color: PAL.bone, maxLines: 3 }));
+    c.addChild(text(`CUTMAN ${f.cutman.name.toUpperCase()} (${f.cutman.rating}): ${rep?.cutman ?? ''}`, ox + 10, 128, { small: true, width: AW / 2 - 20, color: PAL.ash, maxLines: 3 }));
+    if (rep?.quit) c.addChild(text('NOT COMING OUT!', ox + 88, 40, { color: PAL.blood }));
   });
   return c;
 }
@@ -526,24 +1051,25 @@ export function cornerView(A: Fighter, B: Fighter, reports: CornerReport[], roun
 export class RingCardWalk extends Container {
   private g = new Graphics();
   private cardLabel: PixelText;
-  x0 = -30;
   t = 0;
+  private L: Look2 = { skin: 0xdcae88, hairStyle: 5, hairColor: 0x6b4527, beard: 0, build: 0, trunks: 0x1a1a1a, trim: 0xc4a04a, glove: 0xdcae88, stance: 'upright', female: true, tattoo: 0 };
   constructor(round: number) {
     super();
     this.addChild(this.g);
-    this.cardLabel = text(`ROUND ${round}`, 0, 0, { small: true, color: PAL.ink });
+    this.cardLabel = text(`ROUND ${round}`, 0, 0, { color: PAL.ink });
     this.addChild(this.cardLabel);
   }
   update(dt: number): boolean {
     this.t += dt;
-    const x = this.x0 + this.t * 140;
+    const x = -30 + this.t * 130;
     const g = this.g;
     g.clear();
-    const look: Look2 = { skin: SKIN_TONES[1], hair: 5, hairColor: HAIR_COLORS[3], hairStyle: 5, build: 0, shorts: 0x2a2a2a, stance: 'upright', female: true };
-    drawFighter(g, x, FLOOR, 1, 'walk', this.t, look);
-    // the round card held overhead
-    g.rect(x - 14, FLOOR - 58, 30, 14).fill(0xf0eadc).stroke({ color: PAL.ink, width: 1 });
-    this.cardLabel.position.set(x - 12, FLOOR - 54);
+    const step = Math.floor(this.t * 6) % 2 === 0 ? POSES.walk1 : POSES.walk2;
+    const rig: Rig = { ...step, haB: [2, -96], elB: [0, -82], haF: [8, -96], elF: [8, -82] };
+    g.ellipse(x, FLOOR + 1, 12, 2).fill({ color: 0, alpha: 0.35 });
+    drawRig(g, rig, Math.round(x), FLOOR, 1, this.L);
+    g.rect(Math.round(x - 14), FLOOR - 112, 36, 15).fill(0xf0eadc).stroke({ color: PAL.ink, width: 1 });
+    this.cardLabel.position.set(Math.round(x - 11), FLOOR - 108);
     return x < AW + 40;
   }
 }

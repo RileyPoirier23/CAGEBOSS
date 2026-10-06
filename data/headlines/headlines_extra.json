@@ -1,0 +1,266 @@
+[
+ {
+  "id": "upset_b0",
+  "tags": [
+   "upset"
+  ],
+  "text": "MASSIVE UPSET: {winner} STUNS {loser}",
+  "tone": 0.3
+ },
+ {
+  "id": "upset_b1",
+  "tags": [
+   "upset"
+  ],
+  "text": "BOOKIES WEEP AS {winner} TOPPLES {loser}",
+  "tone": 0.3
+ },
+ {
+  "id": "upset_b2",
+  "tags": [
+   "upset"
+  ],
+  "text": "{loser} WAS A 10-TO-1 FAVORITE. {loser} IS NOW A 10-TO-1 MEME",
+  "tone": 0.3
+ },
+ {
+  "id": "upset_b3",
+  "tags": [
+   "upset"
+  ],
+  "text": "NOBODY SAW IT COMING: {winner} OVER {loser}",
+  "tone": 0.3
+ },
+ {
+  "id": "debut_b0",
+  "tags": [
+   "debut"
+  ],
+  "text": "{subject} DEBUTS WITH A BANG",
+  "tone": 0.3
+ },
+ {
+  "id": "debut_b1",
+  "tags": [
+   "debut"
+  ],
+  "text": "NEW BLOOD: {subjectLast} SIGNS WITH {promotion}",
+  "tone": 0.3
+ },
+ {
+  "id": "debut_b2",
+  "tags": [
+   "debut"
+  ],
+  "text": "{promotion} LANDS {subject}; FANS PRETEND THEY'D HEARD OF HIM",
+  "tone": 0.3
+ },
+ {
+  "id": "stripped_b0",
+  "tags": [
+   "stripped"
+  ],
+  "text": "{subject} STRIPPED OF TITLE",
+  "tone": -0.3
+ },
+ {
+  "id": "stripped_b1",
+  "tags": [
+   "stripped"
+  ],
+  "text": "BELT GONE: {promotion} STRIPS {subjectLast}",
+  "tone": -0.3
+ },
+ {
+  "id": "stripped_b2",
+  "tags": [
+   "stripped"
+  ],
+  "text": "{subjectLast} STRIPPED; SAYS 'THE BELT WAS ALWAYS IN MY HEART ANYWAY'",
+  "tone": -0.3
+ },
+ {
+  "id": "interim_b0",
+  "tags": [
+   "interim"
+  ],
+  "text": "{promotion} CREATES INTERIM BELT; PURISTS SCREAM INTO PILLOWS",
+  "tone": -0.1
+ },
+ {
+  "id": "interim_b1",
+  "tags": [
+   "interim"
+  ],
+  "text": "INTERIM GOLD ON THE LINE AS CHAMP SITS OUT",
+  "tone": -0.1
+ },
+ {
+  "id": "interim_b2",
+  "tags": [
+   "interim"
+  ],
+  "text": "AN INTERIM BELT FOR THE INTERIM BELT? {promotion} SAYS 'MAYBE'",
+  "tone": -0.1
+ },
+ {
+  "id": "symbolic_b0",
+  "tags": [
+   "symbolic"
+  ],
+  "text": "{promotion} INTRODUCES 'BADDEST MAN ALIVE' BELT; NOBODY KNOWS WHAT IT MEANS",
+  "tone": 0.1
+ },
+ {
+  "id": "symbolic_b1",
+  "tags": [
+   "symbolic"
+  ],
+  "text": "NEW NOVELTY BELT IS MADE OF GOLD, RHINESTONES AND QUESTIONABLE DECISIONS",
+  "tone": 0.1
+ },
+ {
+  "id": "women_b0",
+  "tags": [
+   "women"
+  ],
+  "text": "{promotion} LAUNCHES WOMEN'S DIVISIONS; FIRST CARD SELLS OUT",
+  "tone": 0.5
+ },
+ {
+  "id": "women_b1",
+  "tags": [
+   "women"
+  ],
+  "text": "WOMEN'S MMA ARRIVES AT {promotion}, IMMEDIATELY STEALS THE SHOW",
+  "tone": 0.5
+ },
+ {
+  "id": "international_b0",
+  "tags": [
+   "international"
+  ],
+  "text": "{promotion} GOES GLOBAL: FIRST INTERNATIONAL EVENT ANNOUNCED",
+  "tone": 0.3
+ },
+ {
+  "id": "international_b1",
+  "tags": [
+   "international"
+  ],
+  "text": "PASSPORT CHECK: {promotion} FIGHTERS DISCOVER VISAS EXIST",
+  "tone": 0.3
+ },
+ {
+  "id": "prospect_b0",
+  "tags": [
+   "prospect"
+  ],
+  "text": "SCOUTING REPORT: {subject} COULD BE THE REAL DEAL",
+  "tone": 0.2
+ },
+ {
+  "id": "prospect_b1",
+  "tags": [
+   "prospect"
+  ],
+  "text": "{subjectLast}, 21, IS EITHER A FUTURE CHAMP OR A FUTURE BOUNCER",
+  "tone": 0.2
+ },
+ {
+  "id": "gossip_b0",
+  "tags": [
+   "gossip"
+  ],
+  "text": "SPOTTED: {subject} AT A STEAKHOUSE WITH A REALITY STAR",
+  "tone": -0.1
+ },
+ {
+  "id": "gossip_b1",
+  "tags": [
+   "gossip"
+  ],
+  "text": "{subjectLast} AND SPOUSE 'TAKING SPACE'; SPACE BEING A VEGAS SUITE",
+  "tone": -0.1
+ },
+ {
+  "id": "gossip_b2",
+  "tags": [
+   "gossip"
+  ],
+  "text": "{subject} GETS A FACE TATTOO; MOM 'DISAPPOINTED BUT NOT SURPRISED'",
+  "tone": -0.1
+ },
+ {
+  "id": "commentary_b0",
+  "tags": [
+   "commentary"
+  ],
+  "text": "BRAILLE SONNEN BREAKS DOWN FIGHT HE DID NOT SEE",
+  "tone": 0.0
+ },
+ {
+  "id": "commentary_b1",
+  "tags": [
+   "commentary"
+  ],
+  "text": "'I CAN'T SEE SHIT,' ADMITS ANALYST AFTER 40-MINUTE BREAKDOWN",
+  "tone": 0.0
+ },
+ {
+  "id": "commentary_b2",
+  "tags": [
+   "commentary"
+  ],
+  "text": "BLIND PUNDIT PREDICTS {subjectLast} WINS; {subjectLast} WAS NOT ON THE CARD",
+  "tone": 0.0
+ },
+ {
+  "id": "belt_ceremony_b0",
+  "tags": [
+   "belt_ceremony"
+  ],
+  "text": "{subject} GETS BELT WRAPPED AROUND HIS WAIST BY A MAN IN A $9,000 SUIT",
+  "tone": 0.3
+ },
+ {
+  "id": "ratings_b0",
+  "tags": [
+   "ratings"
+  ],
+  "text": "{promotion} TOPS WEEKEND RATINGS, BEATS BOXING AND A SLAP CONTEST",
+  "tone": 0.2
+ },
+ {
+  "id": "ratings_b1",
+  "tags": [
+   "ratings"
+  ],
+  "text": "{promotion} LOSES RATINGS WAR TO GROWN MEN SLAPPING EACH OTHER",
+  "tone": 0.2
+ },
+ {
+  "id": "filler_b0",
+  "tags": [
+   "filler"
+  ],
+  "text": "LOCAL MAN STILL BELIEVES HE COULD BEAT A PRO FIGHTER",
+  "tone": 0.0
+ },
+ {
+  "id": "filler_b1",
+  "tags": [
+   "filler"
+  ],
+  "text": "STUDY: 80% OF MEN THINK THEY COULD TAKE A BANTAMWEIGHT",
+  "tone": 0.0
+ },
+ {
+  "id": "filler_b2",
+  "tags": [
+   "filler"
+  ],
+  "text": "GYM REPORTS RECORD SIGN-UPS AFTER MAN WATCHES ONE FIGHT",
+  "tone": 0.0
+ }
+]

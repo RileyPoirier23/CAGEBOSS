@@ -11,7 +11,9 @@ import { W, H, text, button, box, ScrollBox, paper, clickable } from '../kit';
 import { PixelText } from '../text';
 import { fighterPortrait, reporterPortrait } from '../sprites';
 import { ArenaView, cornerView, RingCardWalk, AW, AH } from '../arena';
-import { runBout, applyBout, finalizeEvent, defaultBonuses, bonusAmount, autoFixCard, boutLabel, cardDraw } from '../../sim/events';
+import { boothOpen, commentate, butlerIntro, butlerDecision, butlerFinish, type AnnounceLine } from '../../sim/commentary';
+import { runBout, applyBout, finalizeEvent, defaultBonuses, bonusAmount, autoFixCard, boutLabel, boutTitle, rematchTag, cardDraw, cardProblems } from '../../sim/events';
+import { resolveCardProblems } from '../replace';
 import { fireCategory } from '../../storylets/engine';
 import { playStorylet } from '../dialog';
 import { Rng } from '../../core/rng';
@@ -61,7 +63,13 @@ export class FightNightScene extends Scene {
   private step: Step = 'intro';
   private ev: FightEvent;
   private arena: ArenaView | null = null;
-  private playing: { bout: Bout; lines: TickerLine[]; idx: number; timer: number; paused: boolean; phase: 'fight' | 'corner' | 'ringcard' | 'end'; phaseT: number; ringcard: RingCardWalk | null; corner: Container | null } | null = null;
+  private playing: {
+    bout: Bout; lines: TickerLine[]; idx: number; timer: number; paused: boolean;
+    phase: 'intro' | 'fight' | 'corner' | 'ringcard' | 'end' | 'ceremony'; phaseT: number;
+    ringcard: RingCardWalk | null; corner: Container | null;
+    intro: AnnounceLine[]; introIdx: number; cer: AnnounceLine[]; cerIdx: number; cerWinner: -1 | 0 | 1; raised: boolean;
+  } | null = null;
+  private subtitle: Container | null = null;
   private tickerBox: Container | null = null;
   private bonusSel = new Set<string>();
   private pressersDone = 0;
@@ -73,10 +81,22 @@ export class FightNightScene extends Scene {
 
   enter(): void {
     const s = this.g.state!;
-    autoFixCard(s, this.ev);
+    const fresh = !this.ev.notes.includes('started');
+    if (!fresh) autoFixCard(s, this.ev);
+    this.settleStep();
+    super.enter();
+    // late withdrawals: the boss picks the short-notice replacements
+    if (fresh && cardProblems(s, this.ev).length) {
+      resolveCardProblems(this.g, this.ev, () => {
+        this.settleStep();
+        this.refresh();
+      });
+    }
+  }
+
+  private settleStep(): void {
     if (this.ev.card.every((b) => b.status !== 'scheduled')) this.step = this.ev.card.some((b) => b.status === 'done') ? 'bonus' : 'done';
     else if (this.ev.notes.includes('started')) this.step = 'card';
-    super.enter();
   }
 
   build(): void {
@@ -124,7 +144,7 @@ export class FightNightScene extends Scene {
     }
     const card = this.live();
     card.slice(1, 7).forEach((b, i) => {
-      r.addChild(text(`${s.fighters[b.a]?.last ?? '?'} vs ${s.fighters[b.b]?.last ?? '?'}${b.title ? ' ★' : ''}`, 0, 146 + i * 9, { width: W, align: 'center', color: PAL.bone, small: true }));
+      r.addChild(text(`${boutTitle(s, b)}${b.title ? ' ★' : ''}${b.shortNotice ? ' (short notice)' : ''}`, 0, 146 + i * 9, { width: W, align: 'center', color: PAL.bone, small: true }));
     });
     if (this.ev.notes.length) r.addChild(text(this.ev.notes.filter((n) => n !== 'started').slice(-3).join('  '), 8, 214, { small: true, color: PAL.ember, width: W - 16 }));
     r.addChild(button(`PRESS CONFERENCE (${2 - this.pressersDone})`, 8, H - 26, 130, 18, () => this.presser(false), { fill: PAL.steel, disabled: this.pressersDone >= 2 }));
@@ -197,7 +217,7 @@ export class FightNightScene extends Scene {
       const done = b.status === 'done' && b.result;
       row.addChild(box(W - 22, 22, done ? 0x1e1a20 : b.position === 0 ? 0x3a2228 : 0x2a2430, PAL.shadow));
       row.addChild(text(b.position === 0 ? 'MAIN' : b.position === 1 ? 'CO-MAIN' : b.position < 5 ? 'MAIN CARD' : 'PRELIM', 4, 3, { small: true, color: b.position === 0 ? PAL.gold : PAL.ash }));
-      row.addChild(text(`${A ? fullName(A) : '?'}  vs  ${B ? fullName(B) : '?'}${b.title ? '  ★ ' + (s.belts[b.title]?.name ?? '') : ''}`, 4, 11, { color: PAL.bone, width: 300, maxLines: 1 }));
+      row.addChild(text(`${A ? fullName(A) : '?'}  vs  ${B ? fullName(B) : '?'}${rematchTag(b)}${b.title ? '  ★ ' + (s.belts[b.title]?.name ?? '') : ''}`, 4, 11, { color: PAL.bone, width: 300, maxLines: 1 }));
       if (done) {
         const res = b.result!;
         const w = res.winner ? s.fighters[res.winner] : null;
@@ -242,7 +262,14 @@ export class FightNightScene extends Scene {
     const rng = new Rng(s.rng);
     runBout(s, this.ev, b, rng, true);
     s.rng = rng.state;
-    this.playing = { bout: b, lines: b.result!.ticker ?? [], idx: 0, timer: 0.6, paused: false, phase: 'fight', phaseT: 0, ringcard: null, corner: null };
+    const seed = rng.int(1, 1e9);
+    const base = b.result!.ticker ?? [];
+    const lines = [...boothOpen(s, this.ev, b, seed), ...commentate(s, this.ev, b, base, seed)];
+    const intro = this.g.settings.intros === false ? [] : butlerIntro(s, this.ev, b, seed);
+    this.playing = {
+      bout: b, lines, idx: 0, timer: 0.8, paused: false, phase: intro.length ? 'intro' : 'fight', phaseT: 0, ringcard: null, corner: null,
+      intro, introIdx: 0, cer: [], cerIdx: 0, cerWinner: -1, raised: false,
+    };
     this.step = 'watch';
     this.refresh();
   }
@@ -253,29 +280,64 @@ export class FightNightScene extends Scene {
     const p = this.playing!;
     const A = s.fighters[p.bout.a];
     const B = s.fighters[p.bout.b];
-    this.arena = new ArenaView(A, B, p.bout.rounds);
+    this.arena = new ArenaView(A, B, p.bout.rounds, { event: this.ev.name });
     this.arena.position.set(0, 0);
     r.addChild(this.arena);
+    this.arena.setMode(this.g.settings.fightCam ?? 'side');
+    if (p.phase === 'intro') this.arena.startIntro();
+    if (p.phase === 'ceremony') this.arena.startCeremony();
+    // replay lines already shown
+    for (let i = 0; i < p.idx; i++) this.arena.cue(p.lines[i]);
+    if (p.phase === 'ceremony' && p.raised) this.arena.raiseHand(p.cerWinner);
+    const sub = new Container();
+    sub.position.set(0, AH - 34);
+    r.addChild(sub);
+    this.subtitle = sub;
     const tb = new Container();
     tb.position.set(0, AH);
     r.addChild(tb);
     this.tickerBox = tb;
     this.drawTicker();
-    r.addChild(button('SPEED x' + this.g.settings.fightSpeed, 4, H - 16, 54, 13, () => {
+    r.addChild(button('SPEED x' + this.g.settings.fightSpeed, 4, H - 16, 50, 13, () => {
       this.g.settings.fightSpeed = (this.g.settings.fightSpeed % 4) + 1;
       this.g.applySettings();
       this.refresh();
     }, { small: true }));
-    r.addChild(button(p.paused ? 'PLAY' : 'PAUSE', 62, H - 16, 40, 13, () => {
+    r.addChild(button(p.paused ? 'PLAY' : 'PAUSE', 57, H - 16, 36, 13, () => {
       p.paused = !p.paused;
       this.refresh();
     }, { small: true }));
-    r.addChild(button('SKIP TO END', 106, H - 16, 64, 13, () => this.skipToEnd(), { small: true, fill: PAL.blood }));
-    r.addChild(text(boutLabel(s, p.bout).toUpperCase(), 176, H - 12, { small: true, color: PAL.ash }));
-    // replay lines already shown
-    for (let i = 0; i < p.idx; i++) this.arena.cue(p.lines[i]);
+    const camNames: Record<string, string> = { side: 'WIDE', tv: 'TV', top: 'TOP-DOWN' };
+    r.addChild(button('CAM: ' + camNames[this.g.settings.fightCam ?? 'side'], 96, H - 16, 62, 13, () => {
+      const order = ['side', 'tv', 'top'] as const;
+      const cur = order.indexOf(this.g.settings.fightCam ?? 'side');
+      this.g.settings.fightCam = order[(cur + 1) % order.length];
+      this.g.applySettings();
+      this.arena?.setMode(this.g.settings.fightCam);
+      this.refresh();
+    }, { small: true, fill: PAL.steel }));
+    if (p.phase === 'intro') r.addChild(button('SKIP INTRO', 161, H - 16, 56, 13, () => this.endIntro(), { small: true, fill: PAL.plum }));
+    else r.addChild(button(p.phase === 'ceremony' ? 'SKIP' : 'SKIP TO END', 161, H - 16, 56, 13, () => this.skipToEnd(), { small: true, fill: PAL.blood }));
+    r.addChild(text(boutLabel(s, p.bout).toUpperCase(), 222, H - 12, { small: true, color: PAL.ash, width: W - 226, maxLines: 1 }));
     if (p.phase === 'corner' && p.corner) r.addChild(p.corner);
     if (p.phase === 'ringcard' && p.ringcard) r.addChild(p.ringcard);
+  }
+
+  /** Big subtitle for Juiced Butler. */
+  private say(line: AnnounceLine | null): void {
+    const sub = this.subtitle;
+    if (!sub || sub.destroyed) return;
+    sub.removeChildren().forEach((c) => c.destroy({ children: true }));
+    if (!line) return;
+    const t = text(line.stage ? line.text : line.text, 0, 0, {
+      width: W - 40, align: 'center', color: line.stage ? PAL.ash : /!!!$/.test(line.text) ? PAL.gold : PAL.bone, small: line.stage, maxLines: 3, shadow: PAL.ink,
+    });
+    const h = t.textHeight + 8;
+    sub.addChild(box(W - 24, h, 0x0a080c)).position.set(12, 30 - h);
+    sub.children[0].alpha = 0.82;
+    if (!line.stage) sub.addChild(text('JUICED BUTLER', 16, 30 - h - 9, { small: true, color: PAL.gold, shadow: PAL.ink }));
+    t.position.set(20, 30 - h + 4);
+    sub.addChild(t);
   }
 
   private drawTicker(): void {
@@ -283,29 +345,78 @@ export class FightNightScene extends Scene {
     const p = this.playing;
     if (!tb || !p || tb.destroyed) return;
     tb.removeChildren().forEach((c) => c.destroy({ children: true }));
-    tb.addChild(box(W, H - AH - 18, PAL.ink, PAL.shadow));
-    const shown = p.lines.slice(Math.max(0, p.idx - 9), p.idx);
-    shown.forEach((l, i) => {
-      const newest = i === shown.length - 1;
-      tb.addChild(text(`R${l.round} ${Math.floor(l.t / 60)}:${String(l.t % 60).padStart(2, '0')}  ${l.text}`, 6, 3 + i * 9, {
-        small: !newest, color: newest ? (l.intensity >= 3 ? PAL.gold : PAL.bone) : PAL.grey, width: W - 12, maxLines: 1,
-      }));
-    });
+    const boxH = H - AH - 18;
+    tb.addChild(box(W, boxH, PAL.ink, PAL.shadow));
+    const booth = content().commentary.speakers;
+    const label = (l: TickerLine) => {
+      if (l.speaker) return `{#${booth[l.speaker]?.color ?? 'c4a04a'}}${booth[l.speaker]?.short ?? l.speaker.toUpperCase()}:{/} `;
+      return `R${l.round} ${Math.floor(l.t / 60)}:${String(l.t % 60).padStart(2, '0')}  `;
+    };
+    // newest at the bottom (wraps), older lines stacked above it
+    let y = boxH - 4;
+    for (let i = p.idx - 1; i >= 0 && y > 4; i--) {
+      const l = p.lines[i];
+      const newest = i === p.idx - 1;
+      const t = text(label(l) + l.text, 6, 0, {
+        small: !newest, width: W - 76, maxLines: newest ? 2 : 1,
+        color: newest ? (l.speaker ? PAL.fog : l.intensity >= 3 ? PAL.gold : PAL.bone) : l.speaker ? PAL.ash : PAL.grey,
+      });
+      y -= t.textHeight + (newest ? 4 : 3);
+      if (y < 2) {
+        t.destroy();
+        break;
+      }
+      t.y = y;
+      tb.addChild(t);
+    }
     // crowd meter
-    const last = p.lines[p.idx - 1];
+    const last = [...p.lines.slice(0, p.idx)].reverse().find((l) => !l.speaker);
     const inten = last ? last.intensity : 1;
-    tb.addChild(text('CROWD', W - 60, H - AH - 30, { small: true, color: PAL.ash }));
-    tb.addChild(box(30, 5, PAL.shadow)).position.set(W - 34, H - AH - 30);
-    tb.addChild(box(Math.max(2, inten * 10), 5, inten >= 3 ? PAL.blood : PAL.gold)).position.set(W - 34, H - AH - 30);
+    tb.addChild(text('CROWD', W - 64, 4, { small: true, color: PAL.ash }));
+    tb.addChild(box(30, 5, PAL.shadow)).position.set(W - 36, 5);
+    tb.addChild(box(Math.max(2, inten * 10), 5, inten >= 3 ? PAL.blood : PAL.gold)).position.set(W - 36, 5);
+  }
+
+  private endIntro(): void {
+    const p = this.playing;
+    if (!p || p.phase !== 'intro') return;
+    p.phase = 'fight';
+    p.timer = 0.8;
+    this.arena?.startFight();
+    this.say(null);
+    sfx('bell');
+    this.refresh();
   }
 
   private skipToEnd(): void {
     const p = this.playing;
     if (!p) return;
+    if (p.phase === 'ceremony') return this.endWatch();
     p.idx = p.lines.length;
-    p.phase = 'end';
-    p.phaseT = 0.1;
-    this.endWatch();
+    p.corner?.destroy({ children: true });
+    p.ringcard?.destroy({ children: true });
+    p.corner = null;
+    p.ringcard = null;
+    this.startCeremony();
+  }
+
+  /** Decision read (or finish announcement) with the hand raise. */
+  private startCeremony(): void {
+    const p = this.playing;
+    if (!p) return;
+    const s = this.g.state!;
+    const res = p.bout.result!;
+    const seed = res.fotn * 7919 + p.bout.position;
+    if (res.method === 'DEC' || res.method === 'DRAW') {
+      const d = butlerDecision(s, this.ev, p.bout, seed);
+      p.cer = d.lines;
+    } else p.cer = butlerFinish(s, p.bout, seed);
+    p.cerWinner = res.winner === p.bout.a ? 0 : res.winner === p.bout.b ? 1 : -1;
+    p.cerIdx = 0;
+    p.phase = 'ceremony';
+    p.timer = 1.0;
+    p.raised = false;
+    this.refresh();
   }
 
   update(dt: number): void {
@@ -314,6 +425,41 @@ export class FightNightScene extends Scene {
     const speed = [1, 0.6, 1, 2, 4][this.g.settings.fightSpeed] ?? 1;
     this.arena.update(dt);
     if (p.paused || this.g.modals.length) return;
+    if (p.phase === 'intro') {
+      p.timer -= dt * Math.min(2, speed);
+      if (p.timer > 0) return;
+      const line = p.intro[p.introIdx++];
+      if (!line) return this.endIntro();
+      this.arena.introCue(line.corner, !!line.stage, line.text);
+      this.say(line);
+      if (/!!!$/.test(line.text)) sfx('roar');
+      else if (!line.stage && p.introIdx === 1) sfx('crowd');
+      p.timer = line.stage ? 1.8 : 1.0 + line.text.length / 38;
+      return;
+    }
+    if (p.phase === 'ceremony') {
+      p.timer -= dt * Math.min(2, speed);
+      if (p.timer > 0) return;
+      const line = p.cer[p.cerIdx++];
+      if (!line) {
+        if (p.timer < -2.6) this.endWatch();
+        return;
+      }
+      this.arena.ceremonyCue(line.text);
+      this.say(line);
+      const last = p.cerIdx >= p.cer.length;
+      if (last) {
+        if (p.cerWinner >= 0 || /DRAW/i.test(line.text)) this.arena.raiseHand(p.cerWinner);
+        p.raised = true;
+        sfx('roar');
+        p.timer = 3.2;
+        // keep counting down past zero to linger on the raised hand
+        setTimeout(() => {
+          if (this.playing === p) this.endWatch();
+        }, 3400 / Math.min(2, speed));
+      } else p.timer = 1.0 + line.text.length / 40;
+      return;
+    }
     if (p.phase === 'corner') {
       p.phaseT -= dt * speed;
       if (p.phaseT <= 0) {
@@ -340,16 +486,22 @@ export class FightNightScene extends Scene {
     if (p.timer > 0) return;
     if (p.idx >= p.lines.length) {
       p.phase = 'end';
-      this.arena.update(0);
-      setTimeout(() => this.endWatch(), 1200 / speed);
+      setTimeout(() => {
+        if (this.playing === p) this.startCeremony();
+      }, 1400 / speed);
       return;
     }
     const line = p.lines[p.idx++];
     this.arena.cue(line);
     this.drawTicker();
-    p.timer = line.intensity >= 3 ? 1.6 : line.act === 'bell' ? 0.9 : 0.95;
-    // round ended: corners cutaway
+    p.timer = line.speaker ? 0.9 + line.text.length / 55 : line.intensity >= 3 ? 1.6 : line.act === 'bell' ? 0.9 : 0.95;
+    // round ended: corners cutaway (after the booth has had its say)
     if (line.act === 'bell' && p.idx < p.lines.length) {
+      while (p.lines[p.idx]?.speaker && p.lines[p.idx].round === line.round) {
+        const bl = p.lines[p.idx++];
+        this.arena.cue(bl);
+      }
+      this.drawTicker();
       const reps = (p.bout.result?.corners ?? []).filter((c) => c.round === line.round);
       if (reps.length) {
         p.corner = cornerView(this.g.state!.fighters[p.bout.a], this.g.state!.fighters[p.bout.b], reps, line.round);
@@ -362,14 +514,15 @@ export class FightNightScene extends Scene {
 
   private endWatch(): void {
     const p = this.playing;
-    if (!p || p.phase === 'done' as any) return;
-    (p as any).phase = 'done';
+    if (!p || (p as { done?: boolean }).done) return;
+    (p as { done?: boolean }).done = true;
     const s = this.g.state!;
     const rng = new Rng(s.rng);
     applyBout(s, this.ev, p.bout, rng);
     s.rng = rng.state;
     this.playing = null;
     this.arena = null;
+    this.subtitle = null;
     this.step = 'card';
     this.refresh();
     this.postBout(p.bout, true);
@@ -450,7 +603,7 @@ export class FightNightScene extends Scene {
       const res = b.result!;
       const row = new Container();
       row.addChild(box(W - 22, 20, 0x24212a, PAL.shadow));
-      row.addChild(text(`${s.fighters[b.a]?.last} vs ${s.fighters[b.b]?.last}: ${res.method} R${res.round}  (quality ${res.fotn})`, 4, 6, { small: true, color: PAL.bone, width: 230 }));
+      row.addChild(text(`${boutTitle(s, b)}: ${res.method} R${res.round}  (quality ${res.fotn})`, 4, 6, { small: true, color: PAL.bone, width: 230 }));
       [b.a, b.b].forEach((id, j) => {
         const sel = this.bonusSel.has(id);
         row.addChild(button(`${sel ? '✓ ' : ''}${s.fighters[id]?.last}`, 250 + j * 102, 3, 98, 14, () => {

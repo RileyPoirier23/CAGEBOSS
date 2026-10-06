@@ -1,0 +1,1120 @@
+[
+ {
+  "id": "braille_sonnen",
+  "name": "Braille Sonnen",
+  "outlet": "brogan",
+  "gender": "M",
+  "personality": "Blind analyst with total confidence and zero information. Breaks down fights he cannot see.",
+  "traits": [
+   "Bad Takes",
+   "Blind",
+   "Trash Talker",
+   "Showman"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 1,
+   "skin": 1,
+   "hair": 1,
+   "hairColor": 1,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 1,
+   "glasses": 1
+  },
+  "catchphrase": "I don't actually know what I'm talking about. I can't see shit."
+ },
+ {
+  "id": "ariel_hellwani",
+  "name": "Ariel Hellwani",
+  "outlet": "junkyard",
+  "gender": "M",
+  "personality": "The insider. Breaks every story before you announce it. Somehow knows your lunch order.",
+  "traits": [
+   "Insider",
+   "Relentless"
+  ],
+  "nemesis": true,
+  "look": {
+   "head": 0,
+   "skin": 1,
+   "hair": 2,
+   "hairColor": 0,
+   "beard": 1,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 0
+  },
+  "catchphrase": "Sources tell me..."
+ },
+ {
+  "id": "joe_brogan",
+  "name": "Joe Brogan",
+  "outlet": "brogan",
+  "gender": "M",
+  "personality": "Podcast titan. Will ask about DMT in a press conference about a weigh-in.",
+  "traits": [
+   "Podcaster",
+   "Conspiracy-Curious",
+   "Friendly"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 3,
+   "skin": 0,
+   "hair": 0,
+   "hairColor": 0,
+   "beard": 1,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 2,
+   "glasses": 0
+  },
+  "catchphrase": "It's entirely possible."
+ },
+ {
+  "id": "brendan_slob",
+  "name": "Brendan Slob",
+  "outlet": "brogan",
+  "gender": "M",
+  "personality": "Ex-fighter turned podcaster. His takes are wrong in a way that becomes a meme.",
+  "traits": [
+   "Bad Takes",
+   "Podcaster"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 3,
+   "skin": 0,
+   "hair": 2,
+   "hairColor": 1,
+   "beard": 1,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 2,
+   "glasses": 0
+  },
+  "catchphrase": "Thiccc."
+ },
+ {
+  "id": "luke_tomas",
+  "name": "Luke Tomas",
+  "outlet": "fighting_words",
+  "gender": "M",
+  "personality": "Technical analyst. Will explain why your main event is boring with diagrams.",
+  "traits": [
+   "Analyst",
+   "Fair"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 0,
+   "hair": 3,
+   "hairColor": 2,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 2
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "karyn_buoyant",
+  "name": "Karyn Buoyant",
+  "outlet": "wspn",
+  "gender": "W",
+  "personality": "Polished network host. Smiles while asking the question that ends your week.",
+  "traits": [
+   "Polished",
+   "Sharp"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 4,
+   "hair": 5,
+   "hairColor": 0,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 0
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "megan_oliveoil",
+  "name": "Megan Olive-Oil",
+  "outlet": "wspn",
+  "gender": "W",
+  "personality": "Backstage interviewer. Knows every fighter's kids' names.",
+  "traits": [
+   "Friendly",
+   "Wholesome"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 2,
+   "skin": 1,
+   "hair": 5,
+   "hairColor": 3,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 0
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "dan_hardly",
+  "name": "Dan Hardly",
+  "outlet": "fighting_words",
+  "gender": "M",
+  "personality": "Ex-fighter analyst with wild hair and wilder metaphors. Big fan of the comeback narrative.",
+  "traits": [
+   "Analyst",
+   "Eccentric"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 1,
+   "skin": 0,
+   "hair": 4,
+   "hairColor": 5,
+   "beard": 1,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 0
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "jon_organ",
+  "name": "Jon Organ",
+  "outlet": "junkyard",
+  "gender": "M",
+  "personality": "Veteran writer. Has seen every scandal twice. Asks about fighter pay every single time.",
+  "traits": [
+   "Veteran",
+   "Pay Hawk"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 1,
+   "skin": 0,
+   "hair": 0,
+   "hairColor": 0,
+   "beard": 2,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 1,
+   "glasses": 0
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "kevin_ioleee",
+  "name": "Kevin Iol-eee",
+  "outlet": "pathetic",
+  "gender": "M",
+  "personality": "Old-school boxing writer. Thinks MMA is barbaric, attends anyway, files 4,000 words.",
+  "traits": [
+   "Old School",
+   "Pay Hawk"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 1,
+   "skin": 0,
+   "hair": 1,
+   "hairColor": 6,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 1,
+   "glasses": 2
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "damon_martini",
+  "name": "Damon Martini",
+  "outlet": "fighting_words",
+  "gender": "M",
+  "personality": "Fair, quick, always has the recording running. Never off the record.",
+  "traits": [
+   "Fair"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 2,
+   "hair": 2,
+   "hairColor": 0,
+   "beard": 1,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 1,
+   "glasses": 0
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "marc_ramendi",
+  "name": "Marc Ramen-di",
+  "outlet": "wspn",
+  "gender": "M",
+  "personality": "Network news guy who reads the press release back to you and asks if it's true.",
+  "traits": [
+   "Polished"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 1,
+   "hair": 2,
+   "hairColor": 1,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 1,
+   "glasses": 0
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "brett_okaymoto",
+  "name": "Brett Okay-moto",
+  "outlet": "wspn",
+  "gender": "M",
+  "personality": "Rankings panelist. Will rank your champion #4 to make a point.",
+  "traits": [
+   "Analyst",
+   "Contrarian"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 1,
+   "hair": 2,
+   "hairColor": 0,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 0
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "aaron_bronzeletter",
+  "name": "Aaron Bronze-Letter",
+  "outlet": "junkyard",
+  "gender": "M",
+  "personality": "Canadian insider. Too polite to be this ruthless.",
+  "traits": [
+   "Insider",
+   "Polite"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 0,
+   "hair": 2,
+   "hairColor": 2,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 0
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "jed_messyou",
+  "name": "Jed Mess-You",
+  "outlet": "bleeding_elbow",
+  "gender": "M",
+  "personality": "Blogger. Every article ends with 'and that's why the sport is dying'.",
+  "traits": [
+   "Doom",
+   "Blogger"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 1,
+   "skin": 0,
+   "hair": 3,
+   "hairColor": 3,
+   "beard": 1,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 1,
+   "glasses": 0
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "shaheen_shotty",
+  "name": "Shaheen Al-Shotty",
+  "outlet": "fighting_words",
+  "gender": "M",
+  "personality": "Breaks down judging errors with a calm fury.",
+  "traits": [
+   "Analyst",
+   "Fair"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 2,
+   "hair": 2,
+   "hairColor": 0,
+   "beard": 1,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 0
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "tmz_dave",
+  "name": "Camera Guy Dave",
+  "outlet": "tmzee",
+  "gender": "M",
+  "personality": "Hangs outside clubs at 3am asking fighters about their beef.",
+  "traits": [
+   "Tabloid",
+   "Ambush"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 2,
+   "skin": 0,
+   "hair": 0,
+   "hairColor": 0,
+   "beard": 1,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 1,
+   "glasses": 0
+  },
+  "catchphrase": "Yo yo yo, quick question!"
+ },
+ {
+  "id": "tmz_britt",
+  "name": "Brittany Flash",
+  "outlet": "tmzee",
+  "gender": "W",
+  "personality": "Tabloid queen. Has the photos. Always has the photos.",
+  "traits": [
+   "Tabloid",
+   "Ruthless"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 0,
+   "hair": 5,
+   "hairColor": 4,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 0
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "pathetic_morgan",
+  "name": "Morgan Deepthroat",
+  "outlet": "pathetic",
+  "gender": "W",
+  "personality": "Investigative reporter. Your lawyers know her by name.",
+  "traits": [
+   "Investigator",
+   "Relentless"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 3,
+   "hair": 5,
+   "hairColor": 0,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 2
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "pathetic_sam",
+  "name": "Sam Subpoena",
+  "outlet": "pathetic",
+  "gender": "M",
+  "personality": "Investigative journalist with an anonymous source inside your building.",
+  "traits": [
+   "Investigator"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 1,
+   "skin": 0,
+   "hair": 1,
+   "hairColor": 6,
+   "beard": 1,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 2
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "truthbomb_rex",
+  "name": "Rex Bunkerman",
+  "outlet": "truthbomb",
+  "gender": "M",
+  "personality": "Livestreams from a bunker. Thinks the moon landing was a TKO.",
+  "traits": [
+   "Conspiracy",
+   "Unhinged"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 3,
+   "skin": 0,
+   "hair": 0,
+   "hairColor": 0,
+   "beard": 3,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 2,
+   "glasses": 0
+  },
+  "catchphrase": "WAKE UP, PEOPLE."
+ },
+ {
+  "id": "kanal_rodrigo",
+  "name": "Rodrigo Gritao",
+  "outlet": "kombat_kanal",
+  "gender": "M",
+  "personality": "Brazilian reporter. Every question is shouted. Every loss is a robbery.",
+  "traits": [
+   "Loud",
+   "Hometown"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 2,
+   "hair": 2,
+   "hairColor": 0,
+   "beard": 1,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 1,
+   "glasses": 0
+  },
+  "catchphrase": "ROUBO!"
+ },
+ {
+  "id": "kanal_ana",
+  "name": "Ana Barulho",
+  "outlet": "kombat_kanal",
+  "gender": "W",
+  "personality": "Brazilian TV star. Asks your fighters about their mothers, live.",
+  "traits": [
+   "Loud",
+   "Friendly"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 2,
+   "hair": 5,
+   "hairColor": 1,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 0
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "odds_vinny",
+  "name": "Vinny Parlay",
+  "outlet": "odds_sharted",
+  "gender": "M",
+  "personality": "Betting analyst. Every answer is a line. Knows who's tanking before you do.",
+  "traits": [
+   "Gambler",
+   "Shady"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 1,
+   "skin": 0,
+   "hair": 3,
+   "hairColor": 0,
+   "beard": 4,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 2,
+   "glasses": 0
+  },
+  "catchphrase": "Hammer the over."
+ },
+ {
+  "id": "purse_lisa",
+  "name": "Lisa Labor",
+  "outlet": "purse_report",
+  "gender": "W",
+  "personality": "Fighter-pay crusader. Has a spreadsheet of every purse you ever paid.",
+  "traits": [
+   "Pay Hawk",
+   "Relentless"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 1,
+   "hair": 5,
+   "hairColor": 2,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 2
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "forum_anon",
+  "name": "Anonymous Forum Guy",
+  "outlet": "bed_report",
+  "gender": "M",
+  "personality": "Nobody knows who he is. He knows everything. He is wrong 60% of the time.",
+  "traits": [
+   "Rumor",
+   "Unhinged"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 3,
+   "skin": 0,
+   "hair": 6,
+   "hairColor": 0,
+   "beard": 3,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 2,
+   "glasses": 2
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "junkyard_kid",
+  "name": "Tyler Contentson",
+  "outlet": "junkyard",
+  "gender": "M",
+  "personality": "21-year-old 'content creator' with press credentials somehow.",
+  "traits": [
+   "Clout",
+   "Bad Takes"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 0,
+   "hair": 3,
+   "hairColor": 4,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 0
+  },
+  "catchphrase": "Bro."
+ },
+ {
+  "id": "wspn_stephen",
+  "name": "Stephen A. Shouty",
+  "outlet": "wspn",
+  "gender": "M",
+  "personality": "Yells about MMA once a year, gets it wrong at maximum volume.",
+  "traits": [
+   "Loud",
+   "Bad Takes"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 4,
+   "hair": 0,
+   "hairColor": 0,
+   "beard": 1,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 1,
+   "glasses": 0
+  },
+  "catchphrase": "STAY OFF THE WEED!"
+ },
+ {
+  "id": "brogan_eddie",
+  "name": "Eddie Bravado",
+  "outlet": "brogan",
+  "gender": "M",
+  "personality": "Jiu-jitsu guru and flat-earth enthusiast. Asks about rubber guard.",
+  "traits": [
+   "Conspiracy",
+   "Grappling"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 1,
+   "hair": 2,
+   "hairColor": 0,
+   "beard": 1,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 0
+  },
+  "catchphrase": "Ten Planet, baby."
+ },
+ {
+  "id": "fighting_ben",
+  "name": "Ben Ask-Screwed",
+  "outlet": "fighting_words",
+  "gender": "M",
+  "personality": "Retired wrestler pundit. Thinks every striker is overrated. Funky.",
+  "traits": [
+   "Contrarian",
+   "Wrestling"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 3,
+   "skin": 0,
+   "hair": 6,
+   "hairColor": 4,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 1,
+   "glasses": 0
+  },
+  "catchphrase": "Wrestling is the best base, obviously."
+ },
+ {
+  "id": "bleed_hannah",
+  "name": "Hannah Stats",
+  "outlet": "bleeding_elbow",
+  "gender": "W",
+  "personality": "Statistician. Knows strike differentials to three decimal places.",
+  "traits": [
+   "Analyst",
+   "Fair"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 0,
+   "hair": 5,
+   "hairColor": 1,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 2
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "junkyard_john",
+  "name": "John Pulsemeter",
+  "outlet": "junkyard",
+  "gender": "M",
+  "personality": "Old-school beat writer. Polite, accurate, forgotten.",
+  "traits": [
+   "Fair",
+   "Veteran"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 1,
+   "skin": 0,
+   "hair": 1,
+   "hairColor": 6,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 1,
+   "glasses": 2
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "kevin_kombat",
+  "name": "Kevin Kombat",
+  "outlet": "odds_sharted",
+  "gender": "M",
+  "personality": "Sports-betting influencer with press credentials and a ring light.",
+  "traits": [
+   "Gambler",
+   "Clout"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 0,
+   "hair": 2,
+   "hairColor": 3,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 1,
+   "glasses": 0
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "rights_marcus",
+  "name": "Marcus Union",
+  "outlet": "purse_report",
+  "gender": "M",
+  "personality": "Former fighter organizing a union. Asks you about revenue split. Every time.",
+  "traits": [
+   "Pay Hawk",
+   "Activist"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 1,
+   "skin": 4,
+   "hair": 1,
+   "hairColor": 0,
+   "beard": 2,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 2,
+   "glasses": 0
+  },
+  "catchphrase": "Forty-eight percent."
+ },
+ {
+  "id": "international_kenji",
+  "name": "Kenji Shimbun",
+  "outlet": "kombat_kanal",
+  "gender": "M",
+  "personality": "Japanese correspondent. Bows, then asks the most devastating question of the night.",
+  "traits": [
+   "Polite",
+   "Sharp"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 0,
+   "hair": 2,
+   "hairColor": 0,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 2
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "tabloid_gerald",
+  "name": "Gerald Gossip",
+  "outlet": "tmzee",
+  "gender": "M",
+  "personality": "Covers fighters' dating lives. Knows who's sleeping with whom on your roster.",
+  "traits": [
+   "Tabloid"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 0,
+   "hair": 3,
+   "hairColor": 2,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 1,
+   "glasses": 0
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "pod_theo",
+  "name": "Theo Vonn-Kraut",
+  "outlet": "brogan",
+  "gender": "M",
+  "personality": "Comedian podcaster. Asks fighters about their childhood trauma, then makes a joke.",
+  "traits": [
+   "Podcaster",
+   "Weird"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 0,
+   "hair": 3,
+   "hairColor": 1,
+   "beard": 1,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 0
+  },
+  "catchphrase": "Gang, gang."
+ },
+ {
+  "id": "wspn_mike",
+  "name": "Michael Biscuit",
+  "outlet": "wspn",
+  "gender": "M",
+  "personality": "British ex-champ commentator. Loudest opinions, best stories, will not stop talking about his own career.",
+  "traits": [
+   "Loud",
+   "Veteran"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 1,
+   "skin": 0,
+   "hair": 0,
+   "hairColor": 0,
+   "beard": 1,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 1,
+   "glasses": 0
+  },
+  "catchphrase": "Bloody hell!"
+ },
+ {
+  "id": "network_rachel",
+  "name": "Rachel Ratings",
+  "outlet": "wspn",
+  "gender": "W",
+  "personality": "Network producer who asks about viewership, not fights.",
+  "traits": [
+   "Corporate"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 0,
+   "skin": 1,
+   "hair": 5,
+   "hairColor": 4,
+   "beard": 0,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 0,
+   "glasses": 0
+  },
+  "catchphrase": ""
+ },
+ {
+  "id": "fan_bob",
+  "name": "Bob from the Cheap Seats",
+  "outlet": "bed_report",
+  "gender": "M",
+  "personality": "A fan who won a 'press pass' in a radio contest. Asks for selfies.",
+  "traits": [
+   "Fan",
+   "Friendly"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 3,
+   "skin": 0,
+   "hair": 1,
+   "hairColor": 3,
+   "beard": 1,
+   "brows": 1,
+   "eyes": 0,
+   "nose": 0,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 2,
+   "glasses": 0
+  },
+  "catchphrase": ""
+ }
+]

@@ -104,14 +104,14 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
   const fem = (x: string) =>
     female ? x.replace(/\bhe\b/g, 'she').replace(/\bHe\b/g, 'She').replace(/\bhis\b/g, 'her').replace(/\bHis\b/g, 'Her').replace(/\bhim\b/g, 'her').replace(/\bman\b/g, 'woman').replace(/\bHe's\b/g, "She's").replace(/\bhe's\b/g, "she's") : x;
   const fill = (s: string, ai: number) =>
-    fem(s).replace(/\{a\}/g, S[ai < 0 ? 0 : ai].name).replace(/\{b\}/g, S[ai < 0 ? 1 : 1 - ai].name).replace(/\{ref\}/g, refName).replace(/\{r\}/g, String(round));
+    fem(s).replace(/\{a\}/g, S[ai < 0 ? 0 : ai].name).replace(/\{b\}/g, S[ai < 0 ? 1 : 1 - ai].name).replace(/\{ref\}/g, refName).replace(/\{r\}/g, String(round)).replace(/\b([Aa]) ([AEIOU])/g, '$1n $2');
   const say = (key: string, ai: number, act: string, intensity = 1, extra?: Record<string, string>) => {
     if (!keep) return;
     const list = tpl[key];
     let line = list && list.length ? list[Math.floor(rng.next() * list.length)] : `{a}: ${key}`;
     if (extra) for (const k in extra) line = line.replace(new RegExp('\\{' + k + '\\}', 'g'), extra[k]);
     ticker.push({
-      round, t, text: fill(line, ai), side: ai as 0 | 1 | -1, intensity, act, pos,
+      round, t, text: fill(line, ai), side: ai as 0 | 1 | -1, intensity, act, pos, key,
       hp: [Math.round(Math.max(0, S[0].hp)), Math.round(Math.max(0, S[1].hp))],
     });
   };
@@ -585,6 +585,8 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
       // robbery: judges' winner clearly lost on damage & output
       const truth = S[0].dmg + S[0].str * 0.6 + S[0].td * 3 + S[0].kd * 10 - (S[1].dmg + S[1].str * 0.6 + S[1].td * 3 + S[1].kd * 10);
       if ((winner === 0 && truth < -18) || (winner === 1 && truth > 18) || (winner === -1 && Math.abs(truth) > 40)) robbery = true;
+      round = opts.rounds;
+      t = 300;
       if (keep) sayN(robbery ? 'decision_robbery' : 'decision', 'end', robbery ? 3 : 2, { detail });
     }
   }

@@ -1,0 +1,98 @@
+[
+ {
+  "id": "junkyard",
+  "name": "MMA Junkyard",
+  "type": "insider",
+  "bias": 0.1,
+  "reach": 5,
+  "style": "Breaks news, chases clicks, posts 40 times a day."
+ },
+ {
+  "id": "fighting_words",
+  "name": "MMA Fighting Words",
+  "type": "insider",
+  "bias": 0.0,
+  "reach": 4,
+  "style": "Long-form takes and longer comment sections."
+ },
+ {
+  "id": "tmzee",
+  "name": "TMZee",
+  "type": "tabloid",
+  "bias": -0.5,
+  "reach": 5,
+  "style": "Camera crews outside every courthouse and Waffle House."
+ },
+ {
+  "id": "wspn",
+  "name": "WSPN",
+  "type": "network",
+  "bias": 0.4,
+  "reach": 5,
+  "style": "The worldwide leader in yelling about sports. Loves whoever pays them."
+ },
+ {
+  "id": "pathetic",
+  "name": "The Pathetic",
+  "type": "serious",
+  "bias": -0.6,
+  "reach": 3,
+  "style": "Paywalled investigative journalism. They have spreadsheets. They have sources."
+ },
+ {
+  "id": "brogan",
+  "name": "The Joe Brogan Experience",
+  "type": "podcast",
+  "bias": 0.5,
+  "reach": 5,
+  "style": "Four-hour podcast. Elk meat, DMT, and 'it's entirely possible'."
+ },
+ {
+  "id": "bleeding_elbow",
+  "name": "Bleeding Elbow",
+  "type": "blog",
+  "bias": -0.2,
+  "reach": 3,
+  "style": "Fan blog empire. Will write 6,000 words about a judging error."
+ },
+ {
+  "id": "truthbomb",
+  "name": "TruthBomb Live",
+  "type": "conspiracy",
+  "bias": -0.3,
+  "reach": 3,
+  "style": "A streamer in a bunker who thinks every KO was scripted."
+ },
+ {
+  "id": "kombat_kanal",
+  "name": "Kombat Kanal Brasil",
+  "type": "international",
+  "bias": 0.0,
+  "reach": 3,
+  "style": "Brazilian outlet. Loudest headlines on earth. Every loss is a robbery."
+ },
+ {
+  "id": "odds_sharted",
+  "name": "Odds Sharted",
+  "type": "betting",
+  "bias": 0.2,
+  "reach": 2,
+  "style": "Betting site. Covers fights purely as a way to sell parlays."
+ },
+ {
+  "id": "purse_report",
+  "name": "The Purse Report",
+  "type": "rights",
+  "bias": -0.8,
+  "reach": 2,
+  "style": "Fighters' rights newsletter. Publishes every pay leak with relish."
+ },
+ {
+  "id": "bed_report",
+  "name": "The Undergrowth",
+  "type": "forum",
+  "bias": -0.4,
+  "reach": 2,
+  "style": "Anonymous forum where every rumor starts and no apology ever ends."
+ }
+]

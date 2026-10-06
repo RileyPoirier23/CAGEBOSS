@@ -1,0 +1,1483 @@
+[
+ {
+  "id": "legal_speeding",
+  "title": "Need for Speed",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Boss. It's {subject.first}'s manager. So... the cops clocked {him} doing 142 in a school zone. On a Sunday. In a borrowed Lamborghini. {He} told the officer {he} was 'cutting weight'.",
+    "speaker": "{subject.manager}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay the lawyer to make it disappear ({$fee})",
+    "effects": [
+     "spend('legal', vars.fee)",
+     "subject.loyalty += 5",
+     "heat += 1"
+    ],
+    "result": "The ticket evaporates. {subject.first} sends you a thumbs-up emoji and a picture of a new car.",
+    "bot": 1,
+    "ethics": -1
+   },
+   {
+    "label": "Let {him} deal with it {him}self",
+    "effects": [
+     "subject.morale -= 4",
+     "news('scandal', -0.2, 3)"
+    ],
+    "result": "{subject.first} pays the fine in rolls of quarters. The clerk posts it online.",
+    "default": true
+   },
+   {
+    "label": "Make {him} film a 'Drive Safe' PSA for local schools",
+    "effects": [
+     "media += 2",
+     "fans += 1",
+     "subject.morale -= 2"
+    ],
+    "result": "The PSA is 40 seconds long. {subject.first} breaks character twice to laugh. It gets 3 million views. Mostly ironic.",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.legal == 'free' && !f.parody && f.traits.has('Reckless Driver')"
+   }
+  },
+  "cooldownWeeks": 30,
+  "chain": "reckless",
+  "vars": {
+   "fee": "rand(3, 8) * 1000 * scale"
+  }
+ },
+ {
+  "id": "legal_hit_run",
+  "title": "The Crash",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "{subject.first} {subject.last} crashed into two parked cars and a third car that was not parked, then left on foot. Then came back for {his} phone. The police have {him}. Nobody was killed, but someone is in the hospital.",
+    "speaker": "Your head of security"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Suspend {him} indefinitely, pending the investigation",
+    "effects": [
+     "arrest(subject, 'reckless_hit_run')",
+     "suspend(subject, 26)",
+     "media += 3",
+     "sponsors += 1",
+     "fighters -= 1",
+     "follow('legal_hit_run_court', 6)"
+    ],
+    "result": "You put out a short statement. No jokes. The press calls it 'unusually adult'.",
+    "ethics": 2
+   },
+   {
+    "label": "Wait for all the facts before acting",
+    "effects": [
+     "arrest(subject, 'reckless_hit_run')",
+     "media -= 2",
+     "follow('legal_hit_run_court', 6)"
+    ],
+    "result": "'We're waiting for the facts.' The facts arrive in the form of dashcam footage on every news channel.",
+    "default": true
+   },
+   {
+    "label": "Publicly back your fighter",
+    "effects": [
+     "arrest(subject, 'reckless_hit_run')",
+     "subject.loyalty += 15",
+     "media -= 6",
+     "sponsors -= 5",
+     "heat += 4",
+     "follow('legal_hit_run_court', 6)"
+    ],
+    "result": "'He's a good kid.' Three sponsors call within the hour. None of them say 'good kid'.",
+    "bot": 1,
+    "ethics": -2
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.legal == 'free' && !f.parody && f.traits.has('Reckless Driver')"
+   }
+  },
+  "conditions": "act >= 1 && since('legal_speeding') < 60",
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "reckless",
+  "tags": [
+   "serious"
+  ]
+ },
+ {
+  "id": "legal_hit_run_court",
+  "title": "Plea Deal",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "PEOPLE v. {subject.last}. The DA offers a plea: reckless driving and leaving the scene, 18 months probation, restitution, 200 hours of community service. {He}'d be free to compete after a 6-month suspension.",
+    "title": "PLEA OFFER (CARBON COPY)"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Advise {him} to take it",
+    "effects": [
+     "subject.legal = 'probation'",
+     "subject.morale -= 5",
+     "media += 2",
+     "follow('legal_hit_run_return', 26)"
+    ],
+    "result": "{subject.first} takes the deal. {He} does community service at an animal shelter and is somehow great at it.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Pay for a trial lawyer to fight it ({$fee})",
+    "effects": [
+     "spend('legal', vars.fee)",
+     "subject.loyalty += 10",
+     "heat += 3",
+     "follow('legal_hit_run_return', 30)"
+    ],
+    "result": "The shark lawyer gets it knocked down to a misdemeanor. The victim's family gives a press conference. It is not a good press conference for you.",
+    "bot": 1,
+    "ethics": -1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "true"
+   }
+  },
+  "chain": "reckless",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(40, 90) * 1000 * scale"
+  },
+  "tags": [
+   "serious"
+  ]
+ },
+ {
+  "id": "legal_hit_run_return",
+  "title": "The Redemption Tour",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "{subject.first} is back in your office, clean-shaven, carrying a book about accountability {he} has clearly not read. {He} wants to fight again.",
+    "speaker": "{subject.first} {subject.last}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Book {him} on a big card: redemption sells",
+    "effects": [
+     "unsuspend(subject)",
+     "subject.hype += 15",
+     "fans += 2",
+     "media -= 2",
+     "addTrait(subject, 'Reformed')"
+    ],
+    "result": "The redemption arc trends for a week. The victim's lawyer trends for slightly longer.",
+    "bot": 1
+   },
+   {
+    "label": "Bring {him} back quietly on a prelim",
+    "effects": [
+     "unsuspend(subject)",
+     "subject.morale += 5",
+     "media += 1",
+     "addTrait(subject, 'Reformed')"
+    ],
+    "result": "Quiet comeback. A win by decision. Nobody makes a documentary. Good.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Release {him}",
+    "effects": [
+     "release(subject)",
+     "media += 2",
+     "fighters -= 1"
+    ],
+    "result": "You let {him} go. {He} signs with a bare-knuckle league within 48 hours."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "true"
+   }
+  },
+  "chain": "reckless",
+  "followupOnly": true
+ },
+ {
+  "id": "legal_bar_fight",
+  "title": "Last Call",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "We've got a problem. {subject.first} got into it at a bar called The Rusty Spur. Guy said he 'could take a pro fighter'. He could not. Cops are there now.",
+    "speaker": "{subject.manager}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Let the Bail Office handle it",
+    "effects": [
+     "arrest(subject, 'bar_fight')",
+     "follow('legal_bar_fight_video', 2)"
+    ],
+    "result": "Another ticket for the Bail Office window.",
+    "default": true
+   },
+   {
+    "label": "Call in a favor with the local sheriff ({$fee} 'donation')",
+    "effects": [
+     "spend('donations', vars.fee)",
+     "heat += 3",
+     "subject.loyalty += 8",
+     "flag.sheriff_favor += 1"
+    ],
+    "result": "The sheriff is suddenly a huge fan of the sport. Charges 'misplaced'. A deputy asks for ringside seats.",
+    "bot": 1,
+    "ethics": -2
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.legal == 'free' && !f.parody && (f.traits.has('Hothead') || f.traits.has('Party Animal'))"
+   }
+  },
+  "chain": "barfight",
+  "vars": {
+   "fee": "rand(5, 15) * 1000 * scale"
+  }
+ },
+ {
+  "id": "legal_bar_fight_video",
+  "title": "The Video",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "Phone footage of {subject.last}'s bar fight is everywhere. 14 million views. The comments section has scored it 10-8 and is demanding a rematch with the bouncer."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Lean into it: sell 'Last Call' T-shirts",
+    "effects": [
+     "earn('merch', 20000 * scale)",
+     "subject.hype += 10",
+     "fans += 2",
+     "media -= 3",
+     "commission -= 2"
+    ],
+    "result": "The shirts sell out. The commission sends a letter written entirely in capital letters.",
+    "bot": 2,
+    "ethics": -1
+   },
+   {
+    "label": "Issue a stern statement",
+    "effects": [
+     "media += 1",
+     "subject.morale -= 3"
+    ],
+    "result": "'We do not condone violence outside of a licensed, sanctioned, pay-per-view context.'",
+    "default": true
+   },
+   {
+    "label": "Make {him} apologize to the guy publicly",
+    "effects": [
+     "media += 2",
+     "subject.morale -= 6",
+     "subject.beef += 5",
+     "follow('legal_bar_fight_civil', 8)"
+    ],
+    "result": "The apology is sincere. The guy accepts it, then hires a lawyer anyway."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "true"
+   }
+  },
+  "chain": "barfight",
+  "followupOnly": true
+ },
+ {
+  "id": "legal_bar_fight_civil",
+  "title": "Civil Suit",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "PLAINTIFF Darrel K. Mumford v. {subject.last} and {promotion}. Damages sought: {$amount} for 'emotional distress, a chipped tooth, and the loss of a lifelong belief that I could take a pro fighter'.",
+    "title": "SUMMONS"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Settle ({$amount})",
+    "effects": [
+     "spend('settlements', vars.amount)",
+     "media += 1"
+    ],
+    "result": "Settled. Darrel buys a boat. He names it 'TKO'.",
+    "default": true
+   },
+   {
+    "label": "Fight it in court",
+    "effects": [
+     "spend('legal', vars.amount * 0.4)",
+     "spend('legal judgments', chance(0.5) ? vars.amount : 0)",
+     "heat += 1"
+    ],
+    "result": "It goes to court. The jury is mostly people who have also thought they could take a pro fighter.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "true"
+   }
+  },
+  "chain": "barfight",
+  "followupOnly": true,
+  "vars": {
+   "amount": "rand(20, 80) * 1000 * scale"
+  }
+ },
+ {
+  "id": "legal_dui",
+  "title": "Blow Into This",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "{subject.first} got pulled over at 3am with a blood alcohol level that should have killed a horse. {He} offered the officer a signed glove. The officer is a boxing fan.",
+    "speaker": "{subject.manager}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Send the Bail Office paperwork",
+    "effects": [
+     "arrest(subject, 'dui')",
+     "follow('legal_dui_rehab', 2)"
+    ],
+    "result": "Another mugshot for the collection.",
+    "default": true
+   },
+   {
+    "label": "Get ahead of it: announce {he}'s entering rehab",
+    "effects": [
+     "arrest(subject, 'dui')",
+     "media += 3",
+     "sponsors += 1",
+     "subject.addiction -= 20",
+     "follow('legal_dui_rehab', 2)"
+    ],
+    "result": "You announce rehab before {he} knows about it. {He} finds out from Twitter.",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.legal == 'free' && !f.parody && (f.vices.has('booze') || f.traits.has('Party Animal') || f.addiction > 40)"
+   }
+  },
+  "cooldownWeeks": 40,
+  "chain": "dui"
+ },
+ {
+  "id": "legal_dui_rehab",
+  "title": "Rehab or Rumble",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "{subject.first} shows up hungover, still wearing the hospital bracelet from the drunk tank. {His} coach is with {him}. The coach says {he} needs 60 days in rehab. {subject.first} says {he} needs a fight in three weeks.",
+    "speaker": "{subject.coach}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay for 60 days of rehab ({$fee})",
+    "effects": [
+     "spend('medical', vars.fee)",
+     "subject.addiction -= 40",
+     "injure(subject, 9, 'rehab')",
+     "subject.loyalty += 12",
+     "addTrait(subject, 'Sober')",
+     "follow('legal_dui_sober', 12)"
+    ],
+    "result": "{subject.first} goes to a facility in the desert with horses. {He} names one of the horses after you. It's not a compliment, but it's not not a compliment.",
+    "ethics": 2
+   },
+   {
+    "label": "Book the fight. Work is the best rehab.",
+    "effects": [
+     "subject.addiction += 10",
+     "subject.morale += 5",
+     "heat += 1"
+    ],
+    "result": "'Work is the best rehab,' you say, to a man currently drinking a beer at 10am.",
+    "bot": 1,
+    "ethics": -2
+   },
+   {
+    "label": "Make it {his} problem",
+    "effects": [
+     "subject.morale -= 5"
+    ],
+    "result": "{He} leaves. Unclear where to. Unclear sober.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "true"
+   }
+  },
+  "chain": "dui",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(15, 30) * 1000 * scale"
+  }
+ },
+ {
+  "id": "legal_dui_sober",
+  "title": "Ninety Days Sober",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "{subject.first} is back: clear-eyed, eight pounds of muscle heavier, and drinking sparkling water like it owes {him} money. {He} wants a main event to prove {he}'s a new person.",
+    "speaker": "{subject.first} {subject.last}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Give {him} the spotlight",
+    "effects": [
+     "subject.hype += 12",
+     "subject.morale += 10",
+     "fans += 2",
+     "news('rehab', 0.3, 4)"
+    ],
+    "result": "'The New {subject.last}.' The promo package makes the network cry.",
+    "bot": 1
+   },
+   {
+    "label": "Ease {him} back in",
+    "effects": [
+     "subject.morale += 4",
+     "subject.loyalty += 5"
+    ],
+    "result": "A sensible fight on a sensible card. Growth.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "true"
+   }
+  },
+  "chain": "dui",
+  "followupOnly": true
+ },
+ {
+  "id": "legal_domestic",
+  "title": "A Serious Allegation",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Police were called to {subject.first} {subject.last}'s home last night after a domestic incident was reported. {He} has been arrested. There are no details yet beyond the police report.",
+    "speaker": "Your general counsel"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Suspend {him} immediately and cooperate fully with authorities",
+    "effects": [
+     "arrest(subject, 'domestic')",
+     "suspend(subject, 52)",
+     "media += 4",
+     "sponsors += 2",
+     "commission += 3",
+     "follow('legal_domestic_outcome', 8)"
+    ],
+    "result": "You suspend {him} and refer the matter to the authorities. The promotion makes a donation to a domestic-violence support organisation. It is the right call.",
+    "ethics": 3
+   },
+   {
+    "label": "Pull {him} from all events while the case proceeds",
+    "effects": [
+     "arrest(subject, 'domestic')",
+     "media += 1",
+     "follow('legal_domestic_outcome', 8)"
+    ],
+    "result": "{He} is pulled from all events while the legal process plays out.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Keep {him} on the upcoming card",
+    "effects": [
+     "arrest(subject, 'domestic')",
+     "media -= 10",
+     "sponsors -= 8",
+     "commission -= 5",
+     "heat += 6",
+     "fans -= 3",
+     "follow('legal_domestic_outcome', 8)"
+    ],
+    "result": "Keeping {him} on the card becomes the story. Sponsors, the commission and most of the internet respond in exactly the way you'd expect.",
+    "bot": 1,
+    "ethics": -3
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.legal == 'free' && !f.parody && (f.traits.has('Hothead') || f.addiction > 50)"
+   }
+  },
+  "weight": 4,
+  "cooldownWeeks": 200,
+  "chain": "domestic",
+  "tags": [
+   "serious"
+  ]
+ },
+ {
+  "id": "legal_domestic_outcome",
+  "title": "The Investigation Concludes",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "The criminal case against {subject.last} has concluded. Your general counsel recommends a decision on {his} future with the promotion.",
+    "title": "LEGAL MEMO"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Release {him}",
+    "effects": [
+     "release(subject)",
+     "media += 3",
+     "sponsors += 2"
+    ],
+    "result": "{subject.last} is released. You decline to elaborate beyond a short statement.",
+    "ethics": 2,
+    "default": true
+   },
+   {
+    "label": "Lift the suspension, with mandatory counselling",
+    "effects": [
+     "unsuspend(subject)",
+     "media -= 2",
+     "addTrait(subject, 'Reformed')"
+    ],
+    "result": "{He} returns with conditions. Some sponsors do not return with {him}."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "true"
+   }
+  },
+  "chain": "domestic",
+  "followupOnly": true,
+  "tags": [
+   "serious"
+  ]
+ },
+ {
+  "id": "legal_tax_letter",
+  "title": "A Letter From the Tax People",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "FINAL NOTICE. The tax authority informs {subject.first} {subject.last} that {he} has not filed returns since {his} third pro fight. Amount owed including penalties: {$owed}. {He} has forwarded this letter to you with the message 'lol help'.",
+    "title": "OFFICIAL NOTICE"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Lend {him} the money against future purses",
+    "effects": [
+     "spend('fighter loans', vars.owed)",
+     "subject.loyalty += 10",
+     "subject.debt += vars.owed",
+     "follow('legal_tax_repay', 26)"
+    ],
+    "result": "You pay the government. {subject.first} promises to pay you back. {He} immediately buys a jet ski.",
+    "ethics": 1
+   },
+   {
+    "label": "Send {him} to your accountant",
+    "effects": [
+     "spend('legal', vars.owed * 0.1)",
+     "subject.moneyIQ += 10"
+    ],
+    "result": "Your accountant meets {subject.first} for three hours. The accountant then takes a week off.",
+    "default": true
+   },
+   {
+    "label": "Not your problem",
+    "effects": [
+     "subject.morale -= 5",
+     "follow('legal_tax_raid', 10)"
+    ],
+    "result": "You say 'not my problem'. That is, in fact, a famous last sentence.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.legal == 'free' && !f.parody && f.moneyIQ < 40"
+   }
+  },
+  "cooldownWeeks": 60,
+  "chain": "taxes",
+  "vars": {
+   "owed": "rand(30, 120) * 1000 * scale"
+  }
+ },
+ {
+  "id": "legal_tax_repay",
+  "title": "Repayment Day",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "{subject.first} comes in with a duffel bag. Inside: some cash, a Rolex, three NFTs printed out on paper, and a promise.",
+    "speaker": "{subject.first} {subject.last}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Take what's there",
+    "effects": [
+     "earn('loan repayments', vars.owed * 0.5)",
+     "subject.debt -= vars.owed * 0.5"
+    ],
+    "result": "You get half your money back and a printed NFT of a cartoon ape. You frame it.",
+    "default": true
+   },
+   {
+    "label": "Forgive the rest",
+    "effects": [
+     "subject.loyalty += 15",
+     "subject.debt -= vars.owed",
+     "fighters += 1"
+    ],
+    "result": "{He} hugs you and cries. The whole gym hears about it. Good PR. Bad accounting.",
+    "ethics": 2
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "true"
+   }
+  },
+  "chain": "taxes",
+  "followupOnly": true
+ },
+ {
+  "id": "legal_tax_raid",
+  "title": "The Raid",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Federal agents just searched {subject.first}'s house. They took computers, boxes of paperwork, and a gold-plated title belt replica. {He} is not under arrest. Yet.",
+    "speaker": "{subject.manager}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay for a tax lawyer ({$fee})",
+    "effects": [
+     "spend('legal', vars.fee)",
+     "subject.loyalty += 8",
+     "follow('legal_tax_plea', 12)"
+    ],
+    "result": "The tax lawyer charges by the minute and talks very slowly.",
+    "default": true
+   },
+   {
+    "label": "Distance the promotion",
+    "effects": [
+     "media += 1",
+     "subject.loyalty -= 10",
+     "follow('legal_tax_plea', 12)"
+    ],
+    "result": "'{promotion} has no involvement in Mr. {subject.last}'s personal finances,' says the statement, written on a computer {subject.last} bought with company money."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "true"
+   }
+  },
+  "chain": "taxes",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(25, 60) * 1000 * scale"
+  }
+ },
+ {
+  "id": "legal_tax_plea",
+  "title": "Plea Agreement",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "{subject.last} pleads guilty to tax evasion. Sentence: repayment plan, fines, and probation. {He} can keep fighting, but every purse will now be garnished by the government.",
+    "title": "COURT RECORD"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Restructure {his} contract so it's survivable",
+    "effects": [
+     "subject.purse *= 1.1",
+     "subject.morale += 5",
+     "subject.legal = 'probation'"
+    ],
+    "result": "The tax authority is now {his} biggest fan. They attend every fight. They take 40%.",
+    "default": true
+   },
+   {
+    "label": "Use it as leverage: lower {his} purse",
+    "effects": [
+     "subject.purse *= 0.8",
+     "subject.morale -= 10",
+     "subject.legal = 'probation'",
+     "fighters -= 1"
+    ],
+    "result": "{He} signs, because what else is {he} going to do.",
+    "bot": 1,
+    "ethics": -2
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "true"
+   }
+  },
+  "chain": "taxes",
+  "followupOnly": true
+ },
+ {
+  "id": "legal_airport",
+  "title": "Pre-Workout Is Not a Liquid",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "{subject.first} fought a TSA agent at the airport over a 32-ounce jug of pre-workout. {He} called it 'a supplement, not a liquid'. The agent called it 'a liquid'. {He} is in an airport holding room.",
+    "speaker": "Your travel coordinator"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Bail Office",
+    "effects": [
+     "arrest(subject, 'airport_brawl')"
+    ],
+    "result": "Paperwork incoming.",
+    "default": true
+   },
+   {
+    "label": "Charter {him} a private jet next time ({$fee})",
+    "effects": [
+     "spend('travel', vars.fee)",
+     "subject.loyalty += 5",
+     "arrest(subject, 'airport_brawl')"
+    ],
+    "result": "Private jets: the only airline with no rules and no TSA.",
+    "bot": -1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.legal == 'free' && !f.parody && (f.traits.has('Hothead') || f.traits.has('Gym Rat'))"
+   }
+  },
+  "cooldownWeeks": 40,
+  "vars": {
+   "fee": "rand(8, 20) * 1000 * scale"
+  }
+ },
+ {
+  "id": "legal_phone_smash",
+  "title": "Applebee's Incident",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "VIDEO: {subject.last} grabs a fan's phone at Applebee's and smashes it into 30 pieces. The fan had been filming {him} eating riblets. The riblets were later described as 'excellent'."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay the fan for a new phone and a gag order ({$fee})",
+    "effects": [
+     "spend('settlements', vars.fee)",
+     "heat += 1"
+    ],
+    "result": "The fan gets a new phone, two front-row seats and a lawyer's letter. He posts about the seats.",
+    "bot": 1,
+    "ethics": -1
+   },
+   {
+    "label": "Let the cops handle it",
+    "effects": [
+     "arrest(subject, 'phone_smash')"
+    ],
+    "result": "{He} spends a night in a cell next to a man arrested for the same thing at a Chili's.",
+    "default": true
+   },
+   {
+    "label": "Make {him} apologize and buy the guy riblets",
+    "effects": [
+     "media += 2",
+     "subject.morale -= 3"
+    ],
+    "result": "They eat riblets together on camera. It's weirdly touching.",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.legal == 'free' && !f.parody && f.traits.has('Hothead')"
+   }
+  },
+  "cooldownWeeks": 40,
+  "vars": {
+   "fee": "rand(2, 6) * 1000 * scale"
+  }
+ },
+ {
+  "id": "legal_weapon",
+  "title": "It Was For Bears",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Airport security found a handgun in {subject.first}'s gym bag. {He} says it was 'for bears'. {He} was flying to Miami.",
+    "speaker": "Your head of security"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Bail Office",
+    "effects": [
+     "arrest(subject, 'weapons')",
+     "news('scandal', -0.4, 5)"
+    ],
+    "result": "It's a whole thing.",
+    "default": true
+   },
+   {
+    "label": "Suspend {him} for a month on top",
+    "effects": [
+     "arrest(subject, 'weapons')",
+     "suspend(subject, 4)",
+     "commission += 2",
+     "media += 1"
+    ],
+    "result": "The commission likes the suspension. The bears are relieved.",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.legal == 'free' && !f.parody && (f.traits.has('Paranoid') || f.traits.has('Hothead'))"
+   }
+  },
+  "cooldownWeeks": 104,
+  "tags": [
+   "serious"
+  ]
+ },
+ {
+  "id": "legal_possession",
+  "title": "The Glovebox",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Routine traffic stop. Officers found enough party favors in {subject.first}'s glovebox to stock a music festival. {He} says the glovebox belongs to {his} cousin. It's {his} car. {He} doesn't have a cousin.",
+    "speaker": "{subject.manager}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Bail Office, then mandatory rehab",
+    "effects": [
+     "arrest(subject, 'possession')",
+     "subject.addiction -= 15",
+     "follow('legal_dui_rehab', 1)"
+    ],
+    "result": "Paperwork and a rehab brochure, together at last.",
+    "ethics": 1
+   },
+   {
+    "label": "Bail Office and hope it goes away",
+    "effects": [
+     "arrest(subject, 'possession')"
+    ],
+    "result": "It does not go away.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.legal == 'free' && !f.parody && (f.addiction > 35 || f.traits.has('Party Animal'))"
+   }
+  },
+  "cooldownWeeks": 60,
+  "chain": "dui"
+ },
+ {
+  "id": "legal_fan_assault",
+  "title": "Come Down Here and Say That",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A heckler at {subject.first}'s public workout yelled 'you're washed!'. {subject.first} went over the barricade. The heckler is fine. The barricade is not. Neither is {subject.first}'s legal situation.",
+    "speaker": "Your event manager"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Bail Office",
+    "effects": [
+     "arrest(subject, 'assault_fan')",
+     "subject.hype += 5"
+    ],
+    "result": "Weirdly, ticket sales go up.",
+    "default": true
+   },
+   {
+    "label": "Pay off the heckler before charges ({$fee})",
+    "effects": [
+     "spend('settlements', vars.fee)",
+     "heat += 2"
+    ],
+    "result": "The heckler suddenly 'doesn't want to press charges'. He also suddenly owns a boat.",
+    "bot": 1,
+    "ethics": -2
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.legal == 'free' && !f.parody && f.traits.has('Hothead')"
+   }
+  },
+  "cooldownWeeks": 60,
+  "vars": {
+   "fee": "rand(15, 40) * 1000 * scale"
+  }
+ },
+ {
+  "id": "legal_street_race",
+  "title": "Fast & Furiously Stupid",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "{subject.first} drag raced a car at a red light. The car was an unmarked police cruiser. {He} won the race. {He} lost everything else.",
+    "speaker": "{subject.manager}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Bail Office",
+    "effects": [
+     "arrest(subject, 'racing')",
+     "subject.followers *= 1.2"
+    ],
+    "result": "The dashcam clip is the most-watched thing {he} has ever done, including fights.",
+    "default": true
+   },
+   {
+    "label": "Sell the dashcam rights to a car show ({$fee})",
+    "effects": [
+     "arrest(subject, 'racing')",
+     "earn('licensing', vars.fee)",
+     "commission -= 2"
+    ],
+    "result": "The car show buys it. The commission buys a stress ball.",
+    "bot": 1,
+    "ethics": -1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.legal == 'free' && !f.parody && f.traits.has('Reckless Driver')"
+   }
+  },
+  "cooldownWeeks": 60,
+  "chain": "reckless",
+  "vars": {
+   "fee": "rand(5, 15) * 1000 * scale"
+  }
+ },
+ {
+  "id": "legal_trespass",
+  "title": "A 3AM Visit",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "{subject.first} showed up at {his} rival's gym at 3am 'to talk'. The rival was not there. A janitor was. {subject.first} talked to the janitor for two hours. The janitor called the police.",
+    "speaker": "{subject.manager}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Bail Office",
+    "effects": [
+     "arrest(subject, 'trespass')",
+     "subject.hype += 4"
+    ],
+    "result": "The janitor goes viral. He gets a podcast.",
+    "default": true
+   },
+   {
+    "label": "Turn it into the promo for the fight",
+    "effects": [
+     "arrest(subject, 'trespass')",
+     "subject.hype += 10",
+     "commission -= 2",
+     "media -= 1"
+    ],
+    "result": "'He came to MY HOUSE.' The poster writes itself.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.legal == 'free' && !f.parody && f.rivals.length > 0"
+   }
+  },
+  "cooldownWeeks": 60
+ },
+ {
+  "id": "legal_vandal",
+  "title": "The Billboard",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "Someone spray-painted 'SOFT' and a crude anatomical drawing across a billboard of {subject.last}'s next opponent. Security cameras show it was {subject.last}. {He} also signed it."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay for the billboard ({$fee})",
+    "effects": [
+     "spend('settlements', vars.fee)",
+     "subject.hype += 6"
+    ],
+    "result": "The billboard company is paid. The drawing is now an NFT.",
+    "default": true
+   },
+   {
+    "label": "Let the cops have {him}",
+    "effects": [
+     "arrest(subject, 'vandalism')",
+     "subject.hype += 8"
+    ],
+    "result": "{He} gets community service cleaning billboards. {He} cleans {his} own billboard first."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.legal == 'free' && !f.parody && f.traits.has('Trash Talker')"
+   }
+  },
+  "cooldownWeeks": 60,
+  "vars": {
+   "fee": "rand(3, 9) * 1000 * scale"
+  }
+ },
+ {
+  "id": "legal_gym_fraud",
+  "title": "The Lifetime Membership",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "CLASS ACTION: 400 members of '{subject.last} Elite MMA & Smoothie Bar' allege they paid for 'lifetime memberships' before the gym closed after nine days. The gym is now a vape shop. Also owned by {subject.last}.",
+    "title": "NOTICE OF CLASS ACTION"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Refund the members from promotion funds ({$fee})",
+    "effects": [
+     "spend('settlements', vars.fee)",
+     "media += 2",
+     "subject.loyalty += 5",
+     "subject.debt += vars.fee"
+    ],
+    "result": "Members get refunds and a free ticket. Some become fans. Most remain furious.",
+    "ethics": 1
+   },
+   {
+    "label": "Let {him} go to court",
+    "effects": [
+     "arrest(subject, 'gym_fraud')"
+    ],
+    "result": "Court it is.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.legal == 'free' && !f.parody && f.business.length > 0 && f.moneyIQ < 50"
+   }
+  },
+  "cooldownWeeks": 104,
+  "vars": {
+   "fee": "rand(30, 70) * 1000 * scale"
+  }
+ },
+ {
+  "id": "legal_warrant",
+  "title": "Missed Court",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "{subject.first} missed a court date because {he} was at a fight camp in Thailand. The judge has issued a bench warrant. {He} lands in four hours.",
+    "speaker": "Your general counsel"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Have a lawyer meet {him} at the airport ({$fee})",
+    "effects": [
+     "spend('legal', vars.fee)",
+     "commission -= 1"
+    ],
+    "result": "The lawyer greets {him} with a sign reading 'YOU ARE UNDER ARREST (SORT OF)'.",
+    "default": true
+   },
+   {
+    "label": "Tell {him} to stay in Thailand a while",
+    "effects": [
+     "injure(subject, 8, 'avoiding a warrant')",
+     "heat += 4"
+    ],
+    "result": "{He} stays in Thailand for two months. {His} Muay Thai improves. {His} legal situation does not.",
+    "bot": 1,
+    "ethics": -2
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.legal == 'bail' && !f.parody"
+   }
+  },
+  "cooldownWeeks": 40,
+  "vars": {
+   "fee": "rand(5, 15) * 1000 * scale"
+  }
+ },
+ {
+  "id": "buried_doc_surfaces",
+  "title": "Skeletons in the Filing Cabinet",
+  "category": "legal",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Funny story. A {doc} you buried a while back just landed on a reporter's desk. The reporter is calling everyone. Including your mother.",
+    "speaker": "Your general counsel"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Deny everything",
+    "effects": [
+     "heat += 6",
+     "media -= 5",
+     "news('investigation', -0.6, 7)"
+    ],
+    "result": "'I've never seen that document in my life.' Your fingerprints have.",
+    "bot": 1,
+    "ethics": -2,
+    "default": true
+   },
+   {
+    "label": "Own it and pay the fine ({$fine})",
+    "effects": [
+     "spend('fines', vars.fine)",
+     "media += 1",
+     "commission -= 3",
+     "heat -= 2"
+    ],
+    "result": "You pay the fine and say 'mistakes were made'. Passive voice, the champion of executives.",
+    "ethics": 1
+   },
+   {
+    "label": "Blame an intern",
+    "effects": [
+     "fighters -= 1",
+     "media -= 2",
+     "heat += 2"
+    ],
+    "result": "The intern is very upset. The intern also has screenshots."
+   }
+  ],
+  "chain": "buried",
+  "followupOnly": true,
+  "vars": {
+   "fine": "rand(10, 40) * 1000 * scale",
+   "doc": "'document'"
+  }
+ },
+ {
+  "id": "doping_whistleblower",
+  "title": "The Whistleblower",
+  "category": "doping",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A lab tech says {subject.last}'s failed test was buried. She has emails, timestamps and a very calm voice. She's talking to The Pathetic tomorrow unless someone gives her a reason not to.",
+    "speaker": "Anonymous caller"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Come clean: suspend {subject.last} now",
+    "effects": [
+     "suspend(subject, 52)",
+     "media += 2",
+     "commission += 3",
+     "heat -= 3",
+     "news('doping', -0.3, 6)"
+    ],
+    "result": "It's ugly, but it's over. Mostly.",
+    "ethics": 2
+   },
+   {
+    "label": "Offer her a 'consulting role' ({$fee})",
+    "effects": [
+     "spend('consulting', vars.fee)",
+     "heat += 8",
+     "chaos += 4",
+     "follow('doping_whistleblower_returns', 20)"
+    ],
+    "result": "She accepts. Her first consulting report is titled 'Why You Should Be In Prison'.",
+    "bot": 1,
+    "ethics": -3
+   },
+   {
+    "label": "Ignore her",
+    "effects": [
+     "heat += 5",
+     "media -= 8",
+     "news('investigation', -0.8, 9)"
+    ],
+    "result": "The Pathetic runs it on the front page. Part one of four.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours"
+   }
+  },
+  "chain": "whistle",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(30, 80) * 1000 * scale"
+  }
+ },
+ {
+  "id": "doping_whistleblower_returns",
+  "title": "She Kept Copies",
+  "category": "doping",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "Turns out your 'consultant' kept copies of everything, including the payment. A federal prosecutor would like to discuss your 'consulting arrangements'.",
+    "title": "SUBPOENA"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Lawyer up ({$fee})",
+    "effects": [
+     "spend('legal', vars.fee)",
+     "heat += 6"
+    ],
+    "result": "The lawyers lawyer. Everyone lawyers.",
+    "default": true
+   },
+   {
+    "label": "Cooperate fully",
+    "effects": [
+     "heat -= 5",
+     "patience -= 10",
+     "media += 2"
+    ],
+    "result": "You cooperate. The board is livid. The prosecutor is delighted.",
+    "ethics": 2
+   }
+  ],
+  "chain": "whistle",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(60, 150) * 1000 * scale"
+  }
+ },
+ {
+  "id": "scale_scandal",
+  "title": "The Broken Scale",
+  "category": "commission",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "The commission has reviewed weigh-in footage showing an official's hand on the scale during {subject.last}'s weigh-in. There is a lot of finger. They want an explanation.",
+    "title": "COMMISSION INQUIRY"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Blame a 'technical malfunction'",
+    "effects": [
+     "commission -= 6",
+     "heat += 3"
+    ],
+    "result": "They do not believe in technical malfunctions that wear wedding rings.",
+    "default": true
+   },
+   {
+    "label": "Pay the fine and fire the official ({$fine})",
+    "effects": [
+     "spend('fines', vars.fine)",
+     "commission -= 2",
+     "heat -= 1"
+    ],
+    "result": "Someone takes the fall. It isn't you. This time.",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "true"
+   }
+  },
+  "followupOnly": true,
+  "vars": {
+   "fine": "rand(15, 40) * 1000 * scale"
+  }
+ },
+ {
+  "id": "holdout_threat",
+  "title": "The Holdout",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "{subject.first} won't fight until {he} gets a raise. {He}'s posting cryptic pictures of a boxing ring and a crypto exchange logo. {His} manager says {he}'s 'exploring options'.",
+    "speaker": "{subject.manager}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Give {him} a 25% raise",
+    "effects": [
+     "raise(subject, 25)",
+     "subject.morale += 15",
+     "subject.loyalty += 10",
+     "fighters += 1"
+    ],
+    "result": "{He} posts a picture of a check with your face drawn on it. Affectionately.",
+    "ethics": 1
+   },
+   {
+    "label": "Call {his} bluff",
+    "effects": [
+     "subject.morale -= 10",
+     "subject.beef += 10",
+     "fans -= 1"
+    ],
+    "result": "{He} sits out. The internet takes sides. Your side is smaller.",
+    "bot": 1,
+    "default": true
+   },
+   {
+    "label": "Strip {him} of rankings and bench {him}",
+    "effects": [
+     "subject.hype -= 15",
+     "fighters -= 3",
+     "media -= 2"
+    ],
+    "result": "Benched. The locker room is quietly furious.",
+    "bot": 1,
+    "ethics": -1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "true"
+   }
+  },
+  "chain": "holdout",
+  "followupOnly": true
+ }
+]

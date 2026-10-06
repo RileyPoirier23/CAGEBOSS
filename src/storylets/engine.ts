@@ -18,7 +18,7 @@ import { makeContract, sign as signFighter } from '../sim/newgame';
 import { divisionName } from '../sim/divisions';
 
 /** Categories that must never cast a real-person parody in a role. */
-export const SERIOUS_CATEGORIES = new Set(['legal', 'doping']);
+export const SERIOUS_CATEGORIES = new Set(['legal', 'doping', 'speech']);
 const SPECIAL_CATEGORIES = new Set(['fightnight', 'presser']);
 
 let defsById: Map<string, StoryletDef> | null = null;
@@ -51,7 +51,7 @@ export function fighterView(s: GameState, f: Fighter): Record<string, any> {
     parody: !!f.parody, legend: !!f.legend, record: f.record, wins: f.record.w, losses: f.record.l, streak: f.streak, koLosses: f.koLosses,
     injured: isInjured(f, s.week), booked: isBooked(s, f.id), purse: f.contract?.purse ?? 0, boutsLeft: f.contract?.boutsLeft ?? 0,
     beef: f.beefWithYou, rivals: f.rivals, kids: f.family.kids, married: !!f.family.spouse, country: f.country, hometown: f.hometown,
-    vices: f.vices, business: f.business, gym: f.gym, coach: f.coach, manager: f.manager, skills: f.skills,
+    vices: f.vices, business: f.business, gym: f.gym, coach: f.coach, managerId: f.manager, manager: content().managers.find((m) => m.id === f.manager)?.name ?? f.manager, skills: f.skills,
     weightMisses: f.weightMisses, cutman: f.cutman.name, cutmanRating: f.cutman.rating, scout: f.scout,
     weeksSinceFight: s.week - f.lastFightWeek, titleDefenses: f.titleDefenses,
     he: p.he, his: p.his, him: p.him, He: p.He, His: p.His, man: p.man,
@@ -184,6 +184,9 @@ function candidatesFor(s: GameState, type: string, viewCache: Map<string, Record
   return [];
 }
 
+/** Follow-ups keep their cast even if role filters no longer match. */
+const strictPresetSkip = new Set<string>();
+
 /** Try to bind all roles. Returns null if any role can't be cast. */
 export function bindRoles(
   s: GameState, d: StoryletDef, rng: Rng, base: Env, preset: Record<string, string> = {}, viewCache = new Map<string, Record<string, any>>(), existenceOnly = false,
@@ -195,6 +198,19 @@ export function bindRoles(
     if (preset[name]) {
       const v = roleView(s, rd.type, preset[name]);
       if (!v) return null;
+      if (rd.where && !existenceOnly) {
+        env.f = v;
+        env.r = v;
+        let ok = false;
+        try {
+          ok = !!evaluate(rd.where, env);
+        } catch {
+          ok = false;
+        }
+        delete env.f;
+        delete env.r;
+        if (!ok && !strictPresetSkip.has(d.id)) return null;
+      }
       roles[name] = preset[name];
       env[name] = v;
       continue;
@@ -448,7 +464,7 @@ export function trigger(s: GameState, id: string, rng: Rng, preset: Record<strin
 export function renderText(s: GameState, inst: StoryletInstance, text: string): string {
   const d = def(inst.id);
   const env: Env = { ...rolesEnv(s, d ?? ({} as StoryletDef), inst.roles), vars: inst.vars, ...inst.vars };
-  const first = d && Object.keys(d.roles ?? {})[0];
+  const first = d && (d.roles?.subject ? 'subject' : Object.keys(d.roles ?? {})[0]);
   const p = first && env[first] && env[first].he ? env[first] : { he: 'he', his: 'his', him: 'him', He: 'He', His: 'His', man: 'man' };
   env.he = p.he;
   env.his = p.his;
@@ -706,6 +722,16 @@ export function effectFunctions(ctx: EffectCtx): Env {
     reporterRel: (role: any, delta: number) => {
       const id = roleId(ctx, role);
       if (id && s.media.reporters[id]) s.media.reporters[id].rel = clamp(s.media.reporters[id].rel + delta, -100, 100);
+    },
+    meter: (key: string, delta: number) => {
+      if ((METER_KEYS as readonly string[]).includes(key)) adjustMeter(s, key as MeterKey, delta);
+      else if (key === 'heat' || key === 'patience' || key === 'chaos') adjustHidden(s, key, delta);
+    },
+    setFlag: (key: string, value: number | string | boolean) => {
+      s.flags[key] = value;
+    },
+    addFlag: (key: string, delta: number) => {
+      s.flags[key] = (Number(s.flags[key]) || 0) + delta;
     },
     allFighters: (key: string, delta: number) => {
       for (const f of Object.values(s.fighters)) {

@@ -176,9 +176,18 @@ export function createNewGame(opts: NewGameOpts): GameState {
   const remaining = Object.values(s.fighters).filter((f) => f.status === 'free-agent' && !f.legend);
   remaining.sort((a, b) => overall(b.skills) - overall(a.skills));
   let ri = 0;
+  // authored characters can start at a specific rival
+  for (const f of remaining) {
+    const sw = (f as any).startWith as string | undefined;
+    if (sw && s.rivals[sw]?.alive) {
+      f.promotion = sw;
+      f.status = 'active';
+      f.contract = { boutsLeft: rng.int(2, 4), purse: marketPurse(s, f), winBonus: 0, champClause: false, exclusive: true, signedWeek: 0 };
+    }
+  }
   for (const f of remaining) {
     if (!rivalsDefs.length) break;
-    if ((f as any).startWith === 'free') continue;
+    if ((f as any).startWith || f.promotion) continue;
     if (rng.chance(0.5)) {
       const r = rivalsDefs[ri++ % rivalsDefs.length];
       f.promotion = r.id;

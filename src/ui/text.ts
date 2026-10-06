@@ -15,6 +15,32 @@ interface Atlas {
 
 const atlases = new Map<string, Atlas>();
 
+/**
+ * HD small text: the renderer draws at the integer window scale, so "small"
+ * text is drawn with the main face at ~2/3 size, landing on whole device
+ * pixels. That keeps the pixel look but gives fine print real lowercase,
+ * descenders and readable letterforms instead of a 3x5 caps face.
+ */
+const SMALL_NOMINAL = 2 / 3;
+const SMALL_LH = 7;
+let resolution = 1;
+const live = new Set<PixelText>();
+
+export function setTextResolution(r: number): void {
+  if (Math.abs(r - resolution) < 1e-6) return;
+  resolution = r;
+  for (const t of [...live]) {
+    if (t.destroyed) live.delete(t);
+    else t.rebuild();
+  }
+}
+
+/** Actual small-text glyph pixel size in logical units (whole device pixels, never larger than nominal). */
+function smallK(): number {
+  const px = Math.floor(resolution * SMALL_NOMINAL + 1e-6);
+  return px >= 1 ? px / resolution : 0;
+}
+
 function buildAtlas(face: FontFace): Atlas {
   const chars = Object.keys(face.glyphs);
   const cellW = 8;
@@ -66,13 +92,23 @@ export class PixelText extends Container {
   textWidth = 0;
   textHeight = 0;
   private face: FontFace;
+  private hd = false;
 
   constructor(
     private str: string,
     private opts: TextOpts = {},
   ) {
     super();
-    this.face = opts.small ? SMALL_FACE : MAIN_FACE;
+    this.face = MAIN_FACE;
+    this.build();
+    if (opts.small) {
+      live.add(this);
+      this.on('destroyed', () => live.delete(this));
+    }
+  }
+
+  rebuild(): void {
+    this.removeChildren().forEach((c) => c.destroy());
     this.build();
   }
 
@@ -90,18 +126,27 @@ export class PixelText extends Container {
   }
 
   private build(): void {
+    const small = !!this.opts.small;
+    const k = small ? smallK() : 1;
+    this.hd = small && k > 0;
+    this.face = small && !this.hd ? SMALL_FACE : MAIN_FACE;
     const face = this.face;
     const atlas = atlasFor(face);
     const color = this.opts.color ?? 0xe6dcc4;
-    const scale = this.opts.scale ?? 1;
-    const text = normalizeText(this.str ?? '');
-    let lines = this.opts.width ? wrapText(face, text, Math.floor(this.opts.width / scale)) : text.split('\n');
+    // glyph pixel size in logical units; layout (wrapping) always uses the nominal size
+    const scale = (this.opts.scale ?? 1) * (this.hd ? k : 1);
+    const layoutScale = (this.opts.scale ?? 1) * (this.hd ? SMALL_NOMINAL : 1);
+    let text = normalizeText(this.str ?? '');
+    // single-line small text reads as a label: keep the small-caps look
+    if (small && !this.opts.width) text = upperKeepMarkup(text);
+    let lines = this.opts.width ? wrapText(face, text, Math.floor(this.opts.width / layoutScale)) : text.split('\n');
     if (this.opts.maxLines && lines.length > this.opts.maxLines) {
       lines = lines.slice(0, this.opts.maxLines);
       lines[lines.length - 1] = lines[lines.length - 1].replace(/.{0,3}$/, '...');
     }
     this.lines = lines;
-    const lh = face.lineHeight + (this.opts.lineGap ?? 0);
+    // line height in glyph pixels (small HD text keeps the old 7px logical pitch)
+    const lh = this.hd ? (SMALL_LH + (this.opts.lineGap ?? 0)) / k : face.lineHeight + (this.opts.lineGap ?? 0);
     let curColor = color;
     let maxW = 0;
     const layers: [number, number][] = this.opts.shadow !== undefined ? [[1, this.opts.shadow], [0, -1]] : [[0, -1]];
@@ -112,6 +157,7 @@ export class PixelText extends Container {
         maxW = Math.max(maxW, lineW);
         let x = 0;
         const boxW = this.opts.width ? Math.floor(this.opts.width / scale) : lineW;
+        const rowY = this.hd ? Math.round(li * lh * k * resolution) / resolution / scale : li * lh;
         if (this.opts.align === 'center') x = Math.floor((boxW - lineW) / 2);
         else if (this.opts.align === 'right') x = boxW - lineW;
         let i = 0;
@@ -139,7 +185,7 @@ export class PixelText extends Container {
             if (tex) {
               const s = new Sprite(tex);
               s.x = (x + offset) * scale;
-              s.y = (li * lh + offset) * scale;
+              s.y = (rowY + offset) * scale;
               s.scale.set(scale);
               s.tint = shadowColor >= 0 ? shadowColor : curColor;
               this.addChild(s);
@@ -150,21 +196,33 @@ export class PixelText extends Container {
         }
       });
     }
-    this.textWidth = (this.opts.width ? Math.floor(this.opts.width / scale) : maxW) * scale;
-    this.textHeight = (lines.length * lh - (lh - face.cellHeight + 2)) * scale;
+    if (this.hd) {
+      this.textWidth = this.opts.width ? this.opts.width : Math.ceil(maxW * scale);
+      this.textHeight = Math.max(0, lines.length * SMALL_LH - 2) * (this.opts.scale ?? 1);
+    } else {
+      this.textWidth = (this.opts.width ? Math.floor(this.opts.width / scale) : maxW) * scale;
+      this.textHeight = (lines.length * lh - (lh - face.cellHeight + 2)) * scale;
+    }
   }
 }
 
+function upperKeepMarkup(s: string): string {
+  return s.replace(/(\{#[0-9a-fA-F]{6}\}|\{\/\})|([^{]+|\{)/g, (_m, tag, txt) => tag ?? txt.toUpperCase());
+}
+
+/** Layout width of a single line. Small text measures as an (upper-cased) label at nominal size. */
 export function measure(text: string, small = false): number {
-  return measureLine(small ? SMALL_FACE : MAIN_FACE, text);
+  if (!small) return measureLine(MAIN_FACE, text);
+  return Math.ceil(measureLine(MAIN_FACE, upperKeepMarkup(normalizeText(text))) * SMALL_NOMINAL);
 }
 
 export function wrap(text: string, width: number, small = false): string[] {
-  return wrapText(small ? SMALL_FACE : MAIN_FACE, text, width);
+  if (!small) return wrapText(MAIN_FACE, text, width);
+  return wrapText(MAIN_FACE, text, Math.floor(width / SMALL_NOMINAL));
 }
 
 export function lineHeight(small = false): number {
-  return (small ? SMALL_FACE : MAIN_FACE).lineHeight;
+  return small ? SMALL_LH : MAIN_FACE.lineHeight;
 }
 
 /** Colour markup helper. */

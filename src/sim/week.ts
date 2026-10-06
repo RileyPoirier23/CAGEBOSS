@@ -336,12 +336,14 @@ function resolveWeighIn(s: GameState, d: DeskDoc, stamp: Stamp, rng: Rng): strin
       }
       return 'Both fighters on weight. Faceoff time.';
     case 'deny':
+      if (missedBy && offender) {
+        // the offender is pulled; the opponent keeps the slot if we find a replacement from our roster
+        b.pulled = [...(b.pulled ?? []), missedBy];
+        addNews(s, { tags: ['weight_miss'], vars: { fighter: fullName(offender), last: offender.last, event: ev.name }, weight: 4, tone: -0.2 });
+        return `${offender.last} is pulled from the card and is "devastated" (eating a burrito). Find a replacement from the roster, or the bout is off.`;
+      }
       b.status = 'cancelled';
       renumber(ev);
-      if (missedBy && offender) {
-        addNews(s, { tags: ['weight_miss'], vars: { fighter: fullName(offender), last: offender.last, event: ev.name }, weight: 4, tone: -0.2 });
-        return `Bout cancelled. ${offender.last} is "devastated" (eating a burrito).`;
-      }
       adjustMeter(s, 'fighters', -1);
       return 'You cancelled a bout where both fighters made weight. The locker room is confused.';
     case 'escalate':

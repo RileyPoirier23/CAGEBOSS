@@ -41,6 +41,7 @@ export interface Look {
   scar: number; // 0..3
   tattoo: number; // 0..3
   build: number; // 0 lean, 1 average, 2 heavy
+  glasses?: number; // 0 none, 1 dark shades, 2 nerd frames
 }
 
 export interface Contract {
@@ -123,6 +124,7 @@ export interface Fighter {
   retiredWeek?: number;
   hallOfFame?: boolean;
   weightMisses: number;
+  h2h?: Record<string, number>; // completed fights against each opponent id
   modded?: boolean;
   // ---- careers & scouting
   potential: number; // ceiling for skill growth (40..99)
@@ -165,6 +167,8 @@ export interface TickerLine {
   act: string; // animation cue for the mini arena (jab, kick, shoot, gnp, sub, kd, ko, ...)
   pos: 'stand' | 'clinch' | 'atop' | 'btop'; // position after the action
   hp: [number, number];
+  key?: string; // template key that produced the line (drives commentary)
+  speaker?: string; // commentary booth line (lon, blow, dc, braille, biscuit)
 }
 
 export interface CornerReport {
@@ -216,6 +220,8 @@ export interface Bout {
   purse: [number, number];
   finePct: number; // weight-miss fine applied to a / b side (pct of purse)
   missedBy: string | null;
+  meeting?: number; // 1 = first fight between this pair, 2 = rematch (II), 3 = trilogy (III)...
+  pulled?: string[]; // fighters pulled from this bout (missed weight) awaiting a replacement
   result?: FightResult;
   bonus?: string[]; // fighter ids that received performance bonuses
 }

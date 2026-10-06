@@ -68,7 +68,7 @@ export function openFighterEditor(g: Game, id: string | null, onDone: () => void
         const x = (i % 3) * 150;
         const y = Math.floor(i / 3) * 16;
         area.addChild(text(label, x, y + 3, { small: true, color: PAL.ash }));
-        area.addChild(stepper(x + 40, y, 100, f.look[k], 0, n - 1, 1, String, (v) => { f.look[k] = v; draw(); }));
+        area.addChild(stepper(x + 40, y, 100, f.look[k] ?? 0, 0, n - 1, 1, String, (v) => { f.look[k] = v; draw(); }));
       });
       area.addChild(button('RANDOMIZE LOOK', 0, 70, 90, 13, () => {
         const r2 = new Rng(Date.now() >>> 0);

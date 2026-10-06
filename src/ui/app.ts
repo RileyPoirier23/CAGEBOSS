@@ -9,6 +9,7 @@ import { setColorblind, PAL } from '../art/palette';
 import { setMuted, setMusic, setVolumes, sfx } from '../audio/sfx';
 import { W, H, tooltip, clearChildren, dimmer, box, text } from './kit';
 import { bus } from '../core/events';
+import { setTextResolution } from './text';
 
 export interface Settings {
   textSpeed: number; // 1 slow .. 3 fast, 4 instant
@@ -20,6 +21,8 @@ export interface Settings {
   sfxVolume: number;
   fightSpeed: number; // 1..4
   clockSpeed: number; // multiplier for the desk clock (0 = paused/relaxed)
+  fightCam?: 'side' | 'tv' | 'top'; // spectating camera
+  intros?: boolean; // Juiced Butler introductions before watched bouts
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -105,6 +108,9 @@ export class Game {
     const s = this.settings.uiScale || Math.max(1, Math.floor(Math.min(window.innerWidth / W, window.innerHeight / H)));
     this.scale = s;
     const c = this.app.canvas;
+    const res = s * (window.devicePixelRatio || 1);
+    this.app.renderer.resize(W, H, res);
+    setTextResolution(res);
     c.style.width = W * s + 'px';
     c.style.height = H * s + 'px';
     bus.emit('resize', s);

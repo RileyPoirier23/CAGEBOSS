@@ -277,6 +277,20 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
     b.set(eyeL + 1, eyeY, 0xe8e3d6);
     b.set(eyeR + 1, eyeY, 0xe8e3d6);
   }
+  if (look.glasses === 1) {
+    // dark shades
+    b.hline(eyeL - 2, eyeR + 2, eyeY - 1, 0x0c0c0c);
+    b.rect(eyeL - 1, eyeY, 4, 2, 0x111111);
+    b.rect(eyeR - 1, eyeY, 4, 2, 0x111111);
+    b.set(eyeL, eyeY, 0x5a5a6a);
+    b.set(eyeR, eyeY, 0x5a5a6a);
+  } else if (look.glasses === 2) {
+    b.hline(eyeL - 1, eyeR + 2, eyeY - 1, 0x2a2a2a);
+    b.set(eyeL - 1, eyeY, 0x2a2a2a);
+    b.set(eyeL + 2, eyeY, 0x2a2a2a);
+    b.set(eyeR - 1, eyeY, 0x2a2a2a);
+    b.set(eyeR + 2, eyeY, 0x2a2a2a);
+  }
   // eyebrow cut scar (fighter staple)
   if (look.scar >= 1) b.set(eyeR + 1, browY, skinL);
   if (look.scar >= 2) {

@@ -237,6 +237,14 @@ export interface Content {
   backstories: BackstoryDef[];
   templates: TemplateBank;
   docs: DocContent;
+  commentary: CommentaryBank;
+}
+
+export interface CommentaryBank {
+  speakers: Record<string, { name: string; short: string; color: string; bio: string }>;
+  booth: Record<string, Record<string, string[]>>;
+  fallback: Record<string, string[]>;
+  butler: Record<string, string[] | string>;
 }
 
 let current: Content | null = null;
@@ -315,5 +323,6 @@ export function buildContent(files: Record<string, unknown>): Content {
     // templates/docs fall back to empty banks so partial content still loads
     templates: get('documents/templates.json', { ticker: {}, social: {}, presser: {}, ledgerQuips: [], misc: {} }),
     docs: get('documents/docs.json', { substances: [], doctors: [], scans: [], countries: [], expenseItems: [], sponsorCategories: [] }),
+    commentary: get('documents/commentary.json', { speakers: {}, booth: {}, fallback: {}, butler: {} }),
   };
 }
