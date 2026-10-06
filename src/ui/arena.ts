@@ -13,7 +13,7 @@ import { PixelText, pixelArtResolution } from './text';
 import { portrait } from './sprites';
 import { sfx } from '../audio/sfx';
 import { heightStr } from '../core/format';
-import { Rig, Pose, POSES, drawRig, lerpRig, lookFor, stanceGuard, Look2 } from './rig';
+import { Rig, Pose, POSES, drawRig, lerpRig, mirrorRig, lookFor, stanceGuard, Look2 } from './rig';
 
 export const AW = 480;
 export const AH = 150;
@@ -92,6 +92,18 @@ function subKindFor(text: string, attackerOnTop: boolean): SubKind {
 
 /** Where the TV info card sits during walkout intros (under the event name and LIVE bug). */
 const TV_TOP_Y = 36;
+/** Half the distance between the two when they touch gloves (lead arms out, gloves just meeting). */
+const TOUCH_GAP = 27;
+/** Corner stools (x) for each side. */
+const CORNERS = [CAGE_L + 26, CAGE_R - 26];
+/**
+ * Feet-to-feet distance an attack needs to land (guard pose reach + lunge into the man's face or body).
+ * Further apart than this and the attacker steps in before the line plays.
+ */
+const REACH: Record<string, number> = {
+  jab: 50, cross: 46, punch: 46, kd: 46, ko: 48, tko: 46, foul: 44, elbow: 38, knee: 36,
+  legkick: 48, kick: 50, headkick: 52, td: 46, sprawl: 46, clinch: 36, sub: 28,
+};
 type ArenaScene = 'intro' | 'fight' | 'ceremony';
 
 interface Actor {
@@ -179,7 +191,22 @@ export class ArenaView extends Container {
   private stainG = new Graphics();
   private stainsDrawn = -1;
   private matLogo = new Sprite();
-  private walkInT = 0;
+  /** walking out of the corners to meet in the middle: no exchanges until they get there */
+  private walkIn = false;
+  private walkT = 0;
+  /** the bell went: both men walk back to their corners */
+  private roundOver = false;
+  /** before the opening bell: everyone stays where they are (corners, or the walkout spots) */
+  private prefight = true;
+  /** the referee is busy (separating, checking a downed man): he holds his spot */
+  private refHold = 0;
+  /** fight-speed setting (1 = normal): walk-outs, glove touches and the walk back to the corners hurry up with it */
+  pace = 1;
+  /** lines waiting for the fighters to be in range; the attacker steps in to close the gap first */
+  private held: TickerLine[] = [];
+  private engage: { atk: 0 | 1; reach: number; t: number } | null = null;
+  /** where the pair went down: ground work stays on that patch of canvas instead of sliding around */
+  private groundX = AW / 2;
   private slowTag!: PixelText;
   private touchT = 0; // round 1: ref brings them together, they touch gloves
   private slowT = 0; // slow motion after knockdowns / knockouts
@@ -210,8 +237,8 @@ export class ArenaView extends Container {
     }
     this.L = [lookFor(A, 0, info.champs?.[0]), lookFor(B, 1, info.champs?.[1])];
     this.F = [
-      { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: AW / 2 - 24, lunge: 0, recoil: 0, facing: 1 },
-      { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: AW / 2 + 24, lunge: 0, recoil: 0, facing: -1 },
+      { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: CORNERS[0], lunge: 0, recoil: 0, facing: 1 },
+      { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: CORNERS[1], lunge: 0, recoil: 0, facing: -1 },
     ];
     this.ref = { rig: { ...POSES.stand }, pose: 'stand', x: AW / 2 + 70, tx: AW / 2 + 70, facing: -1, look: REF_LOOK, visible: true, spin: 0 };
     this.butler = { rig: { ...POSES.mic }, pose: 'mic', x: AW / 2, tx: AW / 2, facing: 1, look: BUTLER_LOOK, visible: false, spin: 0 };
@@ -547,6 +574,12 @@ export class ArenaView extends Container {
     if (this.mode === 'tv') this.lowerThird(w, 'WINNER');
   }
 
+  /** Send the referee somewhere with a job to do (he stops circling for a moment). */
+  private refTo(x: number, hold = 1.6): void {
+    this.ref.tx = x;
+    this.refHold = hold;
+  }
+
   private setActor(a: Actor, p: Pose): void {
     a.pose = p;
   }
@@ -618,20 +651,92 @@ export class ArenaView extends Container {
     if (big && this.mode === 'tv') this.cutTo('close', 0.25);
   }
 
-  cue(line: TickerLine): void {
+  /**
+   * Feed a ticker line. Anything that needs contact (strikes, clinch entries, shots) waits until
+   * the attacker has stepped into range, so nobody ever lands a punch on air from across the cage.
+   * `instant` applies the line on the spot (rebuilding the view mid-fight).
+   */
+  cue(line: TickerLine, instant = false): void {
+    if (instant) return this.apply(line);
+    this.held.push(line);
+    this.pumpHeld(0);
+  }
+
+  /** True while the arena is still acting something out that the next line must not interrupt. */
+  busy(): boolean {
+    if (this.scene !== 'fight' || this.finished) return false;
+    return this.held.length > 0 || this.walkIn || this.touchT > 0 || (this.roundOver && this.walkT < 2.5 && !this.atCorners());
+  }
+
+  /** Rebuilt mid-fight (lines replayed instantly): put everyone where the last line left them. */
+  settle(): void {
+    for (const l of this.held.splice(0)) this.apply(l);
+    this.engage = null;
+    this.walkIn = false;
+    this.touchT = 0;
+    const ground = this.ground === 'atop' || this.ground === 'btop';
+    this.F.forEach((f, i) => {
+      f.v = 0;
+      if (!this.prefight) f.x = this.resting || this.roundOver ? CORNERS[i] : ground ? this.groundX : this.center + (i === 0 ? -23 : 23);
+    });
+  }
+
+  private atCorners(): boolean {
+    return this.F.every((f, i) => Math.abs(f.x - CORNERS[i]) < 6);
+  }
+
+  /** How close (feet to feet) the attacker must be for this line to connect; 0 = no range needed. */
+  private reachFor(line: TickerLine): number {
+    if (line.speaker || line.side < 0 || this.scene !== 'fight' || this.finished) return 0;
+    if (this.ground !== 'stand' && this.ground !== 'clinch') return 0; // tangled up on the mat already
+    const r = REACH[line.act] ?? 0;
+    return r && /^miss_/.test(line.key ?? '') ? r + 8 : r;
+  }
+
+  /** Release held lines once their attacker is in range (or after a beat, so a fight can never stall). */
+  private pumpHeld(dt: number): void {
+    while (this.held.length) {
+      const line = this.held[0];
+      const reach = this.reachFor(line);
+      if (reach) {
+        // nobody throws at a man who is still picking himself up off the canvas
+        const floored = this.F.some((f) => f.pose === 'down' && f.poseT > 0);
+        const ready = !this.walkIn && this.touchT <= 0 && !this.resting && !this.roundOver && !this.prefight && !floored;
+        const d = Math.abs(this.F[1].x - this.F[0].x);
+        if (!ready || d > reach + 2) {
+          if (!this.engage) this.engage = { atk: (line.act === 'sprawl' ? 1 - line.side : line.side) as 0 | 1, reach, t: 0 };
+          this.engage.t += dt;
+          if (this.engage.t < (ready ? 1.2 : 8)) return;
+        }
+      }
+      this.held.shift();
+      this.engage = null;
+      // (if we gave up waiting, the downed man is back on his feet for it)
+      if (reach) for (const i of [0, 1] as const) if (this.F[i].pose === 'down' && this.F[i].poseT > 0 && this.F[i].poseT < 9000) this.setPose(i, 'guard', 0);
+      this.apply(line);
+    }
+  }
+
+  private apply(line: TickerLine): void {
     if (line.speaker) return; // booth chatter doesn't move anybody
     this.round = line.round;
     this.sec = line.t;
     this.hp = [line.hp[0], line.hp[1]];
     this.intensity = Math.max(1, line.intensity);
+    // a new round: out of the corners and into the middle (nothing lands until they meet)
+    if (line.key === 'opening' || line.key === 'round_start') this.walkOut(line.key === 'opening');
     const prevGround = this.ground;
     this.ground = line.pos;
+    if (line.act === 'bell') this.ground = 'stand'; // the bell breaks up whatever they were doing
     const wasDown = prevGround === 'atop' || prevGround === 'btop';
     const isDown = this.ground === 'atop' || this.ground === 'btop';
     if (isDown && !wasDown) {
       // hit the mat: most takedowns land in guard, good ones in side control or mount
       const r = Math.random();
       this.groundPos = r < 0.45 ? 'guard' : r < 0.72 ? 'side' : r < 0.88 ? 'mount' : 'back';
+      // the ground work happens where they fell: no sliding across the canvas
+      this.groundX = Math.max(CAGE_L + 60, Math.min(CAGE_R - 60, (this.F[0].x + this.F[1].x) / 2));
+      this.center = this.groundX;
     } else if (isDown && wasDown && prevGround !== this.ground) {
       this.groundPos = Math.random() < 0.6 ? 'guard' : 'mount'; // reversal
       this.subAnim = null;
@@ -640,16 +745,32 @@ export class ArenaView extends Container {
       this.groundPos = this.groundPos === 'guard' ? 'side' : this.groundPos === 'side' ? (Math.random() < 0.5 ? 'mount' : 'back') : this.groundPos;
     }
     if (!isDown) this.subAnim = null;
-    if (prevGround !== this.ground && (this.ground === 'stand')) {
+    if (prevGround !== this.ground && this.ground === 'stand') {
       this.setPose(0, 'guard', 0);
       this.setPose(1, 'guard', 0);
     }
+    if (!isDown && (wasDown || (prevGround === 'clinch' && this.ground === 'stand'))) {
+      // back to the feet / clinch broken: they push off each other and reset to range
+      this.center = (this.F[0].x + this.F[1].x) / 2;
+      this.F[0].v = -110;
+      this.F[1].v = 110;
+    }
     const a = line.side;
     if (a < 0) {
-      if (line.act === 'bell') sfx('bell');
+      if (line.act === 'bell') {
+        sfx('bell');
+        if (line.round >= this.rounds) this.finished = true; // final bell: it's over, the cards decide
+        else if (!this.finished) {
+          // end of the round: back to the corners
+          this.roundOver = true;
+          this.walkT = 0;
+          this.tdT = 0;
+          this.refTo(this.center);
+        }
+      }
       if (line.act === 'standup') {
         this.showCallout('STAND UP!');
-        this.ref.tx = this.center;
+        this.refTo(this.center);
       }
       return;
     }
@@ -658,6 +779,27 @@ export class ArenaView extends Container {
     const ground = this.ground === 'atop' || this.ground === 'btop';
     const bloody = this.hp[D] < 55 && Math.random() < 0.5;
     const sig = (A === 0 ? this.A : this.B).anim?.signature ?? [];
+    // an exchange on the feet: re-centre on the pair so they don't drift straight back out of range
+    if (!ground && REACH[line.act]) this.center = (this.F[0].x + this.F[1].x) / 2;
+    // a whiff: the shot is thrown for real, the other man slips or steps back, nothing connects
+    if (/^miss_/.test(line.key ?? '')) {
+      const kick = line.act === 'kick';
+      this.setPose(A, kick ? (Math.random() < 0.5 ? 'bodykick' : 'legkick') : Math.random() < 0.5 ? 'jab' : Math.random() < 0.5 ? 'cross' : 'hook', kick ? 0.38 : 0.26);
+      this.F[A].lunge = 5;
+      this.setPose(D, kick ? 'block' : Math.random() < 0.6 ? 'slip' : 'block', 0.3);
+      this.F[D].v = (this.F[D].v ?? 0) - this.F[D].facing * 70;
+      sfx('whoosh');
+      return;
+    }
+    // a feint: half a jab, a stamp, the other man flinches
+    if (line.act === 'idle') {
+      if (!ground) {
+        this.setPose(A, Math.random() < 0.6 ? 'jab' : 'slip', 0.1);
+        this.F[A].lunge = 3;
+        if (Math.random() < 0.6) this.setPose(D, 'block', 0.25);
+      }
+      return;
+    }
     switch (line.act) {
       case 'jab':
         this.setPose(A, 'jab', 0.22);
@@ -665,8 +807,9 @@ export class ArenaView extends Container {
         this.impact(A, 'haF', false, false);
         sfx('punch');
         break;
+      case 'cross': // a counter
       case 'punch': {
-        const p: Pose = Math.random() < 0.35 ? 'hook' : Math.random() < 0.25 ? 'uppercut' : Math.random() < 0.2 ? 'body' : 'cross';
+        const p: Pose = line.act === 'cross' ? 'cross' : Math.random() < 0.35 ? 'hook' : Math.random() < 0.25 ? 'uppercut' : Math.random() < 0.2 ? 'body' : 'cross';
         if (ground) {
           this.setPose(A, 'topPunch', 0.25);
           this.impact(A, 'haB', false, bloody);
@@ -709,7 +852,7 @@ export class ArenaView extends Container {
         break;
       case 'rocked':
         this.setPose(D, 'rocked', 0.9);
-        this.ref.tx = this.center + (D === 0 ? -30 : 30);
+        this.refTo(this.center + (D === 0 ? -30 : 30));
         sfx('crowd');
         break;
       case 'kd':
@@ -719,7 +862,7 @@ export class ArenaView extends Container {
         this.flash = 0.25;
         this.showCallout('KNOCKDOWN!');
         this.slowT = 1.1;
-        this.ref.tx = this.center;
+        this.refTo(this.center);
         if (this.mode === 'tv') this.cutTo('close', 0.6, true);
         sfx('roar');
         break;
@@ -733,7 +876,7 @@ export class ArenaView extends Container {
         this.finished = true;
         this.showCallout('KNOCKOUT!');
         this.slowT = 1.6;
-        this.ref.tx = this.F[D].x;
+        this.refTo(this.F[D].x - this.F[D].facing * 12, 3);
         if (this.mode === 'tv') this.cutTo('close', 1.5, true);
         sfx('roar');
         break;
@@ -743,7 +886,7 @@ export class ArenaView extends Container {
         this.winnerSide = A;
         this.finished = true;
         this.showCallout("IT'S STOPPED!");
-        this.ref.tx = this.center;
+        this.refTo(this.center);
         sfx('roar');
         break;
       case 'gnp':
@@ -781,7 +924,7 @@ export class ArenaView extends Container {
         this.winnerSide = A;
         this.finished = true;
         this.showCallout('TAP! TAP! TAP!');
-        this.ref.tx = this.center;
+        this.refTo(this.center);
         sfx('roar');
         break;
       case 'sweep':
@@ -804,7 +947,7 @@ export class ArenaView extends Container {
       case 'foul':
         this.showCallout('FOUL!');
         this.setPose(D, 'hurt', 0.8);
-        this.ref.tx = this.center;
+        this.refTo(this.center);
         break;
       case 'stool':
         this.showCallout('RETIRED ON THE STOOL');
@@ -813,8 +956,12 @@ export class ArenaView extends Container {
       case 'stop':
         this.finished = true;
         break;
-      case 'escape':
       case 'getup':
+        // back up off the canvas after a knockdown
+        if (this.F[A].pose === 'down' && this.F[A].poseT < 9000) this.setPose(A, 'guard', 0);
+        this.subAnim = null;
+        break;
+      case 'escape':
         this.subAnim = null;
         break;
     }
@@ -823,8 +970,6 @@ export class ArenaView extends Container {
       if (name === 'spinningElbow' || name === 'spinningBackfist') this.setPose(A, 'spin', 0.4);
       this.showCallout(name.replace(/([A-Z])/g, ' $1').toUpperCase() + '!');
     }
-    if (line.act === 'bell' || /round_start/.test(line.key ?? '')) this.ref.tx = this.center + 60;
-    if (line.key === 'opening' || line.key === 'round_start') this.walkOut(line.key === 'opening');
     if (line.t >= 288 && !this.clapped.has(line.round) && this.scene === 'fight') {
       // the timekeeper's clapper: ten seconds left in the round
       this.clapped.add(line.round);
@@ -902,17 +1047,33 @@ export class ArenaView extends Container {
 
   /** Between rounds: fighters sit on their stools in the corners. */
   restInCorners(): void {
+    // anything still waiting plays out now (it's behind the corner cutaway)
+    for (const l of this.held.splice(0)) this.apply(l);
+    this.engage = null;
     this.resting = true;
+    this.roundOver = false;
+    this.walkIn = false;
+    this.touchT = 0;
+    this.tdT = 0;
+    this.gnpT = 0;
     this.ground = 'stand';
     this.subAnim = null;
-    const corners = [CAGE_L + 26, CAGE_R - 26];
+    this.center = AW / 2;
     this.F.forEach((f, i) => {
-      f.x = corners[i];
+      f.x = CORNERS[i];
       f.v = 0;
+      f.lunge = 0;
+      f.recoil = 0;
+      f.snap = 0;
       f.pose = 'stool';
       f.poseT = 9999;
       f.facing = i === 0 ? 1 : -1;
+      f.rig = { ...POSES.stool }; // a cut, not a move: no tween from wherever they were
     });
+    // the ref waits by the fence while the card girl does her lap
+    this.ref.x = this.ref.tx = AW / 2 + 96;
+    this.ref.facing = -1;
+    this.ref.rig = { ...POSES.stand };
   }
 
   /** Something that walks behind the fighters (the ring card girl), drawn into the arena's far side. */
@@ -921,25 +1082,27 @@ export class ArenaView extends Container {
     this.worldInner.addChildAt(c, i);
   }
 
-  /** New round: both fighters start in their corners and walk out to meet in the middle. */
+  /** New round: both fighters get off their stools and walk out to meet in the middle. */
   walkOut(firstRound = false): void {
     this.resting = false;
-    this.touchT = firstRound ? 2.6 : 0;
+    this.roundOver = false;
+    this.prefight = false;
+    // round one: they meet in the middle and touch gloves first
+    this.touchT = firstRound ? 2.4 : 0;
     this.ground = 'stand';
     this.subAnim = null;
+    this.tdT = 0;
     this.center = AW / 2;
-    this.walkInT = 1.4;
-    const corners = [CAGE_L + 26, CAGE_R - 26];
-    this.F.forEach((f, i) => {
-      f.x = corners[i];
+    this.walkIn = true;
+    this.walkT = 0;
+    this.F.forEach((f) => {
       f.v = 0;
       f.pose = 'guard';
       f.poseT = 0;
-      f.rig = { ...POSES.guard };
       f.foot = 0;
       f.footT = 1.6;
     });
-    this.ref.x = this.ref.tx = AW / 2 + 70;
+    this.ref.tx = AW / 2 + 70;
   }
 
   /** Which pose pair the ground fighters use right now, and who plays the attacker/top role. */
@@ -1002,7 +1165,10 @@ export class ArenaView extends Container {
     if (this.mode !== 'tv') return;
     const s = this.shot;
     s.hold -= dt;
-    if (s.hold <= 0) {
+    // walking to / sitting in / coming out of the corners: they're far apart, stay on the wide shot
+    const apart = this.scene === 'fight' && (this.roundOver || this.resting || this.walkIn || this.prefight);
+    if (apart && s.z > 1.01) this.cutTo('wide', 1.5);
+    else if (s.hold <= 0) {
       // director: alternate shots, tighter when the action heats up
       const r = Math.random();
       const kind = this.scene === 'ceremony' ? 'medium' : this.ground !== 'stand' ? (r < 0.6 ? 'close' : 'medium') : r < 0.45 ? 'medium' : r < 0.8 ? 'close' : 'wide';
@@ -1025,47 +1191,70 @@ export class ArenaView extends Container {
       this.slowT -= real;
       dt *= 0.3;
     }
-    this.touchT -= dt;
+    if (!this.walkIn) this.touchT -= dt * this.pace;
     this.t += dt;
     this.drawCrowd();
     const ground = this.ground === 'atop' || this.ground === 'btop';
     if (this.scene === 'fight') {
-      // the action drifts around the cage; clinches end up on the fence
+      // the action drifts around the cage; clinches end up on the fence; ground work stays put
       const targetCenter =
-        this.ground === 'clinch' ? (Math.sin(this.round * 1.7) > 0 ? CAGE_R - 40 : CAGE_L + 40) : ground ? AW / 2 + Math.sin(this.round * 2.3) * 60 : AW / 2 + Math.sin(this.t * 0.35) * 70;
-      this.center += (targetCenter - this.center) * Math.min(1, dt * 1.5);
+        this.walkIn || this.touchT > 0 ? AW / 2
+          : this.ground === 'clinch' ? (Math.sin(this.round * 1.7) > 0 ? CAGE_R - 40 : CAGE_L + 40)
+            : ground ? this.groundX
+              : AW / 2 + Math.sin(this.t * 0.35) * 70;
+      this.center += (targetCenter - this.center) * Math.min(1, dt * (ground ? 4 : 1.5));
     } else this.center += (AW / 2 - this.center) * Math.min(1, dt * 2);
     this.drift = this.center - AW / 2;
     const gap = this.ground === 'clinch' ? 12 : ground ? 0 : 23 + Math.sin(this.t * 1.3) * 3;
     this.gnpT -= dt;
-    this.walkInT -= dt;
     this.tdT -= dt;
+    this.walkT += dt;
     if (this.subAnim && !this.subAnim.tapped) {
       this.subAnim.t -= dt;
       if (this.subAnim.t <= 0) this.subAnim = null;
     }
     const lay = this.groundLayout();
+    // the frame every ground pair is drawn in faces the way the man on top faces; a bottom man
+    // attacking from guard (triangle, guillotine, armbar) keeps that frame so nobody flips over
+    const topDir: 1 | -1 = this.ground === 'btop' ? -1 : 1;
+    const sk = this.subAnim?.kind;
+    const groundDir: 1 | -1 = sk && ['tri', 'guil', 'ab'].includes(sk) ? topDir : lay.aIdx === 0 ? 1 : -1;
+    const fightOn = this.scene === 'fight' && !this.resting;
     for (const i of [0, 1] as const) {
       const f = this.F[i];
+      const o = this.F[1 - i];
       const side = i === 0 ? -1 : 1;
       let tx = this.center + side * gap;
+      let facing: 1 | -1 = i === 0 ? 1 : -1;
+      let maxV = 150;
+      // a finish on the mat: once the winner celebrates he gets up and walks off the man underneath
+      const upAndAway = ground && fightOn && this.finished && this.winnerSide === i && (f.poseT <= 0 || f.pose === 'celebrate');
       if (this.scene === 'intro') tx = i === 0 ? CAGE_L + 60 : CAGE_R - 60;
       else if (this.scene === 'ceremony') tx = AW / 2 + side * 26;
-      else if (ground) {
-        // both fighters share the pose pair's frame: same x, attacker/top facing into the exchange
-        f.facing = (lay.aIdx === 0 ? 1 : -1) as 1 | -1;
-        tx = this.center;
-      }
-      if (!ground || this.scene !== 'fight') f.facing = i === 0 ? 1 : -1;
-      if (this.resting) tx = i === 0 ? CAGE_L + 26 : CAGE_R - 26;
-      if (this.touchT > 0 && this.walkInT <= 0 && this.ground === 'stand') {
-        tx = this.center + side * 9;
-        if (this.touchT < 1.6 && this.touchT > 0.9 && f.poseT <= 0) this.setPose(i, 'jab', 0.12);
+      else if (this.resting) tx = CORNERS[i];
+      else if (this.prefight) tx = f.x;
+      else if (this.roundOver) {
+        tx = CORNERS[i];
+        maxV = 70 * this.pace;
+      } else if (upAndAway) {
+        tx = this.groundX + (this.groundX < AW / 2 ? 1 : -1) * 58;
+        maxV = 90;
+      } else if (ground) {
+        // both fighters share the pose pair's frame: same x
+        facing = groundDir;
+        tx = this.groundX;
+      } else if (this.walkIn) {
+        // out of the corners at a walk, to touching distance in round one
+        tx = this.center + side * (this.touchT > 0 ? TOUCH_GAP : gap);
+        maxV = 80 * this.pace;
+      } else if (this.touchT > 0 && this.ground === 'stand') {
+        tx = this.center + side * TOUCH_GAP;
+        if (this.touchT < 1.6 && this.touchT > 0.9 && f.poseT <= 0) this.setPose(i, 'touch', 0.5);
         this.ref.tx = this.center + (this.touchT > 0.9 ? 0 : 60);
       }
       // footwork on the feet: step in, step out to make space, circle; feint now and then
-      const standing = this.scene === 'fight' && this.ground === 'stand' && !this.finished && !this.resting;
-      if (standing && this.walkInT <= 0) {
+      const standing = fightOn && this.ground === 'stand' && !this.finished && !this.roundOver && !this.prefight && !this.walkIn && this.touchT <= 0;
+      if (standing && !this.engage) {
         f.footT = (f.footT ?? 0) - dt;
         if (f.footT <= 0) {
           const r = Math.random();
@@ -1080,16 +1269,27 @@ export class ArenaView extends Container {
           if (fk < 0.45) f.lunge = 3;
         }
       }
-      if (this.scene === 'fight' && this.F[1 - i].pose === 'ko' && f.pose === 'celebrate') tx = this.center + side * 40;
-      if (ground || this.scene !== 'fight') {
+      if (standing && this.engage) {
+        // closing the distance for the next exchange: the attacker steps in, the other man plants his feet
+        if (i === this.engage.atk) {
+          tx = o.x + side * (this.engage.reach - 6);
+          maxV = 170;
+        } else tx = f.x;
+        f.foot = 0;
+      }
+      if (this.scene === 'fight' && this.finished && this.winnerSide === i && (o.pose === 'ko' || o.pose === 'down') && !ground) {
+        // walk off and celebrate away from the man on the canvas
+        tx = o.x + (f.x < o.x ? -1 : 1) * 56;
+        maxV = 90;
+      }
+      if (this.scene !== 'fight' || (ground && fightOn && !upAndAway)) {
         f.x += (tx - f.x) * Math.min(1, dt * (this.scene === 'fight' ? 8 : 3));
         f.v = 0;
       } else {
         // a spring with damping: fighters accelerate, step and settle instead of gliding
         const v0 = f.v ?? 0;
         let v = v0 + ((tx - f.x) * 70 - v0 * 15) * dt;
-        const max = this.walkInT > 0 ? 75 : 150;
-        v = Math.max(-max, Math.min(max, v));
+        v = Math.max(-maxV, Math.min(maxV, v));
         f.v = v;
         f.x += v * dt;
         f.dist = (f.dist ?? 0) + Math.abs(v * dt);
@@ -1110,22 +1310,40 @@ export class ArenaView extends Container {
         }
         if (this.winnerSide === i && this.finished && f.poseT <= 0) pose = 'celebrate';
       }
-      const walking = Math.abs(tx - f.x) > 3 && this.scene !== 'fight';
-      this.drawPose[i] = pose;
+      // walking (not fighting): turn and walk where you're going
+      const walking = Math.abs(tx - f.x) > 3 && (this.scene !== 'fight' || this.roundOver) && pose !== 'ko' && pose !== 'down';
+      if (walking) facing = tx > f.x ? 1 : -1;
+      if (facing !== f.facing) {
+        // turning round: mirror the current joints so the body doesn't jump, then tween from there
+        f.rig = mirrorRig(f.rig);
+        f.facing = facing;
+      }
+      this.drawPose[i] = walking ? 'walk' : pose;
       const target = walking ? (Math.floor(this.t * 6) % 2 ? POSES.walk1 : POSES.walk2) : pose === 'guard' ? stanceGuard(this.L[i], this.t + i * 1.3) : POSES[pose as Pose] ?? POSES.guard;
       const rate = ground && this.scene === 'fight' ? (this.tdT > 0 ? 9 : 5.5) : f.poseT > 0 ? 22 : 12;
-      f.rig = lerpRig(f.rig, pose === 'celebrate' && this.finished ? this.celebration(i, target) : target, Math.min(1, dt * rate));
+      f.rig = lerpRig(f.rig, pose === 'celebrate' && this.finished && !walking ? this.celebration(i, target) : target, Math.min(1, dt * rate));
       f.snap = (f.snap ?? 0) * Math.exp(-dt * 7);
       // long hair swings with movement and with shots to the head
-      this.L[i].sway = Math.max(-4, Math.min(4, -(f.v ?? 0) / 30 + (f.snap ?? 0) * 4 + Math.sin(this.t * 3 + i) * 0.5));
+      this.L[i].sway = Math.max(-4, Math.min(4, ((f.v ?? 0) * f.facing) / 30 + (f.snap ?? 0) * 4 + Math.sin(this.t * 3 + i) * 0.5));
     }
+    if (this.walkIn && this.walkT > 0.3 && this.F.every((f, i) => Math.abs(f.x - (this.center + (i === 0 ? -1 : 1) * (this.touchT > 0 ? TOUCH_GAP : gap))) < 5 && Math.abs(f.v ?? 0) < 25)) this.walkIn = false;
+    if (this.walkIn && this.walkT > 6) this.walkIn = false;
+    this.pumpHeld(dt);
     // referee & announcer
     for (const a of [this.ref, this.butler]) {
       if (!a.visible) continue;
       if (a === this.ref && this.scene === 'fight') {
-        // the ref circles the action, keeping a sightline
-        if (Math.abs(a.tx - this.center) > 70 || Math.random() < dt * 0.3) a.tx = this.center + (Math.random() < 0.5 ? -1 : 1) * (48 + Math.random() * 20);
-        a.facing = a.x < this.center ? 1 : -1;
+        // the ref circles the action at a distance, keeping a sightline; now and then he
+        // crosses to the other side (behind the fighters)
+        this.refHold -= dt;
+        const job = this.refHold > 0 || this.touchT > 0 || this.finished || this.resting || this.roundOver || this.prefight;
+        const off = a.tx - this.center;
+        if (!job && (Math.abs(off) > 104 || Math.abs(off) < 62 || Math.random() < dt * 0.05)) {
+          const keep = Math.abs(off) >= 62 && Math.random() < 0.6;
+          a.tx = this.center + (keep ? Math.sign(off) : Math.sign(off) ? -Math.sign(off) : 1) * (72 + Math.random() * 20);
+          a.tx = Math.max(CAGE_L + 14, Math.min(CAGE_R - 14, a.tx));
+        }
+        if (!this.resting) a.facing = a.x < this.center ? 1 : -1;
       }
       const moving = Math.abs(a.tx - a.x) > 2;
       a.x += (a.tx - a.x) * Math.min(1, dt * 4);
@@ -1137,7 +1355,12 @@ export class ArenaView extends Container {
       a.rig = lerpRig(a.rig, tgt, Math.min(1, dt * 10));
     }
     this.updateCam(dt);
-    if (this.mode === 'top' && this.scene === 'fight') {
+    // between rounds the overhead camera cuts back to the side so you see the card girl's lap
+    const topNow = this.mode === 'top' && this.scene === 'fight' && !this.resting;
+    this.world.visible = !topNow;
+    this.topWorld.visible = topNow;
+    this.topLabels.visible = topNow;
+    if (topNow) {
       this.drawTop(dt);
       this.topWorld.updateCacheTexture();
     } else {
@@ -1161,6 +1384,14 @@ export class ArenaView extends Container {
       drawRig(g, a.rig, Math.round(a.x), fy, a.facing, a.look, sc);
     }
     for (const f of this.F) g.ellipse(f.x, FLOOR + 1, 16, 3).fill({ color: 0x000000, alpha: 0.35 });
+    // corner stools between rounds
+    this.F.forEach((f, i) => {
+      if (this.drawPose[i] !== 'stool') return;
+      const sx = Math.round(f.x - 2 * f.facing);
+      g.rect(sx - 8, FLOOR - 25, 16, 4).fill(0x0c0c0e).rect(sx - 7, FLOOR - 24, 14, 2).fill(0x3a3a42);
+      for (const lx of [-6, 5]) g.rect(sx + lx, FLOOR - 21, 2, 21).fill(0x1c1c22);
+      g.rect(sx - 5, FLOOR - 9, 11, 1).fill(0x1c1c22);
+    });
     const lay = this.groundLayout();
     const last = lay.front === 'a' ? lay.aIdx : ((1 - lay.aIdx) as 0 | 1);
     const order: (0 | 1)[] = ground ? (last === 0 ? [1, 0] : [0, 1]) : this.F[0].poseT > this.F[1].poseT ? [1, 0] : [0, 1];
@@ -1233,8 +1464,22 @@ export class ArenaView extends Container {
     const f = this.F[i];
     const push = (f.lunge - f.recoil) * 0.8;
     const ang = c.ang + (i === 0 ? 0 : Math.PI);
-    const x = c.x + Math.cos(c.ang) * (dir * d / 2) + Math.cos(ang) * push;
-    const y = c.y + Math.sin(c.ang) * (dir * d / 2) + Math.sin(ang) * push;
+    let x = c.x + Math.cos(c.ang) * (dir * d / 2) + Math.cos(ang) * push;
+    let y = c.y + Math.sin(c.ang) * (dir * d / 2) + Math.sin(ang) * push;
+    if (this.scene === 'fight' && (this.roundOver || this.walkIn || this.prefight || this.resting)) {
+      // out of / back to the corner: follow the side view's walk between the stool and the middle
+      const k = Math.max(0, Math.min(1, (f.x - CORNERS[i]) / (AW / 2 + dir * 23 - CORNERS[i])));
+      const ca = ((i === 0 ? 247.5 : 67.5) * Math.PI) / 180;
+      const cx = TCX + Math.cos(ca) * (TR - 12);
+      const cy = TCY + Math.sin(ca) * (TR - 12);
+      x = cx + (x - cx) * k;
+      y = cy + (y - cy) * k;
+      if (k < 0.98) {
+        const walking = Math.abs(f.v ?? 0) > 8;
+        const to = this.roundOver && walking ? [cx, cy] : [c.x, c.y];
+        return { x, y, ang: Math.atan2(to[1] - y, to[0] - x) };
+      }
+    }
     return { x, y, ang };
   }
 
