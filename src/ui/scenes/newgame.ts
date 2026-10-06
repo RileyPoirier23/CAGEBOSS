@@ -111,6 +111,8 @@ export class NewGameScene extends Scene {
     y += 14;
     panel.addChild(checkbox(8, y, 'Dream matches (cross-era)', sb.dreamMatches, (v) => (sb.dreamMatches = v)));
     panel.addChild(checkbox(220, y, 'God mode (edit anything)', sb.godMode, (v) => (sb.godMode = v)));
+    y += 14;
+    panel.addChild(checkbox(8, y, 'Real fighters start on your roster', sb.realRoster !== false, (v) => (sb.realRoster = v)));
   }
 
   private start(): void {

@@ -92,7 +92,7 @@ export function buildPaper(s: GameState, rng: Rng): Newspaper {
   return paper;
 }
 
-function handleOf(f: { first: string; last: string; nick: string }): string {
+export function handleOf(f: { first: string; last: string; nick: string }): string {
   const nick = f.nick.replace(/^The /, '').replace(/[^A-Za-z]/g, '');
   return '@' + (nick.length > 2 && nick.length < 14 ? nick : f.first + f.last).toLowerCase();
 }
@@ -129,7 +129,7 @@ export function buildFeed(s: GameState, items: NewsItem[], rng: Rng): SocialPost
   return posts;
 }
 
-const FAN_HANDLES = [
+export const FAN_HANDLES = [
   'mma_guru_420', 'xX_GNP_Xx', 'leg_kick_larry', 'cardio_karen', 'chinny_mcchinface', 'bjj_dad_1987', 'judge_hater', 'armchair_coach',
   'casual_andy', 'tapologist', 'dana_burner_7', 'boxing_is_dead', 'octagon_oracle', 'mma_mommy', 'ppv_pirate', 'ring_rat_99',
 ];

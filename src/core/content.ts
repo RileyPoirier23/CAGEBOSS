@@ -208,6 +208,7 @@ export interface TemplateBank {
   misc: Record<string, string[]>;
   presserQ?: Record<string, string[]>;
   recap?: Record<string, string[]>;
+  bleets?: Record<string, Record<string, string[]>>;
 }
 
 export interface DocContent {

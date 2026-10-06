@@ -551,6 +551,7 @@ export interface SandboxOptions {
   noOwner: boolean;
   infinite: boolean;
   allLegends: boolean;
+  realRoster?: boolean; // every real-fighter parody starts signed to you
   dreamMatches: boolean;
   godMode: boolean;
 }

@@ -612,6 +612,16 @@ BUTLER = {
         "THEY'VE DONE IT BEFORE... AND THEY'RE GONNA DO IT AGAIN... THIS IS... {X} VERSUS {Y} {ROMAN}!",
         "UNFINISHED... BUSINESS! LADIES AND GENTLEMEN, PART {ROMAN}!",
     ],
+    "open_comain": [
+        "LADIES AND GENTLEMEN... IT IS TIME... FOR YOUR... CO-MAIN EVENT!",
+        "THIS... IS... THE CO-MAIN EVENT OF THE EVENING! {VENUE}, MAKE SOME NOISE!",
+        "LADIES AND GENTLEMEN, YOUR CO-MAIN EVENT... SCHEDULED FOR THREE ROUNDS... IN THE {DIV} DIVISION!",
+    ],
+    "open_card": [
+        "LADIES AND GENTLEMEN... WELCOME... TO THE MAIN CARD!",
+        "Ladies and gentlemen, the following main card contest is scheduled for three rounds in the {div} division!",
+        "MAIN CARD ACTION, {VENUE}! THREE ROUNDS... OF {DIV} WARFARE!",
+    ],
     "open_prelim": [
         "Ladies and gentlemen, the following contest is scheduled for three rounds in the {div} division.",
         "Ladies and gentlemen, three rounds of {div} action!",

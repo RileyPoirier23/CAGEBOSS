@@ -30,6 +30,7 @@ export interface Settings {
   intros?: boolean; // Juiced Butler introductions before watched bouts
   bleep?: boolean; // streamer mode: grawlix instead of swears
   fullscreen?: boolean; // desktop build only
+  bleets?: boolean; // live Bleeter feed while watching fights
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -118,7 +119,7 @@ export class Game {
     window.addEventListener('pointerdown', unlock);
     window.addEventListener('keydown', unlock);
     onTrackChange((t) => {
-      if (this.settings.music && !this.settings.mute) this.toast(`NOW PLAYING: ${t.title.toUpperCase()} - ${t.artist.toUpperCase()}`, PAL.gold, { top: true, small: true });
+      if (this.settings.music && !this.settings.mute) this.showNowPlaying(t.title, t.artist);
     });
   }
 
@@ -230,11 +231,47 @@ export class Game {
     this.toasts.push({ node: c, t: 2.6 });
   }
 
+  /** Compact 'NOW PLAYING' tag, bottom-left: fades in, holds ~3s, fades out. One at a time. */
+  private nowPlaying: { node: Container; t: number } | null = null;
+
+  private showNowPlaying(title: string, artist: string): void {
+    this.nowPlaying?.node.destroy({ children: true });
+    const c = new Container();
+    const label = text('NOW PLAYING', 13, 2, { small: true, color: PAL.ash });
+    const song = text(`${title.toUpperCase()}  -  ${artist.toUpperCase()}`, 13, 9, { small: true, color: PAL.gold, width: 200, maxLines: 1 });
+    const w = Math.max(label.textWidth, song.textWidth) + 18;
+    const bg = new Graphics()
+      .rect(0, 0, w, 17).fill({ color: 0x0a0a10, alpha: 0.85 })
+      .rect(0, 0, 2, 17).fill(PAL.gold);
+    // tiny equaliser bars
+    for (let i = 0; i < 3; i++) bg.rect(5 + i * 2, 6 + (i % 2) * 3, 1, 8 - (i % 2) * 3).fill(PAL.gold);
+    c.addChild(bg, label, song);
+    c.position.set(4, H - 21);
+    c.alpha = 0;
+    this.toastLayer.addChild(c);
+    this.nowPlaying = { node: c, t: 0 };
+  }
+
+  private tickNowPlaying(dt: number): void {
+    const np = this.nowPlaying;
+    if (!np) return;
+    np.t += dt;
+    const IN = 0.35, HOLD = 3, OUT = 0.6;
+    const a = np.t < IN ? np.t / IN : np.t < IN + HOLD ? 1 : 1 - (np.t - IN - HOLD) / OUT;
+    np.node.alpha = Math.max(0, Math.min(1, a));
+    np.node.x = 4 - Math.round((1 - np.node.alpha) * 6);
+    if (np.t > IN + HOLD + OUT) {
+      np.node.destroy({ children: true });
+      this.nowPlaying = null;
+    }
+  }
+
   autosave(): void {
     if (this.state) saveToSlot(this.state, 'auto');
   }
 
   private tick(dt: number): void {
+    this.tickNowPlaying(dt);
     if (this.loader && !this.loader.update(dt)) {
       this.loader.destroy({ children: true });
       this.loader = null;

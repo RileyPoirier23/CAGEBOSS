@@ -6,7 +6,7 @@ import { desktop } from '../../desktop';
 import { openWindow, selector, checkbox, stepper } from '../widgets';
 
 export function openSettings(g: Game, onClose?: () => void): void {
-  const win = openWindow(g, 'Settings', 260, desktop ? 268 : 253, { onClose });
+  const win = openWindow(g, 'Settings', 260, desktop ? 254 : 241, { onClose });
   const b = win.body;
   const s = g.settings;
   const save = () => g.applySettings();
@@ -41,20 +41,22 @@ export function openSettings(g: Game, onClose?: () => void): void {
   b.addChild(stepper(110, y, 140, Math.round((s.musicVolume ?? 0.6) * 10), 0, 10, 1, (v) => v * 10 + '%', (v) => { s.musicVolume = v / 10; save(); }));
   y += 20;
   b.addChild(checkbox(8, y, 'Colour-blind palette', s.colorblind, (v) => { s.colorblind = v; save(); g.scene?.refresh(); }));
-  y += 15;
+  y += 13;
   b.addChild(checkbox(8, y, 'Reduce screen shake', s.reduceShake, (v) => { s.reduceShake = v; save(); }));
-  y += 15;
+  y += 13;
   b.addChild(checkbox(8, y, 'Mute all audio (M)', s.mute, (v) => { s.mute = v; save(); }));
-  y += 15;
+  y += 13;
   b.addChild(checkbox(8, y, 'Soundtrack (N = next track)', s.music, (v) => { s.music = v; save(); }));
-  y += 15;
+  y += 13;
   b.addChild(checkbox(8, y, 'Juiced Butler intros before watched fights', s.intros !== false, (v) => { s.intros = v; save(); }));
-  y += 15;
+  y += 13;
+  b.addChild(checkbox(8, y, 'Live Bleeter feed during fights', s.bleets !== false, (v) => { s.bleets = v; save(); }));
+  y += 13;
   b.addChild(checkbox(8, y, 'Bleep the swearing (streamer mode)', !!s.bleep, (v) => { s.bleep = v; save(); g.scene?.refresh(); }));
-  y += 15;
+  y += 13;
   if (desktop) {
     b.addChild(checkbox(8, y, 'Fullscreen (F11)', s.fullscreen !== false, (v) => { s.fullscreen = v; save(); }));
-    y += 15;
+    y += 13;
   }
   b.addChild(button('JUKEBOX...', 8, y, 80, 13, () => openJukebox(g), { small: true, fill: PAL.plum }));
 }

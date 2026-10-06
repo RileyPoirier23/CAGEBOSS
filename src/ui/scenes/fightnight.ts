@@ -13,7 +13,9 @@ import { PAL, shade } from '../../art/palette';
 import { W, H, text, button, box, ScrollBox, paper, clickable } from '../kit';
 import { PixelText } from '../text';
 import { fighterPortrait, reporterPortrait } from '../sprites';
-import { ArenaView, cornerView, RingCardWalk, AW, AH } from '../arena';
+import { ArenaView, cornerView, RingCardWalk, preloadRingCards, AW, AH } from '../arena';
+import { BleetFeed } from '../bleetfeed';
+import { bleetSituation, makeBleet } from '../../sim/bleets';
 import { boothOpen, commentate, butlerIntro, butlerDecision, butlerFinish, type AnnounceLine } from '../../sim/commentary';
 import { runBout, applyBout, finalizeEvent, defaultBonuses, bonusAmount, autoFixCard, boutLabel, boutTitle, rematchTag, cardDraw, cardProblems } from '../../sim/events';
 import { resolveCardProblems } from '../replace';
@@ -76,6 +78,9 @@ export class FightNightScene extends Scene {
     intro: AnnounceLine[]; introIdx: number; cer: AnnounceLine[]; cerIdx: number; cerWinner: -1 | 0 | 1; raised: boolean;
   } | null = null;
   private subtitle: Container | null = null;
+  private bleetFeed: BleetFeed | null = null;
+  private bleetQueue: { at: number; sit: string; actor: 0 | 1 }[] = [];
+  private bleetClock = 0;
   private tickerBox: Container | null = null;
   private ctrlBar: Container | null = null;
   private bonusSel = new Set<string>();
@@ -306,6 +311,11 @@ export class FightNightScene extends Scene {
     sub.position.set(0, AH - 34);
     r.addChild(sub);
     this.subtitle = sub;
+    if (this.g.settings.bleets !== false) {
+      this.bleetFeed = new BleetFeed();
+      this.bleetFeed.position.set(AW - 146, 36);
+      r.addChild(this.bleetFeed);
+    } else this.bleetFeed = null;
     const tb = new Container();
     tb.position.set(0, AH);
     r.addChild(tb);
@@ -343,6 +353,39 @@ export class FightNightScene extends Scene {
     if (!line.stage) sub.addChild(text('JUICED BUTLER', 16, 30 - h - 9, { small: true, color: PAL.gold, shadow: PAL.ink }));
     t.position.set(20, 30 - h + 4);
     sub.addChild(t);
+  }
+
+  /** Queue a reaction from the timeline a beat after something happens (real people type slowly). */
+  private queueBleet(sit: string, actor: 0 | 1, delay = 0.8 + Math.random() * 1.4): void {
+    if (!this.bleetFeed || this.bleetQueue.length > 3) return;
+    this.bleetQueue.push({ at: this.bleetClock + delay, sit, actor });
+  }
+
+  private reactToLine(line: TickerLine): void {
+    const p = this.playing;
+    if (!p || !this.bleetFeed) return;
+    const sit = bleetSituation(line);
+    if (!sit || Math.random() > sit.chance) return;
+    let actor: 0 | 1 = line.side === 1 ? 1 : 0;
+    if (sit.sit === 'round' || sit.sit === 'lull') actor = line.hp[0] >= line.hp[1] ? 0 : 1;
+    const res = p.bout.result;
+    if ((sit.sit === 'decision' || sit.sit === 'robbery') && res?.winner) actor = res.winner === p.bout.a ? 0 : 1;
+    this.queueBleet(sit.sit, actor);
+    // the big moments get a pile-on
+    if (['ko', 'tap', 'robbery', 'knockdown'].includes(sit.sit) && Math.random() < 0.7) this.queueBleet(sit.sit, actor, 2.6 + Math.random() * 1.5);
+  }
+
+  private tickBleets(dt: number): void {
+    const p = this.playing;
+    if (!this.bleetFeed || this.bleetFeed.destroyed || !p) return;
+    this.bleetClock += dt;
+    this.bleetFeed.update(dt);
+    const due = this.bleetQueue.filter((q) => q.at <= this.bleetClock);
+    this.bleetQueue = this.bleetQueue.filter((q) => q.at > this.bleetClock);
+    for (const q of due) {
+      const b = makeBleet(this.g.state!, this.ev, p.bout, q.sit, q.actor, new Rng((Math.random() * 1e9) | 0));
+      if (b) this.bleetFeed.push(b);
+    }
   }
 
   /** The button strip under the fight. Redrawn in place: rebuilding the scene mid-fight would reset the arena. */
@@ -420,6 +463,7 @@ export class FightNightScene extends Scene {
     p.timer = 0.8;
     this.arena?.startFight();
     this.say(null);
+    this.queueBleet('open', 0, 1.2);
     setMusicContext('fight');
     sfx('bell');
     this.refresh();
@@ -464,6 +508,7 @@ export class FightNightScene extends Scene {
     if (this.step !== 'watch' || !p || !this.arena || this.arena.destroyed) return;
     const speed = [1, 0.6, 1, 2, 4][this.g.settings.fightSpeed] ?? 1;
     this.arena.update(dt);
+    if (!p.paused) this.tickBleets(dt * Math.min(2, speed));
     if (p.paused || this.g.modals.length) return;
     if (p.phase === 'intro') {
       p.timer -= dt * Math.min(2, speed);
@@ -533,6 +578,7 @@ export class FightNightScene extends Scene {
     }
     const line = p.lines[p.idx++];
     this.arena.cue(line);
+    this.reactToLine(line);
     this.drawTicker();
     p.timer = line.speaker ? 0.9 + line.text.length / 55 : line.intensity >= 3 ? 1.6 : line.act === 'bell' ? 0.9 : 0.95;
     // round ended: corners cutaway (after the booth has had its say)

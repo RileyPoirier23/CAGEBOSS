@@ -15,7 +15,21 @@ export type Pose =
   | 'guard' | 'jab' | 'cross' | 'hook' | 'uppercut' | 'body' | 'legkick' | 'bodykick' | 'headkick' | 'knee' | 'elbow' | 'spin' | 'flyknee'
   | 'shoot' | 'sprawl' | 'clinch' | 'top' | 'topPunch' | 'bottom' | 'bottomSub' | 'hurt' | 'rocked' | 'down' | 'ko' | 'celebrate'
   | 'taunt' | 'stool' | 'walk1' | 'walk2' | 'block' | 'slip' | 'lifted'
-  | 'stand' | 'armUp' | 'headDown' | 'refHold' | 'refRaise' | 'mic' | 'point' | 'flex';
+  | 'stand' | 'armUp' | 'headDown' | 'refHold' | 'refRaise' | 'mic' | 'point' | 'flex'
+  | GroundPose;
+
+/**
+ * Grappling poses come in pairs that share one frame: origin = the middle of the exchange,
+ * the attacker / top man ("a") faces right, the man underneath ("d") is laid out to fit.
+ * Both fighters are drawn at the same x with the same facing.
+ */
+export type GroundPose =
+  | 'gTop' | 'gTopPunch' | 'gBot'
+  | 'mTop' | 'mTopPunch' | 'mBot'
+  | 'sTop' | 'sTopPunch' | 'sBot'
+  | 'bkTop' | 'bkTopPunch' | 'bkBot'
+  | 'rncAtk' | 'rncVic' | 'guilAtk' | 'guilVic' | 'triAtk' | 'triVic' | 'abAtk' | 'abVic'
+  | 'atriAtk' | 'atriVic' | 'kimAtk' | 'kimVic' | 'legAtk' | 'legVic';
 
 const P = (o: Partial<Record<Joint, [number, number]>>, base?: Rig): Rig => ({ ...(base ?? GUARD), ...o } as Rig);
 
@@ -29,7 +43,67 @@ const STAND: Rig = {
   hip: [0, -40], knF: [3, -20], ftF: [5, 0], knB: [-3, -20], ftB: [-5, 0],
 };
 
+type J = [number, number];
+/** Full joint set for a ground pose; shoulders hang off the neck unless given. */
+const GP = (o: { head: J; neck: J; hip: J; elF: J; haF: J; elB: J; haB: J; knF: J; ftF: J; knB: J; ftB: J; shF?: J; shB?: J }): Rig => ({
+  ...o,
+  shF: o.shF ?? [o.neck[0] + 2, o.neck[1] + 2],
+  shB: o.shB ?? [o.neck[0] - 3, o.neck[1] + 2],
+});
+
+// on the back, head to the right
+const LEGS_GUARD = { knF: [-10, -26] as J, ftF: [-22, -30] as J, knB: [-14, -22] as J, ftB: [-24, -24] as J };
+const FLAT = { hip: [-8, -4] as J, neck: [20, -4] as J, head: [28, -6] as J, shF: [18, -7] as J, shB: [16, -3] as J };
+const FLAT_LEGS = { knF: [-18, -16] as J, ftF: [-30, -1] as J, knB: [-20, -13] as J, ftB: [-32, 0] as J };
+const KNEEL_LEGS = { knF: [-4, -3] as J, ftF: [-20, 0] as J, knB: [-8, -3] as J, ftB: [-24, 0] as J };
+
+export const GROUND_POSES: Record<GroundPose, Rig> = {
+  // closed guard: top kneels in the guard postured up, bottom's legs locked round his waist
+  gBot: GP({ hip: [-4, -5], neck: [24, -5], head: [32, -7], shF: [22, -8], shB: [20, -4], elF: [26, -18], haF: [30, -28], elB: [18, -16], haB: [24, -26], ...LEGS_GUARD }),
+  gTop: GP({ hip: [-14, -24], ...KNEEL_LEGS, neck: [2, -46], head: [8, -52], elF: [12, -34], haF: [18, -18], elB: [8, -34], haB: [14, -16] }),
+  gTopPunch: GP({ hip: [-14, -24], ...KNEEL_LEGS, neck: [5, -48], head: [10, -55], elF: [12, -38], haF: [14, -46], elB: [18, -30], haB: [28, -10] }),
+  // full mount: sitting on the belly, raining down
+  mBot: GP({ ...FLAT, elF: [24, -14], haF: [26, -24], elB: [20, -12], haB: [22, -22], ...FLAT_LEGS }),
+  mTop: GP({ hip: [-4, -12], knF: [4, -3], ftF: [-10, -1], knB: [0, -3], ftB: [-14, -1], neck: [2, -42], head: [5, -50], elF: [12, -36], haF: [16, -44], elB: [8, -34], haB: [14, -40] }),
+  mTopPunch: GP({ hip: [-4, -12], knF: [4, -3], ftF: [-10, -1], knB: [0, -3], ftB: [-14, -1], neck: [6, -40], head: [10, -47], elF: [16, -24], haF: [24, -8], elB: [8, -34], haB: [14, -42] }),
+  // side control: chest to chest across him
+  sBot: GP({ ...FLAT, elF: [22, -12], haF: [18, -18], elB: [18, -10], haB: [12, -14], ...FLAT_LEGS }),
+  sTop: GP({ hip: [-10, -12], ...KNEEL_LEGS, neck: [16, -14], head: [23, -15], shF: [17, -17], shB: [14, -12], elF: [22, -6], haF: [30, -4], elB: [8, -6], haB: [2, -4] }),
+  sTopPunch: GP({ hip: [-10, -14], ...KNEEL_LEGS, neck: [14, -18], head: [20, -21], shF: [16, -20], shB: [12, -16], elF: [22, -6], haF: [30, -4], elB: [12, -30], haB: [22, -10] }),
+  // back mount: both sitting, hooks in
+  bkBot: GP({ hip: [0, -8], neck: [4, -35], head: [7, -43], knF: [14, -12], ftF: [26, -1], knB: [12, -9], ftB: [24, 0], elF: [12, -26], haF: [8, -36], elB: [8, -24], haB: [5, -34] }),
+  bkTop: GP({ hip: [-8, -8], neck: [-6, -35], head: [-1, -42], knF: [4, -14], ftF: [12, -7], knB: [2, -11], ftB: [10, -5], elF: [8, -30], haF: [4, -38], elB: [2, -40], haB: [0, -44] }),
+  bkTopPunch: GP({ hip: [-8, -8], neck: [-6, -35], head: [-2, -42], knF: [4, -14], ftF: [12, -7], knB: [2, -11], ftB: [10, -5], elF: [4, -30], haF: [8, -26], elB: [6, -46], haB: [12, -42] }),
+  // ---- submissions (a = attacker)
+  rncVic: GP({ hip: [0, -8], neck: [5, -34], head: [8, -41], knF: [14, -12], ftF: [26, -1], knB: [12, -9], ftB: [24, 0], elF: [12, -28], haF: [6, -34], elB: [10, -30], haB: [4, -38] }),
+  rncAtk: GP({ hip: [-8, -8], neck: [-5, -35], head: [1, -40], knF: [4, -14], ftF: [12, -7], knB: [2, -11], ftB: [10, -5], elF: [10, -30], haF: [2, -36], elB: [0, -40], haB: [-2, -44] }),
+  guilAtk: GP({ hip: [-4, -5], neck: [24, -6], head: [32, -9], shF: [22, -8], shB: [20, -4], elF: [14, -24], haF: [6, -26], elB: [16, -14], haB: [8, -14], ...LEGS_GUARD }),
+  guilVic: GP({ hip: [-14, -24], ...KNEEL_LEGS, neck: [0, -28], head: [8, -20], elF: [8, -18], haF: [14, -10], elB: [4, -18], haB: [10, -12] }),
+  triAtk: GP({ hip: [-4, -6], neck: [24, -6], head: [32, -8], shF: [22, -9], shB: [20, -5], elF: [12, -22], haF: [4, -30], elB: [16, -16], haB: [8, -24], knF: [-6, -30], ftF: [6, -38], knB: [-14, -24], ftB: [2, -32] }),
+  triVic: GP({ hip: [-16, -22], knF: [-6, -3], ftF: [-22, 0], knB: [-10, -3], ftB: [-26, 0], neck: [-6, -30], head: [0, -26], elF: [6, -20], haF: [14, -10], elB: [2, -22], haB: [10, -14] }),
+  abVic: GP({ hip: [-10, -4], neck: [18, -4], head: [26, -6], shF: [16, -7], shB: [14, -3], elF: [16, -20], haF: [16, -34], elB: [18, -12], haB: [24, -16], knF: [-20, -14], ftF: [-32, -1], knB: [-22, -12], ftB: [-34, 0] }),
+  abAtk: GP({ hip: [14, -8], neck: [38, -6], head: [46, -8], shF: [36, -9], shB: [34, -5], elF: [26, -24], haF: [18, -34], elB: [28, -20], haB: [18, -30], knF: [8, -28], ftF: [-4, -16], knB: [18, -30], ftB: [28, -14] }),
+  atriVic: GP({ ...FLAT, elF: [18, -16], haF: [22, -22], elB: [14, -8], haB: [8, -10], ...FLAT_LEGS }),
+  atriAtk: GP({ hip: [-10, -12], ...KNEEL_LEGS, neck: [16, -16], head: [22, -12], shF: [17, -18], shB: [14, -14], elF: [26, -12], haF: [30, -6], elB: [20, -4], haB: [28, -2] }),
+  kimVic: GP({ ...FLAT, elF: [22, -16], haF: [14, -22], elB: [18, -10], haB: [12, -14], ...FLAT_LEGS }),
+  kimAtk: GP({ hip: [-10, -14], ...KNEEL_LEGS, neck: [12, -20], head: [16, -26], shF: [14, -22], shB: [9, -18], elF: [20, -14], haF: [14, -22], elB: [8, -14], haB: [16, -18] }),
+  legVic: GP({ hip: [6, -4], neck: [34, -4], head: [42, -6], shF: [32, -7], shB: [30, -3], elF: [28, -12], haF: [22, -14], elB: [30, -10], haB: [24, -8], knF: [-6, -10], ftF: [-18, -14], knB: [-8, -6], ftB: [-20, -2] }),
+  legAtk: GP({ hip: [-26, -8], neck: [-44, -22], head: [-50, -28], shF: [-42, -24], shB: [-46, -20], elF: [-30, -18], haF: [-20, -16], elB: [-32, -12], haB: [-22, -12], knF: [-14, -18], ftF: [-2, -10], knB: [-16, -10], ftB: [-4, -2] }),
+};
+
+/** Slide a whole pose sideways (used to space the pairs so both bodies read). */
+const shiftRig = (r: Rig, dx: number, dy = 0): Rig => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, [v[0] + dx, v[1] + dy]])) as Rig;
+GROUND_POSES.bkTop = shiftRig(GROUND_POSES.bkTop, -6);
+GROUND_POSES.bkTopPunch = shiftRig(GROUND_POSES.bkTopPunch, -6);
+GROUND_POSES.rncAtk = { ...shiftRig(GROUND_POSES.rncAtk, -6), elF: [6, -30], haF: [4, -36], elB: [-4, -40], haB: [0, -44] };
+GROUND_POSES.abAtk = shiftRig(GROUND_POSES.abAtk, 8);
+GROUND_POSES.abAtk.haF = [18, -36];
+GROUND_POSES.abAtk.haB = [17, -32];
+GROUND_POSES.triVic = shiftRig(GROUND_POSES.triVic, -8, -2);
+GROUND_POSES.triAtk = { ...GROUND_POSES.triAtk, knF: [-12, -34], ftF: [2, -44], knB: [-18, -26], ftB: [-4, -38], haF: [-4, -32], elF: [8, -24] };
+
 export const POSES: Record<Pose, Rig> = {
+  ...GROUND_POSES,
   guard: GUARD,
   block: P({ haF: [13, -72], haB: [8, -72], elF: [12, -60], elB: [6, -60], head: [3, -74] }),
   slip: P({ head: [0, -70], neck: [0, -63], shF: [4, -61], shB: [-5, -61] }),
