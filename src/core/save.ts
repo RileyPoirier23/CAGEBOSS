@@ -5,6 +5,7 @@
  */
 import type { GameState } from './types';
 import { fmtDate } from './time';
+import LZString from 'lz-string';
 
 export const SAVE_VERSION = 1;
 export type SlotId = '1' | '2' | '3' | 'auto';
@@ -81,7 +82,9 @@ export function makeSave(state: GameState, slot: SlotId): SaveFile {
 export function saveToSlot(state: GameState, slot: SlotId): boolean {
   if (state.difficulty === 'ironman' && slot !== 'auto') return false;
   try {
-    kv.setItem(key(slot), JSON.stringify(makeSave(state, slot)));
+    const save = makeSave(state, slot);
+    kv.setItem(key(slot), 'lz:' + LZString.compressToUTF16(JSON.stringify(save)));
+    kv.setItem(key(slot) + '.meta', JSON.stringify(save.meta));
     return true;
   } catch (e) {
     console.warn('Save failed', e);
@@ -89,8 +92,12 @@ export function saveToSlot(state: GameState, slot: SlotId): boolean {
   }
 }
 
+function decode(raw: string): string {
+  return raw.startsWith('lz:') ? LZString.decompressFromUTF16(raw.slice(3)) ?? '' : raw;
+}
+
 export function parseSave(text: string): SaveFile {
-  const data = JSON.parse(text);
+  const data = JSON.parse(decode(text));
   if (!data || data.kind !== 'cageboss-save' || !data.state) throw new Error('Not a CAGE BOSS save file');
   if (data.version > SAVE_VERSION) throw new Error('Save is from a newer version');
   return migrate(data as SaveFile);
@@ -108,10 +115,18 @@ export function loadFromSlot(slot: SlotId): GameState | null {
 }
 
 export function slotMeta(slot: SlotId): SaveMeta | null {
+  const metaRaw = kv.getItem(key(slot) + '.meta');
+  if (metaRaw) {
+    try {
+      return JSON.parse(metaRaw) as SaveMeta;
+    } catch {
+      /* fall through */
+    }
+  }
   const raw = kv.getItem(key(slot));
   if (!raw) return null;
   try {
-    return (JSON.parse(raw) as SaveFile).meta;
+    return (JSON.parse(decode(raw)) as SaveFile).meta;
   } catch {
     return null;
   }
@@ -119,6 +134,7 @@ export function slotMeta(slot: SlotId): SaveMeta | null {
 
 export function deleteSlot(slot: SlotId): void {
   kv.removeItem(key(slot));
+  kv.removeItem(key(slot) + '.meta');
 }
 
 export function exportSave(state: GameState): string {

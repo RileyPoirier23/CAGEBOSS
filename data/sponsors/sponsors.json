@@ -1,0 +1,407 @@
+[
+ {
+  "id": "wedum",
+  "name": "WeDum Fightwear",
+  "category": "apparel",
+  "tier": 2,
+  "weekly": 3000,
+  "blurb": "Shorts so tight they count as a takedown. 'Unleash the Dum.'",
+  "ethics": 0
+ },
+ {
+  "id": "neverlast",
+  "name": "NeverLast",
+  "category": "apparel",
+  "tier": 1,
+  "weekly": 1500,
+  "blurb": "Gloves guaranteed to last one camp. Maybe.",
+  "ethics": 0
+ },
+ {
+  "id": "reebroke",
+  "name": "Reebroke Combat (the Uniform Deal)",
+  "category": "apparel",
+  "tier": 3,
+  "weekly": 8000,
+  "blurb": "Everyone wears the same kit and gets paid in exposure.",
+  "ethics": 1
+ },
+ {
+  "id": "hayabooboo",
+  "name": "Hayabooboo",
+  "category": "apparel",
+  "tier": 2,
+  "weekly": 2500,
+  "blurb": "Premium gloves with a name you can't say with a straight face.",
+  "ethics": 0
+ },
+ {
+  "id": "infliction",
+  "name": "Infliction Clothing",
+  "category": "apparel",
+  "tier": 1,
+  "weekly": 1200,
+  "blurb": "Bedazzled skull tees for men who own a boat.",
+  "ethics": 0
+ },
+ {
+  "id": "tappedout",
+  "name": "TAPPED OUT",
+  "category": "apparel",
+  "tier": 1,
+  "weekly": 900,
+  "blurb": "The brand that went from MMA icon to Walmart clearance rack.",
+  "ethics": 0
+ },
+ {
+  "id": "underarmpit",
+  "name": "Under Armpit",
+  "category": "apparel",
+  "tier": 2,
+  "weekly": 3500,
+  "blurb": "Moisture-wicking. Morally wicking.",
+  "ethics": 0
+ },
+ {
+  "id": "psyke",
+  "name": "Psyke",
+  "category": "apparel",
+  "tier": 3,
+  "weekly": 9000,
+  "blurb": "Just Do It (Legal Said Change It).",
+  "ethics": 0
+ },
+ {
+  "id": "sadboy",
+  "name": "Sad Boy MMA",
+  "category": "apparel",
+  "tier": 1,
+  "weekly": 800,
+  "blurb": "Clothing for fighters who post poetry after losses.",
+  "ethics": 0
+ },
+ {
+  "id": "mobster",
+  "name": "Mobster Energy",
+  "category": "energy",
+  "tier": 3,
+  "weekly": 7000,
+  "blurb": "The official energy drink of heart palpitations.",
+  "ethics": 0
+ },
+ {
+  "id": "rabid",
+  "name": "Rabid Energy",
+  "category": "energy",
+  "tier": 1,
+  "weekly": 1200,
+  "blurb": "Energy drink with the caffeine content of a small sun.",
+  "ethics": 0
+ },
+ {
+  "id": "redbull",
+  "name": "Dead Bull",
+  "category": "energy",
+  "tier": 2,
+  "weekly": 4000,
+  "blurb": "Gives you wings. Takes your kidneys.",
+  "ethics": 0
+ },
+ {
+  "id": "celsius",
+  "name": "Delirious Energy",
+  "category": "energy",
+  "tier": 1,
+  "weekly": 1500,
+  "blurb": "Fitness drink for people who run 5Ks to tell people they ran 5Ks.",
+  "ethics": 0
+ },
+ {
+  "id": "budslight",
+  "name": "Bud Slight",
+  "category": "alcohol",
+  "tier": 3,
+  "weekly": 7000,
+  "blurb": "Watery beer for watery cardio. Currently being boycotted by someone.",
+  "ethics": 0
+ },
+ {
+  "id": "muddlo",
+  "name": "Muddlo Especial",
+  "category": "alcohol",
+  "tier": 3,
+  "weekly": 7500,
+  "blurb": "The official beer of fighting spirit and mid-fight fan brawls.",
+  "ethics": 0
+ },
+ {
+  "id": "improper13",
+  "name": "Improper No. Thirteen Whiskey",
+  "category": "alcohol",
+  "tier": 2,
+  "weekly": 6000,
+  "blurb": "Celebrity whiskey from a fighter who is definitely not anyone in particular.",
+  "ethics": 0
+ },
+ {
+  "id": "jagerpainter",
+  "name": "Jagerpainter",
+  "category": "alcohol",
+  "tier": 1,
+  "weekly": 1800,
+  "blurb": "Herbal liqueur that tastes like cough syrup and regret.",
+  "ethics": 0
+ },
+ {
+  "id": "draftqueens",
+  "name": "DraftQueens Sportsbook",
+  "category": "betting",
+  "tier": 3,
+  "weekly": 6000,
+  "blurb": "Bet on the fight! Bet on the round! Bet your house!",
+  "ethics": 1
+ },
+ {
+  "id": "betmgme",
+  "name": "BetMGMe",
+  "category": "betting",
+  "tier": 2,
+  "weekly": 4500,
+  "blurb": "The house always wins. You are not the house.",
+  "ethics": 1
+ },
+ {
+  "id": "fanduel",
+  "name": "FanDuelling",
+  "category": "betting",
+  "tier": 1,
+  "weekly": 2000,
+  "blurb": "Parlays so long they come with a mortgage.",
+  "ethics": 1
+ },
+ {
+  "id": "cryptocon",
+  "name": "Crypto.con",
+  "category": "crypto",
+  "tier": 4,
+  "weekly": 12000,
+  "blurb": "Not a Ponzi scheme. (Legally distinct from a Ponzi scheme.)",
+  "ethics": 2
+ },
+ {
+  "id": "kocoin",
+  "name": "KOcoin",
+  "category": "crypto",
+  "tier": 1,
+  "weekly": 2000,
+  "blurb": "A meme coin with a cartoon fist on it. Up 4000%. Down 98%.",
+  "ethics": 2
+ },
+ {
+  "id": "ftx",
+  "name": "FTXplode Exchange",
+  "category": "crypto",
+  "tier": 3,
+  "weekly": 10000,
+  "blurb": "Your funds are SAFU. (Your funds are in the Bahamas.)",
+  "ethics": 3
+ },
+ {
+  "id": "gnp",
+  "name": "GNP Nutrition",
+  "category": "supplement",
+  "tier": 1,
+  "weekly": 1500,
+  "blurb": "Supplements possibly tainted with whatever the doping agency bans next.",
+  "ethics": 1
+ },
+ {
+  "id": "tainted",
+  "name": "Totally Clean Supps",
+  "category": "supplement",
+  "tier": 1,
+  "weekly": 1200,
+  "blurb": "'Third-party tested' (by the third party who owns the company).",
+  "ethics": 2
+ },
+ {
+  "id": "hatorade",
+  "name": "Hatorade",
+  "category": "supplement",
+  "tier": 2,
+  "weekly": 3500,
+  "blurb": "Is it in you? (It's mostly sugar.)",
+  "ethics": 0
+ },
+ {
+  "id": "muscletech",
+  "name": "Muscle Wreck",
+  "category": "supplement",
+  "tier": 1,
+  "weekly": 1400,
+  "blurb": "Pre-workout that makes your face itch for 6 hours.",
+  "ethics": 0
+ },
+ {
+  "id": "hooterz",
+  "name": "Hooterz Wings",
+  "category": "fastfood",
+  "tier": 2,
+  "weekly": 2500,
+  "blurb": "Wings, beer, and a uniform we will not describe.",
+  "ethics": 1
+ },
+ {
+  "id": "burgerqueen",
+  "name": "Burger Queen",
+  "category": "fastfood",
+  "tier": 1,
+  "weekly": 1200,
+  "blurb": "Home of the Whopper-Weight Challenge.",
+  "ethics": 0
+ },
+ {
+  "id": "tacohell",
+  "name": "Taco Hell",
+  "category": "fastfood",
+  "tier": 1,
+  "weekly": 1300,
+  "blurb": "Fight night food that guarantees you'll be running later.",
+  "ethics": 0
+ },
+ {
+  "id": "crumbl",
+  "name": "Crumble Cookies",
+  "category": "fastfood",
+  "tier": 1,
+  "weekly": 900,
+  "blurb": "$7 cookies for fighters who just made weight and want to die.",
+  "ethics": 0
+ },
+ {
+  "id": "hardlydavidson",
+  "name": "Hardly Davidson",
+  "category": "auto",
+  "tier": 2,
+  "weekly": 4000,
+  "blurb": "Motorcycles for midlife crises at 105 decibels.",
+  "ethics": 0
+ },
+ {
+  "id": "toyotires",
+  "name": "Toyo-Tired",
+  "category": "auto",
+  "tier": 2,
+  "weekly": 3500,
+  "blurb": "Official tire of the octagon (it's not even round).",
+  "ethics": 0
+ },
+ {
+  "id": "ram",
+  "name": "Ram-Bunctious Trucks",
+  "category": "auto",
+  "tier": 2,
+  "weekly": 5000,
+  "blurb": "For men whose trucks are compensating.",
+  "ethics": 0
+ },
+ {
+  "id": "cryptoarena",
+  "name": "1-800-HURT-NOW Injury Lawyers",
+  "category": "tech",
+  "tier": 1,
+  "weekly": 1500,
+  "blurb": "Got punched? Call us. (Not valid for punches in licensed events.)",
+  "ethics": 1
+ },
+ {
+  "id": "sneakyvpn",
+  "name": "SneakyVPN",
+  "category": "tech",
+  "tier": 2,
+  "weekly": 2500,
+  "blurb": "Watch the PPV from anywhere! (Please don't pirate the PPV.)",
+  "ethics": 1
+ },
+ {
+  "id": "swolemate",
+  "name": "Swole Mate Dating",
+  "category": "tech",
+  "tier": 1,
+  "weekly": 1600,
+  "blurb": "Dating app for people who measure love in bench press.",
+  "ethics": 0
+ },
+ {
+  "id": "onlyfighters",
+  "name": "OnlyFighters",
+  "category": "adult",
+  "tier": 2,
+  "weekly": 4000,
+  "blurb": "Subscription site for 'exclusive training content'. Wink.",
+  "ethics": 2
+ },
+ {
+  "id": "chillpill",
+  "name": "Chill Pill CBD",
+  "category": "cbd",
+  "tier": 1,
+  "weekly": 1300,
+  "blurb": "Recovery gummies. Legal in 38 states and one cage.",
+  "ethics": 0
+ },
+ {
+  "id": "cloudchaser",
+  "name": "Cloud Chaser Vapes",
+  "category": "cbd",
+  "tier": 1,
+  "weekly": 1100,
+  "blurb": "Banned in 9 states. Huge in the bantamweight division.",
+  "ethics": 1
+ },
+ {
+  "id": "qasrair",
+  "name": "Qasr Royal Airways",
+  "category": "tech",
+  "tier": 4,
+  "weekly": 20000,
+  "blurb": "National airline of a kingdom with 'complicated' laws.",
+  "ethics": 3
+ },
+ {
+  "id": "badloans",
+  "name": "First National Bank of Bad Loans",
+  "category": "tech",
+  "tier": 3,
+  "weekly": 9000,
+  "blurb": "The bank that financed your Act I debt. They want visibility.",
+  "ethics": 1
+ },
+ {
+  "id": "pawnhub",
+  "name": "PawnHub Pawn Shops",
+  "category": "tech",
+  "tier": 1,
+  "weekly": 900,
+  "blurb": "Pawn your belt! (Do not pawn your belt.)",
+  "ethics": 1
+ },
+ {
+  "id": "graingers",
+  "name": "Mewtwo Mobile",
+  "category": "tech",
+  "tier": 3,
+  "weekly": 8000,
+  "blurb": "Wireless carrier with one bar of signal in every arena.",
+  "ethics": 0
+ },
+ {
+  "id": "callofbooty",
+  "name": "Call of Booty: Modern Warfare",
+  "category": "tech",
+  "tier": 2,
+  "weekly": 5000,
+  "blurb": "Video game for 14-year-olds and divorced fighters.",
+  "ethics": 0
+ }
+]

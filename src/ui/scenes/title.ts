@@ -27,6 +27,8 @@ export class TitleScene extends Scene {
 
   build(): void {
     const r = this.root;
+    this.rain = new Graphics();
+    this.marquee = new Graphics();
     r.addChild(fullBg(0x15121a));
     r.addChild(this.drawFacade());
     r.addChild(this.marquee);

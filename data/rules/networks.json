@@ -1,0 +1,8 @@
+[
+  { "id": "public_access", "name": "Channel 44 Public Access", "tier": 0, "basePerEvent": 4000, "ppv": false, "minAct": 1, "blurb": "Shown between a church sermon and a guy selling knives." },
+  { "id": "spike_ish", "name": "SPLAT TV", "tier": 1, "basePerEvent": 60000, "ppv": false, "minAct": 1, "blurb": "Cable channel for men who own 4 pairs of cargo shorts. Your ticket out of Act I." },
+  { "id": "streamz", "name": "StreamZone+", "tier": 2, "basePerEvent": 180000, "ppv": true, "minAct": 2, "blurb": "Streaming platform that buffers exactly during knockouts." },
+  { "id": "fux_sports", "name": "FUX Sports 1", "tier": 2, "basePerEvent": 300000, "ppv": true, "minAct": 2, "blurb": "Big network, bigger egos. Wants a say in your main events." },
+  { "id": "worldwide_sports", "name": "WSPN", "tier": 3, "basePerEvent": 900000, "ppv": true, "minAct": 3, "blurb": "The worldwide leader in yelling about sports. Pays a fortune, demands total control." },
+  { "id": "megaflix", "name": "Megaflix Live", "tier": 4, "basePerEvent": 2400000, "ppv": true, "minAct": 4, "blurb": "Tech giant with infinite money. Wants a docuseries. Wants everything filmed. Everything." }
+]

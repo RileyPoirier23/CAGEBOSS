@@ -1,0 +1,12 @@
+[
+  { "id": "mojave", "name": "Mojave State Athletic Commission", "region": "mojave", "country": "USA", "strictness": 0.7, "visa": false, "quirks": ["random drug tests", "will fine you for a ring girl's outfit"] },
+  { "id": "lone_star", "name": "Lone Star Combat Sports Department", "region": "lone_star", "country": "USA", "strictness": 0.4, "visa": false, "quirks": ["judges love wrestling", "approves anything with a cowboy hat on"] },
+  { "id": "bayou", "name": "Bayou Parish Boxing & Wrestling Board", "region": "bayou", "country": "USA", "strictness": 0.2, "visa": false, "quirks": ["the inspector is your fighter's cousin", "license fees payable in cash"] },
+  { "id": "great_lakes", "name": "Great Lakes Athletic Commission", "region": "great_lakes", "country": "USA", "strictness": 0.5, "visa": false, "quirks": ["very particular about cup checks"] },
+  { "id": "atlantic", "name": "Atlantic Seaboard Athletic Commission", "region": "atlantic", "country": "USA", "strictness": 0.9, "visa": false, "quirks": ["mandatory MRI for everyone", "won't allow fighters over 40 without a hearing"] },
+  { "id": "pacific", "name": "Pacific Coast Combat Commission", "region": "pacific", "country": "USA", "strictness": 0.75, "visa": false, "quirks": ["hydration testing at weigh-ins", "two-day weigh-in rule"] },
+  { "id": "albion", "name": "Neo-Albion Combat Licensing Office", "region": "albion", "country": "England", "strictness": 0.6, "visa": true, "quirks": ["forms in triplicate", "bans fighters with certain arrests"] },
+  { "id": "brasilia", "name": "Confederacao Nacional de Luta", "region": "brasilia", "country": "Brazil", "strictness": 0.3, "visa": true, "quirks": ["judges extremely hometown", "very loose drug testing"] },
+  { "id": "southern_cross", "name": "Southern Cross Combat Sports Authority", "region": "southern_cross", "country": "Australia", "strictness": 0.65, "visa": true, "quirks": ["bans fighters with any criminal record", "strict on sponsor categories"] },
+  { "id": "qasr", "name": "Royal Qasr Sports Authority", "region": "qasr", "country": "Kingdom of Qasr", "strictness": 0.1, "visa": true, "quirks": ["no alcohol sponsors", "no female ring card girls", "the prince picks one judge"] }
+]

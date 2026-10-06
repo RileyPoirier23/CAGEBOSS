@@ -28,7 +28,7 @@ export const PAL = {
   steel: 0x4f6582,
   sky: 0x8aa2b8,
   plum: 0x6a4c72,
-} as const;
+};
 
 export type PalKey = keyof typeof PAL;
 

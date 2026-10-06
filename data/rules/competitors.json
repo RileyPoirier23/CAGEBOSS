@@ -1,0 +1,9 @@
+[
+  { "id": "boxing_ppv", "name": "Golden Glove Boxing PPV", "sport": "Boxing", "buzz": 60, "volatility": 18, "blurb": "Two men who have avoided each other for 6 years finally fight. It's a hug-fest." },
+  { "id": "influencer_boxing", "name": "Clout Boxing Clash", "sport": "Influencer Boxing", "buzz": 45, "volatility": 30, "blurb": "YouTubers fighting retired basketball players. Somehow outsells you." },
+  { "id": "wrestling_ent", "name": "Worldwide Wrestling Spectacle", "sport": "Pro Wrestling", "buzz": 70, "volatility": 8, "blurb": "Predetermined, perfectly produced, and more honest about it than you." },
+  { "id": "bareknuckle", "name": "Knuckle Up BKFC-ish", "sport": "Bare Knuckle", "buzz": 25, "volatility": 22, "blurb": "Bare-knuckle boxing in a circle. Every fight looks like a car crash. Ratings climbing." },
+  { "id": "slap_league", "name": "Power Slap Showdown", "sport": "Slap Fighting", "buzz": 20, "volatility": 35, "blurb": "Grown men standing still and slapping each other unconscious. Doctors hate it." },
+  { "id": "kickboxing", "name": "Glory-ish Kickboxing", "sport": "Kickboxing", "buzz": 22, "volatility": 12, "blurb": "Elite strikers, nobody watching. A tragedy in three rounds." },
+  { "id": "one_asia", "name": "ONE-derful Championship", "sport": "MMA (Asia)", "buzz": 35, "volatility": 15, "blurb": "Gorgeous production, questionable record keeping, a CEO who posts motivational quotes at 4am." }
+]

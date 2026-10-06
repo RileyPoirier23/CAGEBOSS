@@ -15,6 +15,7 @@
     "namegen": "tsx tools/namegen.ts"
   },
   "dependencies": {
+    "lz-string": "^1.5.0",
     "pixi.js": "^8.22.0"
   },
   "devDependencies": {

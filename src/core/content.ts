@@ -258,9 +258,13 @@ type Raw = Record<string, unknown>;
 
 /** Merge a set of JSON files (path -> parsed) into a Content bundle. */
 export function buildContent(files: Record<string, unknown>): Content {
-  const get = (suffix: string): any => {
+  const REQUIRED = Symbol('required');
+  const get = (suffix: string, fallback: unknown = []): any => {
     const key = Object.keys(files).find((k) => k.replace(/\\/g, '/').endsWith(suffix));
-    if (!key) throw new Error('Missing content file: ' + suffix);
+    if (!key) {
+      if (fallback === REQUIRED) throw new Error('Missing content file: ' + suffix);
+      return fallback;
+    }
     return files[key];
   };
   const under = (dir: string): [string, any][] =>
@@ -288,7 +292,7 @@ export function buildContent(files: Record<string, unknown>): Content {
   }
 
   return {
-    divisions: get('divisions/divisions.json'),
+    divisions: get('divisions/divisions.json', REQUIRED),
     roster,
     managers: get('roster/managers.json'),
     storylets: concat<StoryletDef>('storylets'),
@@ -306,9 +310,10 @@ export function buildContent(files: Record<string, unknown>): Content {
     officials: get('rules/officials.json'),
     endings: get('rules/endings.json'),
     acts: get('rules/acts.json'),
-    names: get('roster/names.json'),
+    names: get('roster/names.json', REQUIRED),
     backstories: get('documents/backstories.json'),
-    templates: get('documents/templates.json'),
-    docs: get('documents/docs.json'),
+    // templates/docs fall back to empty banks so partial content still loads
+    templates: get('documents/templates.json', { ticker: {}, social: {}, presser: {}, ledgerQuips: [], misc: {} }),
+    docs: get('documents/docs.json', { substances: [], doctors: [], scans: [], countries: [], expenseItems: [], sponsorCategories: [] }),
   };
 }

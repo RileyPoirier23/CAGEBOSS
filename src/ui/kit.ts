@@ -124,7 +124,7 @@ export interface ButtonOpts {
 
 export class Button extends Container {
   private bg: Graphics;
-  private label: PixelText;
+  private labelNode: PixelText;
   private hovered = false;
   disabled: boolean;
 
@@ -140,16 +140,16 @@ export class Button extends Container {
     this.bg = new Graphics();
     this.addChild(this.bg);
     const small = !!opts.small;
-    this.label = new PixelText(labelText, {
+    this.labelNode = new PixelText(labelText, {
       small,
       color: this.disabled ? PAL.grey : (opts.textColor ?? PAL.bone),
       width: opts.align === 'left' ? undefined : w,
       align: opts.align === 'left' ? 'left' : 'center',
       maxLines: 1,
     });
-    this.label.x = opts.align === 'left' ? 4 : 0;
-    this.label.y = Math.floor((h - (small ? 5 : 7)) / 2);
-    this.addChild(this.label);
+    this.labelNode.x = opts.align === 'left' ? 4 : 0;
+    this.labelNode.y = Math.floor((h - (small ? 5 : 7)) / 2);
+    this.addChild(this.labelNode);
     this.eventMode = 'static';
     this.cursor = this.disabled ? 'default' : 'pointer';
     this.on('pointerover', () => {
@@ -178,7 +178,7 @@ export class Button extends Container {
   setDisabled(d: boolean): void {
     this.disabled = d;
     this.cursor = d ? 'default' : 'pointer';
-    this.label.setColor(d ? PAL.grey : (this.opts.textColor ?? PAL.bone));
+    this.labelNode.setColor(d ? PAL.grey : (this.opts.textColor ?? PAL.bone));
     this.draw();
   }
 

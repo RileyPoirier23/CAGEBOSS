@@ -92,7 +92,8 @@ export interface Fighter {
   bio?: string; // authored bio (overrides generated)
   look: Look;
   marquee?: { archetype: string; arc: string };
-  parody?: boolean; // pun-name wink at a real person: never cast in 'serious' storylets
+  parody?: string; // real-life counterpart being parodied (never cast in criminal/doping/abuse storylets)
+  anim?: FighterAnim; // fight-view animation style & signature moves
   legend?: boolean;
   record: { w: number; l: number; d: number; nc: number };
 
@@ -136,6 +137,13 @@ export interface Fighter {
   wounds: Wounds; // visible post-fight damage (portraits & interviews)
 }
 
+export interface FighterAnim {
+  stance: 'bouncy' | 'crouch' | 'upright' | 'handsLow' | 'wrestler' | 'karate' | 'brawler' | 'sway';
+  signature: string[]; // e.g. 'spinningElbow', 'obliqueKick', 'showtimeKick', 'flyingKnee', 'shoulderShimmy'
+  walkout?: string; // walkout flavour line
+  celebration?: string; // e.g. 'backflip', 'billyWalk', 'strut', 'prays', 'gunShow'
+}
+
 export interface Wounds {
   cuts: number; // 0..3 open cuts (eyebrow/cheek)
   blackEye: number; // 0..2
@@ -154,6 +162,21 @@ export interface TickerLine {
   text: string;
   side: 0 | 1 | -1; // who acted (-1 neutral)
   intensity: number; // 0..3 crowd noise
+  act: string; // animation cue for the mini arena (jab, kick, shoot, gnp, sub, kd, ko, ...)
+  pos: 'stand' | 'clinch' | 'atop' | 'btop'; // position after the action
+  hp: [number, number];
+}
+
+export interface CornerReport {
+  round: number; // after this round
+  side: 0 | 1;
+  coach: string;
+  cutman: string;
+  hp: number;
+  cut: number;
+  injury: string | null;
+  quit: boolean;
+  scoreGuess: string; // what the corner thinks the scorecards say
 }
 
 export interface FightResult {
@@ -174,6 +197,9 @@ export interface FightResult {
   injuries: { fighter: string; name: string; weeks: number }[]; // in-fight injuries (broken limbs etc.)
   fouls: { fighter: string; text: string; penalized: boolean }[];
   pointDeductions: [number, number];
+  corners?: CornerReport[];
+  roundScores?: [number, number][][]; // [round][judge] = [a, b]
+  cuts: [number, number];
 }
 
 export interface Bout {
@@ -317,6 +343,8 @@ export interface ChoiceDef {
   result?: string;
   tone?: 'deflect' | 'attack' | 'joke' | 'truth' | 'wwsh' | 'storm';
   bot?: number; // hint weight for bots (higher = greedy policy prefers)
+  default?: boolean; // applied if the player ignores the storylet
+  ethics?: number; // -2 shady .. +2 noble (used by bot policies & endings)
 }
 
 export interface StoryletDef {
