@@ -26,7 +26,7 @@ describe('simulation', () => {
     expect(back.week).toBe(s.week);
     expect(back.promotion.cash).toBe(s.promotion.cash);
     expect(Object.keys(back.fighters).length).toBe(Object.keys(s.fighters).length);
-    expect(makeSave(s, 1).meta.name).toBe('Test FC');
+    expect(makeSave(s, 'auto').meta.name).toBe('Test FC');
   });
 
   it('plays a whole career to an ending', () => {

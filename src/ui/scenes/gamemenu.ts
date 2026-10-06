@@ -9,10 +9,11 @@ import { SLOTS, saveToSlot, slotMeta, exportSave } from '../../core/save';
 import { openSettings } from './settings';
 import { openLoad } from './loadmenu';
 import { TitleScene } from './title';
+import { exportRosterPack, importRosterPack } from '../rosterpack';
 
 export function openGameMenu(g: Game, onClose: () => void): void {
   const s = g.state!;
-  const win = openWindow(g, 'Menu', 220, 200, { onClose });
+  const win = openWindow(g, 'Menu', 220, 232, { onClose });
   let y = 4;
   win.body.addChild(text(s.difficulty === 'ironman' ? 'IRONMAN: autosave only.' : 'Save to slot:', 8, y, { small: true, color: PAL.ash }));
   y += 10;
@@ -31,6 +32,9 @@ export function openGameMenu(g: Game, onClose: () => void): void {
   }
   y += 4;
   win.body.addChild(button('EXPORT SAVE TO FILE', 8, y, 204, 13, () => downloadText(`cageboss-${s.promotion.name.replace(/\W+/g, '_')}-wk${s.week}.json`, exportSave(s)), { small: true }));
+  y += 15;
+  win.body.addChild(button('EXPORT ROSTER PACK', 8, y, 100, 13, () => exportRosterPack(g), { small: true }));
+  win.body.addChild(button('IMPORT ROSTER PACK', 112, y, 100, 13, () => importRosterPack(g, () => {}), { small: true }));
   y += 15;
   win.body.addChild(button('LOAD...', 8, y, 204, 13, () => { win.close(); openLoad(g); }, { small: true, disabled: s.difficulty === 'ironman' }));
   y += 15;
