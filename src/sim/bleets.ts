@@ -33,6 +33,22 @@ export function bleetSituation(line: TickerLine): { sit: string; chance: number 
   return null;
 }
 
+/** Lines used recently (across fights in a session): avoid repeating them until the bank runs dry. */
+const RECENT: string[] = [];
+const remember = (line: string) => {
+  RECENT.push(line);
+  if (RECENT.length > 160) RECENT.shift();
+};
+
+// fans type in a dozen different voices
+const FAN_PRE = ['', '', '', 'bro ', 'nah ', 'LMAO ', 'yo ', 'ngl ', 'chat ', 'wait ', 'ok but ', 'not gonna lie ', 'BRO ', 'lol ', 'genuinely '];
+const FAN_POST = ['', '', '', ' lmao', ' smh', ' fr', ' no cap', '!!!', ' #BloodMoney', ' (i am sober)', ' send help', ' im crying', ' 100%', ' ...', ' on god'];
+const HOT_TAKES = [
+  'this fight > {pop_movie}', '{x} fights like {pop_athlete} on {pop_food}', 'somebody tell {pop_celeb} to sit down on fighter row',
+  '{y} is having a {pop_show} season finale moment', '{pop_streamer} watch party is losing it rn', '{x} merch selling out on {pop_app} as we speak',
+  'not {pop_celeb} live-bleeting this from fighter row', '{y} needs a {pop_brand} sponsorship for that chin', 'the commentary team is more lit than {pop_musician}',
+];
+
 export function makeBleet(s: GameState, ev: FightEvent, bout: Bout, sit: string, actor: 0 | 1, rng: Rng): Bleet | null {
   const bank = content().templates.bleets?.[sit];
   if (!bank) return null;
@@ -53,13 +69,23 @@ export function makeBleet(s: GameState, ev: FightEvent, bout: Bout, sit: string,
     else kind = 'fan';
   }
   if (kind === 'fan') handle = '@' + rng.pick(FAN_HANDLES);
-  const lines = bank[kind] ?? bank.fan;
-  if (!lines?.length) return null;
+  const all = bank[kind] ?? bank.fan;
+  if (!all?.length) return null;
+  const fresh = all.filter((l) => !RECENT.includes(l));
+  let line = rng.pick(fresh.length ? fresh : all);
+  remember(line);
+  if (kind === 'fan') {
+    // remix: a hot take now and then, and everyone has their own typing style
+    if (rng.chance(0.18)) line = rng.pick(HOT_TAKES);
+    const pre = rng.pick(FAN_PRE);
+    line = (pre ? pre + line.charAt(0).toLowerCase() + line.slice(1) : line) + rng.pick(FAN_POST);
+  }
+  const shout = kind === 'fan' && rng.chance(0.12);
   const promo = s.promotion.name;
-  const text = expandPop(rng.pick(lines), rng.int(0, 1e6))
+  const text = expandPop(line, rng.int(0, 1e6))
     .replace(/\{X\}/g, A.last.toUpperCase()).replace(/\{Y\}/g, B.last.toUpperCase())
     .replace(/\{x\}/g, A.last).replace(/\{y\}/g, B.last)
     .replace(/\{xh\}/g, handleOf(A)).replace(/\{yh\}/g, handleOf(B))
     .replace(/\{event\}/g, ev.name).replace(/\{promotion\}/g, promo);
-  return { handle, kind, text };
+  return { handle, kind, text: shout ? text.toUpperCase() : text };
 }

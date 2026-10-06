@@ -180,6 +180,11 @@ export class ArenaView extends Container {
   private stainsDrawn = -1;
   private matLogo = new Sprite();
   private walkInT = 0;
+  private slowTag!: PixelText;
+  private touchT = 0; // round 1: ref brings them together, they touch gloves
+  private slowT = 0; // slow motion after knockdowns / knockouts
+  private clapped = new Set<number>();
+  private resting = false;
   private drawPose: [string, string] = ['guard', 'guard'];
   // grappling: which position we're in, and which submission is being cranked (attacker side)
   private groundPos: GroundSpot = 'guard';
@@ -242,6 +247,9 @@ export class ArenaView extends Container {
     this.clock = text('R1 5:00', 0, 3, { width: AW, align: 'center', color: PAL.gold });
     this.callout = text('', 0, 46, { width: AW, align: 'center', color: PAL.gold, scale: 2, shadow: PAL.ink });
     this.hud.addChild(this.clock, this.callout);
+    this.slowTag = text('SLOW MO', AW - 58, AH - 8, { small: true, color: 0xffffff });
+    this.slowTag.visible = false;
+    this.hud.addChild(this.slowTag);
     // TV graphics
     this.tv.addChild(this.tvG);
     this.tvTag = text('● LIVE', AW - 50, 26, { small: true, color: 0xffffff });
@@ -585,7 +593,19 @@ export class ArenaView extends Container {
     const def = (1 - attacker) as 0 | 1;
     this.F[attacker].lunge = 7;
     this.F[def].recoil = big ? 9 : 5;
-    if (joint !== 'ftB' && joint !== 'knB') this.F[def].snap = big ? 1 : 0.55;
+    // the man who got hit reacts: head snaps, he's knocked back a step, body shots fold him,
+    // big ones buckle the knees
+    const D = this.F[def];
+    const head = joint !== 'ftB' && joint !== 'knB';
+    if (head) D.snap = big ? 1.6 : 0.8;
+    if (this.ground === 'stand' || this.ground === 'clinch') {
+      D.v = (D.v ?? 0) - D.facing * (big ? 120 : 60);
+      if (D.poseT <= 0 || D.pose === 'guard') {
+        if (joint === 'knB' || (!head && big)) this.setPose(def, 'doubled', 0.4); // folded over
+        else if (big) this.setPose(def, 'rocked', 0.45);
+        else if (Math.random() < 0.5) this.setPose(def, 'hurt', 0.2);
+      }
+    }
     const [x, y] = this.handPos(attacker, joint);
     this.burst(x, y, big ? 16 : 7, big ? PAL.gold : 0xffffff, big ? 110 : 60, 0.3, big ? 2 : 1);
     this.burst(x, y, 4, 0xbfe0ff, 40, 0.5, 1, 120); // sweat
@@ -698,6 +718,7 @@ export class ArenaView extends Container {
         this.impact(A, 'haB', true, true);
         this.flash = 0.25;
         this.showCallout('KNOCKDOWN!');
+        this.slowT = 1.1;
         this.ref.tx = this.center;
         if (this.mode === 'tv') this.cutTo('close', 0.6, true);
         sfx('roar');
@@ -711,6 +732,7 @@ export class ArenaView extends Container {
         this.winnerSide = A;
         this.finished = true;
         this.showCallout('KNOCKOUT!');
+        this.slowT = 1.6;
         this.ref.tx = this.F[D].x;
         if (this.mode === 'tv') this.cutTo('close', 1.5, true);
         sfx('roar');
@@ -802,7 +824,13 @@ export class ArenaView extends Container {
       this.showCallout(name.replace(/([A-Z])/g, ' $1').toUpperCase() + '!');
     }
     if (line.act === 'bell' || /round_start/.test(line.key ?? '')) this.ref.tx = this.center + 60;
-    if (line.key === 'opening' || line.key === 'round_start') this.walkOut();
+    if (line.key === 'opening' || line.key === 'round_start') this.walkOut(line.key === 'opening');
+    if (line.t >= 288 && !this.clapped.has(line.round) && this.scene === 'fight') {
+      // the timekeeper's clapper: ten seconds left in the round
+      this.clapped.add(line.round);
+      this.showCallout('10 SECONDS!');
+      sfx('click');
+    }
   }
 
   /** The winner's party piece, based on who they are. */
@@ -872,8 +900,31 @@ export class ArenaView extends Container {
     return r;
   }
 
+  /** Between rounds: fighters sit on their stools in the corners. */
+  restInCorners(): void {
+    this.resting = true;
+    this.ground = 'stand';
+    this.subAnim = null;
+    const corners = [CAGE_L + 26, CAGE_R - 26];
+    this.F.forEach((f, i) => {
+      f.x = corners[i];
+      f.v = 0;
+      f.pose = 'stool';
+      f.poseT = 9999;
+      f.facing = i === 0 ? 1 : -1;
+    });
+  }
+
+  /** Something that walks behind the fighters (the ring card girl), drawn into the arena's far side. */
+  addBackdrop(c: Container): void {
+    const i = this.worldInner.getChildIndex(this.fighters);
+    this.worldInner.addChildAt(c, i);
+  }
+
   /** New round: both fighters start in their corners and walk out to meet in the middle. */
-  walkOut(): void {
+  walkOut(firstRound = false): void {
+    this.resting = false;
+    this.touchT = firstRound ? 2.6 : 0;
     this.ground = 'stand';
     this.subAnim = null;
     this.center = AW / 2;
@@ -969,6 +1020,12 @@ export class ArenaView extends Container {
   // ------------------------------------------------------------ frame
 
   update(dt: number): void {
+    const real = dt;
+    if (this.slowT > 0) {
+      this.slowT -= real;
+      dt *= 0.3;
+    }
+    this.touchT -= dt;
     this.t += dt;
     this.drawCrowd();
     const ground = this.ground === 'atop' || this.ground === 'btop';
@@ -1000,8 +1057,14 @@ export class ArenaView extends Container {
         tx = this.center;
       }
       if (!ground || this.scene !== 'fight') f.facing = i === 0 ? 1 : -1;
+      if (this.resting) tx = i === 0 ? CAGE_L + 26 : CAGE_R - 26;
+      if (this.touchT > 0 && this.walkInT <= 0 && this.ground === 'stand') {
+        tx = this.center + side * 9;
+        if (this.touchT < 1.6 && this.touchT > 0.9 && f.poseT <= 0) this.setPose(i, 'jab', 0.12);
+        this.ref.tx = this.center + (this.touchT > 0.9 ? 0 : 60);
+      }
       // footwork on the feet: step in, step out to make space, circle; feint now and then
-      const standing = this.scene === 'fight' && this.ground === 'stand' && !this.finished;
+      const standing = this.scene === 'fight' && this.ground === 'stand' && !this.finished && !this.resting;
       if (standing && this.walkInT <= 0) {
         f.footT = (f.footT ?? 0) - dt;
         if (f.footT <= 0) {
@@ -1357,6 +1420,12 @@ export class ArenaView extends Container {
       h.rect(AW - 144, 13, 140, 6).fill(PAL.ink).rect(AW - 5 - Math.round((138 * this.hp[1]) / 100), 14, Math.round((138 * this.hp[1]) / 100), 4).fill(this.hp[1] > 40 ? PAL.moss : PAL.blood);
       h.rect(4, 20, 10, 2).fill(this.L[0].glove).rect(AW - 14, 20, 10, 2).fill(this.L[1].glove);
     }
+    if (this.slowT > 0) {
+      // broadcast slow motion: letterbox bars and a tag
+      h.rect(0, 0, AW, 10).fill({ color: 0x000000, alpha: 0.85 }).rect(0, AH - 10, AW, 10).fill({ color: 0x000000, alpha: 0.85 });
+      h.rect(AW - 60, AH - 9, 54, 8).fill(0xa01818);
+    }
+    this.slowTag.visible = this.slowT > 0;
     if (this.flash > 0) {
       h.rect(0, 0, AW, AH).fill({ color: 0xffffff, alpha: Math.min(0.5, this.flash) });
       this.flash -= dt;
@@ -1391,7 +1460,7 @@ export class ArenaView extends Container {
 }
 
 /** Corner cutaway between rounds: split screen of both corners. */
-export function cornerView(A: Fighter, B: Fighter, reports: CornerReport[], round: number): Container {
+export function cornerView(A: Fighter, B: Fighter, reports: CornerReport[], round: number, stats?: { sig: [number, number]; td: [number, number]; kd: [number, number] }): Container {
   const c = new Container();
   const g = new Graphics();
   g.rect(0, 0, AW, AH).fill(0x18141a);
@@ -1437,6 +1506,13 @@ export function cornerView(A: Fighter, B: Fighter, reports: CornerReport[], roun
     c.addChild(text(`CUTMAN ${f.cutman.name.toUpperCase()} (${f.cutman.rating}): ${rep?.cutman ?? ''}`, ox + 10, 128, { small: true, width: AW / 2 - 20, color: PAL.ash, maxLines: 3 }));
     if (rep?.quit) c.addChild(text('NOT COMING OUT!', ox + 88, 40, { color: PAL.blood }));
   });
+  if (stats) {
+    // broadcast stat strip: significant strikes, takedowns, knockdowns this round
+    const row = `SIG. STRIKES ${stats.sig[0]} - ${stats.sig[1]}    TAKEDOWNS ${stats.td[0]} - ${stats.td[1]}${stats.kd[0] + stats.kd[1] ? `    KNOCKDOWNS ${stats.kd[0]} - ${stats.kd[1]}` : ''}`;
+    const strip = new Graphics().rect(AW / 2 - 120, 10, 240, 8).fill({ color: 0x0a0a10, alpha: 0.95 }).rect(AW / 2 - 120, 17, 240, 1).fill(PAL.gold);
+    c.addChild(strip);
+    c.addChild(text(row, 0, 12, { small: true, width: AW, align: "center", color: PAL.bone }));
+  }
   return c;
 }
 
@@ -1469,11 +1545,14 @@ export class RingCardWalk extends Container {
     g.clear();
     const step = Math.floor(this.t * 6) % 2 === 0 ? POSES.walk1 : POSES.walk2;
     const rig: Rig = { ...step, haB: [2, -96], elB: [0, -82], haF: [8, -96], elF: [8, -82] };
-    g.ellipse(x, FLOOR + 1, 12, 2).fill({ color: 0, alpha: 0.35 });
-    drawRig(g, rig, Math.round(x), FLOOR, 1, this.L);
-    // held overhead, a little bob with each step
+    // she walks the far side of the octagon, behind the fighters, a touch smaller with distance
+    const fy = FLOOR - 14;
+    const sc = 0.82;
+    g.ellipse(x, fy + 1, 10, 2).fill({ color: 0, alpha: 0.35 });
+    drawRig(g, rig, Math.round(x), fy, 1, this.L, sc);
     const bob = Math.floor(this.t * 6) % 2;
-    this.card.position.set(Math.round(x - 17), FLOOR - 126 + bob);
+    this.card.scale.set(sc);
+    this.card.position.set(Math.round(x - 17 * sc), Math.round(fy - 126 * sc + bob));
     g.updateCacheTexture();
     return x < AW + 40;
   }

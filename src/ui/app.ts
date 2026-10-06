@@ -246,7 +246,7 @@ export class Game {
     // tiny equaliser bars
     for (let i = 0; i < 3; i++) bg.rect(5 + i * 2, 6 + (i % 2) * 3, 1, 8 - (i % 2) * 3).fill(PAL.gold);
     c.addChild(bg, label, song);
-    c.position.set(4, H - 21);
+    c.position.set(4, H - 40); // clear of every screen's bottom button row
     c.alpha = 0;
     this.toastLayer.addChild(c);
     this.nowPlaying = { node: c, t: 0 };

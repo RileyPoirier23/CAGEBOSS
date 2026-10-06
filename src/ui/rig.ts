@@ -15,6 +15,7 @@ export type Pose =
   | 'guard' | 'jab' | 'cross' | 'hook' | 'uppercut' | 'body' | 'legkick' | 'bodykick' | 'headkick' | 'knee' | 'elbow' | 'spin' | 'flyknee'
   | 'shoot' | 'sprawl' | 'clinch' | 'top' | 'topPunch' | 'bottom' | 'bottomSub' | 'hurt' | 'rocked' | 'down' | 'ko' | 'celebrate'
   | 'taunt' | 'stool' | 'walk1' | 'walk2' | 'block' | 'slip' | 'lifted'
+  | 'doubled'
   | 'stand' | 'armUp' | 'headDown' | 'refHold' | 'refRaise' | 'mic' | 'point' | 'flex'
   | GroundPose;
 
@@ -111,6 +112,8 @@ export const POSES: Record<Pose, Rig> = {
   cross: P({ neck: [7, -66], head: [10, -74], shF: [10, -63], shB: [4, -64], elB: [22, -66], haB: [40, -69], haF: [14, -70], elF: [12, -58], ftB: [-10, 0], knB: [-2, -20] }),
   hook: P({ neck: [6, -66], head: [8, -74], shB: [2, -65], elB: [24, -66], haB: [34, -72], haF: [14, -70] }),
   uppercut: P({ neck: [6, -63], head: [8, -71], hip: [2, -38], elB: [16, -56], haB: [30, -74], knF: [10, -18], knB: [-4, -18] }),
+  // folded over from a body shot: hunched, elbows down over the liver, knees bent
+  doubled: P({ neck: [6, -55], head: [10, -61], shF: [9, -53], shB: [2, -54], hip: [-3, -37], elF: [9, -44], haF: [12, -50], elB: [3, -42], haB: [7, -48], knF: [8, -17], ftF: [13, 0], knB: [-8, -17], ftB: [-14, 0] }),
   body: P({ neck: [8, -60], head: [12, -67], hip: [2, -36], shB: [4, -58], elB: [20, -50], haB: [34, -50], knF: [12, -18], knB: [-4, -18] }),
   legkick: P({ neck: [-1, -67], head: [0, -75], hip: [-2, -40], knB: [18, -30], ftB: [38, -22], haB: [-8, -54], elB: [-6, -50] }),
   bodykick: P({ neck: [-4, -65], head: [-5, -73], hip: [-3, -42], knB: [18, -46], ftB: [40, -50], haB: [-12, -56], elB: [-8, -52] }),
@@ -240,7 +243,8 @@ export function lookFor(f: Fighter, corner: 0 | 1, champ = false): Look2 {
               : f.styles.includes('Counter Striker') ? 'sway' : 'bouncy'),
     female: f.gender === 'W',
     tattoo: f.look.tattoo,
-    ink: [...f.id].reduce((a, ch) => (a * 33 + ch.charCodeAt(0)) >>> 0, 7) % 6,
+    // ink follows the contract photo: 1 = neck, 2 = shoulder/chest piece, 3 = the works
+    ink: f.look.tattoo === 1 ? 4 : f.look.tattoo === 2 ? [1, 2, 5][[...f.id].reduce((a, ch) => (a * 33 + ch.charCodeAt(0)) >>> 0, 7) % 3] : f.look.tattoo >= 3 ? 0 : undefined,
     nose: f.look.nose,
     ears: Math.min(3, f.look.ears + (f.styles.includes('Wrestler') || f.styles.includes('Sub Hunter') ? 1 : 0)),
     brows: f.look.brows,
@@ -626,13 +630,14 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
   g.poly(poly(noseShape)).fill(skin);
   // ear (cauliflower if he's rolled long enough)
   const earR = 1.2 + (L.ears ?? 0) * 0.35;
-  g.circle(...hpt(-1.6, 1), earR * s).fill(shade(skin, -0.2));
-  g.circle(...hpt(-1.6, 1), Math.max(0.4, earR - 0.8) * s).fill(shade(skin, -0.38));
+  g.circle(...hpt(-1.6, 1), earR * s).fill(shade(skin, -0.1));
+  g.circle(...hpt(-1.4, 1.1), Math.max(0.35, earR - 0.9) * s).fill(shade(skin, -0.24));
   // eye: white, pupil, lid; brow (heavier brows for some)
   g.circle(...hpt(4.6, -1.2), 0.95 * s).fill(0xd6cec2);
   g.circle(...hpt(5.1, -1.2), 0.55 * s).fill(0x14100e);
   hl([3.6, -2.1], [5.8, -2.1], shade(skin, -0.4), 0.7);
   hl([2.6, -3.6], [6.4, -3.2], shade(L.hairColor, -0.1), 1.2 + (L.brows ?? 0) * 0.35);
+  if (L.tattoo === 3 && !o) g.circle(...hpt(4.4, 0.6), 0.55 * s).fill(shade(skin, -0.65)); // teardrop ink, as on the contract photo
   // scar across the brow
   if ((L.scar ?? 0) > 0) hl([3, -5], [6, -1.6], shade(skin, 0.22), 0.6);
   // mouth (+ mouthguard flash for fighters)
@@ -651,38 +656,67 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
     }
   };
   const D = Math.PI / 180;
+  // Solid hair seen side-on: a crescent hugging the skull from the hairline over the crown to
+  // the nape. a0 is the hairline (0 = face, -90 = top of head, -180 = back), a1 the nape.
+  const capFill = (a0: number, a1: number, thick: number, color: number, lift = 0) => {
+    const steps = 12;
+    const outer: [number, number][] = [];
+    const inner: [number, number][] = [];
+    const R = hr / s;
+    for (let i = 0; i <= steps; i++) {
+      const a = (a0 + ((a1 - a0) * i) / steps) * D;
+      const bulge = Math.sin((Math.PI * i) / steps); // fullest at the crown
+      outer.push([Math.cos(a) * (R + thick * bulge + lift * bulge), Math.sin(a) * (R + thick * bulge + lift * bulge)]);
+      inner.push([Math.cos(a) * (R - 1.2), Math.sin(a) * (R - 1.2)]);
+    }
+    const pts = [...outer, ...inner.reverse()];
+    g.poly(poly(pts)).fill(color).stroke({ color: OUT, width: 0.9 * s, join: 'round' });
+    // a couple of strands so it reads as hair, not a helmet
+    for (let i = 2; i < steps - 1; i += 3) {
+      const a = (a0 + ((a1 - a0) * i) / steps) * D;
+      hl([Math.cos(a) * (R + 0.2), Math.sin(a) * (R + 0.2)], [Math.cos(a) * (R + thick * 0.7), Math.sin(a) * (R + thick * 0.7)], hcD, 0.5);
+    }
+  };
+  const sw = L.sway ?? 0;
   switch (L.hairStyle) {
     case 0:
       g.circle(...hpt(-1, -4.4), 1.4 * s).fill(shade(skin, 0.28)); // bald shine
       break;
     case 1:
-      cap(hr - 1 * s, -170 * D, -5 * D, hcD, 2.2 * s); // buzz
-      break;
-    case 4:
-      g.poly(poly([[-3, -hr / s + 1], [1 - (L.sway ?? 0) * 0.4, -hr / s - 5], [4, -hr / s + 1]])).fill(hc).stroke({ color: OUT, width: 1 * s }); // mohawk
+      capFill(-55, -195, 0.9, shade(hc, -0.05)); // buzz cut: thin, follows the skull
       break;
     case 3:
-      // dreads: a crown plus ropes that swing
-      cap(hr - 0.5 * s, -175 * D, 0, hc, 3.4 * s);
-      for (let k = 0; k < 4; k++) hl([-4 - k * 0.8, -3 + k * 1.2], [-6.5 - k - (L.sway ?? 0) * (0.6 + k * 0.2), 4 + k * 1.6], k % 2 ? hc : hcD, 1.3);
+      // swept / quiff: full top, the front lifted and pushed back
+      capFill(-40, -200, 2.2, hc, 0.6);
+      g.poly(poly([[1, -6.8], [6.5, -10.5 - sw * 0.3], [7.4, -6.6], [3, -5.6]])).fill(hc).stroke({ color: OUT, width: 0.8 * s });
+      break;
+    case 4:
+      // mohawk: shaved sides (stubble shadow) and a tall strip over the crown
+      capFill(-50, -190, 0.4, shade(skin, -0.22));
+      g.poly(poly([[-6, -hr / s + 3], [-4.5 - sw * 0.4, -hr / s - 2.5], [-1 - sw * 0.35, -hr / s - 4.5], [2.5 - sw * 0.3, -hr / s - 3.5], [4.5, -hr / s + 1.2]])).fill(hc).stroke({ color: OUT, width: 0.9 * s });
       break;
     case 5:
+      // long hair: full top, falling past the neck and swinging
+      capFill(-35, -205, 2.4, hc);
+      g.poly(poly([[-4, -2], [-7.8, -1.5], [-9 - sw, fem ? 13 : 9], [-5.5 - sw * 0.6, fem ? 12 : 8], [-3.5, 3]])).fill(hc).stroke({ color: OUT, width: 1 * s });
+      hl([-6.5, 1], [-7.5 - sw * 0.7, fem ? 10 : 7], hcD, 0.6);
+      break;
     case 6:
-      cap(hr - 0.5 * s, -175 * D, 2 * D, hc, 3.6 * s);
-      {
-        const sw = L.sway ?? 0;
-        g.poly(poly([[-4, -2], [-7.5, -1], [-8.5 - sw, fem ? 12 : 8], [-4.5 - sw * 0.7, fem ? 11 : 7]])).fill(hc).stroke({ color: OUT, width: 1 * s });
-      }
-      if (L.hairStyle === 6) for (let i = 0; i < 4; i++) hl([-6 + i * 2.6, -6.4 + Math.abs(i - 1.5)], [-6.4 + i * 2.6, -3], hcD, 0.7);
+      // braids / cornrows: tight lanes over the crown; women keep a long braid that swings
+      capFill(-45, -200, 1.4, hc);
+      for (let k = 0; k < 4; k++) hl([-5 + k * 2.6, -7.6 + Math.abs(k - 1.5) * 0.6], [-6 + k * 2.6, -3.4], hcD, 0.6);
+      if (fem) for (let k = 0; k < 3; k++) hl([-6 - sw * k * 0.3, 2 + k * 4], [-6.5 - sw * (k + 1) * 0.3, 6 + k * 4], k % 2 ? hc : hcD, 1.6);
       break;
     case 7:
-      cap(hr - 0.8 * s, -180 * D, 0, hc, 3 * s);
-      g.circle(...hpt(-6 - (L.sway ?? 0) * 0.3, -5.5), 3 * s).fill(OUT);
-      g.circle(...hpt(-6 - (L.sway ?? 0) * 0.3, -5.5), 2.3 * s).fill(hc); // man bun
+      // man bun / ponytail: pulled back tight, knot at the back of the crown
+      capFill(-45, -195, 1.3, hc);
+      g.circle(...hpt(-6 - sw * 0.3, -5.5), 3 * s).fill(OUT);
+      g.circle(...hpt(-6 - sw * 0.3, -5.5), 2.3 * s).fill(hc);
       break;
     default:
-      cap(hr - 0.6 * s, -180 * D, 2 * D, hc, 3.2 * s);
-      g.poly(poly([[-6.5, -3], [-7.2, 1.5], [-4.5, -1]])).fill(hc); // sideburn / back
+      // short: proper volume on top, tapered at the back and sides
+      capFill(-40, -200, 1.9, hc, 0.3);
+      g.poly(poly([[-1.5, -1], [-2, 2.5], [0.2, 1]])).fill(hc); // sideburn
   }
   if (L.beard === 3) {
     g.poly(poly([[-2.4, 3], [3, 7.6], [7, 5.4], [7.3, 3.6], [4.6, 4.4], [0.5, 1.4]])).fill(hc); // full beard
