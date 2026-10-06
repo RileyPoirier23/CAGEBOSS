@@ -73,7 +73,7 @@ export function fieldNode(
 ): { node: Container; h: number } {
   const c = new Container();
   const labelW = opts.labelW ?? 64;
-  const lab = text(label.toUpperCase(), 2, 2, { small: true, color: PAL.grey, width: labelW - 4, maxLines: 2 });
+  const lab = text(label.toUpperCase(), 2, 2, { small: true, color: PAL.slate, width: labelW - 4, maxLines: 2 });
   c.addChild(lab);
   let h = 10;
   const valW = w - labelW - 4;
@@ -105,6 +105,7 @@ export function fieldNode(
     c.addChild(t);
     h = Math.max(10, t.textHeight + 4);
   }
+  h = Math.max(h, lab.textHeight + 5);
   const hit = new Graphics().rect(0, 0, w, h).fill({ color: 0xffffff, alpha: 0.001 });
   c.addChildAt(hit, 0);
   if (ins) ins.register({ key, label, node: c, w, h });
