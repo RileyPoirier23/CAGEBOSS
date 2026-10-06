@@ -719,7 +719,7 @@
     "effects": [
      "fans -= 1"
     ],
-    "result": "Play-off music at minute 8. {He} keeps talking over it. Legend behaviour.",
+    "result": "Play-off music at minute 8. {He} keeps talking over it. Legend behavior.",
     "bot": 1
    }
   ],

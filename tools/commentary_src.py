@@ -739,7 +739,7 @@ BUTLER = {
         "{his} favorite TV show is {pop_show}, which {he} watches during the weight cut to 'feel something'",
         "{he} claims to be undefeated at {pop_game}. {his} little brother says otherwise",
         "{he} has more followers on {pop_app} than {pop_celeb}",
-        "{he} once got recognised at {pop_food} and the staff gave {him} free fries. {he} fought for that",
+        "{he} once got recognized at {pop_food} and the staff gave {him} free fries. {he} fought for that",
         "{he} wears {pop_brand} to every press conference and has never been paid for it",
     ],
 }

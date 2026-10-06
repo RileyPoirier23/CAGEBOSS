@@ -123,7 +123,7 @@ S(FILE, 'legend_comeback', 'One More Fight', 'legend',
 S(FILE, 'legend_hof_speech', 'Hall of Fame Speech', 'legend',
   [sc('narration', "{subject.first} {subject.last} is being inducted into the Hall of Fame. {His} speech is scheduled for 8 minutes. {He} has written 41 pages.")],
   [C("Let {him} speak as long as {he} wants", "fans += 2", "media += 1", result="It goes 47 minutes. {He} thanks {his} cutman, {his} third-grade teacher and a dog. Everyone cries.", default=True),
-   C("Play the music at minute 8", "fans -= 1", result="Play-off music at minute 8. {He} keeps talking over it. Legend behaviour.", bot=1)],
+   C("Play the music at minute 8", "fans -= 1", result="Play-off music at minute 8. {He} keeps talking over it. Legend behavior.", bot=1)],
   roles={"subject": LEG("true", "f.star + 5")}, cd=52, chain='legends')
 
 S(FILE, 'legend_podcast_beef', 'Legends Beefing', 'legend',

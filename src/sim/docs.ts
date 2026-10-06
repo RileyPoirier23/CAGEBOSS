@@ -421,7 +421,7 @@ const genPress: Gen = (s, rng, _ft, bad) => {
   } else if (bad) {
     if (rng.chance(0.5)) {
       outletName = rng.pick(['MMA Truth Bombs Dot Biz', 'Real Fight Newz (Real)', 'Big Dave\'s Fight Blog', 'The Daily Grapple (Unaffiliated)']);
-      v.push({ rule: 'press_creds', a: 'doc.outlet', b: 'rule.outlets', text: 'That outlet is not recognised.' });
+      v.push({ rule: 'press_creds', a: 'doc.outlet', b: 'rule.outlets', text: 'That outlet is not recognized.' });
     } else {
       const other = rng.pick(reps.filter((r) => r.id !== rep.id));
       photo = other.id;
