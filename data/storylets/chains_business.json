@@ -1,0 +1,1356 @@
+[
+ {
+  "id": "sm_pitch",
+  "title": "The Mascot Deal",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "{pop_food} wants to sponsor your next event, on one condition: a seven-foot mascot gets to walk out with the main eventers. The mascot is a sentient chicken nugget named Nuggy.",
+    "speaker": "Brand partnerships, {pop_food}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Take the money ({$fee})",
+    "effects": [
+     "earn('sponsors', vars.fee)",
+     "fans -= 1",
+     "follow('sm_night', 3)"
+    ],
+    "result": "Nuggy is coming. Nuggy is coming to fight night.",
+    "bot": 2
+   },
+   {
+    "label": "Counter: logo only, no Nuggy",
+    "effects": [
+     "earn('sponsors', vars.fee * 0.4)"
+    ],
+    "result": "They agree, sadly. Nuggy is reportedly devastated.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_sponsor_mascot",
+  "vars": {
+   "fee": "rand(40, 120) * 1000 * scale"
+  }
+ },
+ {
+  "id": "sm_night",
+  "title": "Nuggy Night",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "Nuggy walks out with the main eventer, does a little dance, and gets head-kicked by the opponent during the faceoff. The crowd's reaction is the loudest of the year. The clip has 40 million views."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Apologize to the sponsor",
+    "effects": [
+     "sponsors += 2",
+     "media += 1"
+    ],
+    "result": "The sponsor is thrilled. Sales up 300%. Nuggy has a concussion protocol.",
+    "default": true
+   },
+   {
+    "label": "Book Nuggy vs the opponent",
+    "effects": [
+     "fans += 3",
+     "commission -= 3",
+     "network += 2"
+    ],
+    "result": "The commission writes a very long letter. Nuggy trains with a Muay Thai coach.",
+    "bot": 2
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_sponsor_mascot",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(40, 120) * 1000 * scale"
+  }
+ },
+ {
+  "id": "al_leak",
+  "title": "The Roof Leaks",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "The arena roof for your next event is leaking. Right over the cage. The venue says it'll be fixed 'in time'. The venue said that last year.",
+    "speaker": "Venue manager"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay for an emergency repair ({$fee})",
+    "effects": [
+     "spend('venue', vars.fee)"
+    ],
+    "result": "Fixed. A roofer asks for front-row tickets. You give him two.",
+    "default": true
+   },
+   {
+    "label": "Put a bucket cageside and hope",
+    "effects": [
+     "follow('al_rain', 2)"
+    ],
+    "result": "A bucket. A professional bucket.",
+    "bot": 1
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_arena_leak",
+  "vars": {
+   "fee": "rand(30, 80) * 1000 * scale"
+  }
+ },
+ {
+  "id": "al_rain",
+  "title": "Rain in the Cage",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "Midway through the co-main, it rains. Inside. The mat turns into a slip-and-slide. Both fighters fall over at the same time and the crowd gives them a standing ovation."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Call it 'the Water Fight'",
+    "effects": [
+     "fans += 2",
+     "commission -= 2",
+     "media += 1"
+    ],
+    "result": "Shirts that say 'I SURVIVED THE WATER FIGHT' outsell everything.",
+    "bot": 2,
+    "default": true
+   },
+   {
+    "label": "Delay the event for repairs",
+    "effects": [
+     "fans -= 2",
+     "network -= 2"
+    ],
+    "result": "The network shows a 40-minute replay of the rain. Ratings go up."
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_arena_leak",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(30, 80) * 1000 * scale"
+  }
+ },
+ {
+  "id": "dc_pitch",
+  "title": "Documentary Crew",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A streaming service wants to embed a documentary crew in your promotion for a season. Full access. Every meeting. Every meltdown. Every receipt.",
+    "speaker": "Megaflix producer"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Full access",
+    "effects": [
+     "network += 3",
+     "media += 2",
+     "follow('dc_episode', 8)"
+    ],
+    "result": "Cameras everywhere. Including the bathroom, by accident, once.",
+    "bot": 2
+   },
+   {
+    "label": "Limited access",
+    "effects": [
+     "network += 1",
+     "follow('dc_episode', 8)"
+    ],
+    "result": "They get the fights and the hype. Not the meetings. Not the receipts.",
+    "default": true
+   },
+   {
+    "label": "No",
+    "effects": [],
+    "result": "They make one about a rival instead. It wins an award."
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 156,
+  "chain": "ch_documentary"
+ },
+ {
+  "id": "dc_episode",
+  "title": "Episode Three",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "The documentary's third episode, titled 'The Boss', features {president} yelling at a vending machine, crying at a fighter's wedding, and eating a hot dog in a stairwell. Reviews call it 'unhinged', 'human', and 'disgusting'."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Lean into the persona",
+    "effects": [
+     "fans += 3",
+     "patience -= 2",
+     "media += 1"
+    ],
+    "result": "You're a meme now. The board is not thrilled.",
+    "bot": 2
+   },
+   {
+    "label": "Demand edits",
+    "effects": [
+     "network -= 1",
+     "patience += 2"
+    ],
+    "result": "They cut the hot dog. They keep the vending machine.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 156,
+  "chain": "ch_documentary",
+  "followupOnly": true
+ },
+ {
+  "id": "ts_bots",
+  "title": "The Bots",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Your biggest event of the year sold out in 38 seconds. Ticket bots bought 70% of the seats and are reselling them for ten times the price. Fans are furious. Some fans are also the bots.",
+    "speaker": "Ticketing manager"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Cancel the bot orders and resell",
+    "effects": [
+     "fans += 4",
+     "spend('legal', 20000 * scale)",
+     "follow('ts_lawsuit', 6)"
+    ],
+    "result": "The fans love you. The ticketing company's lawyers do not.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Take a cut of the resale market",
+    "effects": [
+     "earn('gate', 150000 * scale)",
+     "fans -= 5",
+     "media -= 2"
+    ],
+    "result": "Profitable. Hated. Profitable.",
+    "bot": 2,
+    "ethics": -2
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_ticket_scalpers"
+ },
+ {
+  "id": "ts_lawsuit",
+  "title": "The Bot Lawsuit",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "NOTICE OF CLAIM: SecondHand Seats LLC alleges 'tortious interference with legitimate automated purchasing'. They're suing you for cancelling their robot's tickets.",
+    "title": "LEGAL NOTICE"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Fight it in court",
+    "effects": [
+     "spend('legal', 40000 * scale)",
+     "media += 2",
+     "fans += 1"
+    ],
+    "result": "The judge laughs out loud reading the complaint. You win.",
+    "default": true
+   },
+   {
+    "label": "Settle",
+    "effects": [
+     "spend('legal', 25000 * scale)"
+    ],
+    "result": "You settle. The robot gets a refund."
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_ticket_scalpers",
+  "followupOnly": true
+ },
+ {
+  "id": "rsp_spy",
+  "title": "The Spy",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "Your new social media intern keeps asking about upcoming bouts, contract figures and 'where the boss keeps his passwords'. Their previous job was at a rival promotion. They list it on LinkedIn."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Feed them fake information",
+    "effects": [
+     "follow('rsp_payoff', 4)",
+     "chaos += 1"
+    ],
+    "result": "You leak a fake main event: you vs. a grizzly bear. It goes straight to the rival.",
+    "bot": 2
+   },
+   {
+    "label": "Fire them",
+    "effects": [
+     "media += 1"
+    ],
+    "result": "They leave with a stapler. It was your favorite stapler.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 156,
+  "chain": "ch_rival_spy"
+ },
+ {
+  "id": "rsp_payoff",
+  "title": "The Bear Card",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "RIVAL PROMOTION ANNOUNCES 'MAN VS BEAR' SPECTACULAR, SEEMINGLY IN RESPONSE TO RUMOURED COMPETING EVENT; ANIMAL RIGHTS GROUPS AND BEARS ALIKE OUTRAGED"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Laugh about it publicly",
+    "effects": [
+     "fans += 3",
+     "media += 2"
+    ],
+    "result": "The rival quietly cancels the bear. The bear's agent is furious.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 156,
+  "chain": "ch_rival_spy",
+  "followupOnly": true
+ },
+ {
+  "id": "md_order",
+  "title": "The Merch Typo",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "The merch warehouse has 40,000 shirts for your next event. They all say '{promotion} FIGHT NIHGT'. It's too late to reprint.",
+    "speaker": "Merch vendor"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Sell them anyway as 'limited edition'",
+    "effects": [
+     "earn('merch', 40000 * scale)",
+     "follow('md_cult', 6)"
+    ],
+    "result": "'NIHGT' becomes a thing. People yell it at events.",
+    "bot": 2,
+    "default": true
+   },
+   {
+    "label": "Shred them and eat the cost",
+    "effects": [
+     "spend('merch', 30000 * scale)"
+    ],
+    "result": "A very expensive bonfire."
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 156,
+  "chain": "ch_merch_disaster"
+ },
+ {
+  "id": "md_cult",
+  "title": "NIHGT",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "'FIGHT NIHGT' is now a meme. Fans chant it. A rapper put it in a song. The shirts are selling for $400 online. You still have 2,000 in a warehouse."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Print 50,000 more",
+    "effects": [
+     "earn('merch', 120000 * scale)",
+     "fans += 2"
+    ],
+    "result": "Typo capitalism. Beautiful.",
+    "bot": 2,
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 156,
+  "chain": "ch_merch_disaster",
+  "followupOnly": true
+ },
+ {
+  "id": "pw_leak",
+  "title": "The Pay Leak",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "LEAKED: {promotion}'s fighter pay figures posted online by an anonymous account. Fans and fighters furious: one headliner made less than the arena's popcorn concession."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Announce a pay raise across the board",
+    "effects": [
+     "allFighters('morale', 6)",
+     "fighters += 5",
+     "spend('purses', 80000 * scale)",
+     "media += 3"
+    ],
+    "result": "Expensive, popular, and it shuts up the internet for almost a week.",
+    "ethics": 2
+   },
+   {
+    "label": "Find the leaker",
+    "effects": [
+     "fighters -= 3",
+     "follow('pw_hunt', 3)"
+    ],
+    "result": "You start a hunt. The roster notices.",
+    "bot": 1
+   },
+   {
+    "label": "Say nothing",
+    "effects": [
+     "fighters -= 2",
+     "media -= 2"
+    ],
+    "result": "Silence is also a statement. A bad one.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_pay_whistle"
+ },
+ {
+  "id": "pw_hunt",
+  "title": "The Leaker Revealed",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "The leaker was... your own accountant, who thought the numbers were 'embarrassing for everyone'. She's not wrong. She also resigned via a 12-page letter, cc'ing the entire roster."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Hire her back with a raise",
+    "effects": [
+     "fighters += 2",
+     "media += 1"
+    ],
+    "result": "Respect. She audits you more aggressively than ever.",
+    "ethics": 1
+   },
+   {
+    "label": "Sue her",
+    "effects": [
+     "spend('legal', 30000 * scale)",
+     "fighters -= 4",
+     "media -= 3"
+    ],
+    "result": "The headlines are worse than the leak.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_pay_whistle",
+  "followupOnly": true
+ },
+ {
+  "id": "ph_crash",
+  "title": "The Stream Crashes",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Twenty minutes before the main event, the PPV stream crashes. 300,000 people are staring at a spinning wheel. The tech guy says 'it's the servers'. The servers say nothing.",
+    "speaker": "Broadcast tech"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Offer everyone a free replay and refunds",
+    "effects": [
+     "spend('refunds', 80000 * scale)",
+     "fans += 3",
+     "network -= 1"
+    ],
+    "result": "Expensive goodwill. The memes are kinder.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Blame hackers",
+    "effects": [
+     "media -= 2",
+     "follow('ph_truth', 4)"
+    ],
+    "result": "'Foreign hackers.' Nobody believes it. Least of all the hackers.",
+    "bot": 1
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 156,
+  "chain": "ch_ppv_hack"
+ },
+ {
+  "id": "ph_truth",
+  "title": "It Was the Intern",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "REPORT: PPV OUTAGE CAUSED BY INTERN UNPLUGGING SERVER TO CHARGE PHONE"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Give the intern a promotion (in title only)",
+    "effects": [
+     "fans += 2",
+     "media += 1"
+    ],
+    "result": "'Head of Phone Charging'. The intern has never been happier.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 156,
+  "chain": "ch_ppv_hack",
+  "followupOnly": true
+ },
+ {
+  "id": "ss_bad",
+  "title": "Sponsor Gone Bad",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "{sponsor.name} under investigation after its product was found to contain 'mostly sawdust and optimism'."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Drop them immediately",
+    "effects": [
+     "dropSponsor(sponsor)",
+     "media += 2"
+    ],
+    "result": "Clean break. The logo comes off the mat with a heat gun.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Stand by them",
+    "effects": [
+     "sponsors -= 2",
+     "media -= 3",
+     "follow('ss_fallout', 4)"
+    ],
+    "result": "'We believe in sawdust.'",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "sponsor": {
+    "type": "sponsor",
+    "where": "true"
+   }
+  },
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_sponsor_scandal"
+ },
+ {
+  "id": "ss_fallout",
+  "title": "Sawdustgate",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "Fans have started throwing sawdust into the cage at events. A fighter slipped on it. Sawdustgate is trending."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Drop them now",
+    "effects": [
+     "dropSponsor(sponsor)",
+     "media += 1"
+    ],
+    "result": "Too late to look principled, early enough to stop the sawdust.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "sponsor": {
+    "type": "sponsor",
+    "where": "true"
+   }
+  },
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_sponsor_scandal",
+  "followupOnly": true
+ },
+ {
+  "id": "vo_offer",
+  "title": "The Arena For Sale",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "The owner of a mid-sized arena wants out. He'll sell it to you for {$fee}. 'It's a great building. Mostly. There's a raccoon situation.'",
+    "speaker": "Arena owner Herb"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Buy it",
+    "effects": [
+     "spend('capital', vars.fee)",
+     "unlockVenue('rodeo_pavilion')",
+     "follow('vo_raccoon', 6)"
+    ],
+    "result": "You own an arena. You own a raccoon situation.",
+    "bot": 2
+   },
+   {
+    "label": "Pass",
+    "effects": [],
+    "result": "He sells to a church. The church also has a raccoon situation.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "acts": [
+   2,
+   3,
+   4
+  ],
+  "chain": "ch_venue_owner",
+  "vars": {
+   "fee": "rand(400, 900) * 1000 * scale"
+  }
+ },
+ {
+  "id": "vo_raccoon",
+  "title": "The Raccoon Situation",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "A raccoon got into the cage during the prelims, took a fighter's mouthguard, and refused to leave. The crowd chanted its name (they named it 'Trash Panda Jones'). It's now the arena mascot."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Make it official",
+    "effects": [
+     "fans += 3",
+     "media += 2"
+    ],
+    "result": "Trash Panda Jones gets a jersey. And a rabies shot.",
+    "bot": 1,
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_venue_owner",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(400, 900) * 1000 * scale"
+  }
+ },
+ {
+  "id": "sw2_bid",
+  "title": "The Streaming Bidding War",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Two streaming services want your fights. One offers more money. The other offers 'more eyeballs'. Both have names that sound like a cough medicine.",
+    "speaker": "Your media agent"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Take the money",
+    "effects": [
+     "earn('broadcast', 300000 * scale)",
+     "fans -= 2",
+     "follow('sw2_result', 12)"
+    ],
+    "result": "Fans need a new subscription. Fans hate subscriptions.",
+    "bot": 2
+   },
+   {
+    "label": "Take the eyeballs",
+    "effects": [
+     "fans += 3",
+     "network += 2",
+     "follow('sw2_result', 12)"
+    ],
+    "result": "Less money, more people watching. The board frowns. The fans smile.",
+    "default": true
+   }
+  ],
+  "conditions": "act >= 2",
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_streaming_war"
+ },
+ {
+  "id": "sw2_result",
+  "title": "Streaming Report Card",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "memo",
+    "text": "The streaming deal report is in: subscribers up, revenue up, the app crashes during every main event and the 'skip intro' button skips the fights.",
+    "speaker": "The Board",
+    "title": "MEMO: STREAMING REVIEW"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Demand the app gets fixed",
+    "effects": [
+     "network -= 1",
+     "fans += 2"
+    ],
+    "result": "They fix it. Now 'skip intro' skips Juiced Butler. Fans riot.",
+    "default": true
+   },
+   {
+    "label": "Who cares, money's money",
+    "effects": [
+     "patience += 2",
+     "fans -= 2"
+    ],
+    "result": "The board cares about money. Money's money."
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_streaming_war",
+  "followupOnly": true
+ },
+ {
+  "id": "pb_ban",
+  "title": "Ban the Reporter?",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "{reporter.name} broke your main event before you announced it. Again. {His} post got more attention than your announcement video."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Ban {reporter.name} from events",
+    "effects": [
+     "ban(reporter)",
+     "media -= 4",
+     "follow('pb_backlash', 2)"
+    ],
+    "result": "Banned. Every other reporter writes about the ban.",
+    "bot": 1
+   },
+   {
+    "label": "Invite {him} for a coffee instead",
+    "effects": [
+     "media += 2"
+    ],
+    "result": "{He} brings a recorder. You both laugh. Then {he} leaks the coffee.",
+    "ethics": 1,
+    "default": true
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "r.nemesis || r.rel < -10"
+   }
+  },
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_press_ban"
+ },
+ {
+  "id": "pb_backlash",
+  "title": "The Backlash",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "REPORTERS STAGE WALKOUT AT {promotion} MEDIA DAY IN SOLIDARITY WITH BANNED COLLEAGUE; ONLY BRAILLE SONNEN REMAINS, 'BECAUSE NOBODY TOLD HIM'"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Lift the ban",
+    "effects": [
+     "unban(reporter)",
+     "media += 3"
+    ],
+    "result": "Peace returns. Braille gets an exclusive for staying.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Double down",
+    "effects": [
+     "media -= 4",
+     "fans += 1"
+    ],
+    "result": "The internet is split. Braille Sonnen's exclusive is about a chair."
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "r.nemesis || r.rel < -10"
+   }
+  },
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_press_ban",
+  "followupOnly": true
+ },
+ {
+  "id": "fi_pitch",
+  "title": "Fight Island",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A billionaire has offered his private island for a 'Fight Island' event. Mandatory quarantine, a cage on the beach, and a resort. He just wants a ringside seat and a fight against 'anyone, any size'.",
+    "speaker": "The billionaire's assistant"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Do it",
+    "effects": [
+     "unlockVenue('fight_island')",
+     "fans += 3",
+     "follow('fi_event', 8)",
+     "earn('sponsors', 100000 * scale)"
+    ],
+    "result": "Passports, sunscreen and very confused fighters.",
+    "bot": 2
+   },
+   {
+    "label": "Too weird",
+    "effects": [],
+    "result": "He takes it to a rival. Their fighters get sunburned. Good.",
+    "default": true
+   }
+  ],
+  "conditions": "act >= 2",
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_fight_island"
+ },
+ {
+  "id": "fi_event",
+  "title": "Fight Island Night",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "Fight Island: the cage is on the sand, the crowd is 40 billionaires and a parrot, and a fighter got stung by a jellyfish during the walkout. Ratings are enormous."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Make it an annual event",
+    "effects": [
+     "fans += 3",
+     "network += 3"
+    ],
+    "result": "The billionaire still wants his fight. Nobody will take it. Somebody will eventually.",
+    "bot": 2,
+    "default": true
+   },
+   {
+    "label": "One and done",
+    "effects": [
+     "fighters += 1"
+    ],
+    "result": "Fighters thank you. The jellyfish don't."
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_fight_island",
+  "followupOnly": true
+ },
+ {
+  "id": "cs_offer",
+  "title": "The Crypto Coin",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A crypto company wants to sponsor everything: the cage, the belts, the ring card girls, and your bathroom. They'll pay entirely in their own coin, $CAGE, which launched yesterday.",
+    "speaker": "Crypto bro named Trent"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Take it, cash out fast",
+    "effects": [
+     "earn('sponsors', 200000 * scale)",
+     "follow('cs_rug', 6)"
+    ],
+    "result": "You cash out 30% immediately. Trent is upset. Trent will be more upset soon.",
+    "bot": 2
+   },
+   {
+    "label": "Take it, hold the coin",
+    "effects": [
+     "follow('cs_rug', 6)",
+     "setFlag('cage_coin', 1)"
+    ],
+    "result": "To the moon, apparently.",
+    "ethics": -1
+   },
+   {
+    "label": "No crypto",
+    "effects": [],
+    "result": "Trent says you're 'ngmi'. You don't know what that means.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_crypto_sponsor"
+ },
+ {
+  "id": "cs_rug",
+  "title": "The Rug Pull",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "$CAGE COIN DROPS 99.8% IN AN HOUR; CEO TRENT REPORTEDLY 'ON A BOAT, SOMEWHERE'"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Quietly scrape the logos off",
+    "effects": [
+     "media -= 1",
+     "fans -= 1"
+    ],
+    "result": "The belts still say $CAGE on the back. Forever.",
+    "default": true
+   },
+   {
+    "label": "Publicly apologize to the fans",
+    "effects": [
+     "media += 2",
+     "fans += 1",
+     "flag.cage_coin ? spend('losses', 100000 * scale) : meter('fans', 1)"
+    ],
+    "result": "An apology video. Sincere. Mostly.",
+    "ethics": 1
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_crypto_sponsor",
+  "followupOnly": true
+ },
+ {
+  "id": "tr_counter",
+  "title": "Counter-Programming",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A rival promotion has scheduled its biggest event the same night as yours. Same time. Same city. The local news is calling it 'Civil War'.",
+    "speaker": "Your head of marketing"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Move your event",
+    "effects": [
+     "fans -= 1",
+     "network -= 1"
+    ],
+    "result": "You look scared. You aren't. Okay, you are.",
+    "default": true
+   },
+   {
+    "label": "Go head-to-head",
+    "effects": [
+     "follow('tr_night', 3)",
+     "fans += 2"
+    ],
+    "result": "Civil War it is.",
+    "bot": 2
+   }
+  ],
+  "conditions": "rivalsAlive > 0",
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_tv_ratings_war"
+ },
+ {
+  "id": "tr_night",
+  "title": "Civil War Night",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "CIVIL WAR: ratings war between {promotion} and its rival ends with a decisive winner, decided largely by which event had the bigger knockout and the better hot dogs."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Throw a victory press conference",
+    "effects": [
+     "fans += 2",
+     "media += 2"
+    ],
+    "result": "You declare victory regardless of the numbers. The numbers are close. You declare harder.",
+    "default": true
+   },
+   {
+    "label": "Offer the rival a co-promotion",
+    "effects": [
+     "network += 2"
+    ],
+    "result": "They decline, then call back an hour later."
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_tv_ratings_war",
+  "followupOnly": true
+ },
+ {
+  "id": "sb_deal",
+  "title": "Sports Bar Chain",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Hooterz wants exclusive rights to show your PPVs in its 600 locations. They'll pay well. They want a fighter at every grand opening. In person. Shirtless.",
+    "speaker": "Hooterz partnerships"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Accept",
+    "effects": [
+     "earn('broadcast', 80000 * scale)",
+     "follow('sb_tour', 6)"
+    ],
+    "result": "600 locations. Shirtless appearances. The fighters are split.",
+    "bot": 2
+   },
+   {
+    "label": "Decline",
+    "effects": [],
+    "result": "They sign with a rival. The rival's fighters develop a wing addiction.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_sports_bar"
+ },
+ {
+  "id": "sb_tour",
+  "title": "The Wing Tour",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "Your fighters have done 40 sports bar appearances in a month. Three are in the middle of weight cuts. One ate 140 wings on camera and is now 'the Wing King'."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Embrace the Wing King",
+    "effects": [
+     "fans += 2",
+     "fighters -= 1"
+    ],
+    "result": "He's sponsored now. His cardio is not.",
+    "default": true
+   },
+   {
+    "label": "Pull fighters in camp from appearances",
+    "effects": [
+     "fighters += 2",
+     "sponsors -= 1"
+    ],
+    "result": "Fighters thank you. Hooterz sends a sternly worded wing.",
+    "ethics": 1
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_sports_bar",
+  "followupOnly": true
+ },
+ {
+  "id": "wm_lawsuit",
+  "title": "Walkout Song Lawsuit",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "CEASE AND DESIST: Representatives of {pop_musician} demand that {promotion} stop using their client's song for fighter walkouts. Damages sought: 'a lot'.",
+    "title": "LEGAL NOTICE"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay the licensing fee ({$fee})",
+    "effects": [
+     "spend('licensing', vars.fee)"
+    ],
+    "result": "Licensed. The fighter can walk out to it forever.",
+    "default": true
+   },
+   {
+    "label": "Commission a soundalike",
+    "effects": [
+     "spend('music', vars.fee * 0.2)",
+     "follow('wm_soundalike', 4)"
+    ],
+    "result": "A guy in a basement produces 'Song (Not That Song)'.",
+    "bot": 2
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 156,
+  "chain": "ch_walkout_music",
+  "vars": {
+   "fee": "rand(30, 90) * 1000 * scale"
+  }
+ },
+ {
+  "id": "wm_soundalike",
+  "title": "The Soundalike Hits",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "The soundalike walkout track has gone viral and is now charting higher than the original song. The original artist is furious and also asking for a remix."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Release it officially",
+    "effects": [
+     "earn('licensing', 50000 * scale)",
+     "fans += 2"
+    ],
+    "result": "You're a record label now, apparently.",
+    "bot": 2,
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 156,
+  "chain": "ch_walkout_music",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(30, 90) * 1000 * scale"
+  }
+ },
+ {
+  "id": "bs_ask",
+  "title": "The Board Wants a Seat",
+  "category": "owner",
+  "scenes": [
+   {
+    "type": "memo",
+    "text": "The Board would like to place an 'observer' in your weekly meetings. He's 26, says 'synergy' a lot, and has never watched a fight.",
+    "speaker": "The Board",
+    "title": "MEMO: GOVERNANCE"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Accept the observer",
+    "effects": [
+     "patience += 6",
+     "follow('bs_observer', 6)"
+    ],
+    "result": "Chad from corporate has a laptop with a sticker that says 'DISRUPT'.",
+    "default": true
+   },
+   {
+    "label": "Refuse",
+    "effects": [
+     "patience -= 6"
+    ],
+    "result": "The Board notes your 'lack of collaborative spirit'.",
+    "bot": 1
+   }
+  ],
+  "conditions": "sold || act >= 3",
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_board_seat"
+ },
+ {
+  "id": "bs_observer",
+  "title": "Chad From Corporate",
+  "category": "owner",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "Chad has proposed: shorter rounds, a mid-fight halftime show, and an 'NFT belt'. He also asked if fighters can wear brand logos on their faces."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Shoot it all down politely",
+    "effects": [
+     "patience -= 2",
+     "fighters += 1"
+    ],
+    "result": "Chad takes notes. Chad reports back. Chad is relentless.",
+    "default": true
+   },
+   {
+    "label": "Let Chad try the halftime show once",
+    "effects": [
+     "fans -= 3",
+     "network += 2",
+     "patience += 4"
+    ],
+    "result": "The halftime show is a DJ and a man in a nugget costume. Never again.",
+    "bot": 1
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_board_seat",
+  "followupOnly": true
+ },
+ {
+  "id": "cf_offer",
+  "title": "Charity Super Show",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A children's hospital wants to partner on a charity card. All gate money goes to the hospital. Your fighters would fight for free. Some will grumble. Some will cry. All will be on TV.",
+    "speaker": "Hospital foundation"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Do it",
+    "effects": [
+     "fans += 3",
+     "media += 4",
+     "fighters -= 1",
+     "follow('cf_night', 6)"
+    ],
+    "result": "You announce it. Your inbox fills with fighters volunteering. And three asking about the free part.",
+    "ethics": 2
+   },
+   {
+    "label": "Make a donation instead",
+    "effects": [
+     "spend('charity', 40000 * scale)",
+     "media += 1"
+    ],
+    "result": "Generous. Quiet. Less fun.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_charity_fight"
+ },
+ {
+  "id": "cf_night",
+  "title": "Charity Night",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "The charity card raises a record amount. A kid with a paper belt hands it to the main event winner. The winner gives it back. Lon Anik is audibly crying on the broadcast."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Make it annual",
+    "effects": [
+     "fans += 3",
+     "media += 3",
+     "fighters += 2"
+    ],
+    "result": "The best night of the year, every year.",
+    "ethics": 2,
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_charity_fight",
+  "followupOnly": true
+ }
+]

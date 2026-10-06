@@ -1,0 +1,1306 @@
+[
+ {
+  "id": "ml_car",
+  "title": "The Midlife Car",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "A car dealer named Rick is in your office with a brochure for a {pop_car} in 'Champion Gold'. 'You've earned it,' he says. You have not earned it. You want it anyway.",
+    "speaker": "Rick from the dealership"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Buy it ({$fee})",
+    "effects": [
+     "wealth -= vars.fee",
+     "follow('ml_crash', 6)",
+     "fans += 1"
+    ],
+    "result": "It's gold. It's loud. It does not fit in your parking space.",
+    "bot": 2
+   },
+   {
+    "label": "Lease something sensible",
+    "effects": [
+     "wealth -= vars.fee * 0.1"
+    ],
+    "result": "A sedan. Beige. The fighters make fun of you for a month.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_midlife",
+  "vars": {
+   "fee": "rand(150, 400) * 1000"
+  }
+ },
+ {
+  "id": "ml_crash",
+  "title": "The Gold Car Incident",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "{president}'S GOLD SUPERCAR SPOTTED PARKED ACROSS FOUR DISABLED SPACES OUTSIDE {pop_food}; INTERNET FURIOUS"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Apologize and donate the car to charity",
+    "effects": [
+     "media += 2"
+    ],
+    "result": "The charity auctions it to a fighter. The fighter parks it worse.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "'I was getting nuggets, sue me'",
+    "effects": [
+     "media -= 3",
+     "fans += 1"
+    ],
+    "result": "Some people respect it. The disability advocates do not.",
+    "bot": 1,
+    "ethics": -1
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_midlife",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(150, 400) * 1000"
+  }
+ },
+ {
+  "id": "mr_anniv",
+  "title": "The Anniversary",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "It's your anniversary. You're at a weigh-in. Your spouse has called four times. The fifth call is a voicemail that just says your full name, slowly.",
+    "speaker": "Your spouse"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Leave the weigh-in and go home",
+    "effects": [
+     "media -= 1",
+     "follow('mr_home', 2)"
+    ],
+    "result": "You hand the weigh-in to your matchmaker. He weighs himself by accident.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Send flowers and stay",
+    "effects": [
+     "follow('mr_cold', 3)"
+    ],
+    "result": "Flowers. Expensive flowers. The card says 'sorry, weigh-in'.",
+    "bot": 2
+   }
+  ],
+  "conditions": "president.marriage == 'married'",
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_marriage"
+ },
+ {
+  "id": "mr_home",
+  "title": "Dinner",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "Dinner at home. Your phone buzzes 41 times. You don't look at it once. Your spouse notices. It's the best night you've had in months."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Promise more nights like this",
+    "effects": [
+     "patience -= 1",
+     "fighters += 1"
+    ],
+    "result": "You mean it. You'll try. The phone will win sometimes.",
+    "ethics": 1,
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_marriage",
+  "followupOnly": true
+ },
+ {
+  "id": "mr_cold",
+  "title": "The Cold Shoulder",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "Your spouse has moved into the guest room 'temporarily'. The dog has picked a side. It isn't yours."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Book couples therapy",
+    "effects": [
+     "wealth -= 8000",
+     "setFlag('therapy', 1)"
+    ],
+    "result": "The therapist asks what you do. You explain. She asks if you've considered not doing that.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Throw yourself into work",
+    "effects": [
+     "patience += 3",
+     "president.marriage = 'separated'"
+    ],
+    "result": "The promotion has never run better. Your house has never been quieter.",
+    "bot": 1
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 104,
+  "chain": "ch_marriage",
+  "followupOnly": true
+ },
+ {
+  "id": "vg_whale",
+  "title": "The Whale Table",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "A casino host has comped you a suite, a table, and 'unlimited markers'. 'High rollers like you deserve high limits,' she says. You are not a high roller. You are a guy with a promotion.",
+    "speaker": "Casino host Destiny"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Play",
+    "effects": [
+     "follow('vg_morning', 1)",
+     "chance(0.4) ? meter('fans', 0) : setFlag('vegas_loss', 1)"
+    ],
+    "result": "You play blackjack until the sun comes up. You don't remember the last six hands.",
+    "bot": 2
+   },
+   {
+    "label": "Go to bed",
+    "effects": [],
+    "result": "Asleep by 11. You've never felt older or wiser.",
+    "ethics": 1,
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 156,
+  "chain": "ch_vegas",
+  "vars": {
+   "fee": "rand(40, 160) * 1000"
+  }
+ },
+ {
+  "id": "vg_morning",
+  "title": "The Morning After",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "You wake up in the suite. There's a marker on the nightstand. It's for {$fee}. There's also a parrot. Nobody knows where the parrot came from."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay the marker",
+    "effects": [
+     "wealth -= vars.fee"
+    ],
+    "result": "Paid. The parrot is coming home with you, apparently.",
+    "default": true
+   },
+   {
+    "label": "Negotiate it down",
+    "effects": [
+     "wealth -= vars.fee * 0.6",
+     "heat += 1"
+    ],
+    "result": "Destiny is disappointed in you. The parrot is too.",
+    "bot": 1
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 156,
+  "chain": "ch_vegas",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(40, 160) * 1000"
+  }
+ },
+ {
+  "id": "pc_invite",
+  "title": "Your Own Podcast",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A network wants you to host a weekly podcast called 'Boss Talk'. You'd talk about the fights, the business, and 'your vibe'. They promise it'll be 'just two hours, max'.",
+    "speaker": "Podcast producer"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Do it",
+    "effects": [
+     "media += 2",
+     "follow('pc_ep', 6)"
+    ],
+    "result": "Episode one is four hours long. You talk about elk for some reason.",
+    "bot": 2
+   },
+   {
+    "label": "Pass",
+    "effects": [],
+    "result": "Your rival gets a podcast instead. It's bad. It's very popular.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_podcast"
+ },
+ {
+  "id": "pc_ep",
+  "title": "The Episode",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "{president}'S PODCAST CAUSES STORM AFTER HE SAYS JUDGES SHOULD 'BE REPLACED BY THREE DOGS AND A COIN'"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Stand by it",
+    "effects": [
+     "fans += 3",
+     "commission -= 3"
+    ],
+    "result": "'Three Dogs and a Coin' becomes a fan chant.",
+    "bot": 2,
+    "default": true
+   },
+   {
+    "label": "Apologize to the commission",
+    "effects": [
+     "commission += 2",
+     "fans -= 1"
+    ],
+    "result": "The commission accepts your apology. One commissioner asks if he can be one of the dogs.",
+    "ethics": 1
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_podcast",
+  "followupOnly": true
+ },
+ {
+  "id": "rr_bad",
+  "title": "The Ref Review",
+  "category": "commission",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "{ref} UNDER FIRE: fans compile a 14-minute video of every late stoppage in his career. It's set to sad music. It has 6 million views."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Demand a ref review from the commission",
+    "effects": [
+     "commission -= 2",
+     "fans += 2",
+     "follow('rr_hearing', 4)"
+    ],
+    "result": "The commission schedules a hearing. The ref schedules a podcast appearance.",
+    "default": true
+   },
+   {
+    "label": "Defend the ref publicly",
+    "effects": [
+     "commission += 2",
+     "fans -= 2"
+    ],
+    "result": "The video gets a sequel. Now it's 22 minutes.",
+    "bot": 1
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 156,
+  "chain": "ch_ref_review",
+  "vars": {
+   "ref": "'Nerm Bean'"
+  }
+ },
+ {
+  "id": "rr_hearing",
+  "title": "The Ref Hearing",
+  "category": "commission",
+  "scenes": [
+   {
+    "type": "boardroom",
+    "text": "At the hearing, {ref} defends himself with a 40-slide presentation titled 'Let Them Fight: A Philosophy'. Slide 31 is just a picture of a lion."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Accept his explanation",
+    "effects": [
+     "commission += 2"
+    ],
+    "result": "He keeps his job. He stops one fight early the next week out of spite.",
+    "default": true
+   },
+   {
+    "label": "Push for retraining",
+    "effects": [
+     "commission -= 1",
+     "fighters += 2"
+    ],
+    "result": "He's sent to a seminar. He comes back with a certificate and the same philosophy.",
+    "ethics": 1
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 156,
+  "chain": "ch_ref_review",
+  "followupOnly": true,
+  "vars": {
+   "ref": "'Nerm Bean'"
+  }
+ },
+ {
+  "id": "nj_appoint",
+  "title": "The New Judge",
+  "category": "commission",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "The commission has appointed a new judge: a retired accountant who has never watched MMA. 'I'll learn on the job,' he says. His first assignment is your main event.",
+    "speaker": "Commission office"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Request a different judge",
+    "effects": [
+     "commission -= 2"
+    ],
+    "result": "Request denied. He bought a book about MMA. He's on chapter one.",
+    "default": true
+   },
+   {
+    "label": "Send him a training package",
+    "effects": [
+     "spend('misc', 2000 * scale)",
+     "follow('nj_scores', 3)"
+    ],
+    "result": "DVDs, a rulebook, and a box of chocolates. He sends a thank-you note.",
+    "ethics": 1
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_new_judge"
+ },
+ {
+  "id": "nj_scores",
+  "title": "The Accountant Judges",
+  "category": "commission",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "The accountant judge scores your main event... correctly. Every round. The crowd is so stunned they boo out of habit. Then cheer. Then boo again."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Send him a thank-you card",
+    "effects": [
+     "commission += 3"
+    ],
+    "result": "He's assigned to every big fight from now on. Fighters start sending him chocolates. That's probably a problem.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_new_judge",
+  "followupOnly": true
+ },
+ {
+  "id": "dp_new",
+  "title": "The New Testing Partner",
+  "category": "doping",
+  "scenes": [
+   {
+    "type": "memo",
+    "text": "A new anti-doping agency is offering to run your testing program. They're strict. Very strict. They test for things that haven't been invented yet.",
+    "speaker": "The Board",
+    "title": "MEMO: ANTI-DOPING"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Sign up",
+    "effects": [
+     "commission += 6",
+     "spend('testing', 60000 * scale)",
+     "follow('dp_result', 10)"
+    ],
+    "result": "Your fighters receive welcome packets. Several fighters 'retire' immediately.",
+    "ethics": 2
+   },
+   {
+    "label": "Keep the old lax system",
+    "effects": [
+     "commission -= 2"
+    ],
+    "result": "The old system tests for 'vibes'.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "acts": [
+   2,
+   3,
+   4,
+   5
+  ],
+  "chain": "ch_drug_policy"
+ },
+ {
+  "id": "dp_result",
+  "title": "Testing Results",
+  "category": "doping",
+  "scenes": [
+   {
+    "type": "memo",
+    "text": "First quarter of the new program: 3 positive tests, 1 fighter claiming his 'twin' took the test, and 1 fighter who tested positive for an elk supplement recommended by Blow Hogan on air.",
+    "speaker": "The Board",
+    "title": "TESTING REPORT"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Publish the results",
+    "effects": [
+     "commission += 3",
+     "media += 2",
+     "fighters -= 2"
+    ],
+    "result": "The sport respects you more. The roster respects you less.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Handle it quietly",
+    "effects": [
+     "heat += 2",
+     "commission -= 1"
+    ],
+    "result": "Quiet. For now.",
+    "ethics": -1
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_drug_policy",
+  "followupOnly": true
+ },
+ {
+  "id": "rc_insult",
+  "title": "Rival CEO Insult",
+  "category": "rival",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "The CEO of {rival.name} posted: '{promotion} is a minor league with a major ego. Their champion couldn't win our prelims.' The post has 400,000 likes."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Clap back publicly",
+    "effects": [
+     "fans += 3",
+     "media += 1",
+     "follow('rc_challenge', 3)"
+    ],
+    "result": "Your response is one word and a picture of your belt. It does numbers.",
+    "bot": 2
+   },
+   {
+    "label": "Ignore it",
+    "effects": [
+     "fans -= 1"
+    ],
+    "result": "Ignoring it is classy. Classy doesn't trend.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "rival": {
+    "type": "rival",
+    "where": "true"
+   }
+  },
+  "weight": 8,
+  "cooldownWeeks": 156,
+  "chain": "ch_rival_ceo"
+ },
+ {
+  "id": "rc_challenge",
+  "title": "The Champion vs Champion Challenge",
+  "category": "rival",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "The rival CEO calls: 'Fine. Your champ vs our champ. Co-promoted. 50/50 split. Unless you're scared.'",
+    "speaker": "Rival CEO"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Accept the super fight",
+    "effects": [
+     "network += 4",
+     "fans += 4",
+     "earn('ppv', 300000 * scale)"
+    ],
+    "result": "Champion vs champion. The biggest fight either promotion has ever made.",
+    "bot": 2,
+    "default": true
+   },
+   {
+    "label": "Decline: 'come to our house'",
+    "effects": [
+     "fans += 1"
+    ],
+    "result": "He calls you a coward. You call him a coward. Nobody fights."
+   }
+  ],
+  "roles": {
+   "rival": {
+    "type": "rival",
+    "where": "true"
+   }
+  },
+  "weight": 8,
+  "cooldownWeeks": 156,
+  "chain": "ch_rival_ceo",
+  "followupOnly": true
+ },
+ {
+  "id": "rcl_rumor",
+  "title": "Rival in Trouble",
+  "category": "rival",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Word is {rival.name} can't make payroll. Fighters are calling around. Half their roster could be free agents in a month.",
+    "speaker": "Industry insider"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Quietly reach out to their best fighters",
+    "effects": [
+     "follow('rcl_poach', 4)",
+     "chaos += 1"
+    ],
+    "result": "Your phone is very busy this week.",
+    "bot": 2
+   },
+   {
+    "label": "Offer them a loan",
+    "effects": [
+     "spend('loan', 200000 * scale)",
+     "media += 2"
+    ],
+    "result": "Gracious. Possibly stupid.",
+    "ethics": 2,
+    "default": true
+   }
+  ],
+  "roles": {
+   "rival": {
+    "type": "rival",
+    "where": "r.cash < 500000"
+   }
+  },
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_rival_collapse"
+ },
+ {
+  "id": "rcl_poach",
+  "title": "The Exodus",
+  "category": "rival",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "EXODUS: TOP FIGHTERS FLEE {rival.name} AMID PAYROLL CRISIS; SEVERAL SPOTTED ENTERING {promotion} HQ WITH GYM BAGS"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Sign the best of them",
+    "effects": [
+     "fans += 3",
+     "fighters -= 1",
+     "spend('signings', 150000 * scale)"
+    ],
+    "result": "Your roster just got a lot deeper. Your existing fighters just got a lot nervous.",
+    "bot": 2,
+    "default": true
+   }
+  ],
+  "roles": {
+   "rival": {
+    "type": "rival",
+    "where": "r.cash < 500000"
+   }
+  },
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_rival_collapse",
+  "followupOnly": true
+ },
+ {
+  "id": "cx_boxing",
+  "title": "The Boxing Crossover",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A boxing promoter wants your biggest star to box his biggest star. Boxing rules. Their gloves, their ring, their judges. 'It'll be the biggest event in history,' he promises, 'for us.'",
+    "speaker": "Boxing promoter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Agree to a 60/40 split",
+    "effects": [
+     "follow('cx_fight', 8)",
+     "network += 3"
+    ],
+    "result": "Your fighter starts boxing training. Their footwork is 'a work in progress'.",
+    "bot": 2
+   },
+   {
+    "label": "Only if it's MMA rules",
+    "effects": [],
+    "result": "He laughs for a full minute. Then hangs up.",
+    "default": true
+   }
+  ],
+  "conditions": "act >= 3",
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_crossover"
+ },
+ {
+  "id": "cx_fight",
+  "title": "Boxing Night",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "THE CROSSOVER: record-breaking PPV numbers for {promotion} star's boxing debut. Result is controversial. Boxing fans furious. MMA fans furious. Everyone paid."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Demand a rematch under MMA rules",
+    "effects": [
+     "fans += 3",
+     "earn('ppv', 400000 * scale)"
+    ],
+    "result": "The boxer suddenly has a very bad back.",
+    "bot": 2,
+    "default": true
+   },
+   {
+    "label": "Take the money and move on",
+    "effects": [
+     "earn('ppv', 600000 * scale)",
+     "fans -= 1"
+    ],
+    "result": "You count the money. It counts back."
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_crossover",
+  "followupOnly": true
+ },
+ {
+  "id": "lc_offer",
+  "title": "Legend Wants to Coach",
+  "category": "legend",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "{subject.first} {subject.last} wants to open a gym and coach your fighters. 'I know things,' {he} says. {He} knows things. {He} also wants a percentage.",
+    "speaker": "{subject.first} {subject.last}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Partner with {him}",
+    "effects": [
+     "spend('gym', 80000 * scale)",
+     "follow('lc_results', 12)",
+     "fighters += 2"
+    ],
+    "result": "The gym opens with a ribbon cutting. {He} cuts it with a spinning back kick.",
+    "default": true
+   },
+   {
+    "label": "Pass",
+    "effects": [],
+    "result": "{He} opens the gym anyway, across from your HQ. With a bigger sign."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "legend",
+    "where": "f.age < 60"
+   }
+  },
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_legend_coach"
+ },
+ {
+  "id": "lc_results",
+  "title": "The Legend Effect",
+  "category": "legend",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "Fighters training under {subject.first} {subject.last} are winning more, finishing more, and swearing more. {He} has taught them 'the dark arts'. You don't ask."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Expand the program",
+    "effects": [
+     "allFighters('morale', 3)",
+     "fighters += 2",
+     "spend('gym', 40000 * scale)"
+    ],
+    "result": "A second location. A merch line. {He}'s happier than {he} was as champion.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "legend",
+    "where": "f.age < 60"
+   }
+  },
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_legend_coach",
+  "followupOnly": true
+ },
+ {
+  "id": "lf_trash",
+  "title": "Legend Trash Talk",
+  "category": "legend",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "Legend {subject.first} {subject.last} says your current champion 'wouldn't have made it to the prelims in my era'. Your champion replied 'ok grandpa'. Legends worldwide are offended."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Set up an exhibition",
+    "effects": [
+     "comeback(subject)",
+     "follow('lf_exhib', 8)",
+     "fans += 3"
+    ],
+    "result": "Grandpa wants the smoke.",
+    "bot": 2
+   },
+   {
+    "label": "Let them argue online",
+    "effects": [
+     "fans += 1"
+    ],
+    "result": "It lasts a week. Everyone sells T-shirts.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "legend",
+    "where": "f.age < 56"
+   }
+  },
+  "conditions": "act >= 2",
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_legend_feud"
+ },
+ {
+  "id": "lf_exhib",
+  "title": "Grandpa Wants the Smoke",
+  "category": "legend",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "The legend exhibition is three two-minute rounds with big gloves. The legend gets the champ in a headlock for 40 seconds and refuses to let go. The crowd chants 'OK GRANDPA' lovingly."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Book a sequel",
+    "effects": [
+     "fans += 2",
+     "commission -= 1"
+    ],
+    "result": "Everyone wants a sequel. Everyone's doctors don't.",
+    "bot": 1
+   },
+   {
+    "label": "Retire the legend for good, with honors",
+    "effects": [
+     "fans += 2",
+     "media += 2"
+    ],
+    "result": "The legend retires with a standing ovation and a hip replacement scheduled.",
+    "ethics": 1,
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "legend",
+    "where": "f.age < 56"
+   }
+  },
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_legend_feud",
+  "followupOnly": true
+ },
+ {
+  "id": "ha_ghost",
+  "title": "The Haunted Arena",
+  "category": "weird",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Staff at the arena for your next event report 'cold spots', a disembodied voice yelling 'STAND THEM UP', and a mop that moves by itself. A paranormal TV show wants to film there during your event.",
+    "speaker": "Arena manager"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Let them film",
+    "effects": [
+     "network += 2",
+     "follow('ha_night', 4)"
+    ],
+    "result": "A ghost hunter with a meter is coming to fight night.",
+    "bot": 2
+   },
+   {
+    "label": "No ghosts on my broadcast",
+    "effects": [],
+    "result": "The ghost is disappointed. Probably.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_haunted_arena"
+ },
+ {
+  "id": "ha_night",
+  "title": "Ghost Night",
+  "category": "weird",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "During the co-main, the lights flicker, the ghost hunter's meter spikes, and a ring card girl swears she saw a referee in 1990s clothing standing in the corner. The broadcast replays it 30 times."
+   }
+  ],
+  "choices": [
+   {
+    "label": "'The Ghost Ref' becomes a mascot",
+    "effects": [
+     "fans += 3",
+     "media += 1"
+    ],
+    "result": "Ghost Ref merch outsells real ref merch. That's not hard.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_haunted_arena",
+  "followupOnly": true
+ },
+ {
+  "id": "ufo_sighting",
+  "title": "UFO Over the Arena",
+  "category": "weird",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "Dozens of fans posted videos of 'lights' over the arena during your last event. Blow Hogan has done three podcast episodes about it. The FAA says it was a drone delivering {pop_food}."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Lean into it: 'ALIEN NIGHT'",
+    "effects": [
+     "fans += 2",
+     "follow('ufo_event', 6)"
+    ],
+    "result": "Next event: green lights, a fog machine, and a fighter walking out in a tinfoil hat.",
+    "bot": 2
+   },
+   {
+    "label": "Ignore it",
+    "effects": [],
+    "result": "The truth is out there. Nobody at {promotion} is looking for it.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_alien"
+ },
+ {
+  "id": "ufo_event",
+  "title": "Alien Night",
+  "category": "weird",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "ALIEN NIGHT is a huge hit. A fighter walks out in a full alien costume, takes it off mid-walk, and is still the weirdest thing in the arena: Blow Hogan wore an antenna headband all broadcast."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Make it annual",
+    "effects": [
+     "fans += 2",
+     "network += 1"
+    ],
+    "result": "Every year. Same night. Same Blow.",
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 208,
+  "chain": "ch_alien",
+  "followupOnly": true
+ },
+ {
+  "id": "bf_offer",
+  "title": "The Bear Promoter",
+  "category": "weird",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A traveling circus promoter is offering a 'Man vs Bear' exhibition. The bear is 'very friendly, mostly'. The man is your heavyweight, if he agrees. He hasn't been asked.",
+    "speaker": "Circus promoter Lou"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Absolutely not",
+    "effects": [
+     "commission += 2",
+     "media += 1"
+    ],
+    "result": "Lou is crestfallen. The bear is relieved.",
+    "ethics": 2,
+    "default": true
+   },
+   {
+    "label": "Ask the heavyweight (as a joke)",
+    "effects": [
+     "follow('bf_heavy', 1)"
+    ],
+    "result": "You ask. He doesn't laugh. He asks how big.",
+    "bot": 1
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 312,
+  "chain": "ch_bear_fight"
+ },
+ {
+  "id": "bf_heavy",
+  "title": "He Wants the Bear",
+  "category": "weird",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "Your heavyweight is in your office in a bear-print robe. 'I've been training for this my whole life. Every sparring session. Every hug.' He is serious.",
+    "speaker": "Your heavyweight"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Shut it down for good",
+    "effects": [
+     "commission += 2",
+     "fighters += 1"
+    ],
+    "result": "He's disappointed. He gets a bear tattoo instead.",
+    "ethics": 2,
+    "default": true
+   },
+   {
+    "label": "Arrange a 'meeting' with the bear (supervised)",
+    "effects": [
+     "media += 2",
+     "fans += 2",
+     "commission -= 2"
+    ],
+    "result": "The bear and the heavyweight hug for the cameras. Both seem to enjoy it. Nobody fights. Everyone wins.",
+    "bot": 2
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 312,
+  "chain": "ch_bear_fight",
+  "followupOnly": true
+ },
+ {
+  "id": "tc_found",
+  "title": "The Time Capsule",
+  "category": "weird",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "Renovations at HQ uncover a time capsule buried by the promotion's founder. Inside: a VHS tape, a cassette labelled 'NEVER PLAY THIS', and a letter addressed 'to whoever runs this place in the future'."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Read the letter on stream",
+    "effects": [
+     "fans += 2",
+     "follow('tc_tape', 2)"
+    ],
+    "result": "The letter says 'Dear future boss: sorry about the roof.' The roof has been leaking for 30 years.",
+    "default": true
+   },
+   {
+    "label": "Rebury it",
+    "effects": [],
+    "result": "Some things are better left buried. Like the cassette."
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 312,
+  "chain": "ch_time_capsule"
+ },
+ {
+  "id": "tc_tape",
+  "title": "NEVER PLAY THIS",
+  "category": "weird",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "Against all advice, you play the cassette. It's the founder, singing a power ballad called 'Octagon of My Heart'. It's terrible. It's beautiful. The fighters demand it as a walkout song."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Release it",
+    "effects": [
+     "fans += 3",
+     "earn('licensing', 20000 * scale)"
+    ],
+    "result": "'Octagon of My Heart' hits number one on the novelty charts.",
+    "bot": 2,
+    "default": true
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 312,
+  "chain": "ch_time_capsule",
+  "followupOnly": true
+ },
+ {
+  "id": "on_hire",
+  "title": "The Owner's Nephew",
+  "category": "owner",
+  "scenes": [
+   {
+    "type": "memo",
+    "text": "The Owner's nephew, Brayden, needs 'real world experience'. He'll be your new Head of Matchmaking. He's 19. His qualifications include 'watching a lot of fights on TikTok'.",
+    "speaker": "The Board",
+    "title": "MEMO: STAFFING"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Give him the job (on paper)",
+    "effects": [
+     "patience += 5",
+     "follow('on_book', 4)"
+    ],
+    "result": "Brayden has a business card. It's laminated. He hands it to everyone.",
+    "default": true
+   },
+   {
+    "label": "Push back",
+    "effects": [
+     "patience -= 6"
+    ],
+    "result": "The Owner asks if you have 'a problem with family'.",
+    "bot": 1
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 312,
+  "chain": "ch_owner_nephew"
+ },
+ {
+  "id": "on_book",
+  "title": "Brayden Books a Fight",
+  "category": "owner",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "Brayden has booked a flyweight against a heavyweight because 'it would be crazy'. He's already announced it on his personal account. It has 2 million views."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Cancel it and explain weight classes",
+    "effects": [
+     "patience -= 2",
+     "fans -= 1"
+    ],
+    "result": "Brayden is devastated. He makes a video about it. More views.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Turn it into a grappling exhibition",
+    "effects": [
+     "fans += 3",
+     "commission -= 2",
+     "patience += 2"
+    ],
+    "result": "The flyweight wins by heel hook in 40 seconds. Brayden is a genius now, according to Brayden.",
+    "bot": 2
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 312,
+  "chain": "ch_owner_nephew",
+  "followupOnly": true
+ },
+ {
+  "id": "osr_rumor",
+  "title": "Sale Rumors",
+  "category": "owner",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "REPORT: {owner} EXPLORING SALE OF {promotion}; BUYERS RUMOURED TO INCLUDE A SOVEREIGN WEALTH FUND, A STREAMING GIANT AND {pop_celeb}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Reassure the staff",
+    "effects": [
+     "fighters += 2",
+     "patience -= 1",
+     "follow('osr_truth', 6)"
+    ],
+    "result": "You hold an all-hands meeting. Somebody asks if they'll keep their dental.",
+    "default": true
+   },
+   {
+    "label": "Ask the Owner directly",
+    "effects": [
+     "follow('osr_truth', 2)",
+     "patience -= 2"
+    ],
+    "result": "The Owner says 'no comment'. To you. His own president.",
+    "bot": 1
+   }
+  ],
+  "conditions": "!sold && act >= 3",
+  "weight": 8,
+  "cooldownWeeks": 312,
+  "chain": "ch_owner_sale_rumor"
+ },
+ {
+  "id": "osr_truth",
+  "title": "The Truth",
+  "category": "owner",
+  "scenes": [
+   {
+    "type": "memo",
+    "text": "The Owner confirms: 'We are always listening to offers.' Then he adds: 'Make the number go up and nobody has to listen too hard.'",
+    "speaker": "The Board",
+    "title": "MEMO FROM THE OWNER"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Make the number go up",
+    "effects": [
+     "patience += 4",
+     "fighters -= 1"
+    ],
+    "result": "Austerity mode. The catering is now sandwiches. Sad sandwiches.",
+    "bot": 2,
+    "default": true
+   },
+   {
+    "label": "Make the product better instead",
+    "effects": [
+     "fans += 2",
+     "fighters += 1",
+     "patience -= 2"
+    ],
+    "result": "You put money into the fights. The fights get better. The number takes longer.",
+    "ethics": 1
+   }
+  ],
+  "weight": 8,
+  "cooldownWeeks": 312,
+  "chain": "ch_owner_sale_rumor",
+  "followupOnly": true
+ }
+]
