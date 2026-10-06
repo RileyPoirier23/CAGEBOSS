@@ -11,7 +11,7 @@ S(FILE, 'slap_first_event', 'Slap Night One', 'venture',
 
 S(FILE, 'slap_scandal', 'The Slap Heard Round the World', 'venture',
   [phone("A slap fighter has been hospitalized after taking 'the slap of the century'. He's going to be okay. The video has 200 million views. A senator is calling slap fighting 'the end of civilization'. The slap league just outrated your last MMA PPV.", "Slap promoter Dusty")],
-  [C("Go all in on slapping", "earn('side venture', 400000 * scale)", "fans -= 6", "fighters -= 3", "media -= 5", "follow('slap_forever', 26)", "addFlag('slap', 2)", result="You announce a 'Slap World Championship'. Your MMA roster feels quietly betrayed.", bot=2, ethics=-2),
+  [C("Go all in on slapping", "earn('side venture', 400000 * scale)", "fans -= 6", "fighters -= 3", "media -= 5", "follow('slap_forever', 60)", "addFlag('slap', 2)", result="You announce a 'Slap World Championship'. Your MMA roster feels quietly betrayed.", bot=2, ethics=-2),
    C("Add medical rules and slow down", "commission += 3", "media += 2", "earn('side venture', 50000 * scale)", result="Mandatory neurologists. Fewer KOs. Fewer views. More sleep.", default=True, ethics=1),
    C("Shut it down", "venture('')", "fans += 3", "commission += 4", "fighters += 2", result="Slap league over. Dusty slaps himself goodbye.")],
   fu=True, chain='slap')
@@ -20,7 +20,7 @@ S(FILE, 'slap_forever', 'Slap League Forever?', 'venture',
   [memo("The board notes that the slap league now generates more profit than MMA with 4% of the cost. They propose 'transitioning the brand'. They have prepared a PowerPoint. Slide 1 is a hand.", "MEMO: STRATEGIC PIVOT")],
   [C("Pivot to slapping full time (this ends your career here)", "endGame('slap_forever')", "setFlag('ending_slap_forever', 1)", result="You become the King of Slaps. History will judge you. History is also watching.", bot=1, ethics=-3),
    C("Refuse. MMA is the business.", "patience -= 8", "fans += 4", "fighters += 3", result="You give a speech about 'real fighting'. The board writes 'sentimental' in your file.", ethics=2, default=True)],
-  fu=True, chain='slap')
+  fu=True, chain='slap', cond='act >= 2')
 
 # ---------------------------------------------------------------- Reality show chain
 S(FILE, 'reality_house_drama', 'The House', 'venture',

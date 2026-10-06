@@ -21,7 +21,7 @@ S(FILE, 'owner_boardroom', 'The Boardroom', 'owner',
   [C("Promise to hit the next target, no excuses", "patience += 12", "flag.boardroom_promise = 1", result="The chairman nods slowly. 'One quarter.' One quarter.", default=True),
    C("Flip the table (figuratively): 'You don't understand this business'", "patience -= 6", "fans += 2", "fighters += 2", result="A long silence. Then the youngest exec says 'he's kind of right'. He's fired immediately.", bot=1),
    C("Offer to take a pay cut", "patience += 8", "wealth -= 200000", "promotion.staff -= 500 * scale", result="Personal sacrifice. They love it. They don't love you, but they love it.", ethics=1)],
-  cond="patience < 30 && !(mode == 'sandbox')", cd=26)
+  cond="patience < 30 && !(mode == 'sandbox')", cd=40)
 
 S(FILE, 'owner_new_bosses', 'Meet The New Bosses', 'owner',
   [sc('boardroom', "The new owners from OmniVore introduce themselves. A man in a quarter-zip says 'synergy' four times in his first sentence. They want a 'content strategy', a 'fan engagement roadmap' and for you to stop swearing in press conferences.", "OmniVore VP of Synergy")],

@@ -123,7 +123,8 @@
     "ethics": 1
    }
   ],
-  "conditions": "patience < 30 && !(mode == 'sandbox')"
+  "conditions": "patience < 30 && !(mode == 'sandbox')",
+  "cooldownWeeks": 40
  },
  {
   "id": "owner_new_bosses",

@@ -258,7 +258,17 @@ export function checkEndings(s: GameState): string | null {
     s.flags.broke_weeks = (Number(s.flags.broke_weeks) || 0) + 1;
     if (Number(s.flags.broke_weeks) >= 8) return setEnding(s, 'bankrupt');
   } else s.flags.broke_weeks = 0;
-  if (!sb?.noOwner && s.hidden.patience <= 0) return setEnding(s, 'forced_out');
+  if (!sb?.noOwner && s.hidden.patience <= 0) {
+    // one reprieve per career: the Board's final warning
+    if (!s.flags.final_warning) {
+      s.flags.final_warning = 1;
+      s.hidden.patience = 15;
+      s.desk.queue.push(memoDoc(s, 'MEMO: FINAL WARNING', 'The Board has voted 6-5 to give you one more chance. The deciding vote was cast by a man who "likes the fights". Do not make him regret it. -The Board'));
+      return null;
+    }
+    s.flags.out_weeks = (Number(s.flags.out_weeks) || 0) + 1;
+    if (Number(s.flags.out_weeks) >= 3) return setEnding(s, 'forced_out');
+  } else s.flags.out_weeks = 0;
   for (const id of ['desert', 'politics', 'slap_forever', 'secret_ref']) if (s.flags['ending_' + id]) return setEnding(s, id);
   // career end
   if (s.week >= CAREER_WEEKS && !sb?.infinite) return setEnding(s, finalEnding(s));

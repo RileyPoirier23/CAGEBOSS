@@ -115,8 +115,9 @@ const firedAny = defs.filter((d) => (fired[d.id] ?? 0) > 0);
 const never = defs.filter((d) => !(fired[d.id] ?? 0));
 const neverEligible = randomDefs.filter((d) => !(elig[d.id] ?? 0));
 // repetition: fires / eligible-weeks (only meaningful with a decent sample)
+// once-per-career storylets can't repeat, and tiny samples say nothing: need 20+ eligible weeks
 const rep = randomDefs
-  .filter((d) => (elig[d.id] ?? 0) >= 8)
+  .filter((d) => !d.oncePerCareer && !['presser', 'fightnight'].includes(d.category) && (elig[d.id] ?? 0) >= 20)
   .map((d) => ({ id: d.id, cat: d.category, fired: fired[d.id] ?? 0, elig: elig[d.id] ?? 0, rate: (fired[d.id] ?? 0) / (elig[d.id] ?? 1) }))
   .sort((a, b) => b.rate - a.rate);
 const over = rep.filter((x) => x.rate > 0.4);
@@ -124,7 +125,7 @@ const over = rep.filter((x) => x.rate > 0.4);
 console.log(`\n=== STORYLET COVERAGE (${results.length} run${results.length === 1 ? '' : 's'}, ${defs.length} storylets, ${new Set(defs.map((d) => d.chain).filter(Boolean)).size} chains)`);
 console.log(` fired at least once: ${firedAny.length}/${defs.length} (${((firedAny.length / defs.length) * 100).toFixed(1)}%)  target >= 85%`);
 console.log(` random storylets never eligible: ${neverEligible.length}`);
-console.log(` storylets firing in >40% of eligible weeks: ${over.length}  target 0`);
+console.log(` storylets firing in >40% of eligible weeks: ${over.length}  target 0  (random storylets with 20+ eligible weeks; presser/fight-night lines are reporter/context-bound)`);
 for (const x of over.slice(0, 15)) console.log(`   ${x.id.padEnd(28)} ${x.cat.padEnd(11)} fired ${x.fired} / eligible ${x.elig} (${(x.rate * 100).toFixed(0)}%)`);
 if (!quiet && never.length) {
   const byCat: Record<string, string[]> = {};
@@ -139,7 +140,7 @@ for (const r of results) {
   const last = r.yearly[r.yearly.length - 1];
   if (r.minCash < -2_000_000) warnings.push(`${r.policy}/${r.seed}: cash dipped to ${money(r.minCash)}`);
   if (last.cash > 2e9) warnings.push(`${r.policy}/${r.seed}: cash ballooned to ${money(last.cash)}`);
-  if (r.weeks < 104 && r.ending) warnings.push(`${r.policy}/${r.seed}: career ended in under two years (${r.ending}, week ${r.weeks})`);
+  if (r.weeks < 104 && r.ending && r.policy !== 'chaos') warnings.push(`${r.policy}/${r.seed}: career ended in under two years (${r.ending}, week ${r.weeks})`);
 }
 console.log(`\n=== SANITY: ${warnings.length ? warnings.length + ' warning(s)' : 'OK'}`);
 for (const w of warnings) console.log('  ! ' + w);

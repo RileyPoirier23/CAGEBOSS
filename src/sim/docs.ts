@@ -546,7 +546,7 @@ export function generateWeekDocs(s: GameState, rng: Rng): DeskDoc[] {
     const ft = (type === 'bout' || type === 'medical' || type === 'visa') && booked.length ? rng.pick(booked) : rng.pick(roster);
     if (out.some((d) => d.subject === ft.id && d.type === type)) continue;
     const g = GENERATORS[type];
-    const doc = g?.(s, rng, ft, rng.chance(type === 'drug' ? badRate * 0.3 : badRate));
+    const doc = g?.(s, rng, ft, rng.chance(type === 'drug' ? badRate * 0.15 : badRate));
     if (doc) out.push(doc);
   }
   // court notices for fighters on bail with fights booked

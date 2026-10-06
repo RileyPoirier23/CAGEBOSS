@@ -402,10 +402,12 @@ export function selectWeek(s: GameState, rng: Rng, quota = weeklyQuota(s, rng), 
     if (stats) stats[d.id] = (stats[d.id] ?? 0) + 1;
     if (STORYLET_STATS.on) STORYLET_STATS.eligible[d.id] = (STORYLET_STATS.eligible[d.id] ?? 0) + 1;
     const h = s.storylets.history[d.id];
-    const fresh = !h ? 3.5 : 1 / (1 + h.count * 0.9);
+    // not every eligible storylet is "in the air" every week; keeps any one from dominating
+    if (!rng.chance(h ? 0.36 : 0.6)) continue;
+    const fresh = !h ? 2.5 : 1 / (1 + h.count * 0.9);
     const recentCat = (s.storylets.categoryLog[d.category] ?? []).filter((wk) => s.week - wk < 4).length;
     const catDamp = 1 / (1 + recentCat * 0.7);
-    const scandal = ['legal', 'speech', 'doping', 'president', 'weird'].includes(d.category) ? 0.7 + s.hidden.chaos / 60 : 1;
+    const scandal = ['legal', 'speech', 'doping'].includes(d.category) ? 0.22 + s.hidden.chaos / 90 : ['president', 'weird'].includes(d.category) ? 0.7 + s.hidden.chaos / 60 : 1;
     candidates.push({ d, roles, w: (d.weight ?? 10) * fresh * catDamp * scandal });
   }
   const perCat: Record<string, number> = {};
@@ -413,7 +415,7 @@ export function selectWeek(s: GameState, rng: Rng, quota = weeklyQuota(s, rng), 
     const idx = rng.weightedIndex(candidates.map((c) => c.w));
     if (idx < 0) break;
     const c = candidates.splice(idx, 1)[0];
-    if ((perCat[c.d.category] ?? 0) >= 2) {
+    if ((perCat[c.d.category] ?? 0) >= (['legal', 'doping', 'speech'].includes(c.d.category) ? 1 : 2)) {
       i--;
       continue;
     }
@@ -448,7 +450,7 @@ export function fireCategory(
     }
     const h = s.storylets.history[d.id];
     if (STORYLET_STATS.on) STORYLET_STATS.eligible[d.id] = (STORYLET_STATS.eligible[d.id] ?? 0) + 1;
-    cands.push({ d, roles, w: (d.weight ?? 10) * (!h ? 3 : 1 / (1 + h.count)) });
+    cands.push({ d, roles, w: (d.weight ?? 10) * (!h ? 3 : 1 / (1 + h.count * 1.6)) });
   }
   const pick = rng.weighted(cands, (c) => c.w);
   if (!pick) return null;

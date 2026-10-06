@@ -54,7 +54,7 @@
      "fans -= 6",
      "fighters -= 3",
      "media -= 5",
-     "follow('slap_forever', 26)",
+     "follow('slap_forever', 60)",
      "addFlag('slap', 2)"
     ],
     "result": "You announce a 'Slap World Championship'. Your MMA roster feels quietly betrayed.",
@@ -121,6 +121,7 @@
     "default": true
    }
   ],
+  "conditions": "act >= 2",
   "chain": "slap",
   "followupOnly": true
  },
