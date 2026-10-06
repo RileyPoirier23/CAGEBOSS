@@ -159,20 +159,67 @@ export interface Look2 {
   stance: string;
   female: boolean;
   tattoo: number;
+  /** fight-kit chevron print colour (the "Venim" fourth-gen pattern) */
+  pattern?: number;
+  champ?: boolean;
   /** clothing for non-fighters (referee, ring announcer, cutmen) */
   outfit?: { top: number; bottom: number; shirt?: number; tie?: number; bulk?: number; mic?: boolean };
 }
 
-export function lookFor(f: Fighter, corner: 0 | 1): Look2 {
+// --------------------------------------------------------------- fight kits
+/** Shorts by nationality: [main, trim]. Flag colours, sports-kit style. */
+const COUNTRY_KIT: Record<string, [number, number]> = {
+  USA: [0x1f3a6e, 0xb22234], Canada: [0xc8202a, 0xf2f2f2], Mexico: [0x1e7a3c, 0xc8202a], Brazil: [0xf2c12e, 0x1e8a3c],
+  Ireland: [0x1f8a4c, 0xf08a24], 'Northern Ireland': [0xf2f2f2, 0x1f8a4c], England: [0xf2f2f2, 0xc8202a], Scotland: [0x1f5aa8, 0xf2f2f2],
+  Russia: [0x2a4fa0, 0xc8202a], 'Dagestan (Russia)': [0x2a7a3a, 0x2a6ac8], 'Chechnya (Russia)': [0x2a7a3a, 0xc8202a],
+  Georgia: [0xf2f2f2, 0xc8202a], Armenia: [0xe8822a, 0x2a4fa0], Azerbaijan: [0x2aa0d8, 0x2a8a3a], Kazakhstan: [0x2ab0d0, 0xf2c12e],
+  Kyrgyzstan: [0xc8202a, 0xf2c12e], Tajikistan: [0x2a8a3a, 0xc8202a], Ukraine: [0x2a5ac0, 0xf2d02e], Belarus: [0xc8202a, 0x2a8a3a],
+  Poland: [0xc8202a, 0xf2f2f2], Czechia: [0x2a4fa0, 0xc8202a], Slovakia: [0xf2f2f2, 0x2a4fa0], Croatia: [0xc8202a, 0xf2f2f2],
+  Netherlands: [0xf07a1a, 0x1f2a5a], Belgium: [0xf2c12e, 0xc8202a], France: [0x1f3a8a, 0xc8202a], Denmark: [0xc8202a, 0xf2f2f2],
+  Norway: [0xc8202a, 0x1f2a5a], Sweden: [0x2a6ac8, 0xf2d02e], Iceland: [0x2a4fa0, 0xc8202a], Australia: [0x1e7a3c, 0xf2c12e],
+  'New Zealand': [0x16161a, 0xf2f2f2], China: [0xc8202a, 0xf2c12e], Japan: [0xf2f2f2, 0xc8202a], 'South Korea': [0xf2f2f2, 0x2a4fa0],
+  Thailand: [0x2a3a8a, 0xc8202a], Philippines: [0x2a4fa0, 0xf2c12e], Nigeria: [0x1e8a3c, 0xf2f2f2], Cameroon: [0x1e8a3c, 0xf2c12e],
+  Ghana: [0xf2c12e, 0x1e8a3c], Senegal: [0x1e8a3c, 0xf2d02e], Morocco: [0xc8202a, 0x1e8a3c], 'South Africa': [0x1e7a3c, 0xf2c12e],
+};
+/** Personalities that wouldn't be caught dead in national colours. */
+const LOUD_TRAITS = ['Showman', 'Diva', 'Clout Chaser', 'Streamer', 'Prankster'];
+
+export interface Kit {
+  trunks: number;
+  trim: number;
+  pattern: number;
+  champ: boolean;
+}
+
+/** What a fighter wears to the cage: champions in black and gold, show-offs in pink or purple, everyone else in their flag. */
+export function kitFor(f: Fighter, champ = false): Kit {
+  if (champ) return { trunks: 0x141416, trim: 0xd9a441, pattern: 0x3a3a42, champ: true };
+  let h = 0;
+  for (const ch of f.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const loud = f.traits.some((t) => LOUD_TRAITS.includes(t)) || f.styles.includes('Showboat');
+  if (loud && h % 3 !== 0) {
+    const pink = h % 2 === 0;
+    return { trunks: pink ? 0xe0559a : 0x7a3fb0, trim: pink ? 0xf2f2f2 : 0xf2c12e, pattern: pink ? 0xb83a78 : 0x5a2a88, champ: false };
+  }
+  const [main, trim] = COUNTRY_KIT[f.country] ?? [0x4a4a52, 0xe8e8e8];
+  const lum = ((main >> 16) & 255) * 0.3 + ((main >> 8) & 255) * 0.59 + (main & 255) * 0.11;
+  return { trunks: main, trim, pattern: shade(main, lum > 170 ? -0.18 : lum < 60 ? 0.22 : -0.28), champ: false };
+}
+
+export function lookFor(f: Fighter, corner: 0 | 1, champ = false): Look2 {
+  const kit = kitFor(f, champ);
   return {
     skin: SKIN_TONES[f.look.skin % SKIN_TONES.length],
     hairStyle: f.look.hair,
     hairColor: lerpColor(HAIR_COLORS[f.look.hairColor % HAIR_COLORS.length], 0x9a9790, Math.max(0, Math.min(1, (f.age - 36) / 14))),
     beard: f.look.beard,
     build: f.look.build,
-    trunks: corner === 0 ? 0x9e2a2a : 0x284a86,
-    trim: corner === 0 ? 0xe8d8b0 : 0xd8e0f0,
-    glove: corner === 0 ? 0x6e1a1a : 0x1a2e5a,
+    trunks: kit.trunks,
+    trim: kit.trim,
+    pattern: kit.pattern,
+    champ: kit.champ,
+    // gloves stay red / blue so you always know whose corner is whose
+    glove: corner === 0 ? 0x8e1e1e : 0x1e3a7a,
     stance:
       f.anim?.stance ??
       (f.styles.includes('Wrestler') || f.styles.includes('Ground & Pound') ? 'wrestler'
@@ -478,7 +525,20 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
     group([{ a: rig.hip, b: lerp(rig.hip, rig.knF, 0.52), wa: TH.a + 2.4, wm: TH.m + 2.6, wb: TH.m + 2, color: L.trunks, shadow: shade(L.trunks, -0.22) }]);
     line(P(0.88, tw * 0.5), P(0.88, -tw * 0.5), L.trim, 1.8); // waistband
     line(lerp(rig.hip, rig.knF, 0.08), lerp(rig.hip, rig.knF, 0.5), L.trim, 1.1); // side stripe
-    g.rect(...T(add(lerp(rig.hip, rig.knF, 0.28), f, 2)), 2.2 * s, 1.6 * s).fill(shade(L.trim, -0.1)); // logo patch
+    // chevron print down the leg (the fourth-gen kit look)
+    if (L.pattern !== undefined) {
+      const a = rig.hip;
+      const b = lerp(rig.hip, rig.knF, 0.5);
+      const dl = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      const d: V = [(b[0] - a[0]) / dl, (b[1] - a[1]) / dl];
+      const q: V = [-d[1], d[0]];
+      for (const t of [0.34, 0.56, 0.78]) {
+        const c = lerp(a, b, t);
+        line(add(add(c, q, 2.6), d, -1.6), c, L.pattern, 0.9);
+        line(add(add(c, q, -2.6), d, -1.6), c, L.pattern, 0.9);
+      }
+    }
+    g.rect(...T(add(lerp(rig.hip, rig.knF, 0.28), f, 2)), 2.2 * s, 1.6 * s).fill(L.champ ? 0xf2d27a : shade(L.trim, -0.1)); // logo patch
   } else {
     line(P(0.9, tw * 0.48), P(0.9, -tw * 0.48), 0x0c0c0e, 1.6); // belt
   }
@@ -510,7 +570,7 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
   line([hd[0] + 2.6, hd[1] - 3.6], [hd[0] + 6.4, hd[1] - 3.2], shade(L.hairColor, -0.1), 1.3);
   // mouth (+ mouthguard flash for fighters)
   line([hd[0] + 4.6, hd[1] + 3.6], [hd[0] + 6.6, hd[1] + 3.2], shade(skin, -0.5), 0.9);
-  if (!o) line([hd[0] + 5.2, hd[1] + 3.4], [hd[0] + 6.4, hd[1] + 3.2], L.trim === 0xe8d8b0 ? 0xd04040 : 0x3a6ad0, 0.7);
+  if (!o) line([hd[0] + 5.2, hd[1] + 3.4], [hd[0] + 6.4, hd[1] + 3.2], L.glove === 0x8e1e1e ? 0xd04040 : 0x3a6ad0, 0.7);
   // hair
   const hc = L.hairColor;
   const hcD = shade(hc, -0.25);

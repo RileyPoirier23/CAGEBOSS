@@ -167,10 +167,10 @@ export class ArenaView extends Container {
     public A: Fighter,
     public B: Fighter,
     public rounds: number,
-    private info: { network?: string; event?: string; promo?: string } = {},
+    private info: { network?: string; event?: string; promo?: string; champs?: [boolean, boolean] } = {},
   ) {
     super();
-    this.L = [lookFor(A, 0), lookFor(B, 1)];
+    this.L = [lookFor(A, 0, info.champs?.[0]), lookFor(B, 1, info.champs?.[1])];
     this.F = [
       { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: AW / 2 - 24, lunge: 0, recoil: 0, facing: 1 },
       { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: AW / 2 + 24, lunge: 0, recoil: 0, facing: -1 },
@@ -1078,7 +1078,7 @@ export class ArenaView extends Container {
     if (this.scene === 'fight') {
       h.rect(4, 13, 140, 6).fill(PAL.ink).rect(5, 14, Math.round((138 * this.hp[0]) / 100), 4).fill(this.hp[0] > 40 ? PAL.moss : PAL.blood);
       h.rect(AW - 144, 13, 140, 6).fill(PAL.ink).rect(AW - 5 - Math.round((138 * this.hp[1]) / 100), 14, Math.round((138 * this.hp[1]) / 100), 4).fill(this.hp[1] > 40 ? PAL.moss : PAL.blood);
-      h.rect(4, 20, 10, 2).fill(this.L[0].trunks).rect(AW - 14, 20, 10, 2).fill(this.L[1].trunks);
+      h.rect(4, 20, 10, 2).fill(this.L[0].glove).rect(AW - 14, 20, 10, 2).fill(this.L[1].glove);
     }
     if (this.flash > 0) {
       h.rect(0, 0, AW, AH).fill({ color: 0xffffff, alpha: Math.min(0.5, this.flash) });
