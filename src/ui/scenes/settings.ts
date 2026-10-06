@@ -5,7 +5,7 @@ import { openJukebox } from './jukebox';
 import { openWindow, selector, checkbox, stepper } from '../widgets';
 
 export function openSettings(g: Game, onClose?: () => void): void {
-  const win = openWindow(g, 'Settings', 260, 238, { onClose });
+  const win = openWindow(g, 'Settings', 260, 253, { onClose });
   const b = win.body;
   const s = g.settings;
   const save = () => g.applySettings();
@@ -48,6 +48,8 @@ export function openSettings(g: Game, onClose?: () => void): void {
   b.addChild(checkbox(8, y, 'Soundtrack (N = next track)', s.music, (v) => { s.music = v; save(); }));
   y += 15;
   b.addChild(checkbox(8, y, 'Juiced Butler intros before watched fights', s.intros !== false, (v) => { s.intros = v; save(); }));
+  y += 15;
+  b.addChild(checkbox(8, y, 'Bleep the swearing (streamer mode)', !!s.bleep, (v) => { s.bleep = v; save(); g.scene?.refresh(); }));
   y += 15;
   b.addChild(button('JUKEBOX...', 8, y, 80, 13, () => openJukebox(g), { small: true, fill: PAL.plum }));
 }

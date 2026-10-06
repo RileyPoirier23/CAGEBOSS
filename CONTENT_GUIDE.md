@@ -21,7 +21,8 @@ npm run sim -- --seeds 3 --policy all --quiet   # storylet coverage & repetition
 | `data/storylets/*.json` | Events, phone calls, office visits, chains | `tools/storylets/*.py` |
 | `data/documents/commentary.json` | Booth lines (Lon Anik, Blow Hogan, "Chicken Man" Sandwich Cormier, Braille Sonnen, Michael Biscuit) and Juiced Butler announcements | `tools/commentary_src.py` |
 | `data/documents/popculture.json` | 700+ pop-culture parodies by kind | `tools/popculture_src.py` |
-| `data/documents/templates.json` | Fight ticker lines, social posts, interview quotes, presser Q&A, the TV recap, slow-news filler | edit directly |
+| `data/documents/templates.json` | Fight ticker lines, social posts, interview quotes, presser Q&A, the TV recap, slow-news filler | edit directly, or add R-rated lines in `tools/rrated_src.py` and run it (merges without duplicates) |
+| R-rated booth lines | Extra-filthy commentary | `tools/commentary_rrated.py` (imported by `commentary_src.py`) |
 | `data/documents/docs.json` | Paperwork ingredients: substances, doctors, scans, countries, expense items | edit directly |
 | `data/roster/marquee.json`, `legends.json` | Hand-made parody fighters | `tools/roster_src.py` |
 | `data/roster/generated.json` | Procedural depth roster | `npm run namegen -- --roster` (or `npx tsx tools/renick.ts` to re-roll just the nicknames) |
@@ -70,6 +71,12 @@ S(FILE, 'stream_meltdown', 'Live Meltdown', 'fighter',
 | `{president}`, `{presidentLast}`, `{promotion}`, `{owner}` | The player's world |
 | `{$fee}` | A storylet var, formatted as money (`vars={"fee": money(5, 15)}`) |
 | `{pop}`, `{pop_movie}`, `{pop_show}`, `{pop_musician}`, `{pop_celeb}`, `{pop_game}`, `{pop_athlete}`, `{pop_food}`, `{pop_app}`, `{pop_streamer}`, `{pop_meme}`, `{pop_car}`, `{pop_brand}` | A random pop-culture parody of that kind. Works in storylets, news, social posts, commentary and fun facts. |
+
+### Rating
+
+The game is rated R: swearing and crude jokes are welcome. Players can switch on
+**Settings → Bleep the swearing (streamer mode)**, which swaps swears for grawlix
+(`#$%&!`) at render time (see `SWEARS` in `src/ui/text.ts`). No slurs, ever.
 
 ### The parody rule (important)
 

@@ -262,5 +262,245 @@
   ],
   "text": "GYM REPORTS RECORD SIGN-UPS AFTER MAN WATCHES ONE FIGHT",
   "tone": 0.0
+ },
+ {
+  "id": "rr_ko_0",
+  "tags": [
+   "ko"
+  ],
+  "text": "{winner} BEATS {loser} INTO NEXT FUCKING WEEK",
+  "tone": 0.3
+ },
+ {
+  "id": "rr_ko_1",
+  "tags": [
+   "ko"
+  ],
+  "text": "{loser} WAKES UP, ASKS WHAT YEAR IT IS, GETS TOLD 'THE YEAR YOU GOT FUCKED UP'",
+  "tone": 0.3
+ },
+ {
+  "id": "rr_ko_2",
+  "tags": [
+   "ko"
+  ],
+  "text": "{winner} SLEEPS {loser}; {loser}'S MOUTHPIECE FOUND IN PARKING LOT",
+  "tone": 0.3
+ },
+ {
+  "id": "rr_robbery_3",
+  "tags": [
+   "robbery"
+  ],
+  "text": "JUDGES SCORE {event} WHILE VISIBLY HAMMERED, HAND {winner} A BULLSHIT DECISION",
+  "tone": -0.5
+ },
+ {
+  "id": "rr_robbery_4",
+  "tags": [
+   "robbery"
+  ],
+  "text": "'THOSE JUDGES COULDN'T SCORE IN A WHOREHOUSE': {loser}'S CORNER SPEAKS OUT",
+  "tone": -0.5
+ },
+ {
+  "id": "rr_upset_5",
+  "tags": [
+   "upset"
+  ],
+  "text": "WHO THE FUCK IS {winner}? UNDERDOG SHOCKS {loser}",
+  "tone": 0.3
+ },
+ {
+  "id": "rr_event_6",
+  "tags": [
+   "event"
+  ],
+  "text": "{event} DELIVERS: 4 KOS, 2 BROKEN ARMS, 1 FAN ARRESTED FOR FIGHTING A BEER VENDOR",
+  "tone": 0.1
+ },
+ {
+  "id": "rr_event_7",
+  "tags": [
+   "event"
+  ],
+  "text": "{event} WAS SO VIOLENT THE CAGESIDE DOCTOR QUIT MEDICINE",
+  "tone": 0.1
+ },
+ {
+  "id": "rr_weird_8",
+  "tags": [
+   "weird"
+  ],
+  "text": "{subject} GETS 'FUCK THE JUDGES' TATTOOED ON FOREHEAD; MOTHER 'NOT MAD, JUST DISAPPOINTED'",
+  "tone": 0.0
+ },
+ {
+  "id": "rr_weird_9",
+  "tags": [
+   "weird"
+  ],
+  "text": "{subject} SHOWS UP TO WEIGH-INS IN ONLY A FANNY PACK; MAKES WEIGHT",
+  "tone": 0.0
+ },
+ {
+  "id": "rr_weird_10",
+  "tags": [
+   "weird"
+  ],
+  "text": "{subject} CLAIMS HE CUT 30 LBS IN A WEEK 'MOSTLY THROUGH SHITTING'",
+  "tone": 0.0
+ },
+ {
+  "id": "rr_presser_11",
+  "tags": [
+   "presser"
+  ],
+  "text": "{president} TELLS REPORTER TO 'GO FUCK YOURSELF' FOUR TIMES IN ONE ANSWER; RECORD",
+  "tone": 0.0
+ },
+ {
+  "id": "rr_presser_12",
+  "tags": [
+   "presser"
+  ],
+  "text": "PRESS CONFERENCE DEVOLVES INTO 40-MINUTE 'YOUR MOM' EXCHANGE",
+  "tone": 0.0
+ },
+ {
+  "id": "rr_president_scandal_13",
+  "tags": [
+   "president_scandal"
+  ],
+  "text": "{president} SEEN SNORTING SOMETHING OFF A CHAMPIONSHIP BELT; SPOKESPERSON SAYS 'IT WAS PROTEIN'",
+  "tone": -0.7
+ },
+ {
+  "id": "rr_president_scandal_14",
+  "tags": [
+   "president_scandal"
+  ],
+  "text": "LEAKED AUDIO: {president} CALLS OWN FIGHTERS 'MEAT WITH OPINIONS'",
+  "tone": -0.7
+ },
+ {
+  "id": "rr_president_scandal_15",
+  "tags": [
+   "president_scandal"
+  ],
+  "text": "{president}'S EXPENSE REPORT INCLUDES $11K AT 'DIAMOND DOLLS' UNDER 'TALENT SCOUTING'",
+  "tone": -0.7
+ },
+ {
+  "id": "rr_pay_16",
+  "tags": [
+   "pay"
+  ],
+  "text": "PURSE LEAK: {subject} MADE LESS THAN THE GUY WHO MOPS UP THE BLOOD",
+  "tone": -0.5
+ },
+ {
+  "id": "rr_pay_17",
+  "tags": [
+   "pay"
+  ],
+  "text": "{subject} SAYS FIGHT PAY 'WOULDN'T COVER A FUCKING DENTAL BILL'; {subject} NEEDS SEVERAL DENTAL BILLS",
+  "tone": -0.5
+ },
+ {
+  "id": "rr_feud_18",
+  "tags": [
+   "feud"
+  ],
+  "text": "{subjectLast} TELLS {otherLast} 'I'LL FUCK YOUR WHOLE LIFE UP' AT FACE-OFF; STAFF SEPARATES THEM WITH A FOLDING TABLE",
+  "tone": 0.2
+ },
+ {
+  "id": "rr_callout_19",
+  "tags": [
+   "callout"
+  ],
+  "text": "{subjectLast}: '{president} IS A CHEAP BALD BASTARD AND I WANT MY FUCKING MONEY'",
+  "tone": 0.3
+ },
+ {
+  "id": "rr_weight_miss_20",
+  "tags": [
+   "weight_miss"
+  ],
+  "text": "{last} MISSES WEIGHT, BLAMES 'A REALLY BIG SHIT THAT WOULDN'T COME OUT'",
+  "tone": -0.2
+ },
+ {
+  "id": "rr_injury_21",
+  "tags": [
+   "injury"
+  ],
+  "text": "GRUESOME: {fighter}'S {injury} IS SO NASTY NETWORK CUTS TO A CAR COMMERCIAL",
+  "tone": -0.2
+ },
+ {
+  "id": "rr_ratings_22",
+  "tags": [
+   "ratings"
+  ],
+  "text": "{promotion} RATINGS UP 40% AFTER COMMENTATOR SAYS 'FUCK' ON LIVE TV NINE TIMES",
+  "tone": 0.2
+ },
+ {
+  "id": "rr_commentary_23",
+  "tags": [
+   "commentary"
+  ],
+  "text": "BLOW HOGAN SAYS 'HOLY SHIT' 31 TIMES IN ONE BROADCAST; NETWORK GIVES UP ON BLEEPING",
+  "tone": 0.0
+ },
+ {
+  "id": "rr_commentary_24",
+  "tags": [
+   "commentary"
+  ],
+  "text": "SANDWICH CORMIER ACCIDENTALLY READS A FIGHTER'S NUDES TEXT ON AIR",
+  "tone": 0.0
+ },
+ {
+  "id": "rr_filler_25",
+  "tags": [
+   "filler"
+  ],
+  "text": "STUDY: 9 IN 10 MMA FANS HAVE NEVER THROWN A PUNCH, ALL 9 'COULD TAKE HIM THOUGH'",
+  "tone": 0.0
+ },
+ {
+  "id": "rr_filler_26",
+  "tags": [
+   "filler"
+  ],
+  "text": "LOCAL DAD WATCHES ONE JIU-JITSU VIDEO, DISLOCATES BROTHER-IN-LAW'S ELBOW AT BARBECUE",
+  "tone": 0.0
+ },
+ {
+  "id": "rr_slap_27",
+  "tags": [
+   "slap"
+  ],
+  "text": "SLAP LEAGUE CHAMP SLAPPED SO HARD HE NOW ONLY SPEAKS IN CAPS LOCK",
+  "tone": 0.0
+ },
+ {
+  "id": "rr_gossip_28",
+  "tags": [
+   "gossip"
+  ],
+  "text": "SPOTTED: {subject} LEAVING A STRIP CLUB AT 7 A.M. WITH A DOGGY BAG AND NO SHOES",
+  "tone": -0.1
+ },
+ {
+  "id": "rr_fiasco_29",
+  "tags": [
+   "fiasco"
+  ],
+  "text": "{a} VS {b} ENDS WHEN BOTH FIGHTERS SHIT THEMSELVES; DECLARED NO CONTEST",
+  "tone": -0.4
  }
 ]

@@ -40,6 +40,20 @@ const TIPS = [
   'TIP: Slap leagues make money. So does selling plasma. Think about it.',
   'TIP: The fans want violence. The network wants violence at 9:00 sharp.',
   'TIP: Press conferences are free advertising. Bail is not.',
+  'TIP: If a fighter says "I\'m good, I\'m good" they are not fucking good.',
+  'TIP: Never shake hands with a fighter who just made weight. You know where that hand has been.',
+  'TIP: The commission can smell bullshit. Unfortunately so can your fighters.',
+  'TIP: A fighter who "only drinks on weekends" fights on a Saturday. Do the math.',
+  'TIP: Pay your fighters fairly. Or don\'t. They\'re concussed, they won\'t remember.',
+  'TIP: Blow Hogan has said "holy shit" 14,000 times on air. The network stopped counting. And bleeping.',
+  'TIP: "Allegedly" is the most expensive word in this business. Use it generously.',
+  'TIP: Sandwich Cormier\'s phone has 3,000 unread texts. 2,000 are dick pics from fighters asking "is this a staph infection?"',
+  'TIP: When the owner says "we\'re family", check your wallet.',
+  'TIP: Ring card girls see everything. They also hold grudges and clipboards.',
+  'TIP: If the ref is drunk, call it "a veteran presence".',
+  'TIP: Shit happens. In the cage, sometimes literally. Have a towel guy.',
+  'TIP: Every fighter is one bad weekend away from a documentary. Make sure you get the rights.',
+  'TIP: You can\'t spell "promoter" without "PR". Or "rot". Or "moter", which isn\'t a word, which is also this job.',
 ];
 
 const STATUS = [
@@ -47,6 +61,9 @@ const STATUS = [
   'Mopping the octagon', 'Waking up Nerm Bean', 'Charging Blow Hogan\'s sauna', 'Texting Sandwich Cormier', 'Counting PPV buys (twice)',
   'Hiding the receipts', 'Printing the contracts in 4pt font', 'Rehearsing the 360 spin', 'Finding the ring card', 'Lowering fighter pay',
   'Stretching the cutman', 'Loading {pop_movie} on the jumbotron', 'Restocking {pop_food}',
+  'Mopping up the co-main\'s shit', 'Unclogging the weigh-in toilet', 'Paying off the plumber', 'Sobering up the referee',
+  'Telling Blow Hogan to stop saying fuck', 'Losing that argument', 'Shredding the group chat', 'Hiding the snow globes',
+  'Counting the bribes (allegedly)', 'Buying the judges glasses', 'Bleaching the canvas',
 ];
 
 const LOOK: Look2 = {

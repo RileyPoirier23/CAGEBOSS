@@ -39,6 +39,23 @@ export function pixelArtResolution(): number {
   return resolution / p;
 }
 
+// ---------------------------------------------------------------- profanity filter (off by default: the game is rated R)
+let bleep = false;
+const SWEARS = /\b(mother)?fuck(ing|in'|ed|er|ers|s|head|wit|face)?\b|\bshit(ty|ting|s|head|show)?\b|\bbullshit\b|\bhorseshit\b|\bdogshit\b|\bbitch(es)?\b|\bass(hole|holes)?\b|\bdick(s)?\b|\bgoddamn(it)?\b|\bbastard(s)?\b|\bballs\b|\bwhorehouse\b|\bcrack\b/gi;
+const GRAWLIX = '#$%&!@*';
+
+/** Streamer-safe mode: swap swears for grawlix (#$%&!). */
+export function setBleep(on: boolean): void {
+  if (bleep === on) return;
+  bleep = on;
+  for (const t of live) t.rebuild();
+}
+
+export function bleepText(s: string): string {
+  if (!bleep) return s;
+  return s.replace(SWEARS, (w) => Array.from(w, (_, i) => GRAWLIX[i % GRAWLIX.length]).join(''));
+}
+
 export function setTextResolution(r: number): void {
   if (Math.abs(r - resolution) < 1e-6) return;
   resolution = r;
@@ -152,7 +169,7 @@ export class PixelText extends Container {
     // glyph pixel size in logical units; layout (wrapping) always uses the nominal size
     const scale = (this.opts.scale ?? 1) * (this.hd ? k : 1);
     const layoutScale = (this.opts.scale ?? 1) * (this.hd ? SMALL_NOMINAL : 1);
-    let text = normalizeText(this.str ?? '');
+    let text = normalizeText(bleepText(this.str ?? ''));
     // single-line small text reads as a label: keep the small-caps look
     if (small && !this.opts.width) text = upperKeepMarkup(text);
     let lines = this.opts.width ? wrapText(face, text, Math.floor(this.opts.width / layoutScale)) : text.split('\n');
