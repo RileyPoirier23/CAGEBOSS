@@ -24,6 +24,10 @@ export const TRACKS: Track[] = [
   { id: 'bag', title: 'BAG', artist: 'F.O.K. ft. Hope Nikku (prod. Miler)', file: 'bag-fok-ft-hope-nikku.mp3', hype: true },
   { id: 'fu2', title: 'fu2', artist: 'SANDO', file: 'fu2-sando.mp3', hype: false },
   { id: 'ossa', title: 'ossa', artist: 'RUIN143', file: 'ossa-ruin143.mp3', hype: false },
+  { id: 'all_hustle', title: 'All Hustle', artist: 'Zuddha', file: 'all-hustle-zuddha.mp3', hype: true },
+  { id: 'moment_grace', title: 'A Moment w/ Grace', artist: 'Zuddha ft. FTB VON', file: 'a-moment-w-grace-zuddha-ft-ftb-von.mp3', hype: false },
+  { id: 'open_to_you', title: 'Open to You', artist: 'Zuddha', file: 'open-to-you-zuddha.mp3', hype: false },
+  { id: 'some_interlude', title: 'some interlude', artist: 'Zuddha', file: 'some-interlude-zuddha.mp3', hype: false },
 ];
 
 export type MusicContext = 'title' | 'office' | 'fightnight' | 'walkout' | 'fight' | 'off';
