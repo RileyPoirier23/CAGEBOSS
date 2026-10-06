@@ -26,15 +26,21 @@ npm run preview    # serve the built game locally
 
 ```bash
 npm test                                   # unit tests (Vitest)
-npm run sim -- --years 10 --seed 123 --policy balanced   # headless balance sim (greedy|balanced|chaos)
+npm run sim -- --years 10 --seed 123 --policy balanced   # headless balance sim + report
+npm run sim -- --seeds 3 --policy all --quiet            # every bot policy, storylet coverage report
 npm run validate                           # content validator
 npm run namegen                            # sample fighter names; --roster regenerates data/roster/generated.json
+python3 tools/storylets/build.py           # rebuild storylets from tools/storylets/*.py
+python3 tools/commentary_src.py            # rebuild commentary & ring announcer lines
+python3 tools/popculture_src.py            # rebuild the pop-culture parody bank
 ```
 
 ## Controls
 
 - Mouse for everything. `M` mutes.
-- Desk: `I`/`Space` inspect mode, `R` rulebook, `A`/`D`/`E`/`B` stamps, arrow keys / `J`/`K` cycle the inbox.
+- Desk: `I`/`Space` inspect mode, `R` rulebook (drag the title bar, `+`/`-` or `[`/`]` to zoom), `C` calculator
+  (auto-tallies camp expense reports; type numbers while it's open), `A`/`D`/`E`/`B` stamps, arrow keys / `J`/`K` cycle the inbox.
+- Fight view: `CAM` button switches wide / TV / top-down cameras; `SKIP INTRO` skips Juiced Butler.
 - `Esc` closes windows.
 
 ## Modding

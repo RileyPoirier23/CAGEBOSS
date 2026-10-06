@@ -384,7 +384,7 @@ export function butlerIntro(s: GameState, ev: FightEvent, bout: Bout, seed: numb
       lines.push(fl(r.pick(bget('fact_lead')).replace('{fact}', fact)));
     }
     for (const t of lines) out.push({ text: t, corner: idx });
-    if (champ(f)) out.push({ text: up(r.pick(bget('champ_lead'))), corner: idx });
+    if (champ(f)) out.push({ text: up(r.pick(bget('champ_lead'))).replace(/\{HE\}/g, f.gender === 'W' ? 'SHE' : 'HE'), corner: idx });
     else out.push({ text: fl(r.pick(bget('name_lead'))), corner: idx });
     const name = `${f.first}${f.nick ? ` "${f.nick.toUpperCase()}"` : ''} ${f.last.toUpperCase()}!!!`;
     out.push({ text: big ? name.toUpperCase() : name, corner: idx });
