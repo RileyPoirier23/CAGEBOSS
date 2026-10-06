@@ -11,6 +11,7 @@ import { W, H, tooltip, clearChildren, dimmer, box, text } from './kit';
 import { bus } from '../core/events';
 import { setTextResolution } from './text';
 import { LoadingScreen } from './loading';
+import { configureMusic, setMusicContext, skipTrack, unlockMusic, onTrackChange, type MusicContext } from '../audio/music';
 
 export interface Settings {
   textSpeed: number; // 1 slow .. 3 fast, 4 instant
@@ -23,6 +24,8 @@ export interface Settings {
   fightSpeed: number; // 1..4
   clockSpeed: number; // multiplier for the desk clock (0 = paused/relaxed)
   fightCam?: 'side' | 'tv' | 'top'; // spectating camera
+  musicVolume?: number; // soundtrack volume 0..1
+  soundtrackV?: number; // settings migration marker
   intros?: boolean; // Juiced Butler introductions before watched bouts
 }
 
@@ -32,7 +35,9 @@ const DEFAULT_SETTINGS: Settings = {
   colorblind: false,
   reduceShake: false,
   mute: false,
-  music: false,
+  music: true,
+  musicVolume: 0.6,
+  soundtrackV: 1,
   sfxVolume: 0.5,
   fightSpeed: 2,
   clockSpeed: 1,
@@ -40,6 +45,8 @@ const DEFAULT_SETTINGS: Settings = {
 
 export abstract class Scene {
   root = new Container();
+  /** what the soundtrack should be doing while this scene is up */
+  music: MusicContext = 'office';
   constructor(protected g: Game) {}
   abstract build(): void;
   enter(): void {
@@ -99,12 +106,17 @@ export class Game {
     this.resize();
     window.addEventListener('keydown', (e) => this.handleKey(e));
     this.app.ticker.add((t: Ticker) => this.tick(t.deltaMS / 1000));
-    // unlock audio on first interaction
+    // browsers only allow audio after the first click / key press
     const unlock = () => {
-      setMusic(this.settings.music);
+      unlockMusic();
       window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
     };
     window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
+    onTrackChange((t) => {
+      if (this.settings.music && !this.settings.mute) this.toast(`♪ ${t.title} - ${t.artist}`, PAL.gold);
+    });
   }
 
   resize(): void {
@@ -120,10 +132,17 @@ export class Game {
   }
 
   applySettings(): void {
+    // the old chiptune setting defaulted to off; the soundtrack defaults to on
+    if (this.settings.soundtrackV !== 1) {
+      this.settings.soundtrackV = 1;
+      this.settings.music = true;
+      this.settings.musicVolume = this.settings.musicVolume ?? 0.6;
+    }
     setColorblind(this.settings.colorblind);
     setMuted(this.settings.mute);
     setVolumes(this.settings.sfxVolume, 0.25);
-    setMusic(this.settings.music);
+    setMusic(false); // procedural chiptune retired in favour of the soundtrack
+    configureMusic({ enabled: this.settings.music, muted: this.settings.mute, volume: this.settings.musicVolume ?? 0.6 });
     storeJSON('cageboss.settings', this.settings);
     if (this.app) this.resize();
   }
@@ -138,6 +157,7 @@ export class Game {
     tooltip.hide();
     this.scene = scene;
     this.sceneLayer.addChild(scene.root);
+    setMusicContext(scene.music);
     scene.enter();
   }
 
@@ -246,6 +266,10 @@ export class Game {
     const tag = (e.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     for (let i = this.keyHandlers.length - 1; i >= 0; i--) if (this.keyHandlers[i](e)) return;
+    if (e.key === 'n' || e.key === 'N') {
+      skipTrack();
+      return;
+    }
     if (e.key === 'm' || e.key === 'M') {
       this.settings.mute = !this.settings.mute;
       this.applySettings();

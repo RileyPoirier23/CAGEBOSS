@@ -19,6 +19,7 @@ interface Drop {
 }
 
 export class TitleScene extends Scene {
+  music = 'title' as const;
   private rain = new Graphics();
   private drops: Drop[] = [];
   private marquee = new Graphics();
