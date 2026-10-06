@@ -27,7 +27,7 @@ export const TRACKS: Track[] = [
   { id: 'your_mom', title: 'Your Mom Hates Me', artist: 'SANDO', file: 'your-mom-hates-me-sando.mp3', hype: true },
   { id: 'bloodhound', title: 'Bloodhound for You', artist: 'RUIN143', file: 'bloodhound-for-you-ruin143.mp3', hype: true },
   { id: 'come_closer', title: 'Come Closer', artist: 'RUIN143 feat. SANDO', file: 'come-closer-ruin143-ft-sando.mp3', hype: false },
-  { id: 'gen_apathy', title: 'Gen Apathy', artist: 'Release', file: 'gen-apathy-release.mp3', hype: false },
+  { id: 'gen_apathy', title: 'Gen Apathy', artist: 'EYE-V', file: 'gen-apathy-eye-v.mp3', hype: false },
   { id: 'all_hustle', title: 'All Hustle', artist: 'Zuddha', file: 'all-hustle-zuddha.mp3', hype: true },
   { id: 'moment_grace', title: 'A Moment w/ Grace', artist: 'Zuddha ft. FTB VON', file: 'a-moment-w-grace-zuddha-ft-ftb-von.mp3', hype: false },
   { id: 'open_to_you', title: 'Open to You', artist: 'Zuddha', file: 'open-to-you-zuddha.mp3', hype: false },

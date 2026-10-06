@@ -17,7 +17,7 @@ export function openCredits(g: Game): void {
     'RUIN143: ossa, Bloodhound for You, Come Closer (feat. SANDO)\n' +
     'Zuddha: All Hustle, A Moment w/ Grace (ft. FTB VON), Open to You, some interlude\n' +
     'F.O.K.: BAG ft. Hope Nikku (prod. Miler)\n' +
-    'Release: Gen Apathy\n\n' +
+    'EYE-V: Gen Apathy\n\n' +
     'Font: "Cagebook", an original pixel font (public domain).\n' +
     'Engine: PixiJS, TypeScript, Vite.\n\n' +
     'Every fighter, promoter, journalist, outlet, company, commission and event in this game is fictional. ' +
