@@ -41,7 +41,13 @@ Play one fighter's career instead of the promotion. Heavy inspiration from **Bru
 - Underground: a darknet-style shop for PEDs, gear and gambling. Generated and custom fighters only; parody fighters get gear and gambling but not PEDs.
 - Calendar: day-by-day weeks with events on specific days.
 
-## Pick your fighter
+## Create your fighter (decided by the owner)
+- You **create your own fighter** (name, nickname, nationality, look via the portrait generator, archetype, stance) and enter a league populated by **all the parody fighters**. Because the character is your own, you get the full controversial experience: PEDs, arrests, exes, all of it.
+- The league's divisions, champions, top 15 and pound-for-pound lists are seeded from the **real UFC rankings**: `data/rankings/real_snapshot.json`. The snapshot is from early October 2026, maps each real fighter to a parody id, and lists 87 ranked fighters who still need a parody.
+  - UFC switched to an Elo model in June 2026, so the P4P lists in it come from media outlets.
+  - The same snapshot also seeds career mode rankings. Refresh it whenever the real rankings change.
+
+## Pick your fighter (older notes)
 - Any fighter on the roster (parody legends, marquee parodies, generated fighters) or create one.
 - Three base archetypes with distinct strengths and weaknesses: **Striker** (hand speed, counters, footwork), **Wrestler** (takedowns, top control, cardio), **Submission specialist** (scrambles, chains, off-back offence). Hybrids come from training.
 - Content rule (unchanged): parodies of real people never get crime, doping or abuse storylines. When you play one of them, the PED, arrest and allegation systems are switched off and replaced by other drama (bad sparring partners, media beef, contract fights, injuries, a suspicious ex-manager suing over a sponsor deal). Generated and custom fighters get the full set.
