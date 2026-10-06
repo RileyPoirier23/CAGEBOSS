@@ -12,13 +12,12 @@ export function openCredits(g: Game): void {
     'TikTok: iheartgrannies69\n' +
     'Discord: gldmonkey\n\n' +
     'SOUNDTRACK (local artists, used with permission)\n' +
-    'Champion - SANDO\n' +
-    'Doin Shit - SANDO x RUIN\n' +
-    'fu2 - SANDO\n' +
-    'Your Mom Hates Me - SANDO\n' +
-    'BAG - F.O.K. ft. Hope Nikku (prod. Miler)\n' +
-    'ossa - RUIN143\n' +
-    'All Hustle, A Moment w/ Grace (ft. FTB VON), Open to You, some interlude - Zuddha\n\n' +
+    'SANDO: Champion, fu2, Your Mom Hates Me\n' +
+    'SANDO x RUIN: Doin Shit\n' +
+    'RUIN143: ossa, Bloodhound for You, Come Closer (feat. SANDO)\n' +
+    'Zuddha: All Hustle, A Moment w/ Grace (ft. FTB VON), Open to You, some interlude\n' +
+    'F.O.K.: BAG ft. Hope Nikku (prod. Miler)\n' +
+    'Release: Gen Apathy\n\n' +
     'Font: "Cagebook", an original pixel font (public domain).\n' +
     'Engine: PixiJS, TypeScript, Vite.\n\n' +
     'Every fighter, promoter, journalist, outlet, company, commission and event in this game is fictional. ' +
