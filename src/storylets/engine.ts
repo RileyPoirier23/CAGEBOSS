@@ -404,10 +404,12 @@ export function selectWeek(s: GameState, rng: Rng, quota = weeklyQuota(s, rng), 
     const h = s.storylets.history[d.id];
     // not every eligible storylet is "in the air" every week; keeps any one from dominating
     if (!rng.chance(h ? 0.36 : 0.6)) continue;
+    // police blotter stuff is rarer than everything else (it still happens plenty)
+    if (['legal', 'speech', 'doping'].includes(d.category) && !d.followupOnly && !rng.chance(Math.min(0.75, 0.35 + s.hidden.chaos / 200))) continue;
     const fresh = !h ? 2.5 : 1 / (1 + h.count * 0.9);
     const recentCat = (s.storylets.categoryLog[d.category] ?? []).filter((wk) => s.week - wk < 4).length;
     const catDamp = 1 / (1 + recentCat * 0.7);
-    const scandal = ['legal', 'speech', 'doping'].includes(d.category) ? 0.22 + s.hidden.chaos / 90 : ['president', 'weird'].includes(d.category) ? 0.7 + s.hidden.chaos / 60 : 1;
+    const scandal = ['legal', 'speech', 'doping'].includes(d.category) ? Math.min(0.45, 0.1 + s.hidden.chaos / 160) : ['president', 'weird'].includes(d.category) ? 0.7 + s.hidden.chaos / 60 : 1;
     candidates.push({ d, roles, w: (d.weight ?? 10) * fresh * catDamp * scandal });
   }
   const perCat: Record<string, number> = {};
