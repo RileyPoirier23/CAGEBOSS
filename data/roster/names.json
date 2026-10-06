@@ -1,0 +1,257 @@
+{
+  "cultures": [
+    {
+      "id": "us_south", "weight": 9,
+      "countries": ["USA"],
+      "hometowns": ["Lubbock, TX", "Mobile, AL", "Shreveport, LA", "Tulsa, OK", "Biloxi, MS", "Knoxville, TN", "Amarillo, TX", "Macon, GA", "Pine Bluff, AR", "Odessa, TX"],
+      "languages": ["English"],
+      "first": ["Brayden", "Colt", "Dakota", "Jesse", "Wade", "Tucker", "Bubba", "Cody", "Garrett", "Hunter", "Jace", "Kyle", "Levi", "Ricky", "Shane", "Travis", "Waylon", "Dusty", "Beau", "Clint", "Royce", "Kip"],
+      "firstW": ["Brandi", "Kaylee", "Shelby", "Tammy", "Reba", "Dixie", "Jolene", "Krystal", "Savannah", "Raelynn"],
+      "lastPre": ["Pru", "Hol", "Buck", "Tat", "Wad", "Crumm", "Hag", "Bil", "Stub", "Pick", "Tuck", "Gil", "Dar", "Ham", "Lan", "Mor", "Skag", "Whit", "Burr", "Cob"],
+      "lastSuf": ["itt", "ley", "ston", "ett", "er", "ins", "ard", "worth", "berry", "ham", "ell", "wood", "ridge", "bey"]
+    },
+    {
+      "id": "us_urban", "weight": 9,
+      "countries": ["USA"],
+      "hometowns": ["Newark, NJ", "Detroit, MI", "Philadelphia, PA", "Oakland, CA", "Baltimore, MD", "Cleveland, OH", "Camden, NJ", "Bronx, NY", "Chicago, IL", "Memphis, TN", "Houston, TX", "Las Vegas, NV"],
+      "languages": ["English"],
+      "first": ["Darnell", "Marcus", "Tyrese", "Jalen", "DeShawn", "Andre", "Malik", "Terrell", "Isaiah", "Xavier", "Quentin", "Lamar", "Dante", "Rashad", "Trey", "Jamal", "Kendrick", "Desmond"],
+      "firstW": ["Jasmine", "Keisha", "Tasha", "Aaliyah", "Monique", "Danielle", "Imani", "Nia", "Shante", "Brianna"],
+      "lastPre": ["Wash", "Jeff", "Rob", "Brook", "Cart", "Mill", "Gaines", "Hol", "Pet", "Dix", "Thorn", "Price", "Mabr", "Boyk", "Stall", "Kin", "Ell", "Lov"],
+      "lastSuf": ["ington", "erson", "ins", "s", "er", "ey", "ford", "well", "man", "ard", "ison", "worth", "ton", "ry"]
+    },
+    {
+      "id": "us_midwest", "weight": 7,
+      "countries": ["USA"],
+      "hometowns": ["Des Moines, IA", "Fargo, ND", "Toledo, OH", "Duluth, MN", "Peoria, IL", "Omaha, NE", "Gary, IN", "Sioux Falls, SD", "Flint, MI", "Wichita, KS"],
+      "languages": ["English"],
+      "first": ["Chad", "Kevin", "Bryce", "Derek", "Tanner", "Logan", "Grant", "Nate", "Dustin", "Brent", "Kurt", "Zach", "Josh", "Ty", "Brock", "Dalton", "Gunnar", "Trent"],
+      "firstW": ["Ashley", "Megan", "Kelsey", "Brooke", "Amber", "Kristen", "Haley", "Jenna", "Courtney", "Paige"],
+      "lastPre": ["Schm", "Kowal", "Lind", "Gund", "Hoff", "Kramp", "Duff", "Pfeif", "Oster", "Swan", "Rudd", "Ger", "Kleb", "Dorn", "Hult", "Ves"],
+      "lastSuf": ["idt", "ski", "quist", "erson", "mann", "ner", "ick", "haus", "berg", "strom", "ler", "eck"]
+    },
+    {
+      "id": "brazil", "weight": 10,
+      "countries": ["Brazil"],
+      "hometowns": ["Rio de Janeiro", "Sao Paulo", "Curitiba", "Manaus", "Salvador", "Belo Horizonte", "Recife", "Natal", "Fortaleza", "Porto Alegre"],
+      "languages": ["Portuguese"],
+      "first": ["Joao", "Thiago", "Rafael", "Gilberto", "Wanderlei", "Edson", "Rodrigo", "Marcelo", "Paulo", "Renan", "Diego", "Caio", "Ronaldo", "Vitor", "Fabricio", "Anderson", "Lucas", "Cleiton", "Josuel", "Adailton"],
+      "firstW": ["Juliana", "Amanda", "Fernanda", "Leticia", "Bianca", "Thais", "Larissa", "Priscila", "Raquel", "Gabriela"],
+      "lastPre": ["Bar", "Cardo", "Fal", "Mor", "Quei", "Ribe", "Sant", "Pim", "Bez", "Trin", "Mach", "Gonca", "Ferr", "Teix", "Cavalc", "Brag", "Lim"],
+      "lastSuf": ["oso", "eira", "ao", "inho", "ado", "ana", "elo", "oza", "ante", "uda", "ozo", "anha"]
+    },
+    {
+      "id": "caucasus", "weight": 8,
+      "countries": ["Russia", "Dagestan (Russia)", "Chechnya (Russia)", "Azerbaijan"],
+      "hometowns": ["Makhachkala", "Khasavyurt", "Grozny", "Kaspiysk", "Derbent", "Baku", "Nalchik", "Buynaksk"],
+      "languages": ["Russian", "Avar"],
+      "first": ["Magomed", "Islam", "Zabit", "Shamil", "Ruslan", "Abubakar", "Said", "Umar", "Rasul", "Khabib", "Akhmed", "Gadzhi", "Murad", "Usman", "Tagir", "Kamil", "Arslan", "Zaur"],
+      "firstW": ["Patimat", "Aminat", "Zalina", "Madina", "Khadizhat", "Aishat"],
+      "lastPre": ["Magom", "Gadzh", "Abdul", "Khal", "Ramaz", "Tag", "Shakh", "Gas", "Murt", "Nurm", "Akhm", "Zainal"],
+      "lastSuf": ["edov", "iev", "aev", "anov", "urov", "ilov", "abov", "ugov", "ataev", "gadov"]
+    },
+    {
+      "id": "russia", "weight": 6,
+      "countries": ["Russia", "Belarus", "Ukraine"],
+      "hometowns": ["Omsk", "Novosibirsk", "Yekaterinburg", "Tula", "Kursk", "Murmansk", "Minsk", "Kharkiv", "Volgograd", "Irkutsk"],
+      "languages": ["Russian"],
+      "first": ["Dmitri", "Sergei", "Alexei", "Pavel", "Ivan", "Nikolai", "Oleg", "Viktor", "Yuri", "Anatoly", "Mikhail", "Fedor", "Boris", "Artem", "Gleb", "Vadim"],
+      "firstW": ["Irina", "Svetlana", "Olga", "Natalia", "Yana", "Valentina", "Ksenia", "Darya"],
+      "lastPre": ["Volk", "Kras", "Bor", "Zhel", "Yak", "Pet", "Smirn", "Grom", "Kuz", "Tolst", "Medv", "Zay", "Shev", "Lyub", "Pash", "Drozd"],
+      "lastSuf": ["hov", "nov", "ovich", "enko", "insky", "yev", "anov", "ov", "kin", "ich", "uk"]
+    },
+    {
+      "id": "mexico", "weight": 7,
+      "countries": ["Mexico"],
+      "hometowns": ["Tijuana", "Guadalajara", "Monterrey", "Culiacan", "Mexicali", "Hermosillo", "Ciudad Juarez", "Oaxaca", "Puebla", "Mexico City"],
+      "languages": ["Spanish"],
+      "first": ["Jose", "Luis", "Alejandro", "Brandon", "Yair", "Ricardo", "Fernando", "Javier", "Eduardo", "Hector", "Rogelio", "Ulises", "Erik", "Marco", "Chuy", "Raul"],
+      "firstW": ["Alexa", "Irene", "Lupita", "Ximena", "Paola", "Mariana", "Yazmin", "Daniela"],
+      "lastPre": ["Guzm", "Ram", "Mor", "Vill", "Cast", "Escob", "Barr", "Ord", "Galv", "Zav", "Huert", "Carr", "Monc", "Tamay", "Quin"],
+      "lastSuf": ["an", "irez", "ales", "egas", "ano", "edo", "era", "uz", "ala", "ada", "ona", "ero"]
+    },
+    {
+      "id": "uk", "weight": 5,
+      "countries": ["England", "Wales", "Scotland"],
+      "hometowns": ["Liverpool", "Manchester", "Birmingham", "Leeds", "Cardiff", "Glasgow", "Newcastle", "Hull", "Sheffield", "Croydon"],
+      "languages": ["English"],
+      "first": ["Darren", "Liam", "Callum", "Gaz", "Tommy", "Jordan", "Ross", "Kieran", "Dean", "Lewis", "Nathan", "Craig", "Reece", "Jamie", "Stevie"],
+      "firstW": ["Chantelle", "Molly", "Stacey", "Leanne", "Jade", "Kerry", "Becca"],
+      "lastPre": ["Pem", "Ash", "Whit", "Thorn", "Ed", "Bram", "Crump", "Fen", "Hart", "Kettle", "Pidd", "Spenc", "Wat", "Bix"],
+      "lastSuf": ["berton", "worth", "ley", "wick", "dale", "ton", "ington", "shaw", "by", "ridge", "ford", "er"]
+    },
+    {
+      "id": "ireland", "weight": 4,
+      "countries": ["Ireland", "Northern Ireland"],
+      "hometowns": ["Dublin", "Cork", "Limerick", "Galway", "Belfast", "Waterford", "Drogheda", "Sligo"],
+      "languages": ["English", "Irish"],
+      "first": ["Conor", "Paddy", "Sean", "Declan", "Cian", "Eoin", "Ronan", "Fergal", "Darragh", "Niall", "Oisin", "Brendan"],
+      "firstW": ["Aoife", "Siobhan", "Niamh", "Ciara", "Roisin", "Orla"],
+      "lastPre": ["O'Brann", "McGill", "O'Dow", "Fitz", "McCaff", "Donne", "Mulc", "O'Shaugh", "Breen", "Kean", "McT", "Flan"],
+      "lastSuf": ["igan", "ahy", "erty", "ery", "elly", "agan", "ane", "ally", "ney", "y"]
+    },
+    {
+      "id": "poland", "weight": 4,
+      "countries": ["Poland", "Czechia", "Slovakia"],
+      "hometowns": ["Krakow", "Gdansk", "Lodz", "Wroclaw", "Poznan", "Brno", "Ostrava", "Bratislava"],
+      "languages": ["Polish"],
+      "first": ["Jan", "Mateusz", "Krzysztof", "Lukasz", "Tomasz", "Piotr", "Marcin", "Szymon", "Jakub", "Wojciech", "Mariusz"],
+      "firstW": ["Joanna", "Karolina", "Agnieszka", "Marta", "Zofia"],
+      "lastPre": ["Prochaz", "Blach", "Gamr", "Wrzos", "Kowal", "Nowa", "Zielin", "Grab", "Szcz", "Bart", "Pud"],
+      "lastSuf": ["owicz", "ka", "ski", "czyk", "ek", "iak", "ewski", "ot", "nik"]
+    },
+    {
+      "id": "nigeria", "weight": 5,
+      "countries": ["Nigeria", "Cameroon", "Ghana", "Senegal"],
+      "hometowns": ["Lagos", "Abuja", "Ibadan", "Douala", "Yaounde", "Accra", "Kumasi", "Dakar"],
+      "languages": ["English", "Yoruba", "French"],
+      "first": ["Kamaru", "Israel", "Francis", "Chidi", "Emeka", "Tunde", "Kofi", "Ousmane", "Babajide", "Obinna", "Kwame", "Ifeanyi", "Moussa", "Sodiq"],
+      "firstW": ["Ngozi", "Adaeze", "Ama", "Funmi", "Aissatou", "Chioma"],
+      "lastPre": ["Oka", "Adeb", "Usm", "Ngan", "Olu", "Mensa", "Diall", "Eze", "Bab", "Ade", "Nwos", "Kalu", "Dioub"],
+      "lastSuf": ["for", "anya", "ou", "owale", "ah", "ugo", "emi", "kwe", "anu", "ade", "ate"]
+    },
+    {
+      "id": "japan", "weight": 3,
+      "countries": ["Japan"],
+      "hometowns": ["Osaka", "Tokyo", "Nagoya", "Sapporo", "Fukuoka", "Kobe", "Sendai", "Hiroshima"],
+      "languages": ["Japanese"],
+      "first": ["Kenji", "Takeshi", "Yuki", "Hiroshi", "Daisuke", "Shinya", "Kazuki", "Ryo", "Tatsuya", "Masato"],
+      "firstW": ["Ayaka", "Rin", "Miyu", "Kana", "Saori"],
+      "lastPre": ["Tana", "Yama", "Naka", "Hori", "Mori", "Kawa", "Saku", "Ishi", "Taka", "Fuji", "Matsu", "Oga"],
+      "lastSuf": ["guchi", "moto", "mura", "kawa", "ta", "shima", "hara", "zaki", "no", "da"]
+    },
+    {
+      "id": "korea", "weight": 2,
+      "countries": ["South Korea"],
+      "hometowns": ["Seoul", "Busan", "Incheon", "Daegu", "Gwangju", "Pohang"],
+      "languages": ["Korean"],
+      "first": ["Min-jun", "Doo-ho", "Chan-sung", "Jun-young", "Seung-woo", "Kyung-ho", "Dong-hyun", "Tae-hoon"],
+      "firstW": ["Ji-yeon", "Seo-yeon", "Ha-eun", "Da-som"],
+      "lastPre": ["Ch", "J", "K", "P", "Y", "S", "H", "B"],
+      "lastSuf": ["oi", "ung", "im", "ark", "oon", "eong", "wang", "ae"]
+    },
+    {
+      "id": "aus_nz", "weight": 4,
+      "countries": ["Australia", "New Zealand"],
+      "hometowns": ["Perth", "Brisbane", "Gold Coast", "Sydney", "Auckland", "Christchurch", "Darwin", "Wollongong", "Rotorua"],
+      "languages": ["English", "Maori"],
+      "first": ["Robbie", "Tai", "Shaun", "Brad", "Jack", "Kai", "Mitch", "Wiremu", "Lachlan", "Tane", "Jimmy", "Tyson"],
+      "firstW": ["Casey", "Kiri", "Tayla", "Shannon", "Mia"],
+      "lastPre": ["Whit", "Tuiv", "Fale", "Ngat", "Crute", "Hoog", "Mal", "Tafa", "Brun", "Ruak", "Kel"],
+      "lastSuf": ["taker", "asa", "olo", "ai", "ere", "ham", "son", "ena", "iti", "ly"]
+    },
+    {
+      "id": "china", "weight": 3,
+      "countries": ["China"],
+      "hometowns": ["Chengdu", "Kunming", "Harbin", "Xi'an", "Shenyang", "Ordos", "Guiyang", "Wuhan"],
+      "languages": ["Mandarin"],
+      "first": ["Wei", "Jianping", "Li", "Haoran", "Zhenhong", "Kangjie", "Yizhou", "Bo"],
+      "firstW": ["Weili", "Yan", "Jingliang", "Xiaonan", "Meng"],
+      "lastPre": ["Zh", "W", "L", "Ch", "Y", "X", "S", "Q"],
+      "lastSuf": ["ang", "u", "ao", "en", "ong", "ia", "ui", "iu"]
+    },
+    {
+      "id": "central_asia", "weight": 3,
+      "countries": ["Kazakhstan", "Kyrgyzstan", "Uzbekistan", "Tajikistan"],
+      "hometowns": ["Almaty", "Bishkek", "Tashkent", "Shymkent", "Osh", "Dushanbe", "Karaganda"],
+      "languages": ["Kazakh", "Russian"],
+      "first": ["Shavkat", "Askar", "Nurlan", "Damir", "Bekzat", "Azamat", "Timur", "Sanzhar", "Yerlan"],
+      "firstW": ["Aigerim", "Dinara", "Zhanna", "Malika"],
+      "lastPre": ["Rakh", "Nurl", "Ism", "Asan", "Kair", "Bek", "Sult", "Tok", "Zhum"],
+      "lastSuf": ["monov", "anov", "ailov", "bekov", "atov", "aliev", "baev", "enov"]
+    },
+    {
+      "id": "nordic", "weight": 3,
+      "countries": ["Sweden", "Norway", "Iceland", "Finland", "Denmark"],
+      "hometowns": ["Stockholm", "Gothenburg", "Oslo", "Bergen", "Reykjavik", "Helsinki", "Malmo", "Aarhus"],
+      "languages": ["Swedish", "English"],
+      "first": ["Gunnar", "Alexander", "Erik", "Sven", "Bjorn", "Magnus", "Leif", "Anders", "Johan", "Oskar"],
+      "firstW": ["Astrid", "Freja", "Linnea", "Sigrid", "Ingrid"],
+      "lastPre": ["Gust", "Lind", "Berg", "Holm", "Thor", "Sand", "Ny", "Ek", "Dahl", "Fjeld", "Strom"],
+      "lastSuf": ["afsson", "qvist", "gren", "stad", "son", "lund", "berg", "dottir", "heim", "vall"]
+    },
+    {
+      "id": "france", "weight": 3,
+      "countries": ["France", "Belgium", "Switzerland"],
+      "hometowns": ["Marseille", "Paris", "Lyon", "Nice", "Lille", "Toulouse", "Brussels", "Geneva"],
+      "languages": ["French"],
+      "first": ["Benoit", "Cyril", "Nassourdine", "Manon", "Florian", "Mickael", "Taylor", "Morgan", "Ciryl", "Jeremy"],
+      "firstW": ["Manon", "Elodie", "Chloe", "Margaux", "Lea"],
+      "lastPre": ["Dum", "Gan", "Fiore", "Imav", "Sal", "Bout", "Lacr", "Mich", "Gir", "Dup", "Roch"],
+      "lastSuf": ["ont", "e", "ot", "ard", "elle", "et", "ier", "oix", "ault", "eau"]
+    },
+    {
+      "id": "georgia", "weight": 2,
+      "countries": ["Georgia", "Armenia"],
+      "hometowns": ["Tbilisi", "Batumi", "Kutaisi", "Yerevan", "Gyumri", "Rustavi"],
+      "languages": ["Georgian", "Armenian"],
+      "first": ["Merab", "Giga", "Levan", "Irakli", "Guram", "Davit", "Aram", "Tigran", "Zurab"],
+      "firstW": ["Nino", "Tamar", "Ani", "Lusine"],
+      "lastPre": ["Dval", "Chik", "Kakh", "Kvar", "Japar", "Mkhit", "Gogo", "Tsik", "Abram"],
+      "lastSuf": ["ishvili", "adze", "eli", "ian", "yan", "ava", "ia"]
+    },
+    {
+      "id": "philippines", "weight": 2,
+      "countries": ["Philippines", "Indonesia", "Thailand"],
+      "hometowns": ["Baguio", "Cebu", "Davao", "Manila", "Jakarta", "Bangkok", "Chiang Mai", "Pattaya"],
+      "languages": ["Filipino", "Thai", "English"],
+      "first": ["Eduard", "Kevin", "Jomar", "Rolando", "Sakda", "Buakaw", "Ronnel", "Joshua"],
+      "firstW": ["Denice", "Stamp", "Jenelyn", "Mei"],
+      "lastPre": ["Fol", "Bel", "Sit", "Cat", "Dag", "Pacq", "Lak", "Somr", "Banar"],
+      "lastSuf": ["ayang", "ingon", "chai", "alan", "uiao", "ao", "sak", "ong", "dal"]
+    },
+    {
+      "id": "canada", "weight": 4,
+      "countries": ["Canada"],
+      "hometowns": ["Montreal, QC", "Calgary, AB", "Winnipeg, MB", "Halifax, NS", "Saskatoon, SK", "Thunder Bay, ON", "Moncton, NB", "Red Deer, AB"],
+      "languages": ["English", "French"],
+      "first": ["Georges", "Mac", "Jean-Luc", "Brendan", "Cody", "Patrick", "Mathieu", "Denis", "Tanner", "Gord"],
+      "firstW": ["Valerie", "Genevieve", "Sarah", "Jocelyn"],
+      "lastPre": ["Trembl", "Bouch", "Gagn", "Mac", "Pell", "Lapo", "Theri", "Fras", "Robich", "Duch"],
+      "lastSuf": ["ay", "ard", "on", "Kinnon", "etier", "inte", "ault", "er", "aud", "esne"]
+    },
+    {
+      "id": "netherlands", "weight": 2,
+      "countries": ["Netherlands", "Suriname", "Morocco"],
+      "hometowns": ["Amsterdam", "Rotterdam", "Breda", "Utrecht", "Paramaribo", "Casablanca", "Tangier"],
+      "languages": ["Dutch", "Arabic"],
+      "first": ["Alistair", "Remy", "Gegard", "Badr", "Semmy", "Jairzinho", "Melvin", "Ottman", "Rico", "Hesdy"],
+      "firstW": ["Germaine", "Lindsey", "Yasmina"],
+      "lastPre": ["van der ", "de ", "Over", "Bon", "El ", "Haz", "Ver", "Groot", "Ak"],
+      "lastSuf": ["Berg", "Jong", "eem", "jasky", "Hari", "Azz", "hoeven", "dijk", "ouz"]
+    }
+  ],
+  "nickAdj": ["Southern Fried", "Unpaid", "Gluten-Free", "Free-Range", "Extra Spicy", "Off-Brand", "Unsupervised", "Certified", "Uninsured", "Overdrafted", "Sleep-Deprived", "Premium", "Fully Vaccinated", "Unvaccinated", "Unbothered", "Unmedicated", "Bankrupt", "Bulletproof", "Lactose-Intolerant", "Two-Time", "Undefeated (Allegedly)", "Gas Station", "Pre-Owned", "Unlicensed", "Disgraced", "Recently Divorced", "Hungover", "Organic", "Fat-Free", "Haunted", "Low-Sodium", "Feral", "Notorious", "Self-Diagnosed", "Shadowbanned", "Verified", "Deep-Fried", "Federal", "Undocumented", "Restraining", "Silent", "Spicy", "Rabid", "Midnight", "Iron", "Golden", "Bloody", "Savage", "Cold-Blooded", "Concrete"],
+  "nickNoun": ["Tax Audit", "Lasagna", "Raccoon", "Parole Officer", "Group Chat", "Leg Day", "Burrito", "Lawsuit", "Chimney", "Ankle Monitor", "Mortgage", "Cockroach", "Waffle House", "Food Truck", "Spreadsheet", "Hangover", "Thumbtack", "Dumpster", "Shopping Cart", "Mullet", "Stepdad", "Crypto Wallet", "Disappointment", "Middle Child", "Pitbull", "Hurricane", "Tornado", "Bulldozer", "Wrecking Ball", "Meat Locker", "Sledgehammer", "Glacier", "Pressure Washer", "Fire Alarm", "Microwave", "Lawnmower", "Speed Bump", "Landlord", "Cheat Code", "Sinkhole", "Honey Badger", "Possum", "Mosquito", "Jackhammer", "Group Project", "Reply Guy", "Body Bag", "Gravedigger", "Nightmare", "Problem"],
+  "nicknames": [
+    "The Tax Audit", "Southern Fried", "The Human Restraining Order", "Two Strikes", "The Accountant", "Big Country (Small Town)", "Mr. Cardio (Ironic)",
+    "The Uber Rating", "Cheese Grater", "No Chin Lin", "The Mailman", "Dad Bod", "The Substitute Teacher", "Spicy Lasagna", "Lights Out", "The Notary",
+    "Bad Decisions", "The Final Boss", "The Intern", "Gas Station Sushi", "The Reply Guy", "Group Chat", "Extended Warranty", "The Landlord",
+    "Repo Man", "The Chiropractor", "Flat Earth", "The Prophet", "Coupon", "Side Quest", "The Dentist", "Big Rig", "Cash App", "The Wi-Fi Password",
+    "The Divorce Lawyer", "Overtime", "The Plumber", "Diet Coke", "The Mortician", "Leg Day", "The Bouncer", "Gravy", "The Animal", "The Butcher",
+    "Hot Pocket", "The Disappointment", "No Context", "The Algorithm", "Captain Concussion", "The Undertaker's Intern", "Tiny Tim", "Thicc Vic",
+    "Hammer Time", "The Gentleman", "Pay-Per-View", "Retainer", "The Hall Monitor", "Fourth Strike", "The Reverend", "Buffet Killer", "Mr. Monday",
+    "Mid", "The Quiet Storm", "Stone Cold Sober", "The Uninvited", "The Tow Truck", "Late Fee", "The Influencer", "Night Shift", "The Groundskeeper",
+    "Wet Cement", "Biscuit", "The Cleaner", "Goose", "Taco Tuesday", "Big Pharma", "The Raccoon", "Pocket Sand", "Detention", "The Snitch",
+    "Mustard", "Mr. Nobody", "The Weatherman", "Funeral Home", "Mama's Boy", "Pressure", "Bone Collector", "Payday", "Jackpot", "The Contractor",
+    "Sweet Tea", "Buckshot", "Lemon Pepper", "Captain Clinch", "The Arborist", "Dial Tone", "Overdraft", "Nightmare Fuel", "The Hitman", "The Surgeon",
+    "Cowboy", "The Eraser", "Iceberg", "The Sniper", "Bam Bam", "The Bull", "Thunder", "Rampage", "The Spider", "The Dream", "Mystic", "Shogun"
+  ],
+  "gyms": [
+    "Strip Mall Kombat", "Garage Gang MMA", "Blood & Sweat Academy", "Iron Lung Fight Club", "Duke's Pressure Shack", "The Pain Cave", "Eagle Talon MMA",
+    "Sunset Boulevard BJJ", "Kill Cliff Collective", "Alpha Male Adjacent", "Team Concussion", "Peak Performance Pizza & MMA", "Hard Knocks Barn",
+    "Tiger Muay Thai Knockoff", "Black House of Pancakes", "American Top Tier", "Jackson-Wink-Nod", "City Kickboxing Lite", "Tristar-Ish",
+    "Dojo of Bad Decisions", "Cobra Kai Rentals", "The Gas Tank", "Basement Grappling Society", "Holy Choke Church Gym", "Wolf Pack Combat",
+    "Sand Box BJJ", "Kremlin Basement Sambo", "Mountain Sambo Camp", "Rio Favela Fight Team", "Nova Uniao Nova", "Chute Boxe Classic", "Dagestan Barn Collective",
+    "Rotterdam Kick Factory", "Bangkok Bone Breakers", "Dublin Straight Blast", "Tokyo Shooto Dojo", "Lagos Lions MMA", "Gold Coast Grapple",
+    "Montreal Tristar Wannabe", "Ozark Mountain Fight House", "Bayou Brawl Barn", "Detroit Steel Boxing", "Philly Shell Shop", "Elevation Fight Basement"
+  ],
+  "cutmen": [
+    "Stitch Malone", "Vaseline Vinny", "Doc Gauze", "Enswell Eddie", "Q-Tip Quincy", "Butterfly Barb", "Adrenaline Al", "Clot Kowalski", "Pressure Pete",
+    "Ice Bag Ike", "Jumbo Swab Jones", "Stanch Stanley", "Coagulant Carl", "Patch Patterson", "Gentle Jean", "Benny Bandage", "Sal 'The Seal' Ruiz",
+    "Two-Hands Tony", "Old Man Mercer", "Petroleum Pat", "Moist Towel Morty", "Clamp Clemente", "Grandpa Gauze", "Hemo Hector", "Dab-It Dabney"
+  ],
+  "coachFirst": ["Duke", "Greg", "Mike", "Javier", "Firas", "Eric", "Mark", "Trevor", "Rafael", "Abdul", "Coach", "Big John", "Ray", "Sensei Rick", "Mama", "Pops", "Uncle Ted", "Rocco", "Bas", "Henri"],
+  "coachLast": ["Rufus", "Jacksonne", "Brooksby", "Mendes-ish", "Zahabi-Lite", "Albuqurk", "Dellagrotte", "Wittman", "Cordeiro", "Kavanaugh", "Pena", "Tyson-Smith", "Ustinov", "Fong", "Okafor", "Nakamura", "Bellweather", "Hooker-Grant", "Dundee", "Vasquez"],
+  "socialStyles": ["all caps rants", "gym selfies", "cryptic quotes", "conspiracy threads", "dad jokes", "thirst traps", "beefing with randoms", "motivational slop", "food reviews", "silent lurker", "prayer emojis", "crypto shilling", "live streams", "meme reposts", "gaming clips"]
+}

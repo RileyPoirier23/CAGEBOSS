@@ -1,0 +1,27 @@
+{
+  "name": "cage-boss",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "CAGE BOSS - a satirical MMA-promoter management sim",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "sim": "tsx tools/sim.ts",
+    "validate": "tsx tools/validate.ts",
+    "namegen": "tsx tools/namegen.ts"
+  },
+  "dependencies": {
+    "pixi.js": "^8.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  }
+}
