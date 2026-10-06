@@ -14,13 +14,19 @@ export const JOINTS: Joint[] = ['head', 'neck', 'shF', 'elF', 'haF', 'shB', 'elB
 export type Pose =
   | 'guard' | 'jab' | 'cross' | 'hook' | 'uppercut' | 'body' | 'legkick' | 'bodykick' | 'headkick' | 'knee' | 'elbow' | 'spin' | 'flyknee'
   | 'shoot' | 'sprawl' | 'clinch' | 'top' | 'topPunch' | 'bottom' | 'bottomSub' | 'hurt' | 'rocked' | 'down' | 'ko' | 'celebrate'
-  | 'taunt' | 'stool' | 'walk1' | 'walk2' | 'block' | 'slip' | 'lifted';
+  | 'taunt' | 'stool' | 'walk1' | 'walk2' | 'block' | 'slip' | 'lifted'
+  | 'stand' | 'armUp' | 'headDown' | 'refHold' | 'refRaise' | 'mic' | 'point' | 'flex';
 
 const P = (o: Partial<Record<Joint, [number, number]>>, base?: Rig): Rig => ({ ...(base ?? GUARD), ...o } as Rig);
 
 export const GUARD: Rig = {
   head: [5, -76], neck: [3, -67], shF: [7, -64], elF: [15, -55], haF: [20, -66], shB: [-2, -64], elB: [6, -53], haB: [11, -64],
   hip: [0, -40], knF: [9, -21], ftF: [15, 0], knB: [-6, -21], ftB: [-13, 0],
+};
+
+const STAND: Rig = {
+  head: [2, -77], neck: [1, -67], shF: [5, -64], elF: [7, -52], haF: [8, -41], shB: [-3, -64], elB: [-5, -52], haB: [-5, -41],
+  hip: [0, -40], knF: [3, -20], ftF: [5, 0], knB: [-3, -20], ftB: [-5, 0],
 };
 
 export const POSES: Record<Pose, Rig> = {
@@ -56,6 +62,15 @@ export const POSES: Record<Pose, Rig> = {
   walk1: P({ head: [1, -76], neck: [0, -67], shF: [3, -64], shB: [-3, -64], elF: [6, -52], haF: [8, -42], elB: [-6, -52], haB: [-8, -42], knF: [6, -20], ftF: [10, 0], knB: [-4, -20], ftB: [-8, 0] }),
   walk2: P({ head: [1, -76], neck: [0, -67], shF: [3, -64], shB: [-3, -64], elF: [-4, -52], haF: [-6, -42], elB: [4, -52], haB: [6, -42], knF: [-2, -20], ftF: [-6, 0], knB: [4, -20], ftB: [8, 0] }),
   lifted: P({ hip: [0, -60], neck: [-6, -84], head: [-10, -90], knF: [10, -48], ftF: [16, -34], knB: [4, -44], ftB: [10, -30], haF: [8, -72], haB: [2, -70] }),
+  // ---- ceremony / announcer / referee
+  stand: STAND,
+  armUp: P({ elF: [6, -84], haF: [8, -100], head: [3, -77] }, STAND),
+  headDown: P({ head: [5, -71], neck: [3, -64], shF: [5, -61], shB: [-2, -61], haF: [8, -40], haB: [-2, -40], elF: [7, -50], elB: [-3, -50] }, STAND),
+  refHold: P({ elF: [12, -56], haF: [20, -54], elB: [-10, -56], haB: [-18, -54] }, STAND),
+  refRaise: P({ elF: [12, -82], haF: [18, -100], elB: [-10, -56], haB: [-18, -54] }, STAND),
+  mic: P({ elB: [8, -58], haB: [6, -72], head: [3, -77] }, STAND),
+  point: P({ elF: [18, -68], haF: [34, -72], elB: [8, -58], haB: [6, -72], head: [5, -77] }, STAND),
+  flex: P({ elF: [16, -72], haF: [12, -86], elB: [-12, -72], haB: [-8, -86], head: [2, -78] }, STAND),
 };
 
 export interface Look2 {
@@ -70,6 +85,8 @@ export interface Look2 {
   stance: string;
   female: boolean;
   tattoo: number;
+  /** clothing for non-fighters (referee, ring announcer, cutmen) */
+  outfit?: { top: number; bottom: number; shirt?: number; tie?: number; bulk?: number; mic?: boolean };
 }
 
 export function lookFor(f: Fighter, corner: 0 | 1): Look2 {
@@ -158,6 +175,7 @@ export function lerpRig(a: Rig, b: Rig, k: number): Rig {
 export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 | -1, L: Look2, scale = 1): void {
   const tx = (p: [number, number]): [number, number] => [Math.round(x + p[0] * facing * scale), Math.round(y + p[1] * scale)];
   const OUT = 0x120d10;
+  if (L.outfit) return drawClothed(g, rig, x, y, facing, L, scale);
   const skin = L.skin;
   const skinB = shade(skin, -0.22); // far limbs
   const skinL = shade(skin, 0.1);
@@ -264,6 +282,64 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
   g.circle(gfx, gfy, 4.4 * scale).fill(OUT);
   g.circle(gfx, gfy, 3.6 * scale).fill(L.glove);
   g.rect(gfx - 1 * scale, gfy - 2 * scale, 2 * scale, 1 * scale).fill(shade(L.glove, 0.35));
+}
+
+/** Clothed figure: referee shirt, Juiced Butler's straining tuxedo. */
+function drawClothed(g: Graphics, rig: Rig, x: number, y: number, facing: 1 | -1, L: Look2, scale: number): void {
+  const o = L.outfit!;
+  const tx = (p: [number, number]): [number, number] => [Math.round(x + p[0] * facing * scale), Math.round(y + p[1] * scale)];
+  const OUT = 0x120d10;
+  const bulk = o.bulk ?? 0;
+  const w = (7 + bulk) * scale;
+  const seg = (a: Joint, b: Joint, width: number, color: number) => {
+    const [x1, y1] = tx(rig[a]);
+    const [x2, y2] = tx(rig[b]);
+    g.moveTo(x1, y1).lineTo(x2, y2).stroke({ color: OUT, width: width + 2 * scale, cap: 'round' });
+    g.moveTo(x1, y1).lineTo(x2, y2).stroke({ color, width, cap: 'round' });
+  };
+  const topB = shade(o.top, -0.25);
+  const botB = shade(o.bottom, -0.25);
+  // far leg & arm
+  seg('hip', 'knB', w, botB);
+  seg('knB', 'ftB', w * 0.85, botB);
+  const [fbx, fby] = tx(rig.ftB);
+  g.rect(fbx - 3 * scale, fby - 2 * scale, 8 * scale, 3 * scale).fill(0x0a0a0a);
+  seg('shB', 'elB', w * 0.85, topB);
+  seg('elB', 'haB', w * 0.8, topB);
+  const [hbx, hby] = tx(rig.haB);
+  g.circle(hbx, hby, 2.6 * scale).fill(shade(L.skin, -0.2));
+  if (o.mic) g.rect(hbx - 1 * scale, hby - 5 * scale, 2 * scale, 5 * scale).fill(0x1a1a1a).rect(hbx - 1.5 * scale, hby - 7 * scale, 3 * scale, 3 * scale).fill(0x4a4a4a);
+  // torso
+  const [nx, ny] = tx(rig.neck);
+  const [hx, hy] = tx(rig.hip);
+  const tw = (12 + bulk * 2) * scale;
+  g.moveTo(nx, ny).lineTo(hx, hy).stroke({ color: OUT, width: tw + 2 * scale, cap: 'round' });
+  g.moveTo(nx, ny).lineTo(hx, hy).stroke({ color: o.top, width: tw, cap: 'round' });
+  if (o.shirt !== undefined) {
+    g.moveTo(nx + 1 * facing * scale, ny + 1 * scale).lineTo(nx + (hx - nx) * 0.6 + 1 * facing * scale, ny + (hy - ny) * 0.6).stroke({ color: o.shirt, width: 3 * scale });
+  }
+  if (o.tie !== undefined) g.rect(nx - 2 * scale + 1 * facing * scale, ny + 1 * scale, 5 * scale, 2 * scale).fill(o.tie);
+  // near leg
+  seg('hip', 'knF', w, o.bottom);
+  seg('knF', 'ftF', w * 0.85, o.bottom);
+  const [ffx, ffy] = tx(rig.ftF);
+  g.rect(ffx - 3 * scale, ffy - 2 * scale, 9 * scale, 3 * scale).fill(0x0a0a0a);
+  // head
+  const [hdx, hdy] = tx(rig.head);
+  const hr = 7 * scale;
+  g.circle(hdx, hdy, hr + 1 * scale).fill(OUT);
+  g.circle(hdx, hdy, hr).fill(L.skin);
+  g.rect(Math.round(hdx + 3 * facing * scale - (facing < 0 ? 2 * scale : 0)), Math.round(hdy - 2 * scale), 2 * scale, 2 * scale).fill(0x1c1714);
+  if (L.hairStyle === 0) g.circle(Math.round(hdx - 1 * facing * scale), Math.round(hdy - 4 * scale), 2 * scale).fill(shade(L.skin, 0.3));
+  else {
+    g.moveTo(hdx + Math.cos(Math.PI) * hr, hdy);
+    g.arc(hdx, hdy, hr, Math.PI, Math.PI * 2).stroke({ color: L.hairColor, width: 3 * scale });
+  }
+  // near arm
+  seg('shF', 'elF', w * 0.85, o.top);
+  seg('elF', 'haF', w * 0.8, o.top);
+  const [hfx, hfy] = tx(rig.haF);
+  g.circle(hfx, hfy, 2.8 * scale).fill(L.skin);
 }
 
 export function trunksFor(corner: 0 | 1): number {

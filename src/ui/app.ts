@@ -21,6 +21,8 @@ export interface Settings {
   sfxVolume: number;
   fightSpeed: number; // 1..4
   clockSpeed: number; // multiplier for the desk clock (0 = paused/relaxed)
+  fightCam?: 'side' | 'tv' | 'top'; // spectating camera
+  intros?: boolean; // Juiced Butler introductions before watched bouts
 }
 
 const DEFAULT_SETTINGS: Settings = {

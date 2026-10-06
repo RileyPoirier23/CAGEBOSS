@@ -41,23 +41,72 @@ interface FState {
   facing: 1 | -1;
 }
 
+export type CamMode = 'side' | 'tv' | 'top';
+type ArenaScene = 'intro' | 'fight' | 'ceremony';
+
+interface Actor {
+  rig: Rig;
+  pose: Pose;
+  x: number;
+  tx: number;
+  facing: 1 | -1;
+  look: Look2;
+  visible: boolean;
+  spin: number; // >0 while doing the Buffer 360
+}
+
+const REF_LOOK: Look2 = {
+  skin: 0x8d5a3b, hairStyle: 0, hairColor: 0x1a1412, beard: 2, build: 1, trunks: 0x111111, trim: 0x111111, glove: 0x2a5aa8,
+  stance: 'upright', female: false, tattoo: 0, outfit: { top: 0x1a1a1e, bottom: 0x22222a, bulk: 0 },
+};
+const BUTLER_LOOK: Look2 = {
+  skin: 0xe0b48c, hairStyle: 0, hairColor: 0x2a2020, beard: 0, build: 2, trunks: 0x111111, trim: 0x111111, glove: 0xe0b48c,
+  stance: 'upright', female: false, tattoo: 0, outfit: { top: 0x15151a, bottom: 0x15151a, shirt: 0xf2efe6, tie: 0x8e2f2f, bulk: 4, mic: true },
+};
+
+// top-down octagon geometry
+const TCX = AW / 2;
+const TCY = 76;
+const TR = 66;
+
 export class ArenaView extends Container {
+  private world = new Container();
   private bg = new Graphics();
   private crowd = new Graphics();
   private lights = new Graphics();
   private fighters = new Graphics();
   private fx = new Graphics();
   private front = new Graphics();
+  private top = new Graphics();
+  private topFx = new Graphics();
   private hud = new Container();
   private hudG = new Graphics();
+  private tv = new Container();
+  private tvG = new Graphics();
+  private tvLower: PixelText;
+  private tvLower2: PixelText;
+  private tvTag: PixelText;
+  private topLabels = new Container();
   private clock: PixelText;
   private callout: PixelText;
   private parts: Part[] = [];
+  private tparts: Part[] = [];
   private t = 0;
   private L: [Look2, Look2];
   private F: [FState, FState];
+  private ref: Actor;
+  private butler: Actor;
   private center = AW / 2;
   private drift = 0;
+  // camera
+  mode: CamMode = 'side';
+  private cam = { x: AW / 2, y: AH / 2, z: 1 };
+  private shot = { x: AW / 2, y: AH / 2, z: 1, hold: 0, slowZoom: 0 };
+  private lowerT = 0;
+  // top-down state
+  private tc = { x: TCX, y: TCY, ang: 0 };
+  scene: ArenaScene = 'fight';
+  private introFocus: -1 | 0 | 1 = -1;
   hp: [number, number] = [100, 100];
   intensity = 1;
   flash = 0;
@@ -73,6 +122,7 @@ export class ArenaView extends Container {
     public A: Fighter,
     public B: Fighter,
     public rounds: number,
+    private info: { network?: string; event?: string; promo?: string } = {},
   ) {
     super();
     this.L = [lookFor(A, 0), lookFor(B, 1)];
@@ -80,14 +130,40 @@ export class ArenaView extends Container {
       { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: AW / 2 - 24, lunge: 0, recoil: 0, facing: 1 },
       { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: AW / 2 + 24, lunge: 0, recoil: 0, facing: -1 },
     ];
-    this.addChild(this.bg, this.crowd, this.lights, this.fighters, this.fx, this.front, this.hudG, this.hud);
+    this.ref = { rig: { ...POSES.stand }, pose: 'stand', x: AW / 2 + 70, tx: AW / 2 + 70, facing: -1, look: REF_LOOK, visible: true, spin: 0 };
+    this.butler = { rig: { ...POSES.mic }, pose: 'mic', x: AW / 2, tx: AW / 2, facing: 1, look: BUTLER_LOOK, visible: false, spin: 0 };
+    this.world.addChild(this.bg, this.crowd, this.lights, this.fighters, this.fx, this.front);
+    this.addChild(this.world, this.top, this.topFx, this.topLabels, this.hudG, this.hud, this.tv);
     this.drawBg();
+    this.drawTopStatic();
     this.hud.addChild(text(`${A.first[0]}. ${A.last}`, 6, 3, { color: PAL.bone }));
     this.hud.addChild(text(`${B.first[0]}. ${B.last}`, AW - 126, 3, { color: PAL.bone, width: 120, align: 'right' }));
     this.clock = text('R1 5:00', 0, 3, { width: AW, align: 'center', color: PAL.gold });
     this.callout = text('', 0, 46, { width: AW, align: 'center', color: PAL.gold, scale: 2, shadow: PAL.ink });
     this.hud.addChild(this.clock, this.callout);
+    // TV graphics
+    this.tv.addChild(this.tvG);
+    this.tvTag = text('● LIVE', AW - 50, 26, { small: true, color: 0xffffff });
+    this.tv.addChild(text((info.event ?? '').toUpperCase(), 6, 26, { small: true, color: PAL.gold, shadow: PAL.ink }));
+    this.tvLower = text('', 18, AH - 27, { color: PAL.bone });
+    this.tvLower2 = text('', 18, AH - 16, { small: true, color: PAL.ash, width: 300 });
+    this.tv.addChild(this.tvTag, this.tvLower, this.tvLower2);
+    this.setMode('side');
   }
+
+  setMode(m: CamMode): void {
+    this.mode = m;
+    const top = m === 'top' && this.scene === 'fight';
+    this.world.visible = !top;
+    this.top.visible = top;
+    this.topFx.visible = top;
+    this.topLabels.visible = top;
+    this.tv.visible = m === 'tv';
+    if (m !== 'tv') this.applyCam(AW / 2, AH / 2, 1, true);
+    else this.shot.hold = 0;
+  }
+
+  // ------------------------------------------------------------ backgrounds
 
   private drawBg(): void {
     const g = this.bg;
@@ -100,6 +176,8 @@ export class ArenaView extends Container {
       g.rect(18 + i * 48, 10, 12, 5).fill(0x3a3032);
       g.rect(21 + i * 48, 15, 6, 2).fill(0xe8d8a0);
     }
+    // big screens
+    g.rect(150, 1, 60, 8).fill(0x0e1420).rect(270, 1, 60, 8).fill(0x0e1420);
     // the canvas (mat) in perspective
     g.poly([CAGE_L - 20, FLOOR + 14, CAGE_R + 20, FLOOR + 14, CAGE_R - 4, FLOOR - 10, CAGE_L + 4, FLOOR - 10]).fill(0xc9c3b6);
     g.poly([CAGE_L - 20, FLOOR + 14, CAGE_R + 20, FLOOR + 14, AW, AH, 0, AH]).fill(0x1a1416);
@@ -144,11 +222,183 @@ export class ArenaView extends Container {
       const fx = Math.random() * AW;
       g.circle(fx, 24 + Math.random() * 20, 2).fill(0xffffff);
     }
+    // jumbotrons show the action
+    const sc = this.scene === 'intro' ? 0x3a2a14 : this.intensity >= 3 ? 0x5a1a1a : 0x1a2a40;
+    g.rect(152, 2, 56, 6).fill(sc).rect(272, 2, 56, 6).fill(sc);
     // spotlights over the cage
     const l = this.lights;
     l.clear();
     l.poly([AW / 2 - 30, 16, AW / 2 + 30, 16, AW / 2 + 150, FLOOR, AW / 2 - 150, FLOOR]).fill({ color: 0xfff2d0, alpha: 0.05 + this.intensity * 0.01 });
     l.ellipse(AW / 2 + this.drift, FLOOR + 1, 110, 10).fill({ color: 0xfff2d0, alpha: 0.08 });
+    if (this.scene === 'intro') {
+      const fx = this.introFocus < 0 ? this.butler.x : this.F[this.introFocus as 0 | 1].x;
+      l.poly([fx - 6, 16, fx + 6, 16, fx + 30, FLOOR + 4, fx - 30, FLOOR + 4]).fill({ color: 0xfff2d0, alpha: 0.12 });
+    }
+  }
+
+  /** Top-down octagon: mat, fence, crowd, commentary desk, judges. */
+  private drawTopStatic(): void {
+    const g = this.top;
+    g.clear();
+    g.rect(0, 0, AW, AH).fill(0x110d11);
+    // crowd ring
+    for (let i = 0; i < 520; i++) {
+      const n = Math.sin(i * 91.7) * 43758.5453;
+      const v = n - Math.floor(n);
+      const a = (i / 520) * Math.PI * 2 * 7;
+      const rr = 92 + (i % 7) * 9 + v * 4;
+      const x = TCX + Math.cos(a) * rr * 1.6;
+      const y = TCY + Math.sin(a) * rr * 0.62;
+      if (y < 2 || y > AH - 2) continue;
+      g.circle(x, y, 2).fill(lerpColor(0x241c22, 0x4a3a40, v));
+    }
+    // floor around the cage
+    const oct = (r: number) => {
+      const pts: number[] = [];
+      for (let k = 0; k < 8; k++) {
+        const a = Math.PI / 8 + (k * Math.PI) / 4;
+        pts.push(TCX + Math.cos(a) * r, TCY + Math.sin(a) * r);
+      }
+      return pts;
+    };
+    g.poly(oct(TR + 14)).fill(0x1c171b);
+    g.poly(oct(TR + 3)).fill(0x2a2a30);
+    g.poly(oct(TR)).fill(0xcfc9bc);
+    // mat art
+    g.circle(TCX, TCY, 26).stroke({ color: 0xa83232, width: 2, alpha: 0.55 });
+    g.circle(TCX, TCY, 14).fill({ color: 0xa83232, alpha: 0.18 });
+    g.rect(TCX - 46, TCY - 40, 26, 6).fill({ color: 0x2a4a86, alpha: 0.3 });
+    g.rect(TCX + 20, TCY + 34, 26, 6).fill({ color: 0x2a4a86, alpha: 0.3 });
+    // fence & posts
+    g.poly(oct(TR + 1)).stroke({ color: 0x0c0c0e, width: 3 });
+    const p = oct(TR + 1);
+    for (let k = 0; k < 8; k++) g.circle(p[k * 2], p[k * 2 + 1], 3).fill(0x8a1e1e);
+    // corners: red (left-up) and blue (right-down) stools
+    g.rect(p[10] - 6, p[11] - 4, 8, 8).fill(0x9e2a2a);
+    g.rect(p[2] - 2, p[3] - 4, 8, 8).fill(0x284a86);
+    // commentary desk
+    g.rect(24, 112, 116, 16).fill(0x2a2228).rect(24, 112, 116, 3).fill(0x4a3a40);
+    for (let k = 0; k < 3; k++) {
+      const hx = 44 + k * 38;
+      g.circle(hx, 122, 6).fill(0x15151a);
+      g.circle(hx, 120, 3.5).fill([0xe0b48c, 0xd8a47c, 0x6e4630][k]);
+      g.rect(hx - 6, 112, 12, 3).fill(0xc4a04a); // monitors
+    }
+    // judges
+    for (let k = 0; k < 3; k++) {
+      const jy = 28 + k * 46;
+      g.rect(AW - 70, jy - 6, 40, 12).fill(0x2a2228);
+      g.circle(AW - 50, jy + 6, 4).fill(0x15151a);
+      g.circle(AW - 50, jy + 5, 2.5).fill(0xc8a080);
+    }
+    this.topLabels.removeChildren().forEach((c) => c.destroy());
+    this.topLabels.addChild(text('ANIK  •  HOGAN  •  SANDWICH', 24, 131, { small: true, color: PAL.ash }));
+    this.topLabels.addChild(text('JUDGES', AW - 66, AH - 12, { small: true, color: PAL.ash }));
+    this.topLabels.addChild(text('RED', TCX - TR - 8, 22, { small: true, color: 0xc85a5a }));
+    this.topLabels.addChild(text('BLUE', TCX + TR - 8, AH - 30, { small: true, color: 0x6a8ad8 }));
+  }
+
+  // ------------------------------------------------------------ scenes
+
+  /** Juiced Butler time: fighters in their corners, announcer centre stage. */
+  startIntro(): void {
+    this.scene = 'intro';
+    this.F[0].x = CAGE_L + 60;
+    this.F[1].x = CAGE_R - 60;
+    this.butler.visible = true;
+    this.butler.x = this.butler.tx = AW / 2;
+    this.ref.x = this.ref.tx = AW / 2 + 90;
+    this.setMode(this.mode);
+  }
+
+  introCue(corner: 0 | 1 | undefined, stage: boolean, line: string): void {
+    const b = this.butler;
+    if (stage) {
+      if (/360|spin|180/i.test(line)) b.spin = 0.7;
+      else if (/flex|lats|bicep|pose/i.test(line)) this.setActor(b, 'flex');
+      this.introFocus = -1;
+      return;
+    }
+    if (corner === undefined) {
+      this.setActor(b, 'mic');
+      b.facing = 1;
+      this.introFocus = -1;
+      return;
+    }
+    // the Buffer 180: whip around and point at the corner being introduced
+    const want = corner === 0 ? -1 : 1;
+    if (b.facing !== want) b.spin = 0.35;
+    b.facing = want as 1 | -1;
+    this.setActor(b, /!!!$/.test(line) ? 'point' : 'mic');
+    this.introFocus = corner;
+    if (/!!!$/.test(line)) {
+      this.F[corner].pose = 'taunt';
+      this.F[corner].poseT = 1.2;
+      this.intensity = 3;
+      this.flash = 0.15;
+      if (this.mode === 'tv') this.lowerThird(corner);
+    }
+  }
+
+  startFight(): void {
+    this.scene = 'fight';
+    this.butler.visible = false;
+    this.introFocus = -1;
+    this.setActor(this.ref, 'stand');
+    this.setMode(this.mode);
+  }
+
+  /** Both fighters to the centre, referee between them holding their wrists. */
+  startCeremony(): void {
+    this.scene = 'ceremony';
+    this.butler.visible = true;
+    this.butler.x = this.butler.tx = AW / 2 + 78;
+    this.butler.facing = -1;
+    this.setActor(this.butler, 'mic');
+    this.ref.tx = AW / 2;
+    this.ref.facing = 1;
+    this.setActor(this.ref, 'refHold');
+    for (const i of [0, 1] as const) {
+      this.F[i].pose = 'stand';
+      this.F[i].poseT = 9999;
+    }
+    this.ground = 'stand';
+    this.setMode(this.mode);
+  }
+
+  ceremonyCue(line: string): void {
+    this.setActor(this.butler, /!!!$/.test(line) ? 'point' : 'mic');
+  }
+
+  /** The moment: referee raises the winner's hand. */
+  raiseHand(side: -1 | 0 | 1): void {
+    if (side < 0) {
+      this.setActor(this.ref, 'flex');
+      for (const i of [0, 1] as const) this.F[i].pose = 'armUp';
+      return;
+    }
+    const w = side as 0 | 1;
+    this.ref.facing = w === 1 ? 1 : -1;
+    this.setActor(this.ref, 'refRaise');
+    this.F[w].pose = 'armUp';
+    this.F[(1 - w) as 0 | 1].pose = 'headDown';
+    this.winnerSide = w;
+    this.intensity = 3;
+    this.flash = 0.2;
+    this.burst(this.F[w].x, FLOOR - 100, 24, PAL.gold, 90, 0.9, 2, 60);
+    this.burst(this.F[w].x, FLOOR - 100, 18, 0xffffff, 90, 0.9, 1, 60);
+    if (this.mode === 'tv') this.lowerThird(w, 'WINNER');
+  }
+
+  private setActor(a: Actor, p: Pose): void {
+    a.pose = p;
+  }
+
+  private lowerThird(i: 0 | 1, tag?: string): void {
+    const f = i === 0 ? this.A : this.B;
+    this.tvLower.setText(`${tag ? tag + ': ' : ''}${f.first} ${f.nick ? `"${f.nick}" ` : ''}${f.last}`.toUpperCase());
+    this.tvLower2.setText(`${f.record.w}-${f.record.l}${f.record.d ? '-' + f.record.d : ''}  •  ${f.hometown.split('|')[0]}, ${f.country}  •  ${f.gym}`);
+    this.lowerT = 3.2;
   }
 
   // ------------------------------------------------------------ cues
@@ -164,9 +414,10 @@ export class ArenaView extends Container {
     return [f.x + (f.lunge + j[0]) * f.facing, FLOOR + j[1]];
   }
 
-  private burst(x: number, y: number, n: number, color: number, speed = 70, life = 0.35, size = 2, grav = 220): void {
+  private burst(x: number, y: number, n: number, color: number, speed = 70, life = 0.35, size = 2, grav = 220, top = false): void {
+    const arr = top ? this.tparts : this.parts;
     for (let k = 0; k < n; k++) {
-      this.parts.push({ x, y, vx: (Math.random() - 0.5) * speed * 2, vy: -Math.random() * speed, life: life * (0.6 + Math.random() * 0.6), c: color, s: size, grav });
+      arr.push({ x, y, vx: (Math.random() - 0.5) * speed * 2, vy: top ? (Math.random() - 0.5) * speed * 2 : -Math.random() * speed, life: life * (0.6 + Math.random() * 0.6), c: color, s: size, grav: top ? 0 : grav });
     }
   }
 
@@ -178,10 +429,16 @@ export class ArenaView extends Container {
     this.burst(x, y, big ? 16 : 7, big ? PAL.gold : 0xffffff, big ? 110 : 60, 0.3, big ? 2 : 1);
     this.burst(x, y, 4, 0xbfe0ff, 40, 0.5, 1, 120); // sweat
     if (bloody) this.burst(x, y, 6, 0xa01818, 45, 0.9, 2);
+    // same hit, top-down
+    const [hx, hy] = this.topPos(def);
+    this.burst(hx, hy, big ? 12 : 5, big ? PAL.gold : 0xffffff, big ? 60 : 35, 0.3, big ? 2 : 1, 0, true);
+    if (bloody) this.burst(hx, hy, 5, 0xa01818, 25, 1.5, 2, 0, true);
     if (big) this.shakeT = 0.25;
+    if (big && this.mode === 'tv') this.cutTo('close', 0.25);
   }
 
   cue(line: TickerLine): void {
+    if (line.speaker) return; // booth chatter doesn't move anybody
     this.round = line.round;
     this.sec = line.t;
     this.hp = [line.hp[0], line.hp[1]];
@@ -195,7 +452,10 @@ export class ArenaView extends Container {
     const a = line.side;
     if (a < 0) {
       if (line.act === 'bell') sfx('bell');
-      if (line.act === 'standup') this.showCallout('STAND UP!');
+      if (line.act === 'standup') {
+        this.showCallout('STAND UP!');
+        this.ref.tx = this.center;
+      }
       return;
     }
     const A = a as 0 | 1;
@@ -254,6 +514,7 @@ export class ArenaView extends Container {
         break;
       case 'rocked':
         this.setPose(D, 'rocked', 0.9);
+        this.ref.tx = this.center + (D === 0 ? -30 : 30);
         sfx('crowd');
         break;
       case 'kd':
@@ -262,6 +523,8 @@ export class ArenaView extends Container {
         this.impact(A, 'haB', true, true);
         this.flash = 0.25;
         this.showCallout('KNOCKDOWN!');
+        this.ref.tx = this.center;
+        if (this.mode === 'tv') this.cutTo('close', 0.6, true);
         sfx('roar');
         break;
       case 'ko':
@@ -273,6 +536,8 @@ export class ArenaView extends Container {
         this.winnerSide = A;
         this.finished = true;
         this.showCallout('KNOCKOUT!');
+        this.ref.tx = this.F[D].x;
+        if (this.mode === 'tv') this.cutTo('close', 1.5, true);
         sfx('roar');
         break;
       case 'tko':
@@ -281,6 +546,7 @@ export class ArenaView extends Container {
         this.winnerSide = A;
         this.finished = true;
         this.showCallout("IT'S STOPPED!");
+        this.ref.tx = this.center;
         sfx('roar');
         break;
       case 'gnp':
@@ -292,6 +558,7 @@ export class ArenaView extends Container {
         this.setPose(A, 'shoot', 0.3);
         this.setPose(D, 'lifted', 0.25);
         this.burst(this.center, FLOOR, 10, 0xd8d0c0, 50, 0.4, 2, 60); // mat dust
+        this.burst(this.tc.x, this.tc.y, 8, 0xe8e0d0, 30, 0.5, 2, 0, true);
         this.shakeT = 0.15;
         sfx('thud');
         break;
@@ -301,12 +568,14 @@ export class ArenaView extends Container {
         break;
       case 'sub':
         this.setPose(A, ground ? (this.isTop(A) ? 'top' : 'bottomSub') : 'clinch', 0.8);
+        if (this.mode === 'tv') this.cutTo('close', 0.2);
         break;
       case 'tap':
         this.setPose(A, this.isTop(A) ? 'top' : 'bottomSub', 9999);
         this.winnerSide = A;
         this.finished = true;
         this.showCallout('TAP! TAP! TAP!');
+        this.ref.tx = this.center;
         sfx('roar');
         break;
       case 'sweep':
@@ -329,6 +598,7 @@ export class ArenaView extends Container {
       case 'foul':
         this.showCallout('FOUL!');
         this.setPose(D, 'hurt', 0.8);
+        this.ref.tx = this.center;
         break;
       case 'stool':
         this.showCallout('RETIRED ON THE STOOL');
@@ -346,6 +616,7 @@ export class ArenaView extends Container {
       if (name === 'spinningElbow' || name === 'spinningBackfist') this.setPose(A, 'spin', 0.4);
       this.showCallout(name.replace(/([A-Z])/g, ' $1').toUpperCase() + '!');
     }
+    if (line.act === 'bell' || /round_start/.test(line.key ?? '')) this.ref.tx = this.center + 60;
   }
 
   private isTop(i: 0 | 1): boolean {
@@ -357,51 +628,143 @@ export class ArenaView extends Container {
     this.calloutT = 1.3;
   }
 
+  // ------------------------------------------------------------ camera
+
+  private cutTo(kind: 'close' | 'medium' | 'wide', hold = 0, slow = false): void {
+    const z = kind === 'close' ? 1.75 : kind === 'medium' ? 1.35 : 1;
+    this.shot.z = z;
+    this.shot.hold = Math.max(hold, 2 + Math.random() * 3);
+    this.shot.slowZoom = slow ? 0.25 : 0;
+    this.applyCam(this.focusX(), this.focusY(z), z, true);
+  }
+
+  private focusX(): number {
+    if (this.scene === 'intro') return this.introFocus < 0 ? this.butler.x : this.F[this.introFocus as 0 | 1].x;
+    return (this.F[0].x + this.F[1].x) / 2;
+  }
+
+  private focusY(z: number): number {
+    const ground = this.ground === 'atop' || this.ground === 'btop';
+    if (z <= 1.01) return AH / 2;
+    return ground ? FLOOR - 26 : FLOOR - 56;
+  }
+
+  private applyCam(x: number, y: number, z: number, snap = false): void {
+    const c = this.cam;
+    if (snap) {
+      c.x = x;
+      c.y = y;
+      c.z = z;
+    }
+    const hw = AW / (2 * c.z);
+    const hh = AH / (2 * c.z);
+    c.x = Math.max(hw, Math.min(AW - hw, c.x));
+    c.y = Math.max(hh, Math.min(AH - hh, c.y));
+    this.world.scale.set(c.z);
+    this.world.position.set(Math.round(AW / 2 - c.x * c.z), Math.round(AH / 2 - c.y * c.z));
+  }
+
+  private updateCam(dt: number): void {
+    if (this.mode !== 'tv') return;
+    const s = this.shot;
+    s.hold -= dt;
+    if (s.hold <= 0) {
+      // director: alternate shots, tighter when the action heats up
+      const r = Math.random();
+      const kind = this.scene === 'ceremony' ? 'medium' : this.ground !== 'stand' ? (r < 0.6 ? 'close' : 'medium') : r < 0.45 ? 'medium' : r < 0.8 ? 'close' : 'wide';
+      this.cutTo(kind);
+    }
+    if (s.slowZoom > 0) s.z = Math.min(2.3, s.z + s.slowZoom * dt);
+    const c = this.cam;
+    const k = Math.min(1, dt * 3);
+    c.x += (this.focusX() - c.x) * k;
+    c.y += (this.focusY(s.z) - c.y) * k;
+    c.z += (s.z - c.z) * Math.min(1, dt * 4);
+    this.applyCam(c.x, c.y, c.z);
+  }
+
   // ------------------------------------------------------------ frame
 
   update(dt: number): void {
     this.t += dt;
     this.drawCrowd();
-    // the action drifts around the cage; clinches end up on the fence
     const ground = this.ground === 'atop' || this.ground === 'btop';
-    const targetCenter =
-      this.ground === 'clinch' ? (Math.sin(this.round * 1.7) > 0 ? CAGE_R - 40 : CAGE_L + 40) : ground ? AW / 2 + Math.sin(this.round * 2.3) * 60 : AW / 2 + Math.sin(this.t * 0.35) * 70;
-    this.center += (targetCenter - this.center) * Math.min(1, dt * 1.5);
+    if (this.scene === 'fight') {
+      // the action drifts around the cage; clinches end up on the fence
+      const targetCenter =
+        this.ground === 'clinch' ? (Math.sin(this.round * 1.7) > 0 ? CAGE_R - 40 : CAGE_L + 40) : ground ? AW / 2 + Math.sin(this.round * 2.3) * 60 : AW / 2 + Math.sin(this.t * 0.35) * 70;
+      this.center += (targetCenter - this.center) * Math.min(1, dt * 1.5);
+    } else this.center += (AW / 2 - this.center) * Math.min(1, dt * 2);
     this.drift = this.center - AW / 2;
     const gap = this.ground === 'clinch' ? 12 : ground ? 0 : 23 + Math.sin(this.t * 1.3) * 3;
     for (const i of [0, 1] as const) {
       const f = this.F[i];
       const side = i === 0 ? -1 : 1;
       let tx = this.center + side * gap;
-      if (ground) {
+      if (this.scene === 'intro') tx = i === 0 ? CAGE_L + 60 : CAGE_R - 60;
+      else if (this.scene === 'ceremony') tx = AW / 2 + side * 26;
+      else if (ground) {
         const top = this.isTop(i);
-        // top fighter postured between the bottom fighter's legs
         const topIdx = this.ground === 'atop' ? 0 : 1;
         f.facing = (top ? (topIdx === 0 ? 1 : -1) : topIdx === 0 ? -1 : 1) as 1 | -1;
         tx = top ? this.center - 18 * f.facing : this.center - 22 * f.facing;
-      } else f.facing = i === 0 ? 1 : -1;
-      if (this.F[1 - i].pose === 'ko' && f.pose === 'celebrate') tx = this.center + side * 40;
-      f.x += (tx - f.x) * Math.min(1, dt * 8);
+      }
+      if (!ground || this.scene !== 'fight') f.facing = i === 0 ? 1 : -1;
+      if (this.scene === 'fight' && this.F[1 - i].pose === 'ko' && f.pose === 'celebrate') tx = this.center + side * 40;
+      f.x += (tx - f.x) * Math.min(1, dt * (this.scene === 'fight' ? 8 : 3));
       f.lunge *= Math.pow(0.001, dt);
       f.recoil *= Math.pow(0.003, dt);
       if (f.poseT > 0) {
         f.poseT -= dt;
-        if (f.poseT <= 0 && f.pose !== 'ko') f.pose = 'guard';
+        if (f.poseT <= 0 && f.pose !== 'ko') f.pose = this.scene === 'ceremony' ? 'stand' : 'guard';
       }
       let pose = f.pose;
-      if (ground && !['ko', 'tap', 'celebrate', 'topPunch', 'bottomSub', 'top'].includes(pose)) pose = this.isTop(i) ? 'top' : 'bottom';
-      if (ground && pose === 'bottomSub' && this.isTop(i)) pose = 'top';
-      if (this.ground === 'clinch' && pose === 'guard') pose = 'clinch';
-      if (this.winnerSide === i && this.finished && f.poseT <= 0) pose = 'celebrate';
-      const target = pose === 'guard' ? stanceGuard(this.L[i], this.t + i * 1.3) : POSES[pose as Pose] ?? POSES.guard;
+      if (this.scene === 'fight') {
+        if (ground && !['ko', 'tap', 'celebrate', 'topPunch', 'bottomSub', 'top'].includes(pose)) pose = this.isTop(i) ? 'top' : 'bottom';
+        if (ground && pose === 'bottomSub' && this.isTop(i)) pose = 'top';
+        if (this.ground === 'clinch' && pose === 'guard') pose = 'clinch';
+        if (this.winnerSide === i && this.finished && f.poseT <= 0) pose = 'celebrate';
+      }
+      const walking = Math.abs(tx - f.x) > 3 && this.scene !== 'fight';
+      const target = walking ? (Math.floor(this.t * 6) % 2 ? POSES.walk1 : POSES.walk2) : pose === 'guard' ? stanceGuard(this.L[i], this.t + i * 1.3) : POSES[pose as Pose] ?? POSES.guard;
       f.rig = lerpRig(f.rig, target, Math.min(1, dt * (f.poseT > 0 ? 22 : 12)));
     }
-    // draw fighters: back one first; defenders slightly behind attackers
+    // referee & announcer
+    for (const a of [this.ref, this.butler]) {
+      if (!a.visible) continue;
+      if (a === this.ref && this.scene === 'fight') {
+        // the ref circles the action, keeping a sightline
+        if (Math.abs(a.tx - this.center) > 70 || Math.random() < dt * 0.3) a.tx = this.center + (Math.random() < 0.5 ? -1 : 1) * (48 + Math.random() * 20);
+        a.facing = a.x < this.center ? 1 : -1;
+      }
+      const moving = Math.abs(a.tx - a.x) > 2;
+      a.x += (a.tx - a.x) * Math.min(1, dt * 4);
+      if (a.spin > 0) {
+        a.spin -= dt;
+        if (Math.floor(a.spin * 20) % 2 === 0) a.facing = (a.facing * -1) as 1 | -1;
+      }
+      const tgt = moving ? (Math.floor(this.t * 7) % 2 ? POSES.walk1 : POSES.walk2) : POSES[a.pose];
+      a.rig = lerpRig(a.rig, tgt, Math.min(1, dt * 10));
+    }
+    this.updateCam(dt);
+    if (this.mode === 'top' && this.scene === 'fight') this.drawTop(dt);
+    else this.drawSide(dt, ground);
+    this.drawHud(dt);
+  }
+
+  private drawSide(dt: number, ground: boolean): void {
     const g = this.fighters;
     g.clear();
     const shake = this.shakeT > 0 ? Math.round((Math.random() - 0.5) * 4) : 0;
     this.shakeT -= dt;
-    // shadows
+    // ref & announcer stand behind the fighters
+    for (const a of [this.ref, this.butler]) {
+      if (!a.visible) continue;
+      const sc = a === this.butler ? 1.05 : this.scene === 'fight' ? 0.9 : 1;
+      const fy = this.scene === 'fight' && a === this.ref ? FLOOR - 6 : FLOOR;
+      g.ellipse(a.x, fy + 1, 12, 2.5).fill({ color: 0x000000, alpha: 0.3 });
+      drawRig(g, a.rig, Math.round(a.x), fy, a.facing, a.look, sc);
+    }
     for (const f of this.F) g.ellipse(f.x, FLOOR + 1, 16, 3).fill({ color: 0x000000, alpha: 0.35 });
     const order: (0 | 1)[] = ground ? (this.isTop(0) ? [1, 0] : [0, 1]) : this.F[0].poseT > this.F[1].poseT ? [1, 0] : [0, 1];
     for (const i of order) {
@@ -424,17 +787,192 @@ export class ArenaView extends Container {
       }
       p.rect(Math.round(s.x), Math.round(s.y), s.s, s.s).fill(s.c);
     }
-    // front fence posts (in front of the fighters, faint)
+    // front fence posts
     const fr = this.front;
     fr.clear();
     fr.rect(CAGE_L - 6, 40, 6, FLOOR - 26).fill({ color: 0x0c0c0e, alpha: 0.9 });
     fr.rect(CAGE_R, 40, 6, FLOOR - 26).fill({ color: 0x0c0c0e, alpha: 0.9 });
-    // HUD
+  }
+
+  // ------------------------------------------------------------ top-down
+
+  /** Head position of fighter i in the top-down view. */
+  private topPos(i: 0 | 1): [number, number] {
+    const { x, y, ang } = this.topBody(i);
+    return [x + Math.cos(ang) * 2, y + Math.sin(ang) * 2];
+  }
+
+  private topBody(i: 0 | 1): { x: number; y: number; ang: number } {
+    const c = this.tc;
+    const ground = this.ground === 'atop' || this.ground === 'btop';
+    const d = this.ground === 'clinch' ? 10 : ground ? 4 : 26 + Math.sin(this.t * 1.3) * 3;
+    const dir = i === 0 ? -1 : 1;
+    const f = this.F[i];
+    const push = (f.lunge - f.recoil) * 0.8;
+    const ang = c.ang + (i === 0 ? 0 : Math.PI);
+    const x = c.x + Math.cos(c.ang) * (dir * d / 2) + Math.cos(ang) * push;
+    const y = c.y + Math.sin(c.ang) * (dir * d / 2) + Math.sin(ang) * push;
+    return { x, y, ang };
+  }
+
+  private drawTop(dt: number): void {
+    // action centre wanders; clinches drift to the fence
+    const c = this.tc;
+    const ground = this.ground === 'atop' || this.ground === 'btop';
+    let tx = TCX + Math.sin(this.t * 0.31) * 28;
+    let ty = TCY + Math.cos(this.t * 0.23) * 22;
+    if (this.ground === 'clinch') {
+      const a = Math.sin(this.round * 1.7) * Math.PI;
+      tx = TCX + Math.cos(a) * (TR - 16);
+      ty = TCY + Math.sin(a) * (TR - 16);
+    }
+    if (ground) {
+      tx = TCX + Math.sin(this.round * 2.3) * 20;
+      ty = TCY + Math.cos(this.round * 1.1) * 14;
+    }
+    c.x += (tx - c.x) * Math.min(1, dt * 1.2);
+    c.y += (ty - c.y) * Math.min(1, dt * 1.2);
+    if (!ground && this.ground !== 'clinch') c.ang += dt * 0.25 * Math.sin(this.t * 0.4 + 1); // circling
+    const g = this.topFx;
+    g.clear();
+    // referee
+    const ra = c.ang + Math.PI / 2;
+    const rx = c.x + Math.cos(ra) * 34;
+    const ry = c.y + Math.sin(ra) * 34;
+    g.circle(rx + 1, ry + 2, 6).fill({ color: 0, alpha: 0.3 });
+    g.circle(rx, ry, 5.5).fill(0x18181c);
+    g.circle(rx, ry, 3.2).fill(REF_LOOK.skin);
+    // fighters: bottom one first
+    const order: (0 | 1)[] = ground ? (this.isTop(0) ? [1, 0] : [0, 1]) : [0, 1];
+    for (const i of order) this.drawTopFighter(g, i);
+    // particles
+    this.tparts = this.tparts.filter((s) => (s.life -= dt) > 0);
+    for (const s of this.tparts) {
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      s.vx *= Math.pow(0.05, dt);
+      s.vy *= Math.pow(0.05, dt);
+      g.rect(Math.round(s.x), Math.round(s.y), s.s, s.s).fill(s.c);
+    }
+  }
+
+  private drawTopFighter(g: Graphics, i: 0 | 1): void {
+    const L = this.L[i];
+    const f = this.F[i];
+    const { x, y, ang } = this.topBody(i);
+    const cos = Math.cos(ang);
+    const sin = Math.sin(ang);
+    const P = (lx: number, ly: number): [number, number] => [x + lx * cos - ly * sin, y + lx * sin + ly * cos];
+    const OUT = 0x120d10;
+    const bulk = L.build === 2 ? 2 : L.build === 1 ? 1 : 0;
+    const pose = f.pose;
+    const lying = pose === 'down' || pose === 'ko' || (this.ground !== 'stand' && this.ground !== 'clinch' && !this.isTop(i)) || pose === 'bottom' || pose === 'bottomSub';
+    // shadow
+    g.ellipse(x + 2, y + 3, 11, 8).fill({ color: 0, alpha: 0.28 });
+    if (lying) {
+      // flat on the mat: body stretched back along the facing axis
+      const back = pose === 'ko' ? -1 : -0.6;
+      const [hx, hy] = P(back * 22, 0);
+      const [fx1, fy1] = P(back * -14, -5);
+      const [fx2, fy2] = P(back * -14, 5);
+      const [hip1, hip2] = P(back * -2, 0);
+      g.moveTo(hip1, hip2).lineTo(fx1, fy1).stroke({ color: OUT, width: 6, cap: 'round' }).moveTo(hip1, hip2).lineTo(fx2, fy2).stroke({ color: OUT, width: 6, cap: 'round' });
+      g.moveTo(hip1, hip2).lineTo(fx1, fy1).stroke({ color: L.skin, width: 4, cap: 'round' }).moveTo(hip1, hip2).lineTo(fx2, fy2).stroke({ color: L.skin, width: 4, cap: 'round' });
+      g.moveTo(hip1, hip2).lineTo(hx, hy).stroke({ color: OUT, width: 13 + bulk, cap: 'round' });
+      g.moveTo(hip1, hip2).lineTo(hx, hy).stroke({ color: L.skin, width: 11 + bulk, cap: 'round' });
+      const [tx1, ty1] = P(back * -2, 0);
+      g.circle(tx1, ty1, 5).fill(L.trunks);
+      if (pose === 'bottomSub') {
+        // legs up, hunting a triangle/armbar
+        const [l1x, l1y] = P(10, -8);
+        const [l2x, l2y] = P(10, 8);
+        g.moveTo(hip1, hip2).lineTo(l1x, l1y).stroke({ color: L.skin, width: 4, cap: 'round' }).moveTo(hip1, hip2).lineTo(l2x, l2y).stroke({ color: L.skin, width: 4, cap: 'round' });
+      }
+      g.circle(hx, hy, 5.5).fill(OUT);
+      g.circle(hx, hy, 4.5).fill(L.hairStyle === 0 ? L.skin : L.hairColor);
+      const [g1x, g1y] = P(back * 14, -8);
+      const [g2x, g2y] = P(back * 14, 8);
+      g.circle(g1x, g1y, 2.6).fill(L.glove).circle(g2x, g2y, 2.6).fill(L.glove);
+      return;
+    }
+    // gloves (lead = -y side) per pose
+    let lead: [number, number] = [9, -4];
+    let rear: [number, number] = [7, 4];
+    let leg: [number, number] | null = null;
+    let lean = 0;
+    switch (pose) {
+      case 'jab': lead = [22, -3]; break;
+      case 'cross': rear = [22, 1]; lean = 2; break;
+      case 'hook': rear = [15, 9]; lean = 1; break;
+      case 'uppercut': rear = [15, 3]; break;
+      case 'body': rear = [14, 6]; lean = 2; break;
+      case 'elbow': rear = [12, 4]; lean = 2; break;
+      case 'spin': rear = [6, 18]; break;
+      case 'legkick': leg = [18, 9]; break;
+      case 'bodykick': leg = [22, 5]; break;
+      case 'headkick': leg = [25, 1]; lean = -2; break;
+      case 'knee': case 'flyknee': leg = [14, 2]; lean = 2; break;
+      case 'shoot': lead = [16, -6]; rear = [16, 6]; lean = 7; break;
+      case 'sprawl': lead = [10, -7]; rear = [10, 7]; lean = -5; break;
+      case 'clinch': lead = [13, -5]; rear = [13, 5]; lean = 2; break;
+      case 'top': case 'topPunch': lead = pose === 'topPunch' ? [16, -1] : [10, -5]; rear = [10, 5]; lean = 4; break;
+      case 'hurt': lean = -3; lead = [6, -5]; rear = [6, 5]; break;
+      case 'rocked': lean = -4 + Math.sin(this.t * 9) * 2; lead = [3, -7]; rear = [3, 7]; break;
+      case 'celebrate': case 'flex': case 'armUp': lead = [0, -10]; rear = [0, 10]; break;
+      case 'taunt': lead = [2, -13]; rear = [2, 13]; break;
+    }
+    const [bx, by] = P(lean, 0);
+    if (leg) {
+      const [hx, hy] = P(-1, 3);
+      const [lx, ly] = P(leg[0], leg[1]);
+      g.moveTo(hx, hy).lineTo(lx, ly).stroke({ color: OUT, width: 7, cap: 'round' });
+      g.moveTo(hx, hy).lineTo(lx, ly).stroke({ color: L.skin, width: 5, cap: 'round' });
+    }
+    // shoulders (rotated ellipse)
+    const pts: number[] = [];
+    for (let k = 0; k < 14; k++) {
+      const a = (k / 14) * Math.PI * 2;
+      const [px, py] = P(lean + Math.cos(a) * (5 + bulk * 0.5), Math.sin(a) * (9 + bulk));
+      pts.push(px, py);
+    }
+    g.poly(pts).fill(OUT);
+    const inner: number[] = [];
+    for (let k = 0; k < 14; k++) {
+      const a = (k / 14) * Math.PI * 2;
+      const [px, py] = P(lean + Math.cos(a) * (4 + bulk * 0.5), Math.sin(a) * (8 + bulk));
+      inner.push(px, py);
+    }
+    g.poly(inner).fill(L.skin);
+    // arms to gloves
+    for (const [side, hand] of [[-1, lead], [1, rear]] as [number, [number, number]][]) {
+      const [sx, sy] = P(lean, side * (7 + bulk));
+      const [hx, hy] = P(hand[0] + lean * 0.5, hand[1]);
+      g.moveTo(sx, sy).lineTo(hx, hy).stroke({ color: OUT, width: 5, cap: 'round' });
+      g.moveTo(sx, sy).lineTo(hx, hy).stroke({ color: shade(L.skin, side < 0 ? 0 : -0.12), width: 3.4, cap: 'round' });
+      g.circle(hx, hy, 3.6).fill(OUT);
+      g.circle(hx, hy, 2.8).fill(L.glove);
+    }
+    // head from above: hair crown
+    const [hx, hy] = P(lean + 1, 0);
+    g.circle(hx, hy, 5).fill(OUT);
+    g.circle(hx, hy, 4.2).fill(L.skin);
+    if (L.hairStyle !== 0) g.circle(hx - cos * 0.8, hy - sin * 0.8, 3.4).fill(L.hairColor);
+    void bx;
+    void by;
+  }
+
+  // ------------------------------------------------------------ HUD
+
+  private drawHud(dt: number): void {
     const h = this.hudG;
     h.clear();
-    h.rect(4, 13, 140, 6).fill(PAL.ink).rect(5, 14, Math.round((138 * this.hp[0]) / 100), 4).fill(this.hp[0] > 40 ? PAL.moss : PAL.blood);
-    h.rect(AW - 144, 13, 140, 6).fill(PAL.ink).rect(AW - 5 - Math.round((138 * this.hp[1]) / 100), 14, Math.round((138 * this.hp[1]) / 100), 4).fill(this.hp[1] > 40 ? PAL.moss : PAL.blood);
-    h.rect(4, 20, 10, 2).fill(this.L[0].trunks).rect(AW - 14, 20, 10, 2).fill(this.L[1].trunks);
+    const tv = this.mode === 'tv';
+    this.clock.visible = this.scene === 'fight';
+    if (this.scene === 'fight') {
+      h.rect(4, 13, 140, 6).fill(PAL.ink).rect(5, 14, Math.round((138 * this.hp[0]) / 100), 4).fill(this.hp[0] > 40 ? PAL.moss : PAL.blood);
+      h.rect(AW - 144, 13, 140, 6).fill(PAL.ink).rect(AW - 5 - Math.round((138 * this.hp[1]) / 100), 14, Math.round((138 * this.hp[1]) / 100), 4).fill(this.hp[1] > 40 ? PAL.moss : PAL.blood);
+      h.rect(4, 20, 10, 2).fill(this.L[0].trunks).rect(AW - 14, 20, 10, 2).fill(this.L[1].trunks);
+    }
     if (this.flash > 0) {
       h.rect(0, 0, AW, AH).fill({ color: 0xffffff, alpha: Math.min(0.5, this.flash) });
       this.flash -= dt;
@@ -445,6 +983,23 @@ export class ArenaView extends Container {
       this.calloutT -= dt;
       this.callout.alpha = Math.min(1, this.calloutT * 2);
     } else this.callout.alpha = 0;
+    // broadcast graphics
+    if (tv) {
+      const t = this.tvG;
+      t.clear();
+      t.rect(AW - 54, 24, 48, 10).fill(0xa01818);
+      if (this.lowerT > 0) {
+        this.lowerT -= dt;
+        const a = Math.min(1, this.lowerT * 3);
+        t.rect(12, AH - 30, 320, 24).fill({ color: 0x0a0a10, alpha: 0.82 * a }).rect(12, AH - 30, 4, 24).fill({ color: PAL.gold, alpha: a });
+        this.tvLower.alpha = a;
+        this.tvLower2.alpha = a;
+      } else {
+        this.tvLower.alpha = 0;
+        this.tvLower2.alpha = 0;
+      }
+      this.tvTag.setText(Math.floor(this.t * 1.5) % 2 ? '● LIVE' : '  LIVE');
+    }
   }
 }
 

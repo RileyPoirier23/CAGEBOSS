@@ -167,6 +167,8 @@ export interface TickerLine {
   act: string; // animation cue for the mini arena (jab, kick, shoot, gnp, sub, kd, ko, ...)
   pos: 'stand' | 'clinch' | 'atop' | 'btop'; // position after the action
   hp: [number, number];
+  key?: string; // template key that produced the line (drives commentary)
+  speaker?: string; // commentary booth line (lon, blow, dc, braille, biscuit)
 }
 
 export interface CornerReport {
