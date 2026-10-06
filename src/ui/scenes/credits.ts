@@ -15,6 +15,7 @@ export function openCredits(g: Game): void {
     'Champion - SANDO\n' +
     'Doin Shit - SANDO x RUIN\n' +
     'fu2 - SANDO\n' +
+    'Your Mom Hates Me - SANDO\n' +
     'BAG - F.O.K. ft. Hope Nikku (prod. Miler)\n' +
     'ossa - RUIN143\n' +
     'All Hustle, A Moment w/ Grace (ft. FTB VON), Open to You, some interlude - Zuddha\n\n' +
