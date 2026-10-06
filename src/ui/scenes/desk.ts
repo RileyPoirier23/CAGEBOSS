@@ -9,6 +9,7 @@
  *          and the stamp rack.
  *  - INSPECT mode: click two fields to compare them (Papers, Please-style).
  */
+import { openReplacementPicker } from '../replace';
 import { Container, Graphics } from 'pixi.js';
 import { Scene } from '../app';
 import { PAL, C, shade, meterColor } from '../../art/palette';
@@ -537,6 +538,13 @@ export class DeskScene extends Scene {
     const rng = new Rng(s.rng);
     const res = stampDoc(s, item.doc.id, st, rng);
     s.rng = rng.state;
+    if (item.doc.type === 'weighin' && st === 'deny' && item.doc.meta.missedBy) {
+      const ev = s.events.find((e) => e.id === item.doc.meta.eventId);
+      const b = ev?.card.find((x) => x.id === item.doc.meta.boutId);
+      if (ev && b && b.status === 'scheduled' && b.pulled?.length) {
+        setTimeout(() => openReplacementPicker(this.g, ev, b, String(item.doc.meta.missedBy), 'missed weight', () => this.refresh()), 700);
+      }
+    }
     sfx('stamp');
     this.g.shake(2, 0.12);
     // stamp graphic

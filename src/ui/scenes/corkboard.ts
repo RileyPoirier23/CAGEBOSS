@@ -9,7 +9,9 @@ import type { FightEvent, Fighter, Bout } from '../../core/types';
 import { PAL, shade } from '../../art/palette';
 import { W, H, text, button, box, ScrollBox, clickable, paper } from '../kit';
 import { fighterPortrait } from '../sprites';
+import { openReplacementPicker } from '../replace';
 import { openWindow, alertBox, selector } from '../widgets';
+import { rematchTag } from '../../sim/events';
 import {
   upcomingEvents, bookable, canFight, makeBout, renumber, autoCard, cardProblems, findReplacement, estimateFinancials, createEvent, venueRegion, cardDraw,
 } from '../../sim/events';
@@ -79,7 +81,7 @@ export function openCorkboard(g: Game, onClose: () => void): void {
     c.addChild(box(W - 22, 28, i === 0 ? 0x5a3a28 : 0x4a3424, PAL.woodDark));
     const label = i === 0 ? 'MAIN EVENT' : i === 1 ? 'CO-MAIN' : i < 5 ? 'MAIN CARD' : 'PRELIMS';
     c.addChild(text(label, 4, 2, { small: true, color: i === 0 ? PAL.gold : PAL.ash }));
-    c.addChild(text(`${b.rounds}R${b.title ? ' ★ ' + (s.belts[b.title]?.name ?? '') : ''}${b.catchweight ? ' CATCHWEIGHT' : ''}${b.shortNotice ? ' SHORT NOTICE' : ''}`, 4, 20, { small: true, color: b.title ? PAL.gold : PAL.ash, width: 120, maxLines: 1 }));
+    c.addChild(text(`${b.rounds}R${rematchTag(b) ? ' ★' + rematchTag(b) : ''}${b.title ? ' ★ ' + (s.belts[b.title]?.name ?? '') : ''}${b.catchweight ? ' CATCHWEIGHT' : ''}${b.shortNotice ? ' SHORT NOTICE' : ''}`, 4, 20, { small: true, color: b.title ? PAL.gold : PAL.ash, width: 120, maxLines: 1 }));
     const side = (f: Fighter, x: number, right: boolean) => {
       const p = fighterPortrait(f, 24);
       p.position.set(right ? x + 106 : x, 2);
@@ -89,7 +91,7 @@ export function openCorkboard(g: Game, onClose: () => void): void {
     };
     if (A) side(A, 76, false);
     if (B) side(B, 222, true);
-    c.addChild(text('VS', 211, 9, { color: PAL.blood }));
+    c.addChild(text('VS' + rematchTag(b), 211, 9, { color: PAL.blood }));
     if (A && B) {
       const p = quickOdds(A, B);
       c.addChild(text(`${oddsString(p)} / ${oddsString(1 - p)}`, 196, 19, { small: true, color: PAL.ash }));
@@ -141,17 +143,9 @@ export function openCorkboard(g: Game, onClose: () => void): void {
   };
 
   const replace = (ev: FightEvent, b: Bout) => {
-    const probs = cardProblems(s, ev).filter((p) => p.bout === b);
-    for (const p of probs) {
-      const stay = p.fighter === b.a ? b.b : b.a;
-      const rep = findReplacement(s, ev, b, stay);
-      if (!rep) return alertBox(g, 'No replacement', 'Nobody available on short notice. Cancel the bout or wait.');
-      if (b.a === p.fighter) b.a = rep.id;
-      else b.b = rep.id;
-      b.shortNotice = true;
-    }
-    sfx('paper');
-    draw();
+    const p = cardProblems(s, ev).find((q) => q.bout === b);
+    if (!p) return;
+    openReplacementPicker(g, ev, b, p.fighter, p.reason, () => draw());
   };
 
   const pickVenue = (ev: FightEvent) => {

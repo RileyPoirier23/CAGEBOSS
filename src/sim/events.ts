@@ -81,7 +81,7 @@ export function createEvent(s: GameState, week: number, numbered: boolean, rng: 
   };
   s.events.push(ev);
   autoCard(s, ev, rng);
-  if (!numbered && ev.card[0]) ev.name = `${shortPromo(s)} Fight Night: ${s.fighters[ev.card[0].a].last} vs ${s.fighters[ev.card[0].b].last}`;
+  if (!numbered && ev.card[0]) ev.name = `${shortPromo(s)} Fight Night: ${boutTitle(s, ev.card[0])}`;
   return ev;
 }
 
@@ -121,7 +121,38 @@ export function makeBout(s: GameState, ev: FightEvent, a: Fighter, b: Fighter, p
     purse: [purse(a), purse(b)],
     finePct: 0,
     missedBy: null,
+    meeting: meetings(s, a.id, b.id) + 1,
   };
+}
+
+/** How many completed fights two fighters have had against each other. */
+export function meetings(s: GameState, a: string, b: string): number {
+  return Math.max(s.fighters[a]?.h2h?.[b] ?? 0, s.fighters[b]?.h2h?.[a] ?? 0);
+}
+
+export function roman(n: number): string {
+  const t: [number, string][] = [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+  let out = '';
+  for (const [v, r] of t) while (n >= v) { out += r; n -= v; }
+  return out;
+}
+
+/** " II", " III"... for rematches, '' for a first meeting. */
+export function rematchTag(b: Bout): string {
+  return (b.meeting ?? 1) > 1 ? ' ' + roman(b.meeting!) : '';
+}
+
+/** Swap one side of a bout for a new fighter (keeps rematch numbering right). */
+export function setOpponent(s: GameState, b: Bout, outId: string, inId: string): void {
+  if (b.a === outId) b.a = inId;
+  else if (b.b === outId) b.b = inId;
+  b.pulled = b.pulled?.filter((x) => x !== outId);
+  if (b.pulled && !b.pulled.length) delete b.pulled;
+  b.meeting = meetings(s, b.a, b.b) + 1;
+  b.purse = [s.fighters[b.a].contract?.purse ?? 5000, s.fighters[b.b].contract?.purse ?? 5000];
+  b.missedBy = null;
+  b.finePct = 0;
+  b.catchweight = s.fighters[b.a].division !== s.fighters[b.b].division;
 }
 
 /** Fighters eligible to be put on a card for an event in `week`. */
@@ -213,21 +244,38 @@ export function cardProblems(s: GameState, ev: FightEvent): { bout: Bout; fighte
       else if (f.legal === 'suspended' || f.legal === 'banned') out.push({ bout: b, fighter: id, reason: 'suspended' });
       else if (f.injuries.some((i) => i.until > ev.week)) out.push({ bout: b, fighter: id, reason: 'injured' });
       else if (f.medSuspUntil > ev.week) out.push({ bout: b, fighter: id, reason: 'medically suspended' });
+      else if (b.pulled?.includes(id)) out.push({ bout: b, fighter: id, reason: 'missed weight' });
     }
   }
   return out;
 }
 
-/** Find a short-notice replacement opponent for `stay` (who keeps the fight). */
-export function findReplacement(s: GameState, ev: FightEvent, bout: Bout, stay: string): Fighter | null {
+/**
+ * Short-notice replacements for `stay`'s opponent, drawn from our own roster.
+ * Same-division fighters first (closest in ranking), then neighbours from the
+ * adjacent divisions at catchweight.
+ */
+export function replacementCandidates(s: GameState, ev: FightEvent, bout: Bout, stay: string): { f: Fighter; catchweight: boolean }[] {
   const keep = s.fighters[stay];
-  if (!keep) return null;
+  if (!keep) return [];
   const used = new Set(ev.card.filter((b) => b.status === 'scheduled').flatMap((b) => [b.a, b.b]));
-  const cands = Object.values(s.fighters).filter(
-    (f) => isAvailable(s, f, ev.week) && !used.has(f.id) && !isBooked(s, f.id) && canFight(s, keep, f) && ev.week - f.lastFightWeek >= 3,
+  const pool = Object.values(s.fighters).filter(
+    (f) => isAvailable(s, f, ev.week) && !used.has(f.id) && !isBooked(s, f.id) && ev.week - f.lastFightWeek >= 3 && !bout.pulled?.includes(f.id),
   );
-  cands.sort((a, b) => Math.abs(rankScore(s, a) - rankScore(s, keep)) - Math.abs(rankScore(s, b) - rankScore(s, keep)));
-  return cands[0] ?? null;
+  const close = (f: Fighter) => Math.abs(rankScore(s, f) - rankScore(s, keep));
+  const same = pool.filter((f) => canFight(s, keep, f)).sort((a, b) => close(a) - close(b));
+  const divs = content().divisions;
+  const di = divs.findIndex((d) => d.id === keep.division);
+  const near = new Set([divs[di - 1]?.id, divs[di + 1]?.id].filter(Boolean) as string[]);
+  const cw = pool
+    .filter((f) => near.has(f.division) && f.gender === keep.gender && f.id !== keep.id && !f.friends.includes(keep.id))
+    .sort((a, b) => close(a) - close(b));
+  return [...same.map((f) => ({ f, catchweight: false })), ...cw.map((f) => ({ f, catchweight: true }))];
+}
+
+/** Best short-notice replacement opponent for `stay` (who keeps the fight). */
+export function findReplacement(s: GameState, ev: FightEvent, bout: Bout, stay: string): Fighter | null {
+  return replacementCandidates(s, ev, bout, stay)[0]?.f ?? null;
 }
 
 /** Auto-fix a card: replace missing fighters, cancel bouts that can't be saved. */
@@ -240,10 +288,8 @@ export function autoFixCard(s: GameState, ev: FightEvent): string[] {
     const out = s.fighters[p.fighter];
     const rep = findReplacement(s, ev, b, stay);
     if (rep && cardProblems(s, ev).every((q) => q.bout !== b || q.fighter === p.fighter)) {
-      if (b.a === p.fighter) b.a = rep.id;
-      else b.b = rep.id;
+      setOpponent(s, b, p.fighter, rep.id);
       b.shortNotice = true;
-      b.purse = [s.fighters[b.a].contract?.purse ?? 5000, s.fighters[b.b].contract?.purse ?? 5000];
       notes.push(`${rep.first} ${rep.last} steps in on short notice for ${out ? fullName(out) : 'a missing fighter'} (${p.reason}).`);
     } else {
       b.status = 'cancelled';
@@ -308,6 +354,8 @@ export function applyBout(s: GameState, ev: FightEvent, bout: Bout, rng: Rng): v
   const odds = quickOdds(A, B);
   sides.forEach((f, i) => {
     const opp = sides[1 - i];
+    f.h2h = f.h2h ?? {};
+    f.h2h[opp.id] = (f.h2h[opp.id] ?? 0) + 1;
     const won = r.winner === f.id;
     const lost = r.loser === f.id;
     if (won) {
@@ -536,12 +584,14 @@ export function runEventHeadless(s: GameState, ev: FightEvent, rng: Rng, bonusPi
 export function boutTitle(s: GameState, b: Bout): string {
   const A = s.fighters[b.a];
   const B = s.fighters[b.b];
-  return `${A ? A.last : '?'} vs ${B ? B.last : '?'}`;
+  return `${A ? A.last : '?'} vs ${B ? B.last : '?'}${rematchTag(b)}`;
 }
 
 export function boutLabel(s: GameState, b: Bout): string {
   const belt = b.title ? s.belts[b.title] : null;
-  return belt ? belt.name : `${divisionName(b.division)} bout`;
+  const m = b.meeting ?? 1;
+  const tag = m === 2 ? ' • Rematch (II)' : m === 3 ? ' • Trilogy (III)' : m > 3 ? ` • Part ${roman(m)}` : '';
+  return (belt ? belt.name : `${divisionName(b.division)} bout`) + tag;
 }
 
 export function purseTotal(b: Bout): number {

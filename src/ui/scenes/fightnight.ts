@@ -11,7 +11,8 @@ import { W, H, text, button, box, ScrollBox, paper, clickable } from '../kit';
 import { PixelText } from '../text';
 import { fighterPortrait, reporterPortrait } from '../sprites';
 import { ArenaView, cornerView, RingCardWalk, AW, AH } from '../arena';
-import { runBout, applyBout, finalizeEvent, defaultBonuses, bonusAmount, autoFixCard, boutLabel, cardDraw } from '../../sim/events';
+import { runBout, applyBout, finalizeEvent, defaultBonuses, bonusAmount, autoFixCard, boutLabel, boutTitle, rematchTag, cardDraw, cardProblems } from '../../sim/events';
+import { resolveCardProblems } from '../replace';
 import { fireCategory } from '../../storylets/engine';
 import { playStorylet } from '../dialog';
 import { Rng } from '../../core/rng';
@@ -73,10 +74,22 @@ export class FightNightScene extends Scene {
 
   enter(): void {
     const s = this.g.state!;
-    autoFixCard(s, this.ev);
+    const fresh = !this.ev.notes.includes('started');
+    if (!fresh) autoFixCard(s, this.ev);
+    this.settleStep();
+    super.enter();
+    // late withdrawals: the boss picks the short-notice replacements
+    if (fresh && cardProblems(s, this.ev).length) {
+      resolveCardProblems(this.g, this.ev, () => {
+        this.settleStep();
+        this.refresh();
+      });
+    }
+  }
+
+  private settleStep(): void {
     if (this.ev.card.every((b) => b.status !== 'scheduled')) this.step = this.ev.card.some((b) => b.status === 'done') ? 'bonus' : 'done';
     else if (this.ev.notes.includes('started')) this.step = 'card';
-    super.enter();
   }
 
   build(): void {
@@ -124,7 +137,7 @@ export class FightNightScene extends Scene {
     }
     const card = this.live();
     card.slice(1, 7).forEach((b, i) => {
-      r.addChild(text(`${s.fighters[b.a]?.last ?? '?'} vs ${s.fighters[b.b]?.last ?? '?'}${b.title ? ' ★' : ''}`, 0, 146 + i * 9, { width: W, align: 'center', color: PAL.bone, small: true }));
+      r.addChild(text(`${boutTitle(s, b)}${b.title ? ' ★' : ''}${b.shortNotice ? ' (short notice)' : ''}`, 0, 146 + i * 9, { width: W, align: 'center', color: PAL.bone, small: true }));
     });
     if (this.ev.notes.length) r.addChild(text(this.ev.notes.filter((n) => n !== 'started').slice(-3).join('  '), 8, 214, { small: true, color: PAL.ember, width: W - 16 }));
     r.addChild(button(`PRESS CONFERENCE (${2 - this.pressersDone})`, 8, H - 26, 130, 18, () => this.presser(false), { fill: PAL.steel, disabled: this.pressersDone >= 2 }));
@@ -197,7 +210,7 @@ export class FightNightScene extends Scene {
       const done = b.status === 'done' && b.result;
       row.addChild(box(W - 22, 22, done ? 0x1e1a20 : b.position === 0 ? 0x3a2228 : 0x2a2430, PAL.shadow));
       row.addChild(text(b.position === 0 ? 'MAIN' : b.position === 1 ? 'CO-MAIN' : b.position < 5 ? 'MAIN CARD' : 'PRELIM', 4, 3, { small: true, color: b.position === 0 ? PAL.gold : PAL.ash }));
-      row.addChild(text(`${A ? fullName(A) : '?'}  vs  ${B ? fullName(B) : '?'}${b.title ? '  ★ ' + (s.belts[b.title]?.name ?? '') : ''}`, 4, 11, { color: PAL.bone, width: 300, maxLines: 1 }));
+      row.addChild(text(`${A ? fullName(A) : '?'}  vs  ${B ? fullName(B) : '?'}${rematchTag(b)}${b.title ? '  ★ ' + (s.belts[b.title]?.name ?? '') : ''}`, 4, 11, { color: PAL.bone, width: 300, maxLines: 1 }));
       if (done) {
         const res = b.result!;
         const w = res.winner ? s.fighters[res.winner] : null;
@@ -450,7 +463,7 @@ export class FightNightScene extends Scene {
       const res = b.result!;
       const row = new Container();
       row.addChild(box(W - 22, 20, 0x24212a, PAL.shadow));
-      row.addChild(text(`${s.fighters[b.a]?.last} vs ${s.fighters[b.b]?.last}: ${res.method} R${res.round}  (quality ${res.fotn})`, 4, 6, { small: true, color: PAL.bone, width: 230 }));
+      row.addChild(text(`${boutTitle(s, b)}: ${res.method} R${res.round}  (quality ${res.fotn})`, 4, 6, { small: true, color: PAL.bone, width: 230 }));
       [b.a, b.b].forEach((id, j) => {
         const sel = this.bonusSel.has(id);
         row.addChild(button(`${sel ? '✓ ' : ''}${s.fighters[id]?.last}`, 250 + j * 102, 3, 98, 14, () => {

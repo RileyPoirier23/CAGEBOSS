@@ -124,6 +124,7 @@ export interface Fighter {
   retiredWeek?: number;
   hallOfFame?: boolean;
   weightMisses: number;
+  h2h?: Record<string, number>; // completed fights against each opponent id
   modded?: boolean;
   // ---- careers & scouting
   potential: number; // ceiling for skill growth (40..99)
@@ -217,6 +218,8 @@ export interface Bout {
   purse: [number, number];
   finePct: number; // weight-miss fine applied to a / b side (pct of purse)
   missedBy: string | null;
+  meeting?: number; // 1 = first fight between this pair, 2 = rematch (II), 3 = trilogy (III)...
+  pulled?: string[]; // fighters pulled from this bout (missed weight) awaiting a replacement
   result?: FightResult;
   bonus?: string[]; // fighter ids that received performance bonuses
 }
