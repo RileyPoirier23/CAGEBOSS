@@ -203,6 +203,8 @@ export interface TemplateBank {
   presser: Record<string, string[]>;
   ledgerQuips: string[];
   misc: Record<string, string[]>;
+  presserQ?: Record<string, string[]>;
+  recap?: Record<string, string[]>;
 }
 
 export interface DocContent {

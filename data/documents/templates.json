@@ -728,5 +728,145 @@
    "Martyr Complex|Everyone is out to get {him}. Sometimes they really are.",
    "Sober|{He} is sober now and drinks an alarming amount of sparkling water."
   ]
+ },
+ "presserQ": {
+  "to_winner": [
+   "{f}, congratulations. What's next for you?",
+   "{f}, walk us through the finish. Did you see it coming?",
+   "{f}, you looked {adj} out there. Was that the game plan?",
+   "{f}, who do you want next, and please be specific, my editor needs a headline.",
+   "{f}, your opponent said some things this week. Anything you want to say back?",
+   "{f}, there's a rumor you trained for this fight by watching {pop_movie}. Comment?",
+   "{f}, quick one: is it true you celebrated backstage with {pop_food}?",
+   "{f}, how does it feel? And can you describe it using only one word? Not that word."
+  ],
+  "to_champ": [
+   "Champ, how many more defenses before you ask for a raise?",
+   "Champ, is there anyone left in the division you haven't beaten?",
+   "Champ, there's talk of a super fight. Are you moving up, down or sideways?",
+   "Champ, {pop_celeb} posted about your fight. Have you seen it?"
+  ],
+  "to_loser": [
+   "{f}, tough night. What went wrong?",
+   "{f}, do you think the stoppage was early?",
+   "{f}, are you thinking about retirement?"
+  ],
+  "to_robbed": [
+   "{f}, a lot of people think you won that fight. Do you?",
+   "{f}, what would you like to say to the judges?",
+   "{f}, will you appeal the decision? Can you appeal a decision? Can anyone?"
+  ],
+  "answer_winner": [
+   "Next? Next is a cheeseburger. Then the belt. In that order.",
+   "I want the champ. I want the champ's coach. I want the champ's coach's dog. I'm hungry.",
+   "I told you all. I told everybody. Nobody listens. Now they listen.",
+   "I'd like to thank God, my team, and {pop_food}, who are not a sponsor yet but should be.",
+   "I felt it land and I thought, 'that's a mortgage payment'.",
+   "Honestly I don't remember the second round. Can somebody tell me if I was good?",
+   "I'm not gonna call anybody out. I'm gonna call everybody out. Line up.",
+   "I watched {pop_movie} the night before. Very inspiring. Spoilers: I won.",
+   "Pay me, {president}. Pay me like you pay the guys with the big Instagrams.",
+   "I'm just happy to be here. I'm lying. I'm happy to be PAID.",
+   "That's what happens when you train hard and don't read the comments.",
+   "My kids are watching. Hi kids. Daddy hurt a man. Go to bed."
+  ],
+  "answer_champ": [
+   "I'm the best in the world. Write that down. Spell my name right this time.",
+   "Bring me whoever. Bring me two of them. I'll fight them on the same night if the money is right.",
+   "This belt goes everywhere with me. The grocery store. The dentist. The bath. Mostly the bath.",
+   "I'm not moving divisions. The divisions should move to me."
+  ],
+  "answer_loser": [
+   "I'll be back. I don't know when. I don't know how. My head hurts.",
+   "No excuses. Well, some excuses. I had a cold. And the lights were weird.",
+   "He was the better man tonight. Tomorrow I'll be the better man. At brunch.",
+   "I need to go home and look at my life. And my contract."
+  ],
+  "answer_robbed": [
+   "I won that fight. Everybody here knows I won that fight. The guy who cleans the cage knows I won that fight.",
+   "The judges should be investigated. Or at least given glasses. Braille Sonnen had a better view.",
+   "I'm not mad. I'm disappointed. I'm also mad."
+  ],
+  "chaos": [
+   "{f} moves the {sponsor} bottles off the table and replaces them with water. The sponsor rep in the back row faints.",
+   "{f} answers the next question with sunglasses on, indoors, at night. Nobody can tell if {f}'s eyes are open.",
+   "A reporter's phone goes off. The ringtone is {pop_musician}. {f} starts dancing.",
+   "{f} has brought a small child to the table. The child takes the next question. The child is better at it.",
+   "{f} is eating {pop_food} at the podium. 'Weigh-ins are over,' {f} explains. Nobody argues.",
+   "Braille Sonnen asks a question to the empty chair at the end of the table. The chair does not respond. Braille calls it 'evasive'.",
+   "{f} stands up, says 'I'm done', walks into the curtain, and has to be shown the exit.",
+   "Someone in the back yells 'WHO DA F*** IS THAT GUY?' Nobody is sure who they mean. Everybody is offended.",
+   "{f} starts a livestream mid-press-conference. 4,000 viewers watch the press conference through {f}'s phone, which is pointed at the ceiling.",
+   "Juiced Butler wanders in, flexes once, and leaves without a word.",
+   "Sandwich Cormier walks in with a plate of wings and sits in the front row. Nobody asks why."
+  ],
+  "open_hype": [
+   "What a night. WHAT a night. If you didn't watch, you missed history, and you can still buy the replay for $79.99.",
+   "That was the greatest card in the history of the sport. I say that every time. This time I mean it more."
+  ],
+  "open_thanks": [
+   "First of all, I want to thank every fighter on this card. They bled for you tonight. Some of them are still bleeding. Somebody get a towel.",
+   "These athletes put it all on the line. Respect to every single one of them. Even the ones who lost. Especially the ones who lost, honestly. Brutal."
+  ],
+  "open_rant": [
+   "Before we start: the judging tonight was a disgrace. I've seen better scoring at a kid's birthday party. The commission can call me.",
+   "I'm gonna say it: the refereeing was criminal tonight. Not literally. Lawyers are in the room. Figuratively criminal."
+  ]
+ },
+ "recap": {
+  "show": [
+   "SPORTSCENTRAL TONIGHT",
+   "WSPN FIGHT CENTRAL"
+  ],
+  "open": [
+   "Welcome to SportsCentral, I'm Stephen A. Shouty, and I am DISGUSTED. Also thrilled. Mostly disgusted.",
+   "Good evening, I'm Stephen A. Shouty, and tonight at {event} we saw some things. SOME THINGS.",
+   "Welcome back. Big night of fights at {venue}. Michael, I've been yelling since the prelims. I'm going to keep yelling."
+  ],
+  "ko_take": [
+   "{winner} put {loser} to SLEEP. To SLEEP! I'm talking pajamas! I'm talking a nightlight! A BEDTIME STORY!",
+   "Let me tell you something about {winner}: that is a GROWN man doing GROWN man things to {loser}'s FACE!",
+   "{loser} is going to wake up tomorrow and ask what year it is. And somebody is going to have to tell him."
+  ],
+  "sub_take": [
+   "{winner} strangled {loser} like a guy who's been waiting in line at {pop_food} for forty minutes!",
+   "That's a black belt, that's a BLACK BELT! {loser} had no business being on the ground with {winner}! NO BUSINESS!"
+  ],
+  "dec_take": [
+   "{winner} won on the cards, and I'm going to be honest with you, I fell asleep. Twice. Woke up for the scorecards.",
+   "Fifteen minutes of {winner} doing just enough. JUST enough! You know who else does just enough? My accountant!"
+  ],
+  "robbery_take": [
+   "ROBBERY! That was a ROBBERY! I want the judges INVESTIGATED! I want the scorecards CARBON DATED!",
+   "{loser} got ROBBED, and I'm not going to sit here and pretend otherwise! I'm going to STAND here and pretend otherwise! No! I'm SITTING! IT WAS A ROBBERY!"
+  ],
+  "upset_take": [
+   "NOBODY gave {winner} a chance! NOBODY! Not me, not you, not {winner}'s MOTHER!",
+   "The upset of the YEAR! The bookmakers are crying! I'm crying! Michael's eye is crying!"
+  ],
+  "champ_take": [
+   "And STILL... {winner}! I'm telling you, this is the best champion we've seen since... since the LAST one I said that about!",
+   "We have a NEW champion! {winner}! I called it! I didn't call it. Somebody called it. It doesn't matter! NEW CHAMP!"
+  ],
+  "biscuit": [
+   "Stephen, mate, calm down. Your voice is doing the thing again.",
+   "Bloody hell, Stephen, you said the same thing last week about a completely different fighter.",
+   "I'll be honest, I watched it with one eye and still saw it better than you did.",
+   "I'm just glad someone else got hit in the face for once. Makes a nice change.",
+   "Proper performance, that. Absolute scenes. Can we wrap this up? I've got a train."
+  ],
+  "ratings_good": [
+   "The numbers are in: {buys} buys. {promotion} beat {rival} this week, and they want you to know about it.",
+   "Ratings are UP. {promotion} topped the combat sports chart this week. {president} is reportedly doing laps of his office."
+  ],
+  "ratings_bad": [
+   "Ratings, though: down. {rival} outdrew them with a card headlined by a guy who sells mattresses. Brutal.",
+   "Viewership was soft. Very soft. Softer than {loser}'s chin, apparently."
+  ],
+  "signoff": [
+   "That's all for tonight. STAY OFF THE WEED! I mean it this time!",
+   "We'll be right back after this message from {pop_food}. They paid for this sentence.",
+   "Goodnight, and remember: protect yourself at all times. Especially from me. I'm very loud."
+  ]
  }
 }

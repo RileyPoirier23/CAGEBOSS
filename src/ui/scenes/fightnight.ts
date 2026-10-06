@@ -5,7 +5,9 @@
  */
 import { Container, Graphics } from 'pixi.js';
 import { Scene, Game, fullBg } from '../app';
-import type { Bout, FightEvent, TickerLine } from '../../core/types';
+import type { Bout, FightEvent, TickerLine, EventFinancials } from '../../core/types';
+import { PostFightPresser } from '../presser';
+import { NewsRecap } from '../newsrecap';
 import { PAL, shade } from '../../art/palette';
 import { W, H, text, button, box, ScrollBox, paper, clickable } from '../kit';
 import { PixelText } from '../text';
@@ -26,7 +28,7 @@ import { sfx } from '../../audio/sfx';
 import { fmtFightDate } from '../../core/time';
 import { quickOdds, oddsString } from '../../sim/fight';
 
-type Step = 'intro' | 'card' | 'watch' | 'bonus' | 'done';
+type Step = 'intro' | 'card' | 'watch' | 'bonus' | 'presser' | 'recap' | 'done';
 
 const INTERVIEW: Record<string, string[]> = {
   win_ko: [
@@ -72,6 +74,8 @@ export class FightNightScene extends Scene {
   private subtitle: Container | null = null;
   private tickerBox: Container | null = null;
   private bonusSel = new Set<string>();
+  private presserView: PostFightPresser | null = null;
+  private recapView: NewsRecap | null = null;
   private pressersDone = 0;
 
   constructor(g: Game, evId: string) {
@@ -107,6 +111,8 @@ export class FightNightScene extends Scene {
       case 'card': return this.buildCard();
       case 'watch': return this.buildWatch();
       case 'bonus': return this.buildBonus();
+      case 'presser': return this.buildPresser();
+      case 'recap': return this.buildRecap();
       case 'done': return this.finish();
     }
   }
@@ -420,6 +426,8 @@ export class FightNightScene extends Scene {
   }
 
   update(dt: number): void {
+    if (this.step === 'presser' && this.presserView && !this.presserView.destroyed) this.presserView.update(dt);
+    if (this.step === 'recap' && this.recapView && !this.recapView.destroyed) this.recapView.update(dt);
     const p = this.playing;
     if (this.step !== 'watch' || !p || !this.arena || this.arena.destroyed) return;
     const speed = [1, 0.6, 1, 2, 4][this.g.settings.fightSpeed] ?? 1;
@@ -618,13 +626,46 @@ export class FightNightScene extends Scene {
     r.addChild(sb);
     sb.refresh();
     r.addChild(text(`Selected: ${this.bonusSel.size}  (${money(this.bonusSel.size * bonusAmount(s))})`, 8, H - 22, { color: PAL.bone }));
-    r.addChild(button('POST-FIGHT PRESSER →', W - 150, H - 26, 142, 18, () => this.presser(true), { fill: PAL.steel }));
+    r.addChild(button('POST-FIGHT PRESSER →', W - 150, H - 26, 142, 18, () => this.wrapUp(), { fill: PAL.steel }));
+  }
+
+  /** Pay everybody, then the post-fight press conference and the TV recap. */
+  private wrapUp(): void {
+    const s = this.g.state!;
+    if (this.ev.status === 'scheduled') {
+      this.ev.fin = finalizeEvent(s, this.ev, [...this.bonusSel]);
+      sfx('cash');
+    }
+    this.step = 'presser';
+    this.refresh();
+  }
+
+  private finSafe(): EventFinancials {
+    return this.ev.fin ?? { attendance: 0, gate: 0, ppvBuys: 0, ppv: 0, broadcast: 0, sponsors: 0, merch: 0, purses: 0, bonuses: 0, venue: 0, production: 0 };
+  }
+
+  private buildPresser(): void {
+    this.presserView = new PostFightPresser(this.g, this.ev, this.finSafe(), [...this.bonusSel], () => {
+      this.presserView = null;
+      this.step = 'recap';
+      this.refresh();
+    });
+    this.root.addChild(this.presserView);
+  }
+
+  private buildRecap(): void {
+    this.recapView = new NewsRecap(this.g, this.ev, this.finSafe(), () => {
+      this.recapView = null;
+      this.finish();
+    });
+    this.root.addChild(this.recapView);
   }
 
   private finish(): void {
     const s = this.g.state!;
     if (this.ev.status === 'scheduled') {
       const fin = finalizeEvent(s, this.ev, [...this.bonusSel]);
+      this.ev.fin = fin;
       sfx('cash');
       this.g.toast(`Gate ${money(fin.gate)}  •  ${fin.attendance.toLocaleString()} fans${fin.ppvBuys ? `  •  ${fin.ppvBuys.toLocaleString()} PPV buys` : ''}`, PAL.gold);
     }

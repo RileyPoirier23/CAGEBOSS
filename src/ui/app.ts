@@ -10,6 +10,7 @@ import { setMuted, setMusic, setVolumes, sfx } from '../audio/sfx';
 import { W, H, tooltip, clearChildren, dimmer, box, text } from './kit';
 import { bus } from '../core/events';
 import { setTextResolution } from './text';
+import { LoadingScreen } from './loading';
 
 export interface Settings {
   textSpeed: number; // 1 slow .. 3 fast, 4 instant
@@ -62,6 +63,8 @@ export class Game {
   modalLayer = new Container();
   toastLayer = new Container();
   tipLayer = new Container();
+  loadLayer = new Container();
+  private loader: LoadingScreen | null = null;
   scene: Scene | null = null;
   modals: Container[] = [];
   state: GameState | null = null;
@@ -86,7 +89,7 @@ export class Game {
     parent.appendChild(this.app.canvas);
     this.app.stage.addChild(this.stage);
     this.stage.addChild(this.sceneLayer, this.modalLayer, this.toastLayer);
-    this.app.stage.addChild(this.tipLayer);
+    this.app.stage.addChild(this.tipLayer, this.loadLayer);
     tooltip.attach(this.tipLayer);
     this.app.stage.eventMode = 'static';
     this.app.stage.hitArea = { contains: () => true };
@@ -138,6 +141,27 @@ export class Game {
     scene.enter();
   }
 
+  /**
+   * Show a loading screen, run the (possibly heavy) work once it has painted,
+   * keep it up for at least `minTime` seconds, then fade it out.
+   */
+  loading(label: string, work: () => void, minTime = 0.9): void {
+    if (this.loader) this.loader.destroy({ children: true });
+    const ls = new LoadingScreen(label);
+    this.loader = ls;
+    this.loadLayer.addChild(ls);
+    const start = performance.now();
+    // two frames so the screen is actually visible before we block
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      try {
+        work();
+      } finally {
+        const left = Math.max(0, minTime * 1000 - (performance.now() - start));
+        setTimeout(() => (ls.done = true), left);
+      }
+    }));
+  }
+
   /** Push a modal container (gets a dimmer behind it). */
   modal(content: Container, opts: { dim?: number; closeOnDim?: boolean } = {}): Container {
     const wrap = new Container();
@@ -186,6 +210,10 @@ export class Game {
   }
 
   private tick(dt: number): void {
+    if (this.loader && !this.loader.update(dt)) {
+      this.loader.destroy({ children: true });
+      this.loader = null;
+    }
     if (this.shakeT > 0) {
       this.shakeT -= dt;
       const m = this.shakeT > 0 ? this.shakeMag : 0;
