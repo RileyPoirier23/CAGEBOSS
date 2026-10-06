@@ -258,9 +258,9 @@ export function normalizeText(s: string): string {
     .replace(/…/g, '...')
     .replace(/ /g, ' ')
     .replace(/[éèêë]/g, 'e')
-    .replace(/[áàâä]/g, 'a')
+    .replace(/[áàâäã]/g, 'a')
     .replace(/[íìîï]/g, 'i')
-    .replace(/[óòôö]/g, 'o')
+    .replace(/[óòôöõ]/g, 'o')
     .replace(/[úùûü]/g, 'u')
     .replace(/ñ/g, 'n')
     .replace(/ç/g, 'c');

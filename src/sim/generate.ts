@@ -80,11 +80,36 @@ export function makeName(rng: Rng, culture: CultureDef, gender: 'M' | 'W'): { fi
   return { first, last };
 }
 
-export function makeNickname(rng: Rng, names: NameTables): string {
-  const r = rng.next();
-  if (r < 0.45) return rng.pick(names.nicknames);
-  if (r < 0.85) return 'The ' + rng.pick(names.nickAdj) + ' ' + rng.pick(names.nickNoun);
-  return rng.pick(names.nickAdj);
+export interface NickContext {
+  styles?: string[];
+  traits?: string[];
+  culture?: string;
+  division?: string;
+  gender?: 'M' | 'W';
+}
+
+/**
+ * Nicknames that sound like real fight nicknames: picked to fit the fighter's
+ * style, background, size or personality, with the odd blue-collar joke.
+ */
+export function makeNickname(rng: Rng, names: NameTables, ctx: NickContext = {}): string {
+  const pools: { w: number; list: string[] }[] = [];
+  const add = (w: number, list?: string[]) => {
+    if (list && list.length) pools.push({ w, list });
+  };
+  for (const st of ctx.styles ?? []) add(3, names.nickStyle?.[st]);
+  if (ctx.culture) add(2.5, names.nickCulture?.[ctx.culture]);
+  for (const t of ctx.traits ?? []) add(0.8, names.nickTrait?.[t]);
+  if (ctx.division === 'heavy') add(2, names.nickHeavy);
+  if (ctx.gender === 'W') add(2.5, names.nickFemale);
+  add(2.5, names.nicknames);
+  const total = pools.reduce((a, p) => a + p.w, 0);
+  let r = rng.next() * total;
+  for (const p of pools) {
+    r -= p.w;
+    if (r <= 0) return rng.pick(p.list);
+  }
+  return rng.pick(names.nicknames);
 }
 
 export function makeLook(rng: Rng, culture: CultureDef, gender: 'M' | 'W', division: string): Look {
@@ -178,7 +203,7 @@ export function generateFighter(rng: Rng, names: NameTables, opts: GenOpts): Fig
     id,
     first,
     last,
-    nick: makeNickname(rng, names),
+    nick: makeNickname(rng, names, { styles, traits, culture: culture.id, division: opts.division, gender }),
     gender,
     age,
     hometown,

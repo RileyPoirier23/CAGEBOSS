@@ -181,9 +181,12 @@ export interface CultureDef {
 
 export interface NameTables {
   cultures: CultureDef[];
-  nickAdj: string[];
-  nickNoun: string[];
   nicknames: string[];
+  nickStyle?: Record<string, string[]>;
+  nickCulture?: Record<string, string[]>;
+  nickTrait?: Record<string, string[]>;
+  nickHeavy?: string[];
+  nickFemale?: string[];
   gyms: string[];
   cutmen: string[];
   coachFirst: string[];

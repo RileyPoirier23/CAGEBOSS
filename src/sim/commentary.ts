@@ -195,7 +195,7 @@ function vars(c: Ctx, xi: number): Record<string, string> {
     age: String(x.age), ref, belt, event: c.ev.name, venue, div: divisionName(c.bout.division),
     president: c.s.president.name, fact: c.rng.pick(facts),
     winner: win?.last ?? x.last, loser: lose?.last ?? y.last,
-    meeting: roman(c.bout.meeting ?? 1), bones: 'Bro Bones',
+    meeting: roman(c.bout.meeting ?? 1), bones: 'Bonez',
     wins: String(x.record.w), fin: String(Math.max(0, Math.round(x.record.w * (x.styles.includes('Point Fighter') || x.styles.includes('Boring But Effective') ? 0.3 : 0.6)))),
     sa: String(Math.max(sc[0], sc[1])), sb: String(Math.min(sc[0], sc[1])),
     r: '1', ...(wa ? {} : {}),

@@ -24,7 +24,8 @@ npm run sim -- --seeds 3 --policy all --quiet   # storylet coverage & repetition
 | `data/documents/templates.json` | Fight ticker lines, social posts, interview quotes, presser Q&A, the TV recap, slow-news filler | edit directly |
 | `data/documents/docs.json` | Paperwork ingredients: substances, doctors, scans, countries, expense items | edit directly |
 | `data/roster/marquee.json`, `legends.json` | Hand-made parody fighters | `tools/roster_src.py` |
-| `data/roster/generated.json` | Procedural depth roster | `npm run namegen -- --roster` |
+| `data/roster/generated.json` | Procedural depth roster | `npm run namegen -- --roster` (or `npx tsx tools/renick.ts` to re-roll just the nicknames) |
+| `data/roster/names.json` nick tables | Nicknames by style, culture, trait, size and gender | edit directly |
 | `data/roster/names.json` | Name tables per culture ("City\|Country" hometowns) | edit directly |
 | `data/headlines/*.json` | Newspaper headlines, matched by tag | edit directly |
 | `data/reporters`, `data/outlets` | The press | edit directly |
