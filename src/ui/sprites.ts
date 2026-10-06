@@ -4,7 +4,7 @@
 import { Sprite, Texture, Container, Graphics, Rectangle } from 'pixi.js';
 import type { Fighter } from '../core/types';
 import type { ReporterDef } from '../core/content';
-import { drawPortrait, drawSignature, drawBarcode, PixelBuf, PortraitInput, PortraitVariant, P } from '../art/portrait';
+import { drawPortrait, drawSignature, drawBarcode, halfSize, PixelBuf, PortraitInput, PortraitVariant } from '../art/portrait';
 import { PAL } from '../art/palette';
 
 const cache = new Map<string, Texture>();
@@ -43,26 +43,25 @@ export function portraitInputForFighter(f: Fighter, variant: PortraitVariant = '
   };
 }
 
-export function portraitTexture(inp: PortraitInput): Texture {
+/** Portrait texture: 64px master, or a box-filtered 32px version for small slots. */
+export function portraitTexture(inp: PortraitInput, half = false): Texture {
   const w = inp.wounds;
-  const key = `p:${inp.id}:${inp.variant}:${inp.attire}:${inp.age}:${Math.floor((inp.damage ?? 0) / 20)}:${JSON.stringify(inp.look)}:${w ? `${w.cuts}${w.blackEye}${w.swelling}${w.bandages}${w.noseBleed ? 1 : 0}` : ''}:${inp.accent ?? ''}`;
+  const key = `p:${half ? 'h' : 'f'}:${inp.id}:${inp.variant}:${inp.attire}:${inp.gender}:${inp.age}:${Math.floor((inp.damage ?? 0) / 20)}:${JSON.stringify(inp.look)}:${w ? `${w.cuts}${w.blackEye}${w.swelling}${w.bandages}${w.noseBleed ? 1 : 0}` : ''}:${inp.accent ?? ''}`;
   const hit = cache.get(key);
   if (hit) return hit;
-  return bufToTexture(drawPortrait(inp), key);
+  const buf = drawPortrait(inp);
+  return bufToTexture(half ? halfSize(buf) : buf, key);
 }
 
 /** A framed portrait sprite. size: 64 (2x), 32 (1x) or 24 (cropped). */
 export function portrait(inp: PortraitInput, size: 64 | 32 | 24 = 64, frame = true): Container {
   const c = new Container();
-  const tex = portraitTexture(inp);
   let sp: Sprite;
   if (size === 24) {
+    const tex = portraitTexture(inp, true);
     const sub = new Texture({ source: tex.source, frame: new Rectangle(4, 3, 24, 24) });
     sp = new Sprite(sub);
-  } else {
-    sp = new Sprite(tex);
-    sp.scale.set(size / P);
-  }
+  } else sp = new Sprite(portraitTexture(inp, size === 32));
   if (frame) {
     const g = new Graphics().rect(-1, -1, size + 2, size + 2).fill(PAL.ink);
     c.addChild(g);

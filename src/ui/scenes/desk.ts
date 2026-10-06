@@ -13,7 +13,7 @@ import { openReplacementPicker } from '../replace';
 import { Container, Graphics } from 'pixi.js';
 import { Scene } from '../app';
 import { PAL, C, shade, meterColor } from '../../art/palette';
-import { W, H, text, button, box, clickable, ScrollBox, hoverTip, paper } from '../kit';
+import { W, H, text, button, box, clickable, ScrollBox, hoverTip, paper, makeDraggable } from '../kit';
 import type { DeskDoc, Stamp, StoryletInstance, Negotiation } from '../../core/types';
 import { Inspector, renderDoc, renderFileCard, ruleField, PAGE_RULE_KEYS } from '../docview';
 import { stampDoc, compareFields, spendMinutes } from '../../sim/week';
@@ -64,6 +64,11 @@ export class DeskScene extends Scene {
   private clockHand = new Graphics();
   private stampFx: { node: Container; t: number } | null = null;
   private lastFound: [string, string] | null = null;
+  /** rulebook window: position + zoom survive refreshes */
+  private rb = { x: 10, y: 84, zoom: 1 };
+  /** calculator window */
+  private calcOpen = false;
+  private calc = { x: 4, y: 82, display: '0', acc: 0, op: '' as '' | '+' | '-' | '*' | '/', fresh: true };
   private dayOverShown = false;
   private queueScroll = 0;
 
@@ -74,7 +79,16 @@ export class DeskScene extends Scene {
     this.clockHand = new Graphics();
     this.ins.clear();
     this.ins.onCompare = (a, b) => this.compare(a, b);
-    this.ins.onChange = () => this.drawStrings();
+    this.ins.onChange = () => {
+      // highlighting the line items of a camp expense report pulls out the calculator
+      const it = this.currentItem();
+      if (this.ins.selected === 'doc.items' && it?.kind === 'doc' && it.doc.type === 'expense' && !this.calcOpen) {
+        this.calcOpen = true;
+        this.refresh();
+        return;
+      }
+      this.drawStrings();
+    };
 
     // ---------------------------------------------------------- office wall
     const wall = new Graphics();
@@ -182,6 +196,12 @@ export class DeskScene extends Scene {
       tooltip: 'Inspect mode: click two fields (document, file card or rulebook) to compare them.',
     });
     props.addChild(insBtn);
+    const calcBtn = clickable(new Container(), () => this.toggleCalc(), 'Calculator (C): auto-tallies camp expense reports.');
+    calcBtn.addChild(box(24, 22, 0x3a3a40, PAL.ink, { bevel: true }));
+    calcBtn.addChild(box(18, 5, 0x9aa88a)).position.set(3, 3);
+    for (let i = 0; i < 6; i++) calcBtn.addChild(box(4, 3, 0x6a6a72)).position.set(3 + (i % 3) * 6, 11 + Math.floor(i / 3) * 5);
+    calcBtn.position.set(84, 14);
+    props.addChild(calcBtn);
     r.addChild(props);
 
     // centre: document / item
@@ -210,12 +230,13 @@ export class DeskScene extends Scene {
       centre.addChild(empty);
     }
 
-    // rulebook overlay
-    if (this.rulebookOpen) r.addChild(this.drawRulebook());
-
     // right: queue + stamps
     r.addChild(this.drawQueue());
     if (item?.kind === 'doc') r.addChild(this.drawStamps(item.doc));
+
+    // rulebook & calculator float above everything on the desk
+    if (this.rulebookOpen) r.addChild(this.drawRulebook());
+    if (this.calcOpen) r.addChild(this.drawCalculator());
 
     // message bar
     if (this.message) {
@@ -428,19 +449,32 @@ export class DeskScene extends Scene {
     const s = this.g.state!;
     const pages = rulebookPages(s);
     const c = new Container();
-    c.position.set(10, 84);
+    c.position.set(this.rb.x, this.rb.y);
+    c.scale.set(this.rb.zoom);
     const bw = 354;
     const bh = 182;
     c.addChild(box(bw, bh, 0x2d3a52, PAL.ink, { shadow: true }));
     c.addChild(paper(bw - 8, bh - 22, 'white', 5)).position.set(4, 18);
-    c.addChild(text('THE RULEBOOK', 6, 4, { color: PAL.gold }));
+    // title bar = drag handle
+    const handle = new Container();
+    handle.addChild(new Graphics().rect(0, 0, 76, 16).fill({ color: 0xffffff, alpha: 0.001 }));
+    handle.addChild(text('THE RULEBOOK', 6, 4, { color: PAL.gold }));
+    c.addChild(handle);
+    makeDraggable(handle, c, (x, y) => {
+      this.rb.x = x;
+      this.rb.y = y;
+      this.drawStrings();
+    }, { w: bw, h: bh });
+    hoverTip(handle, 'Drag me next to the document. +/- to zoom.');
     c.addChild(button('X', bw - 14, 3, 11, 11, () => {
       this.rulebookOpen = false;
       this.refresh();
     }, { small: true, fill: PAL.blood }));
+    c.addChild(button('+', bw - 40, 3, 11, 11, () => this.zoomRulebook(0.25), { small: true, fill: PAL.steel, tooltip: 'Zoom in' }));
+    c.addChild(button('-', bw - 27, 3, 11, 11, () => this.zoomRulebook(-0.25), { small: true, fill: PAL.steel, tooltip: 'Zoom out' }));
     // tabs
     pages.forEach((p, i) => {
-      const t = button(p.page.split(' ')[0].toUpperCase(), 80 + i * 34, 4, 33, 11, () => {
+      const t = button(p.page.split(' ')[0].toUpperCase(), 80 + i * 32, 4, 31, 11, () => {
         this.rulePage = i;
         this.refresh();
       }, { small: true, fill: i === this.rulePage ? PAL.gold : PAL.slate, textColor: i === this.rulePage ? PAL.ink : PAL.bone });
@@ -471,6 +505,135 @@ export class DeskScene extends Scene {
     c.addChild(sb);
     sb.refresh();
     return c;
+  }
+
+  private zoomRulebook(d: number): void {
+    this.rb.zoom = Math.max(0.75, Math.min(2, this.rb.zoom + d));
+    sfx('click');
+    this.refresh();
+  }
+
+  // ------------------------------------------------------------ calculator
+  private calcKey(k: string): void {
+    const c = this.calc;
+    const cur = () => parseFloat(c.display.replace(/,/g, '')) || 0;
+    const apply = () => {
+      const v = cur();
+      if (c.op === '+') c.acc += v;
+      else if (c.op === '-') c.acc -= v;
+      else if (c.op === '*') c.acc *= v;
+      else if (c.op === '/') c.acc = v ? c.acc / v : NaN;
+      else c.acc = v;
+    };
+    if (/^[0-9]$/.test(k)) {
+      c.display = c.fresh || c.display === '0' ? k : (c.display + k).slice(0, 11);
+      c.fresh = false;
+    } else if (k === '.') {
+      if (c.fresh) c.display = '0.';
+      else if (!c.display.includes('.')) c.display += '.';
+      c.fresh = false;
+    } else if (k === 'C') {
+      c.display = '0';
+      c.acc = 0;
+      c.op = '';
+      c.fresh = true;
+    } else if (k === '=') {
+      apply();
+      c.op = '';
+      c.display = Number.isFinite(c.acc) ? String(Math.round(c.acc * 100) / 100) : 'ERR';
+      c.fresh = true;
+    } else if (['+', '-', '*', '/'].includes(k)) {
+      if (!c.fresh) apply();
+      c.op = k as '+' | '-' | '*' | '/';
+      c.display = Number.isFinite(c.acc) ? String(Math.round(c.acc * 100) / 100) : 'ERR';
+      c.fresh = true;
+    }
+    sfx('click');
+    this.refresh();
+  }
+
+  /** Line items of the current camp expense report (if that's what's on the desk). */
+  private expenseTally(): { lines: { item: string; amt: number }[]; claimed: number; sum: number; cap: number } | null {
+    const item = this.currentItem();
+    if (item?.kind !== 'doc' || item.doc.type !== 'expense') return null;
+    const d = item.doc;
+    const num = (t: string) => Number((t.match(/\$?([\d,]+)\s*$/)?.[1] ?? '0').replace(/,/g, ''));
+    const lines = (d.fields.find((f) => f.key === 'doc.items')?.value ?? '').split('\n').filter(Boolean).map((l) => ({ item: l.replace(/\s+\$?[\d,]+\s*$/, ''), amt: num(l) }));
+    const claimed = num(d.fields.find((f) => f.key === 'doc.total')?.value ?? '0');
+    const capTxt = d.refs['rule.cap'] ?? '';
+    const cap = Number((capTxt.match(/\$?([\d,]+)/)?.[1] ?? '0').replace(/,/g, '')) || 3000;
+    return { lines, claimed, sum: lines.reduce((t, l) => t + l.amt, 0), cap };
+  }
+
+  private drawCalculator(): Container {
+    const c = new Container();
+    c.position.set(this.calc.x, this.calc.y);
+    const cw = 112;
+    const tally = this.expenseTally();
+    const ch = tally ? 186 : 118;
+    c.addChild(box(cw, ch, 0x2a2a2e, PAL.ink, { shadow: true, bevel: true }));
+    const handle = new Container();
+    handle.addChild(new Graphics().rect(0, 0, cw - 16, 12).fill({ color: 0xffffff, alpha: 0.001 }));
+    handle.addChild(text('CALC-U-LOSER 3000', 4, 3, { small: true, color: PAL.ash }));
+    c.addChild(handle);
+    makeDraggable(handle, c, (x, y) => {
+      this.calc.x = x;
+      this.calc.y = y;
+    }, { w: cw, h: ch });
+    c.addChild(button('X', cw - 13, 2, 11, 9, () => {
+      this.calcOpen = false;
+      this.refresh();
+    }, { small: true, fill: PAL.blood }));
+    // LCD
+    c.addChild(box(cw - 8, 14, 0x9aa88a, PAL.ink)).position.set(4, 13);
+    c.addChild(text(this.calc.display + (this.calc.op ? ' ' + this.calc.op : ''), 6, 16, { width: cw - 14, align: 'right', color: 0x1a2414 }));
+    const keys = ['7', '8', '9', '/', '4', '5', '6', '*', '1', '2', '3', '-', 'C', '0', '=', '+'];
+    keys.forEach((k, i) => {
+      const bx = 4 + (i % 4) * 26;
+      const by = 30 + Math.floor(i / 4) * 15;
+      c.addChild(button(k === '*' ? 'x' : k, bx, by, 24, 13, () => this.calcKey(k), {
+        small: true, fill: /[0-9]/.test(k) ? 0x45454c : k === 'C' ? PAL.blood : k === '=' ? PAL.moss : PAL.slate,
+      }));
+    });
+    c.addChild(button('.', 4, 90, 24, 12, () => this.calcKey('.'), { small: true, fill: 0x45454c }));
+    if (!tally) {
+      c.addChild(text('Open a camp expense report to auto-tally it.', 32, 91, { small: true, width: cw - 36, color: PAL.grey }));
+      return c;
+    }
+    // auto-tally tape for camp expense reports
+    c.addChild(paper(cw - 8, 80, 'white', 3)).position.set(4, 104);
+    let y = 107;
+    for (const l of tally.lines.slice(0, 6)) {
+      const over = l.amt > tally.cap;
+      c.addChild(text(l.item.slice(0, 13), 7, y, { small: true, color: over ? PAL.blood : PAL.ink, maxLines: 1, width: 58 }));
+      c.addChild(text(money(l.amt, false), 66, y, { small: true, color: over ? PAL.blood : PAL.ink, width: 38, align: 'right' }));
+      y += 7;
+    }
+    c.addChild(new Graphics().rect(7, y, cw - 14, 1).fill(PAL.ink));
+    y += 2;
+    c.addChild(text('SUM', 7, y, { small: true, color: PAL.ink }));
+    c.addChild(text(money(tally.sum, false), 50, y, { small: true, color: PAL.ink, width: 54, align: 'right' }));
+    y += 7;
+    c.addChild(text('CLAIMED', 7, y, { small: true, color: PAL.ink }));
+    c.addChild(text(money(tally.claimed, false), 50, y, { small: true, color: PAL.ink, width: 54, align: 'right' }));
+    y += 9;
+    const diff = tally.claimed - tally.sum;
+    const overCap = tally.lines.some((l) => l.amt > tally.cap);
+    const ok = diff === 0 && !overCap;
+    c.addChild(text(ok ? '✓ ADDS UP' : diff !== 0 ? `✗ OFF BY ${money(Math.abs(diff), false)}` : '✗ ITEM OVER CAP', 7, y, { small: true, color: ok ? PAL.moss : PAL.blood }));
+    if (!ok) {
+      c.addChild(button('CITE IT', cw - 46, y - 2, 40, 11, () => {
+        this.ins.active = true;
+        this.compare(diff !== 0 ? 'doc.total' : 'doc.items', diff !== 0 ? 'doc.items' : 'rule.cap');
+      }, { small: true, fill: PAL.blood, tooltip: 'Flag the discrepancy (same as comparing the fields in inspect mode).' }));
+    }
+    return c;
+  }
+
+  private toggleCalc(): void {
+    this.calcOpen = !this.calcOpen;
+    sfx('click');
+    this.refresh();
   }
 
   private toggleInspect(): void {
@@ -506,15 +669,15 @@ export class DeskScene extends Scene {
     if (this.ins.selected) {
       const sp = this.ins.spots.get(this.ins.selected);
       if (sp && !sp.node.destroyed) {
-        const p = sp.node.getGlobalPosition();
-        g.rect(p.x - 1, p.y - 1, sp.w + 2, sp.h + 2).stroke({ color: PAL.gold, width: 1 });
+        const bb = sp.node.getBounds();
+        g.rect(bb.x - 1, bb.y - 1, bb.width + 2, bb.height + 2).fill({ color: 0xf0e060, alpha: 0.18 }).stroke({ color: PAL.gold, width: 1 });
       }
     }
     // outline all inspectable fields faintly
     for (const sp of this.ins.spots.values()) {
       if (sp.node.destroyed) continue;
-      const p = sp.node.getGlobalPosition();
-      g.rect(p.x, p.y, sp.w, sp.h).stroke({ color: PAL.gold, width: 1, alpha: 0.25 });
+      const bb = sp.node.getBounds();
+      g.rect(bb.x, bb.y, bb.width, bb.height).stroke({ color: PAL.gold, width: 1, alpha: 0.25 });
     }
     if (this.lastFound) {
       const a = this.ins.center(this.lastFound[0]);
@@ -522,9 +685,11 @@ export class DeskScene extends Scene {
       if (a && b) {
         g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ color: PAL.blood, width: 2 });
         for (const k of this.lastFound) {
-          const sp = this.ins.spots.get(k)!;
-          const p = sp.node.getGlobalPosition();
-          g.rect(p.x - 1, p.y - 1, sp.w + 2, sp.h + 2).stroke({ color: PAL.blood, width: 1 });
+          const sp = this.ins.spots.get(k);
+          if (!sp || sp.node.destroyed) continue;
+          const bb = sp.node.getBounds();
+          // highlighter: red marker over both halves of the discrepancy
+          g.rect(bb.x - 1, bb.y - 1, bb.width + 2, bb.height + 2).fill({ color: 0xff3030, alpha: 0.16 }).stroke({ color: PAL.blood, width: 1 });
         }
       }
     }
@@ -643,7 +808,11 @@ export class DeskScene extends Scene {
     else if (k === 'r') {
       this.rulebookOpen = !this.rulebookOpen;
       this.refresh();
-    } else if (k === 'a') this.stamp('approve');
+    } else if (k === 'c') this.toggleCalc();
+    else if (this.calcOpen && /^[0-9.+\-*/=]$/.test(e.key)) this.calcKey(e.key);
+    else if (this.calcOpen && (k === 'enter' || k === 'backspace' || k === 'delete')) this.calcKey(k === 'enter' ? '=' : 'C');
+    else if (this.rulebookOpen && (k === '[' || k === ']')) this.zoomRulebook(k === ']' ? 0.25 : -0.25);
+    else if (k === 'a') this.stamp('approve');
     else if (k === 'd') this.stamp('deny');
     else if (k === 'e') this.stamp('escalate');
     else if (k === 'b') this.stamp('bury');

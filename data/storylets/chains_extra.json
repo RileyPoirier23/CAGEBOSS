@@ -1,0 +1,2565 @@
+[
+ {
+  "id": "tt_ink",
+  "title": "The Face Tattoo",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "{subject.first} got a face tattoo of {his} own record: '{subject.wins}-{subject.losses}'. It is already out of date because {he} fights on Saturday."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Laugh it off",
+    "effects": [
+     "subject.hype += 4",
+     "follow('tt_update', 5)"
+    ],
+    "result": "The tattoo artist offers a subscription plan for updates.",
+    "default": true
+   },
+   {
+    "label": "Ban face tattoos from promo shoots",
+    "effects": [
+     "subject.morale -= 4"
+    ],
+    "result": "{He} wears a balaclava to every shoot in protest."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 156,
+  "chain": "ch_tattoo"
+ },
+ {
+  "id": "tt_update",
+  "title": "Record Update",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "{subject.first} went back to the tattoo parlor to update {his} face record. The artist misspelled a number. {His} face now says {he} has 'tweleve' wins."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Sponsor the laser removal",
+    "effects": [
+     "spend('misc', 3000 * scale)",
+     "subject.loyalty += 4"
+    ],
+    "result": "The laser hurts more than any fight.",
+    "default": true
+   },
+   {
+    "label": "Lean into it",
+    "effects": [
+     "fans += 2",
+     "subject.hype += 4"
+    ],
+    "result": "'Tweleve' becomes a fan chant.",
+    "bot": 2
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 156,
+  "chain": "ch_tattoo",
+  "followupOnly": true
+ },
+ {
+  "id": "wo_plan",
+  "title": "The Walkout Plan",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "{subject.first} wants a walkout with: 12 dancers, a live mariachi band, a monster truck and a cameo from {pop_celeb}. 'Big fights need big entrances.'",
+    "speaker": "{subject.first} {subject.last}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Approve a scaled-down version ({$fee})",
+    "effects": [
+     "spend('production', vars.fee)",
+     "follow('wo_night', 3)",
+     "subject.hype += 6"
+    ],
+    "result": "Six dancers, no monster truck. {He} sulks for four minutes.",
+    "default": true
+   },
+   {
+    "label": "Approve everything ({$fee} x3)",
+    "effects": [
+     "spend('production', vars.fee * 3)",
+     "follow('wo_night', 3)",
+     "subject.hype += 12",
+     "fans += 2"
+    ],
+    "result": "The monster truck can't fit through the tunnel. They find another way.",
+    "bot": 2
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.booked && f.traits.has('Showman')"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 104,
+  "chain": "ch_walkout",
+  "vars": {
+   "fee": "rand(5, 15) * 1000 * scale"
+  }
+ },
+ {
+  "id": "wo_night",
+  "title": "The Entrance",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "The walkout takes eleven minutes. The mariachi band plays {pop_musician}. The crowd loses its mind. {subject.first}'s opponent has been standing in the cage for nine of those minutes and is visibly furious."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Fine {him} for the delay",
+    "effects": [
+     "subject.morale -= 2",
+     "commission += 1"
+    ],
+    "result": "{He} pays the fine with a check that says 'worth it' in the memo line.",
+    "default": true
+   },
+   {
+    "label": "Make it {his} signature",
+    "effects": [
+     "fans += 2",
+     "network += 1"
+    ],
+    "result": "Every walkout bigger than the last. The production budget weeps.",
+    "bot": 2
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.booked && f.traits.has('Showman')"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 104,
+  "chain": "ch_walkout",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(5, 15) * 1000 * scale"
+  }
+ },
+ {
+  "id": "ft_fan",
+  "title": "Super Fan",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "A fan got your promotion's logo tattooed across his entire back. He wants free tickets for life. He also spelled the promotion's name wrong."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Give him lifetime tickets",
+    "effects": [
+     "fans += 3",
+     "follow('ft_back', 10)"
+    ],
+    "result": "He cries. You almost cry. His mother definitely cries.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Offer to pay for a correction",
+    "effects": [
+     "fans += 1"
+    ],
+    "result": "He refuses. 'It's who I am now.'"
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_fan_tattoo"
+ },
+ {
+  "id": "ft_back",
+  "title": "The Super Fan Returns",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "Your super fan has attended every event since, front row, shirtless, back to the cage. The cameras love him. He has 300,000 followers and a manager."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Make him an official ambassador",
+    "effects": [
+     "fans += 3",
+     "media += 1"
+    ],
+    "result": "He takes the job very seriously. He has business cards. They're also misspelled.",
+    "default": true
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_fan_tattoo",
+  "followupOnly": true
+ },
+ {
+  "id": "cml_hire",
+  "title": "The Legendary Cutman",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Stitch McGee, the most famous cutman alive, is available. He once closed a cut with a credit card and some Vaseline. He's expensive, ornery, and 79.",
+    "speaker": "Stitch McGee's agent"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Hire him for the roster ({$fee})",
+    "effects": [
+     "spend('staff', vars.fee)",
+     "follow('cml_night', 4)",
+     "fighters += 2"
+    ],
+    "result": "He arrives with a tackle box from 1974. Nobody is allowed to touch it.",
+    "bot": 1
+   },
+   {
+    "label": "Too expensive",
+    "effects": [],
+    "result": "He signs with a rival. Their fighters stop bleeding. Infuriating.",
+    "default": true
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_cut_man_legend",
+  "vars": {
+   "fee": "rand(20, 40) * 1000 * scale"
+  }
+ },
+ {
+  "id": "cml_night",
+  "title": "Stitch Works His Magic",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "A cut that would have stopped any fight: Stitch closes it in 40 seconds between rounds while yelling about the Dodgers. The fighter wins in the next round. The doctor asks Stitch for his number."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Give Stitch a raise",
+    "effects": [
+     "spend('staff', 4000 * scale)",
+     "fighters += 2"
+    ],
+    "result": "Stitch says 'about time'. He is 79. It is about time.",
+    "default": true
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_cut_man_legend",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(20, 40) * 1000 * scale"
+  }
+ },
+ {
+  "id": "rh_cohab",
+  "title": "Roommates",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "Two of your fighters, {subject.first} and {other.first}, are now roommates to save money. One is a neat freak. The other keeps a snake in the bathtub. They fight in six weeks. Against each other."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Move one of them out ({$fee})",
+    "effects": [
+     "spend('housing', vars.fee)"
+    ],
+    "result": "Peace restored. The snake is relocated.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Film it",
+    "effects": [
+     "network += 2",
+     "follow('rh_blowup', 3)",
+     "rivalry(subject, other)"
+    ],
+    "result": "Two cameras, one bathroom, zero chill.",
+    "bot": 2
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours"
+   },
+   "other": {
+    "type": "fighter",
+    "where": "f.ours && f.id != subject.id && f.division == subject.division"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 156,
+  "chain": "ch_reality_house",
+  "vars": {
+   "fee": "rand(2, 6) * 1000 * scale"
+  }
+ },
+ {
+  "id": "rh_blowup",
+  "title": "The Bathtub Incident",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "The snake escaped. It was found in {subject.first}'s gym bag. {subject.first} has accused {other.first} of 'snake warfare'. The footage is incredible."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Air it as fight promo",
+    "effects": [
+     "fans += 3",
+     "subject.hype += 8",
+     "other.hype += 8"
+    ],
+    "result": "'SNAKE WARFARE' sells out the arena.",
+    "bot": 2,
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours"
+   },
+   "other": {
+    "type": "fighter",
+    "where": "f.ours && f.id != subject.id && f.division == subject.division"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 156,
+  "chain": "ch_reality_house",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(2, 6) * 1000 * scale"
+  }
+ },
+ {
+  "id": "sgm_invent",
+  "title": "The New Move",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "{subject.first} has invented a new move called 'The {subject.last} Special'. It's a spinning backfist into a cartwheel into a flying knee. It has never worked in sparring. {He} plans to use it Saturday."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Hype it",
+    "effects": [
+     "subject.hype += 6",
+     "fans += 1",
+     "follow('sgm_result', 3)"
+    ],
+    "result": "The whole sport is watching for The Special.",
+    "bot": 2,
+    "default": true
+   },
+   {
+    "label": "Tell {him} to keep it simple",
+    "effects": [
+     "subject.skills.fightIQ += 1",
+     "subject.morale -= 2"
+    ],
+    "result": "{He} nods. {He} is not keeping it simple."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.booked"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 156,
+  "chain": "ch_signature_move"
+ },
+ {
+  "id": "sgm_result",
+  "title": "The Special",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "THE {subject.last} SPECIAL: fighter attempts viral move in fight, results described as 'historic' by some and 'a crime against physics' by others"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Put it on every highlight reel",
+    "effects": [
+     "fans += 2",
+     "subject.hype += 6"
+    ],
+    "result": "Kids everywhere attempt it in their backyards. Parents everywhere email you.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.booked"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 156,
+  "chain": "ch_signature_move",
+  "followupOnly": true
+ },
+ {
+  "id": "bd_dent",
+  "title": "The Dented Belt",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "The champion dropped the title belt off a party boat. A diver recovered it. It's dented, waterlogged, and now smells like a lake.",
+    "speaker": "{subject.manager}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Make a new belt ({$fee})",
+    "effects": [
+     "spend('belts', vars.fee)",
+     "follow('bd_auction', 6)"
+    ],
+    "result": "A brand new belt. The old one is sitting in a bucket.",
+    "default": true
+   },
+   {
+    "label": "The champ keeps the lake belt",
+    "effects": [
+     "fans += 2",
+     "subject.morale -= 2"
+    ],
+    "result": "'Lake Belt' merch. Of course.",
+    "bot": 2
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.champ"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_belt_damage",
+  "vars": {
+   "fee": "rand(10, 25) * 1000 * scale"
+  }
+ },
+ {
+  "id": "bd_auction",
+  "title": "Lake Belt Auction",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "DENTED 'LAKE BELT' AUCTIONED FOR CHARITY; WINNING BIDDER IS A FISH RESTAURANT"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Attend the unveiling",
+    "effects": [
+     "media += 2",
+     "fans += 1"
+    ],
+    "result": "It hangs above the fish tank. Diners love it. The fish seem indifferent.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.champ"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_belt_damage",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(10, 25) * 1000 * scale"
+  }
+ },
+ {
+  "id": "ts_split",
+  "title": "The Coach Split",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "{subject.last} SPLITS WITH LONGTIME COACH {subject.coach}; COACH CLAIMS FIGHTER 'STOPPED LISTENING IN 2019'"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Help {him} find an elite camp ({$fee})",
+    "effects": [
+     "spend('camp', vars.fee)",
+     "subject.skills.fightIQ += 2",
+     "follow('ts_new', 6)"
+    ],
+    "result": "An elite camp. With a waiting list. You pull strings.",
+    "default": true
+   },
+   {
+    "label": "Stay out of it",
+    "effects": [
+     "subject.morale -= 3",
+     "follow('ts_new', 6)"
+    ],
+    "result": "{He} trains alone in a garage with a tablet and a dream."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 156,
+  "chain": "ch_trainer_split",
+  "vars": {
+   "fee": "rand(10, 30) * 1000 * scale"
+  }
+ },
+ {
+  "id": "ts_new",
+  "title": "New Camp, New Me",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "{subject.first} posts from the new camp: new stance, new nutrition, new haircut, new catchphrase. {He} looks great. The old coach comments 'we'll see' under every post."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Book a statement fight",
+    "effects": [
+     "subject.hype += 8",
+     "fans += 1"
+    ],
+    "result": "If it works, the old coach eats his words. If not, he'll post them.",
+    "bot": 2,
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 156,
+  "chain": "ch_trainer_split",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(10, 30) * 1000 * scale"
+  }
+ },
+ {
+  "id": "fd_truck",
+  "title": "The Food Truck",
+  "category": "weird",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "{subject.first} has opened a food truck called '{subject.nick} Bites' selling 'fighter food': chicken, rice, and a {pop_food} knockoff burger. The line is around the block."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Bring the truck to fight night",
+    "effects": [
+     "fans += 2",
+     "follow('fd_poison', 4)"
+    ],
+    "result": "Truck parked outside the arena. Smells incredible.",
+    "bot": 2
+   },
+   {
+    "label": "Wish {him} luck",
+    "effects": [
+     "subject.morale += 2"
+    ],
+    "result": "{He} sends you a free burger. It's genuinely great.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_food_truck"
+ },
+ {
+  "id": "fd_poison",
+  "title": "Food Truck Incident",
+  "category": "weird",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "FIGHT NIGHT FOOD TRUCK UNDER INVESTIGATION AFTER 40 FANS REPORT 'STOMACH TROUBLE'; FIGHTER-OWNER BLAMES 'THE MAYO SUPPLIER'"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay the fans' medical bills",
+    "effects": [
+     "spend('misc', 15000 * scale)",
+     "media += 1",
+     "fans += 1"
+    ],
+    "result": "Expensive mayo.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Distance yourself",
+    "effects": [
+     "subject.loyalty -= 6",
+     "media -= 1"
+    ],
+    "result": "'We have no relationship with the truck.' Your logo is on the truck."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_food_truck",
+  "followupOnly": true
+ },
+ {
+  "id": "hb_bet",
+  "title": "The Haircut Bet",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "{subject.first} and {other.first} made a bet: the loser of their fight shaves their head on live TV. Both have exceptional hair. The hair has its own fan accounts."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Promote the bet",
+    "effects": [
+     "rivalry(subject, other)",
+     "fans += 2",
+     "follow('hb_shave', 4)"
+    ],
+    "result": "'HAIR VS HAIR' posters go up everywhere.",
+    "bot": 2,
+    "default": true
+   },
+   {
+    "label": "Ban the bet",
+    "effects": [
+     "subject.morale -= 2",
+     "other.morale -= 2"
+    ],
+    "result": "They do it anyway, privately. Neither shows up to the press conference."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.booked"
+   },
+   "other": {
+    "type": "fighter",
+    "where": "f.ours && f.id != subject.id && f.division == subject.division"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_haircut_bet"
+ },
+ {
+  "id": "hb_shave",
+  "title": "The Shave",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "The loser sits on a stool in the center of the cage while the winner shaves them with clippers. The crowd sings. The loser cries a single tear. The hair is auctioned online for $14,000."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Donate the money",
+    "effects": [
+     "media += 2",
+     "fans += 2"
+    ],
+    "result": "The hair funds a youth gym. Wholesome. Bald, but wholesome.",
+    "ethics": 1,
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.booked"
+   },
+   "other": {
+    "type": "fighter",
+    "where": "f.ours && f.id != subject.id && f.division == subject.division"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_haircut_bet",
+  "followupOnly": true
+ },
+ {
+  "id": "kf_letter",
+  "title": "Letter From a Kid",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "Dear {subject.first}, I am 9 and you are my favorite fighter. I watch every fight with my grandpa. He says you hit like a truck. I got bullied at school and I did your move. I got suspended. Worth it. Love, Danny.",
+    "title": "FAN MAIL"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Arrange for {subject.first} to visit Danny's school",
+    "effects": [
+     "media += 3",
+     "subject.morale += 6",
+     "follow('kf_visit', 3)"
+    ],
+    "result": "{He} agrees immediately. {He} also asks about the suspension.",
+    "ethics": 2,
+    "default": true
+   },
+   {
+    "label": "Send a signed photo",
+    "effects": [
+     "subject.morale += 2"
+    ],
+    "result": "Danny frames it. Grandpa frames the envelope."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && !f.traits.has('Hothead')"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_kid_fan"
+ },
+ {
+  "id": "kf_visit",
+  "title": "School Visit",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "{subject.last} VISITS LOCAL SCHOOL, GIVES ANTI-BULLYING TALK; BULLY REPORTEDLY 'SEEN CRYING NEAR THE MONKEY BARS'"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Make it a program",
+    "effects": [
+     "media += 3",
+     "fans += 2",
+     "spend('community', 10000 * scale)"
+    ],
+    "result": "The 'Fighters in Schools' program launches. Every fighter wants in. Even the scary ones.",
+    "ethics": 2,
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && !f.traits.has('Hothead')"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_kid_fan",
+  "followupOnly": true
+ },
+ {
+  "id": "wsc_broken",
+  "title": "The Rigged Scale?",
+  "category": "commission",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "A viral video claims the official weigh-in scale reads 2 pounds light. The video is shot vertically, at night, by a man named Craig. It has 5 million views."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Have the scale certified ({$fee})",
+    "effects": [
+     "spend('commission', vars.fee)",
+     "commission += 2",
+     "follow('wsc_result', 2)"
+    ],
+    "result": "An inspector with a very small hammer certifies the scale.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Ignore Craig",
+    "effects": [
+     "commission -= 1"
+    ],
+    "result": "Craig makes four more videos. One is in Spanish."
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_weight_scale",
+  "vars": {
+   "fee": "rand(1, 4) * 1000 * scale"
+  }
+ },
+ {
+  "id": "wsc_result",
+  "title": "Scale Results",
+  "category": "commission",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "CERTIFICATION: The official weigh-in scale is accurate to within 0.1 lb. Note: the inspector found a sandwich behind the scale. It has been removed.",
+    "title": "COMMISSION CERTIFICATE"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Post the certificate",
+    "effects": [
+     "media += 2",
+     "commission += 1"
+    ],
+    "result": "Craig posts that the certificate is 'exactly what they'd want you to think'.",
+    "default": true
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_weight_scale",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(1, 4) * 1000 * scale"
+  }
+ },
+ {
+  "id": "rg_strike",
+  "title": "Ring Card Strike",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "The ring card team is threatening to strike: they've been paid in 'exposure' and leftover hot dogs for a year. They have a union rep. He's very calm. That's scary.",
+    "speaker": "Ring card union rep"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay them properly ({$fee})",
+    "effects": [
+     "spend('staff', vars.fee)",
+     "media += 2"
+    ],
+    "result": "They show up with new outfits and, for the first time, smiles.",
+    "ethics": 2,
+    "default": true
+   },
+   {
+    "label": "Replace them with Juiced Butler",
+    "effects": [
+     "fans += 1",
+     "follow('rg_butler', 3)"
+    ],
+    "result": "Juiced Butler agrees immediately.",
+    "bot": 1
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_ring_girl",
+  "vars": {
+   "fee": "rand(5, 15) * 1000 * scale"
+  }
+ },
+ {
+  "id": "rg_butler",
+  "title": "Juiced Butler Holds the Card",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "Juiced Butler walks the round card in a tank top, flexing between steps. The card snaps in half from the force of his grip. Round three is announced verbally. With a 360 spin."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Bring back the ring card team (with raises)",
+    "effects": [
+     "spend('staff', vars.fee)",
+     "fans += 2"
+    ],
+    "result": "Everyone wins. Butler keeps the snapped card in a frame.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Keep Butler on cards",
+    "effects": [
+     "fans += 2",
+     "media -= 1"
+    ],
+    "result": "Round cards are now a contact sport.",
+    "bot": 2
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_ring_girl",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(5, 15) * 1000 * scale"
+  }
+ },
+ {
+  "id": "alt_camp",
+  "title": "Altitude Camp",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "{subject.first} wants to train at altitude in the mountains of {subject.country}. {His} coach says it builds cardio. {His} accountant says it builds debt."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Fund it ({$fee})",
+    "effects": [
+     "spend('camp', vars.fee)",
+     "subject.skills.cardio += 3",
+     "follow('alt_back', 6)"
+    ],
+    "result": "{He} sends photos of mountains and llamas.",
+    "default": true
+   },
+   {
+    "label": "Suggest a treadmill and a mask",
+    "effects": [
+     "subject.morale -= 3"
+    ],
+    "result": "{He} trains in a hypoxic mask at the mall. Mall security has questions."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_altitude",
+  "vars": {
+   "fee": "rand(8, 20) * 1000 * scale"
+  }
+ },
+ {
+  "id": "alt_back",
+  "title": "Back From the Mountain",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "{subject.first} is back from altitude camp, lighter, leaner, tanned, and accompanied by a llama named Gary. Gary is now part of the team. Gary has a credential."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Approve Gary's credential",
+    "effects": [
+     "fans += 2",
+     "subject.morale += 6"
+    ],
+    "result": "Gary walks out with {him} on fight night. Gary has more fans than some of your champions.",
+    "bot": 2,
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_altitude",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(8, 20) * 1000 * scale"
+  }
+ },
+ {
+  "id": "mm_debate",
+  "title": "MMA Math",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "Fans on forums have used 'MMA math' to prove that a flyweight on your roster would beat {pop_athlete}, a bear, and the concept of time. The thread has 40,000 replies."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Post the thread on the official account",
+    "effects": [
+     "fans += 2",
+     "follow('mm_reply', 2)"
+    ],
+    "result": "The internet engages. So does {pop_athlete}.",
+    "bot": 2,
+    "default": true
+   },
+   {
+    "label": "Ignore",
+    "effects": [],
+    "result": "The thread grows. It becomes sentient."
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_mma_math"
+ },
+ {
+  "id": "mm_reply",
+  "title": "The Athlete Responds",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "{pop_athlete} has responded: 'I'd beat your flyweight with one hand.' Your flyweight replied: 'Bring the hand.' This is going nowhere and getting enormous engagement."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Offer an exhibition (grappling only)",
+    "effects": [
+     "fans += 3",
+     "network += 2"
+    ],
+    "result": "The athlete's agent says no. The athlete says maybe. The agent says no louder.",
+    "bot": 2,
+    "default": true
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_mma_math",
+  "followupOnly": true
+ },
+ {
+  "id": "gf_fire",
+  "title": "The Gym Fire",
+  "category": "family",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "{subject.gym} burned down overnight. No one was hurt, but the mats, the bags and the trophy wall are gone. {subject.first} has a fight in five weeks and nowhere to train.",
+    "speaker": "{subject.coach}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay for a temporary gym ({$fee})",
+    "effects": [
+     "spend('camp', vars.fee)",
+     "subject.loyalty += 10",
+     "follow('gf_rebuild', 8)"
+    ],
+    "result": "A warehouse with mats. It's not glamorous. It's a gym.",
+    "ethics": 2,
+    "default": true
+   },
+   {
+    "label": "Start a fundraiser",
+    "effects": [
+     "fans += 2",
+     "media += 1",
+     "follow('gf_rebuild', 8)"
+    ],
+    "result": "Fans raise twice what was needed. The internet can be good sometimes.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_gym_fire",
+  "vars": {
+   "fee": "rand(15, 40) * 1000 * scale"
+  }
+ },
+ {
+  "id": "gf_rebuild",
+  "title": "The Rebuild",
+  "category": "family",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "{subject.gym} has reopened, bigger, with a wall dedicated to the people who helped. Your name is on it. Spelled correctly, even."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Attend the reopening",
+    "effects": [
+     "media += 2",
+     "fighters += 2"
+    ],
+    "result": "You cut the ribbon. {subject.first} cries. The coach hugs you for a long time.",
+    "ethics": 1,
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_gym_fire",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(15, 40) * 1000 * scale"
+  }
+ },
+ {
+  "id": "lg_trans",
+  "title": "Lost in Translation",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "At the press conference, {subject.first}'s translator turned a polite answer into 'I will eat your children and then your children's children'. The translator has been fired. The quote is everywhere."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Clarify immediately",
+    "effects": [
+     "media += 1",
+     "subject.hype -= 2"
+    ],
+    "result": "The clarification gets 1% of the views.",
+    "default": true
+   },
+   {
+    "label": "Never clarify",
+    "effects": [
+     "subject.hype += 10",
+     "fans += 2",
+     "follow('lg_legend', 4)"
+    ],
+    "result": "{subject.first} is now the scariest person in the sport. {He} is a gentle soul who knits.",
+    "bot": 2
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.country != 'USA'"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_language"
+ },
+ {
+  "id": "lg_legend",
+  "title": "The Legend Grows",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "Fans now believe {subject.first} is a menace. {He} keeps posting knitting videos. The internet believes the knitting is 'psychological warfare'."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Sell knitting kits",
+    "effects": [
+     "earn('merch', 30000 * scale)",
+     "fans += 2"
+    ],
+    "result": "They sell out. Opponents report feeling 'uneasy'.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.country != 'USA'"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_language",
+  "followupOnly": true
+ },
+ {
+  "id": "ct_test",
+  "title": "The Cardio Test",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "{subject.first} posted a 'cardio test' video running up a hill. {He} made it a third of the way, sat down, and ate a banana. {His} opponent has reposted it 400 times."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Hire a strength & conditioning coach ({$fee})",
+    "effects": [
+     "spend('camp', vars.fee)",
+     "subject.skills.cardio += 3",
+     "follow('ct_hill', 6)"
+    ],
+    "result": "The S&C coach brings a whistle and no mercy.",
+    "default": true
+   },
+   {
+    "label": "Tell {him} to stop posting",
+    "effects": [
+     "subject.morale -= 2"
+    ],
+    "result": "{He} posts about not posting."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.booked"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 156,
+  "chain": "ch_cardio_test",
+  "vars": {
+   "fee": "rand(4, 10) * 1000 * scale"
+  }
+ },
+ {
+  "id": "ct_hill",
+  "title": "The Hill, Revisited",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "{subject.first} returns to the hill. Runs it four times. Then eats the banana at the top, staring into the camera. The opponent stops reposting."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Use it as the fight promo",
+    "effects": [
+     "subject.hype += 8",
+     "fans += 2"
+    ],
+    "result": "The banana becomes a symbol.",
+    "bot": 2,
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.booked"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 156,
+  "chain": "ch_cardio_test",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(4, 10) * 1000 * scale"
+  }
+ },
+ {
+  "id": "jbr_rumor",
+  "title": "Judge Rumors",
+  "category": "commission",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "ANONYMOUS FORUM POST CLAIMS A {promotion} JUDGE 'TAKES STEAK DINNERS FOR SCORECARDS'; JUDGE DENIES IT, MID-STEAK"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Ask the commission to investigate",
+    "effects": [
+     "commission += 2",
+     "spend('legal', 10000 * scale)",
+     "follow('jbr_result', 4)"
+    ],
+    "result": "An investigation. The judge is put on leave and orders room service.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Dismiss it as trolling",
+    "effects": [
+     "commission -= 2",
+     "media -= 1"
+    ],
+    "result": "The forum post gets a sequel with photos of steaks."
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_judge_bribe_rumor"
+ },
+ {
+  "id": "jbr_result",
+  "title": "Investigation Result",
+  "category": "commission",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "FINDINGS: No evidence of scorecard manipulation. Substantial evidence of steak. The judge is reminded that gifts over $50 must be declared. He has declared 41 steaks.",
+    "title": "COMMISSION FINDINGS"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Publish the findings",
+    "effects": [
+     "commission += 2",
+     "media += 2"
+    ],
+    "result": "The steak memes outlive the controversy.",
+    "default": true
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_judge_bribe_rumor",
+  "followupOnly": true
+ },
+ {
+  "id": "mv_offer",
+  "title": "The Movie Role",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A studio wants {subject.first} for a role in {pop_movie} 2. Six weeks of shooting. It's a 'speaking role', meaning one line: 'Not today.'",
+    "speaker": "Hollywood agent"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Let {him} do it",
+    "effects": [
+     "subject.followers *= 1.4",
+     "subject.morale += 6",
+     "follow('mv_premiere', 10)"
+    ],
+    "result": "{He} rehearses 'Not today' 4,000 times.",
+    "bot": 2
+   },
+   {
+    "label": "Keep {him} in camp",
+    "effects": [
+     "subject.morale -= 6"
+    ],
+    "result": "{He} watches the trailer without {him} in it. Sad.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.star > 50"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_movie_role"
+ },
+ {
+  "id": "mv_premiere",
+  "title": "The Premiere",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "{subject.last} STEALS THE SHOW IN FIVE-SECOND MOVIE CAMEO; CRITICS CALL DELIVERY OF 'NOT TODAY' 'THE ONLY GOOD PART'"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Bring the movie cast to fight night",
+    "effects": [
+     "fans += 3",
+     "network += 2"
+    ],
+    "result": "A movie star cageside. The jumbotron can't stop finding them.",
+    "bot": 2,
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.star > 50"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_movie_role",
+  "followupOnly": true
+ },
+ {
+  "id": "pet_dog",
+  "title": "Fight Dog",
+  "category": "weird",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "{subject.first} adopted a rescue dog named Rear Naked Choke ('Choke' for short). Choke attends training, sits on the apron and growls at the sparring partners. Choke has 200k followers."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Give Choke a credential",
+    "effects": [
+     "fans += 2",
+     "follow('pet_night', 4)"
+    ],
+    "result": "Choke's credential photo is the best ID photo in the building.",
+    "bot": 1,
+    "default": true
+   },
+   {
+    "label": "No dogs in the arena",
+    "effects": [
+     "subject.morale -= 3"
+    ],
+    "result": "Choke watches from the car. Judging you."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_pet"
+ },
+ {
+  "id": "pet_night",
+  "title": "Choke at Fight Night",
+  "category": "weird",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "Choke the dog watches the fight from the corner in a tiny {promotion} hoodie. When {subject.first} wins, Choke runs into the cage before the ref can stop him. The image is the most-shared photo of the year."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Make Choke an official mascot",
+    "effects": [
+     "fans += 3",
+     "media += 2"
+    ],
+    "result": "Choke gets an endorsement deal with a dog food company. More than some prelim fighters.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_pet",
+  "followupOnly": true
+ },
+ {
+  "id": "ht_event",
+  "title": "Hometown Hero",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "{subject.first} wants to fight in {his} hometown of {subject.hometown}. The local arena seats 6,000. The mayor has offered a key to the city and a parade 'with a float shaped like a fist'."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Book a hometown event",
+    "effects": [
+     "fans += 2",
+     "subject.morale += 10",
+     "follow('ht_parade', 6)"
+    ],
+    "result": "The whole town is buying tickets. Some are buying two.",
+    "bot": 2,
+    "default": true
+   },
+   {
+    "label": "Not this year",
+    "effects": [
+     "subject.morale -= 4"
+    ],
+    "result": "{His} mom calls you personally. It's very uncomfortable."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.star > 30"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_hometown"
+ },
+ {
+  "id": "ht_parade",
+  "title": "The Parade",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "{subject.hometown} THROWS PARADE FOR HOMETOWN FIGHTER; FIST-SHAPED FLOAT COLLIDES WITH LOCAL BAKERY, NO INJURIES, MANY CROISSANTS"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay for the bakery",
+    "effects": [
+     "spend('misc', 8000 * scale)",
+     "media += 2"
+    ],
+    "result": "The bakery names a pastry after {him}. It's a fist-shaped croissant.",
+    "ethics": 1,
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.star > 30"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_hometown",
+  "followupOnly": true
+ },
+ {
+  "id": "ai_pitch",
+  "title": "The Robot Judge",
+  "category": "commission",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A tech startup wants to pilot an AI judge at your events. It analyzes every strike and outputs a score in real time. It's called JudgeBot. It's 'mostly accurate'.",
+    "speaker": "Startup founder"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pilot it alongside the human judges",
+    "effects": [
+     "network += 2",
+     "follow('ai_result', 6)"
+    ],
+    "result": "JudgeBot sits cageside in a small plastic box. It beeps when someone gets hit.",
+    "bot": 2
+   },
+   {
+    "label": "No robots",
+    "effects": [
+     "commission += 1"
+    ],
+    "result": "The judges send you a thank-you card. And a steak.",
+    "default": true
+   }
+  ],
+  "conditions": "act >= 3",
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_ai_judge"
+ },
+ {
+  "id": "ai_result",
+  "title": "JudgeBot Results",
+  "category": "commission",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "JUDGEBOT DISAGREES WITH HUMAN JUDGES IN 4 OF 9 FIGHTS; FANS SIDE WITH THE ROBOT IN ALL FOUR; ONE JUDGE THREATENS TO 'UNPLUG IT PERSONALLY'"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Push the commission to adopt it",
+    "effects": [
+     "fans += 3",
+     "commission -= 3"
+    ],
+    "result": "The commission forms a committee. The committee forms a sub-committee. JudgeBot waits.",
+    "bot": 2
+   },
+   {
+    "label": "Retire JudgeBot",
+    "effects": [
+     "commission += 2"
+    ],
+    "result": "JudgeBot is unplugged. It beeps one last time. Lon Anik says 'rest in peace'.",
+    "default": true
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_ai_judge",
+  "followupOnly": true
+ },
+ {
+  "id": "spb_viral",
+  "title": "The Spit Bucket",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "A cornerman accidentally knocked over the spit bucket onto a front-row celebrity, {pop_celeb}. The video has 30 million views. The celebrity's publicist is drafting statements."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Send a heartfelt apology and new outfit",
+    "effects": [
+     "spend('misc', 10000 * scale)",
+     "media += 1"
+    ],
+    "result": "The celebrity posts the apology. And the new outfit. And a picture with the cornerman.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Sell 'I got spit-bucketed' shirts",
+    "effects": [
+     "earn('merch', 20000 * scale)",
+     "fans += 2",
+     "media -= 1",
+     "follow('spb_feud', 3)"
+    ],
+    "result": "Shirts sell out. The celebrity's publicist doesn't laugh.",
+    "bot": 2
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_spit_bucket"
+ },
+ {
+  "id": "spb_feud",
+  "title": "Celebrity Feud",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "{pop_celeb} has called your promotion 'disgusting' on a talk show. Then said 'the fights were sick though'. Both clips are trending."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Invite them back, VIP",
+    "effects": [
+     "fans += 2",
+     "media += 2"
+    ],
+    "result": "They come back. They sit in row three this time.",
+    "default": true
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_spit_bucket",
+  "followupOnly": true
+ },
+ {
+  "id": "ot_crunch",
+  "title": "Staff Burnout",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "memo",
+    "text": "Your staff worked 90-hour weeks during fight month. The matchmaker fell asleep in a meeting. The social media manager has started tweeting in her sleep.",
+    "speaker": "The Board",
+    "title": "MEMO: HR"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Give everyone a week off and bonuses ({$fee})",
+    "effects": [
+     "spend('staff', vars.fee)",
+     "fighters += 1",
+     "follow('ot_back', 2)"
+    ],
+    "result": "The office is empty. Peaceful. A plant dies.",
+    "ethics": 2,
+    "default": true
+   },
+   {
+    "label": "Pizza party",
+    "effects": [
+     "spend('staff', 500)",
+     "chaos += 1"
+    ],
+    "result": "The pizza party is noted, by HR, as 'not a solution'.",
+    "bot": 1
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_overtime",
+  "vars": {
+   "fee": "rand(15, 40) * 1000 * scale"
+  }
+ },
+ {
+  "id": "ot_back",
+  "title": "Recharged",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "Your staff are back, rested and terrifyingly productive. The matchmaker booked a perfect card in an hour. The social media manager tweeted something so good the rival promotion followed you."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Make it policy",
+    "effects": [
+     "patience -= 1",
+     "media += 1",
+     "fighters += 1"
+    ],
+    "result": "Mandatory rest after fight month. The Board frowns. The work gets better.",
+    "ethics": 1,
+    "default": true
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_overtime",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(15, 40) * 1000 * scale"
+  }
+ },
+ {
+  "id": "al_lie",
+  "title": "How Old Are You Really?",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "A fan found {subject.first}'s high school yearbook. It's from a year that would make {him} {subject.age} plus seven. {He} claims it's 'a different person with the same name and face'."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Investigate",
+    "effects": [
+     "follow('al_truth', 2)",
+     "media += 1"
+    ],
+    "result": "You request {his} birth certificate. It arrives laminated, which is suspicious.",
+    "default": true
+   },
+   {
+    "label": "Laugh it off",
+    "effects": [
+     "fans += 2",
+     "subject.hype += 4"
+    ],
+    "result": "'AGELESS' becomes {his} nickname.",
+    "bot": 2
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.age >= 32"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_age_lie"
+ },
+ {
+  "id": "al_truth",
+  "title": "The Real Age",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "IT'S TRUE: {subject.last} IS SEVEN YEARS OLDER THAN CLAIMED; FIGHTER RESPONDS 'AGE IS A STATE OF MIND' WHILE ICING BOTH KNEES"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Celebrate it",
+    "effects": [
+     "fans += 2",
+     "subject.hype += 6"
+    ],
+    "result": "The oldest active fighter in the division gets a cake at the weigh-in.",
+    "default": true
+   },
+   {
+    "label": "Fine {him} for false info",
+    "effects": [
+     "commission += 2",
+     "subject.morale -= 6"
+    ],
+    "result": "{He} pays the fine and says {he}'s 'too old for this'."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.age >= 32"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_age_lie",
+  "followupOnly": true
+ },
+ {
+  "id": "mf_knock",
+  "title": "Knockoff Merch",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "Knockoff {promotion} merch is everywhere: shirts misspelling the name, hats with the logo upside down, and a 'championship belt' made of a cereal box."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Crack down legally ({$fee})",
+    "effects": [
+     "spend('legal', vars.fee)",
+     "follow('mf_result', 6)"
+    ],
+    "result": "Cease and desists fly. A man in Florida is very upset.",
+    "default": true
+   },
+   {
+    "label": "Partner with the best knockoff maker",
+    "effects": [
+     "earn('merch', 15000 * scale)",
+     "fans += 2"
+    ],
+    "result": "The cereal box belt is now official merch. Of course it is.",
+    "bot": 2
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_merch_fake",
+  "vars": {
+   "fee": "rand(10, 25) * 1000 * scale"
+  }
+ },
+ {
+  "id": "mf_result",
+  "title": "Merch Report",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "memo",
+    "text": "Official merch sales up 30% following the knockoff crackdown. The cereal box belt is now a collector's item. You own none.",
+    "speaker": "The Board",
+    "title": "MEMO: MERCH"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Release an official cereal box belt",
+    "effects": [
+     "earn('merch', 25000 * scale)",
+     "fans += 1"
+    ],
+    "result": "If you can't beat them.",
+    "bot": 1,
+    "default": true
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_merch_fake",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(10, 25) * 1000 * scale"
+  }
+ },
+ {
+  "id": "cr_hire",
+  "title": "The New Commentator",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A former fighter wants a spot on the commentary team. He's charismatic, funny, and has never once said 'he's hurt' without the fighter actually being hurt. Blow Hogan feels threatened.",
+    "speaker": "Broadcast producer"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Give him a trial run",
+    "effects": [
+     "network += 1",
+     "follow('cr_debut', 3)"
+    ],
+    "result": "Blow Hogan schedules a 3-hour podcast about 'loyalty'.",
+    "bot": 1,
+    "default": true
+   },
+   {
+    "label": "The booth is full",
+    "effects": [],
+    "result": "He signs with a rival. He's great there. Annoyingly."
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_comm_rookie"
+ },
+ {
+  "id": "cr_debut",
+  "title": "The Booth Debut",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "The new guy's debut: he calls a knockout three seconds before it happens. Blow Hogan says 'OH HE'S HURT' a full five seconds later. Lon Anik looks between them like a child of divorce."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Give him a permanent seat",
+    "effects": [
+     "network += 2",
+     "fans += 2"
+    ],
+    "result": "Four in the booth. Sandwich Cormier has to share his chicken.",
+    "bot": 2,
+    "default": true
+   },
+   {
+    "label": "Back to the original booth",
+    "effects": [
+     "fans += 1"
+    ],
+    "result": "Blow Hogan is visibly relieved. He brings everyone elk jerky."
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_comm_rookie",
+  "followupOnly": true
+ },
+ {
+  "id": "sa_sauna",
+  "title": "Sauna Suit Incident",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "{subject.first} was found asleep in a hotel sauna wearing two sauna suits, a trash bag, and a winter hat, the night before weigh-ins. Hotel staff thought {he} was 'a very large burrito'."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Send the doctor",
+    "effects": [
+     "spend('medical', 3000 * scale)",
+     "follow('sa_lesson', 2)"
+    ],
+    "result": "{He}'s okay. Dehydrated. Very dehydrated. Philosophically dehydrated.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "{He} made weight, right?",
+    "effects": [
+     "subject.damage += 2"
+    ],
+    "result": "{He} made weight. {He} also made a new friend: the hotel's defibrillator.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.booked"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 156,
+  "chain": "ch_sauna"
+ },
+ {
+  "id": "sa_lesson",
+  "title": "Weight Cut Seminar",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "You've mandated a weight-cut seminar. A sports scientist explains hydration with charts. Half the roster falls asleep. One asks if pickle juice counts as a vegetable."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Make it mandatory every camp",
+    "effects": [
+     "fighters -= 1",
+     "commission += 2",
+     "allFighters('morale', -1)"
+    ],
+    "result": "Fewer weight misses. More complaining.",
+    "ethics": 1,
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.booked"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 156,
+  "chain": "ch_sauna",
+  "followupOnly": true
+ },
+ {
+  "id": "cw_poach",
+  "title": "Cutman Poaching",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A rival promotion is trying to poach your best cutman, Sal 'The Seal' Ruiz, with a car and a lifetime supply of Vaseline.",
+    "speaker": "Sal 'The Seal' Ruiz"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Match it ({$fee})",
+    "effects": [
+     "spend('staff', vars.fee)",
+     "fighters += 1"
+    ],
+    "result": "Sal stays. Sal gets a car. Sal's car smells of Vaseline.",
+    "default": true
+   },
+   {
+    "label": "Let him go",
+    "effects": [
+     "fighters -= 2",
+     "follow('cw_cuts', 6)"
+    ],
+    "result": "Sal leaves with a tearful speech and all the good gauze.",
+    "bot": 1
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_cutman_war",
+  "vars": {
+   "fee": "rand(5, 15) * 1000 * scale"
+  }
+ },
+ {
+  "id": "cw_cuts",
+  "title": "Bleeding Out",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "{promotion} FIGHTERS LEAD THE SPORT IN DOCTOR STOPPAGES SINCE CUTMAN DEPARTURE; FANS CALL IT 'THE BLEEDING ERA'"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Hire two new cutmen",
+    "effects": [
+     "spend('staff', vars.fee * 1.5)",
+     "fighters += 2"
+    ],
+    "result": "Two cutmen. Neither is Sal. Both are fine.",
+    "default": true
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 208,
+  "chain": "ch_cutman_war",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(5, 15) * 1000 * scale"
+  }
+ },
+ {
+  "id": "wd_invite",
+  "title": "Wedding in the Cage",
+  "category": "family",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "{subject.first} wants to get married in the cage after {his} next fight. The ref would officiate. Juiced Butler would announce the couple. The rings would be delivered by the ring card girl, obviously.",
+    "speaker": "{subject.first} {subject.last}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Yes. A thousand times yes.",
+    "effects": [
+     "fans += 3",
+     "follow('wd_day', 4)"
+    ],
+    "result": "The wedding is booked. The network is thrilled. The commission is confused.",
+    "bot": 2,
+    "default": true
+   },
+   {
+    "label": "Maybe a normal venue?",
+    "effects": [
+     "subject.morale -= 3"
+    ],
+    "result": "{He} gets married at a {pop_food}. Still trending."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.booked && !f.married"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_wedding"
+ },
+ {
+  "id": "wd_day",
+  "title": "The Cage Wedding",
+  "category": "family",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "{subject.first} wins, then takes off {his} gloves and proposes... no, marries, right there. Juiced Butler: 'LADIES AND GENTLEMEN... THE NEWLYWEEEEEDS!' Blow Hogan cries. Sandwich Cormier catches the bouquet."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Give the couple a honeymoon on the promotion",
+    "effects": [
+     "spend('gifts', 15000 * scale)",
+     "subject.loyalty += 12",
+     "fans += 2"
+    ],
+    "result": "They honeymoon at Fight Island. Of course they do.",
+    "ethics": 1,
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.booked && !f.married"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_wedding",
+  "followupOnly": true
+ },
+ {
+  "id": "pd_pitch",
+  "title": "Mockumentary",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A comedy streamer wants to make a mockumentary about your promotion called '{promotion}: A Real Documentary'. It's 100% satire. You'd play yourself. Badly, they hope.",
+    "speaker": "Comedy producer"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Do it",
+    "effects": [
+     "fans += 2",
+     "media += 1",
+     "follow('pd_release', 10)"
+    ],
+    "result": "You have to do eleven takes of 'walking into a room angrily'.",
+    "bot": 2
+   },
+   {
+    "label": "Pass",
+    "effects": [],
+    "result": "They make it anyway with an actor who looks like you, but taller.",
+    "default": true
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_parody_doc"
+ },
+ {
+  "id": "pd_release",
+  "title": "The Mockumentary Drops",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "'{promotion}: A REAL DOCUMENTARY' TOPS STREAMING CHARTS; VIEWERS UNSURE WHICH PARTS ARE FAKE; {president} ALSO UNSURE"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Embrace it",
+    "effects": [
+     "fans += 3",
+     "network += 2"
+    ],
+    "result": "Season two is greenlit. You're now a sitcom character in real life.",
+    "default": true
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_parody_doc",
+  "followupOnly": true
+ },
+ {
+  "id": "fu_meeting",
+  "title": "The Secret Meeting",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "Your roster held a secret meeting at a bowling alley. They're talking about forming an association. They chose the bowling alley because 'nobody would ever look for fighters at a bowling alley'. You found out from the bowling alley."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Meet them halfway: health insurance for all",
+    "effects": [
+     "spend('benefits', 60000 * scale)",
+     "fighters += 6",
+     "follow('fu_result', 8)"
+    ],
+    "result": "They vote to 'pause' the association. And bowl a celebratory game.",
+    "ethics": 2,
+    "default": true
+   },
+   {
+    "label": "Threaten anyone involved",
+    "effects": [
+     "fighters -= 6",
+     "media -= 2",
+     "follow('fu_result', 8)"
+    ],
+    "result": "Threats are recorded. Of course they're recorded.",
+    "bot": 1,
+    "ethics": -2
+   }
+  ],
+  "conditions": "act >= 2",
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_fighter_union"
+ },
+ {
+  "id": "fu_result",
+  "title": "Bowling Alley Accord",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "FIGHTERS ANNOUNCE 'BOWLING ALLEY ACCORD' WITH {promotion}; TERMS INCLUDE INSURANCE, BETTER PAY, AND FREE SHOE RENTAL"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Sign it",
+    "effects": [
+     "fighters += 4",
+     "patience -= 3",
+     "media += 3"
+    ],
+    "result": "Historic. The Board hates it. The fighters frame the bowling scores.",
+    "ethics": 2,
+    "default": true
+   },
+   {
+    "label": "Stall",
+    "effects": [
+     "fighters -= 3"
+    ],
+    "result": "They keep bowling. They keep organizing."
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_fighter_union",
+  "followupOnly": true
+ },
+ {
+  "id": "ff_brawl",
+  "title": "Crowd Brawl",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "A brawl broke out in section 214 during the prelims. Two men in matching {pop_brand} jerseys threw hands for six minutes. Fans say the technique was 'honestly better than the prelims'."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Ban them for life",
+    "effects": [
+     "commission += 1",
+     "media += 1"
+    ],
+    "result": "Banned. They start a podcast about being banned.",
+    "default": true
+   },
+   {
+    "label": "Offer them an amateur bout",
+    "effects": [
+     "fans += 2",
+     "commission -= 2",
+     "follow('ff_bout', 4)"
+    ],
+    "result": "Amateur bout booked. The internet is ecstatic.",
+    "bot": 2
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_fan_fight"
+ },
+ {
+  "id": "ff_bout",
+  "title": "Section 214 Rematch",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "The two section-214 brawlers fight on the prelims, in matching jerseys. It's a draw. They hug. They're best friends now. The crowd gives them the loudest ovation of the night."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Make 'Section 214' a recurring feature",
+    "effects": [
+     "fans += 2",
+     "commission -= 1"
+    ],
+    "result": "Every event, one fan fight. Sanctioned. Supervised. Absolutely deranged.",
+    "bot": 2
+   },
+   {
+    "label": "One and done",
+    "effects": [
+     "commission += 1"
+    ],
+    "result": "Good memories. No precedents.",
+    "default": true
+   }
+  ],
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_fan_fight",
+  "followupOnly": true
+ },
+ {
+  "id": "st_offer",
+  "title": "Sponsor Tattoo",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "{pop_food} will pay {subject.first} {$fee} to get their logo tattooed on {his} back. Permanently. 'It's a forever partnership,' they say. Their last forever partnership lasted eight months.",
+    "speaker": "{subject.manager}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Let {him} decide",
+    "effects": [
+     "subject.morale += 4",
+     "follow('st_regret', 26)"
+    ],
+    "result": "{He} says yes before you finish the sentence.",
+    "bot": 1
+   },
+   {
+    "label": "Advise against it",
+    "effects": [
+     "subject.morale -= 2"
+    ],
+    "result": "{He} gets a temporary tattoo instead. Very sensible. Very disappointing.",
+    "ethics": 1,
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.moneyIQ < 50"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_sponsor_tattoo",
+  "vars": {
+   "fee": "rand(10, 40) * 1000 * scale"
+  }
+ },
+ {
+  "id": "st_regret",
+  "title": "Sponsor Gone",
+  "category": "fighter",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "{pop_food} has dropped all athlete sponsorships. {subject.first} still has their logo on {his} back. {He} has started wearing a T-shirt in the cage. That's illegal."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay for a cover-up tattoo",
+    "effects": [
+     "spend('misc', 5000 * scale)",
+     "subject.loyalty += 6"
+    ],
+    "result": "The logo becomes a dragon. A dragon eating a burger. It works.",
+    "ethics": 1,
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.moneyIQ < 50"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 312,
+  "chain": "ch_sponsor_tattoo",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(10, 40) * 1000 * scale"
+  }
+ }
+]

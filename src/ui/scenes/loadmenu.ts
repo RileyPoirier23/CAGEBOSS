@@ -16,7 +16,7 @@ export function openLoad(g: Game): void {
     const label = slot === 'auto' ? 'AUTOSAVE' : 'SLOT ' + slot;
     b.addChild(text(label, 10, y + 3, { small: true, color: PAL.gold }));
     if (meta) {
-      b.addChild(text(`${meta.name}  •  ${meta.date}  •  Act ${meta.act}`, 10, y + 11, { color: PAL.bone }));
+      b.addChild(text(`${meta.name}  •  ${meta.date}  •  Act ${meta.act}`, 10, y + 11, { color: PAL.bone, width: 222, maxLines: 1 }));
       b.addChild(text(`${meta.mode.toUpperCase()} / ${meta.difficulty.toUpperCase()}  CASH ${money(meta.cash)}${meta.ending ? '  [ENDED]' : ''}`, 10, y + 23, { small: true, color: PAL.ash }));
       b.addChild(button('LOAD', 236, y + 4, 52, 12, () => {
         const st = loadFromSlot(slot);

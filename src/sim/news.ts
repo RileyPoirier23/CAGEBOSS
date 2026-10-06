@@ -3,6 +3,7 @@
  * become the Morning Paper (headline generator with slot filling + outlet
  * bias) plus a social-media feed sidebar.
  */
+import { expandPop } from './popculture';
 import type { GameState, NewsItem, Newspaper, SocialPost, Story } from '../core/types';
 import { content, type HeadlineDef, type OutletDef } from '../core/content';
 import { Rng } from '../core/rng';
@@ -14,7 +15,7 @@ export function addNews(s: GameState, item: Omit<NewsItem, 'week'> & { week?: nu
 }
 
 export function fillTemplate(text: string, vars: Record<string, string | number>): string {
-  return text.replace(/\{([a-zA-Z0-9_.]+)\}/g, (m, k) => (vars[k] !== undefined ? String(vars[k]) : m));
+  return expandPop(text.replace(/\{([a-zA-Z0-9_.]+)\}/g, (m, k) => (vars[k] !== undefined ? String(vars[k]) : m)));
 }
 
 function headlineFor(s: GameState, item: NewsItem, outlet: OutletDef, rng: Rng): { headline: string; body: string; id: string | null } {
@@ -40,7 +41,7 @@ function headlineFor(s: GameState, item: NewsItem, outlet: OutletDef, rng: Rng):
 
 function needVars(h: HeadlineDef): Record<string, true> {
   const out: Record<string, true> = {};
-  for (const m of (h.text + ' ' + (h.body ?? '')).matchAll(/\{([a-zA-Z0-9_.]+)\}/g)) out[m[1]] = true;
+  for (const m of (h.text + ' ' + (h.body ?? '')).matchAll(/\{([a-zA-Z0-9_.]+)\}/g)) if (!/^pop(_|$)/.test(m[1])) out[m[1]] = true;
   return out;
 }
 
@@ -73,9 +74,11 @@ export function buildPaper(s: GameState, rng: Rng): Newspaper {
     const h = headlineFor(s, it, outlet, rng);
     stories.push({ outlet: outlet.name, headline: h.headline, body: h.body || genericBody(s, it, rng) });
   }
-  if (!stories.length) {
-    const filler = content().templates.misc?.slowNews ?? ['SLOW NEWS WEEK: LOCAL MAN STILL BELIEVES HE COULD BEAT A PRO FIGHTER'];
-    stories.push({ outlet: content().outlets[0]?.name ?? 'The Wire', headline: fillTemplate(rng.pick(filler), { promotion: s.promotion.name }), body: '' });
+  const filler = content().templates.misc?.slowNews ?? ['SLOW NEWS WEEK: LOCAL MAN STILL BELIEVES HE COULD BEAT A PRO FIGHTER'];
+  // quiet weeks (and some busy ones) get a celebrity / pop-culture filler story
+  if (!stories.length || (stories.length < 4 && rng.chance(0.55))) {
+    const gossip = content().outlets.find((o) => o.type === 'tabloid') ?? content().outlets[0];
+    stories.push({ outlet: gossip?.name ?? 'The Wire', headline: fillTemplate(rng.pick(filler), { promotion: s.promotion.name }).toUpperCase(), body: '' });
   }
   const paper: Newspaper = {
     week: s.week,
@@ -105,10 +108,12 @@ export function buildFeed(s: GameState, items: NewsItem[], rng: Rng): SocialPost
     const list = bank[styleKey] ?? bank.generic ?? [];
     if (!list.length) break;
     const opp = rng.pick(fighters);
+    let text = fillTemplate(rng.pick(list), { opp: opp.last, promotion: s.promotion.name, president: s.president.name.split(' ').pop() ?? 'boss', nick: f.nick, city: f.hometown.split('|')[0] });
+    if (styleKey === 'all_caps_rants') text = text.toUpperCase();
     posts.push({
       handle: handleOf(f),
       name: fullName(f),
-      text: fillTemplate(rng.pick(list), { opp: opp.last, promotion: s.promotion.name, president: s.president.name.split(' ').pop() ?? 'boss', nick: f.nick, city: f.hometown }),
+      text,
       likes: Math.round(f.social.followers * rng.float(0.01, 0.08)),
       fighter: f.id,
     });

@@ -421,7 +421,7 @@ const genPress: Gen = (s, rng, _ft, bad) => {
   } else if (bad) {
     if (rng.chance(0.5)) {
       outletName = rng.pick(['MMA Truth Bombs Dot Biz', 'Real Fight Newz (Real)', 'Big Dave\'s Fight Blog', 'The Daily Grapple (Unaffiliated)']);
-      v.push({ rule: 'press_creds', a: 'doc.outlet', b: 'rule.outlets', text: 'That outlet is not recognised.' });
+      v.push({ rule: 'press_creds', a: 'doc.outlet', b: 'rule.outlets', text: 'That outlet is not recognized.' });
     } else {
       const other = rng.pick(reps.filter((r) => r.id !== rep.id));
       photo = other.id;
@@ -546,7 +546,7 @@ export function generateWeekDocs(s: GameState, rng: Rng): DeskDoc[] {
     const ft = (type === 'bout' || type === 'medical' || type === 'visa') && booked.length ? rng.pick(booked) : rng.pick(roster);
     if (out.some((d) => d.subject === ft.id && d.type === type)) continue;
     const g = GENERATORS[type];
-    const doc = g?.(s, rng, ft, rng.chance(type === 'drug' ? badRate * 0.3 : badRate));
+    const doc = g?.(s, rng, ft, rng.chance(type === 'drug' ? badRate * 0.15 : badRate));
     if (doc) out.push(doc);
   }
   // court notices for fighters on bail with fights booked

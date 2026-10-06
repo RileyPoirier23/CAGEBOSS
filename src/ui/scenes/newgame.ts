@@ -9,7 +9,7 @@ import { selector, stepper, checkbox, domInput, removeAllDomInputs, bigTitle } f
 import type { Difficulty, GameMode, SandboxOptions } from '../../core/types';
 import { createNewGame, DEFAULT_SANDBOX } from '../../sim/newgame';
 import { startWeek } from '../../sim/week';
-import { startGameFromState } from '../flow';
+import { routePhase } from '../flow';
 import { TitleScene } from './title';
 import { money } from '../../core/format';
 
@@ -114,18 +114,21 @@ export class NewGameScene extends Scene {
   }
 
   private start(): void {
-    const s = createNewGame({
-      seed: this.seed,
-      mode: this.mode,
-      difficulty: this.difficulty,
-      promotionName: this.promo.trim() || PROMO_NAMES[0],
-      presidentName: this.pres.trim() || 'Dane Whyte',
-      sandbox: this.mode === 'sandbox' ? this.sb : undefined,
-    });
-    startWeek(s);
     this.exit();
-    startGameFromState(this.g, s);
-    this.g.autosave();
+    this.g.loading('Building your promotion', () => {
+      const s = createNewGame({
+        seed: this.seed,
+        mode: this.mode,
+        difficulty: this.difficulty,
+        promotionName: this.promo.trim() || PROMO_NAMES[0],
+        presidentName: this.pres.trim() || 'Dane Whyte',
+        sandbox: this.mode === 'sandbox' ? this.sb : undefined,
+      });
+      startWeek(s);
+      this.g.state = s;
+      routePhase(this.g, true);
+      this.g.autosave();
+    }, 1.4);
   }
 
   exit(): void {

@@ -30,7 +30,7 @@
     "text": "Three missed whereabouts filings in 12 months counts as a failed test. Fighters at two strikes must be flagged (ESCALATE).",
     "params": { "maxStrikes": 2 } },
   { "id": "press_creds", "page": "Media", "title": "Press Credentials", "act": 2, "docTypes": ["press"], "announce": "PROMOTION TO 'REVIEW' MEDIA CREDENTIALS; REPORTERS NERVOUSLY CHECK LANYARDS",
-    "text": "Credentials must be issued by a recognised outlet and must not belong to a reporter on the banned list. Photo on credential must match the person in your window.",
+    "text": "Credentials must be issued by a recognized outlet and must not belong to a reporter on the banned list. Photo on credential must match the person in your window.",
     "params": {} },
   { "id": "court_dates", "page": "Legal", "title": "Court Date Conflicts", "act": 2, "docTypes": ["police", "bout"],
     "text": "A fighter cannot be booked on a card that falls on or after a scheduled court date in the same week. Fighters with no-travel orders cannot fight outside their home region.",

@@ -11,7 +11,7 @@ import {
   isAvailable, isBooked, fullName, addCareerLog, computeStarPower, overall, isOurs, marketPurse,
 } from './fighters';
 import { undisputed, interim, awardBelt, rankScore, computeRankings } from './rankings';
-import { earn, spend, scale } from './econ';
+import { earn, spend, scale, adjustMeter } from './econ';
 import { divisionName } from './divisions';
 import { addNews } from './news';
 
@@ -436,7 +436,7 @@ export function applyBout(s: GameState, ev: FightEvent, bout: Bout, rng: Rng): v
   // headline-worthy results
   if (r.robbery) {
     addNews(s, { tags: ['robbery', 'fight'], vars: { winner: fullName(s.fighters[r.winner ?? A.id]), loser: fullName(s.fighters[r.loser ?? B.id]), event: ev.name, judge: r.judges[0] }, weight: 7, tone: -0.4 });
-    s.meters.fans = clamp(s.meters.fans - 1, 0, 100);
+    adjustMeter(s, 'fans', -1);
   } else if (r.method === 'KO' && bout.position <= 2 && r.winner) {
     addNews(s, { tags: ['ko', 'fight'], vars: { winner: fullName(s.fighters[r.winner]), loser: fullName(s.fighters[r.loser!]), event: ev.name, detail: r.detail }, weight: 5, tone: 0.3 });
   } else if (r.method === 'DQ' || r.method === 'NC') {
@@ -541,9 +541,9 @@ export function finalizeEvent(s: GameState, ev: FightEvent, bonusIds: string[]):
   // fan reaction to the show
   const avgFotn = ev.card.filter((b) => b.result).reduce((t, b) => t + b.result!.fotn, 0) / Math.max(1, ev.card.filter((b) => b.result).length);
   const titles = ev.card.filter((b) => b.title && b.status === 'done').length;
-  s.meters.fans = clamp(s.meters.fans + (avgFotn - 30) / 10 + titles * 0.4 + (ev.number !== null ? 0.3 : 0), 0, 100);
-  s.meters.network = clamp(s.meters.network + (avgFotn - 32) / 20, 0, 100);
-  s.meters.fighters = clamp(s.meters.fighters + bonusIds.length * 0.4 - 0.3, 0, 100);
+  adjustMeter(s, 'fans', (avgFotn - 30) / 10 + titles * 0.4 + (ev.number !== null ? 0.3 : 0));
+  adjustMeter(s, 'network', (avgFotn - 32) / 20);
+  adjustMeter(s, 'fighters', bonusIds.length * 0.4 - 0.3);
   // drop bulky data from older events to keep saves small
   for (const e of s.events) {
     if (e === ev) continue;
@@ -571,12 +571,13 @@ export function finalizeEvent(s: GameState, ev: FightEvent, bonusIds: string[]):
 }
 
 /** Run every remaining bout and finalise (used by headless sim / skip). */
-export function runEventHeadless(s: GameState, ev: FightEvent, rng: Rng, bonusPicker?: (ev: FightEvent) => string[]): EventFinancials {
+export function runEventHeadless(s: GameState, ev: FightEvent, rng: Rng, bonusPicker?: (ev: FightEvent) => string[], onBout?: (b: Bout) => void): EventFinancials {
   autoFixCard(s, ev);
   const order = ev.card.filter((b) => b.status === 'scheduled').sort((a, b) => b.position - a.position);
   for (const b of order) {
     runBout(s, ev, b, rng, false);
     applyBout(s, ev, b, rng);
+    onBout?.(b);
   }
   return finalizeEvent(s, ev, bonusPicker ? bonusPicker(ev) : defaultBonuses(ev));
 }

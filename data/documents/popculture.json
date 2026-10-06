@@ -1,0 +1,2962 @@
+{
+ "movie": [
+  {
+   "real": "Rocky",
+   "parody": "Rocko"
+  },
+  {
+   "real": "Rocky IV",
+   "parody": "Rocko IV: The Cold War Gets Colder"
+  },
+  {
+   "real": "Creed",
+   "parody": "Greed"
+  },
+  {
+   "real": "Raging Bull",
+   "parody": "Raging Bill"
+  },
+  {
+   "real": "Fight Club",
+   "parody": "Fright Club"
+  },
+  {
+   "real": "Million Dollar Baby",
+   "parody": "Million Dollar Gravy"
+  },
+  {
+   "real": "Warrior",
+   "parody": "Worrier"
+  },
+  {
+   "real": "The Wrestler",
+   "parody": "The Rassler"
+  },
+  {
+   "real": "Bloodsport",
+   "parody": "Bloodspork"
+  },
+  {
+   "real": "Kickboxer",
+   "parody": "Kickboxer 7: Kick Harder"
+  },
+  {
+   "real": "Never Back Down",
+   "parody": "Never Back Down (Unless Asked Nicely)"
+  },
+  {
+   "real": "Cinderella Man",
+   "parody": "Cinderella Mansplainer"
+  },
+  {
+   "real": "The Fighter",
+   "parody": "The Lighter"
+  },
+  {
+   "real": "Ip Man",
+   "parody": "Ip Mansion"
+  },
+  {
+   "real": "Enter the Dragon",
+   "parody": "Enter the Wagon"
+  },
+  {
+   "real": "Karate Kid",
+   "parody": "Karate Kidney"
+  },
+  {
+   "real": "Cobra Kai",
+   "parody": "Cobra Pie"
+  },
+  {
+   "real": "Gladiator",
+   "parody": "Gladiater"
+  },
+  {
+   "real": "300",
+   "parody": "299 (One Called In Sick)"
+  },
+  {
+   "real": "Top Gun",
+   "parody": "Top Bun"
+  },
+  {
+   "real": "Top Gun: Maverick",
+   "parody": "Top Bun: Mayonnaise"
+  },
+  {
+   "real": "John Wick",
+   "parody": "John Wicked"
+  },
+  {
+   "real": "John Wick: Chapter 4",
+   "parody": "John Wicked: Chapter Forty"
+  },
+  {
+   "real": "The Matrix",
+   "parody": "The Mattress"
+  },
+  {
+   "real": "Fast & Furious",
+   "parody": "Fast & Curious"
+  },
+  {
+   "real": "Fast X",
+   "parody": "Fast Eleventeen"
+  },
+  {
+   "real": "Jurassic Park",
+   "parody": "Jurassic Parking Lot"
+  },
+  {
+   "real": "Jaws",
+   "parody": "Jowls"
+  },
+  {
+   "real": "Titanic",
+   "parody": "Titantic"
+  },
+  {
+   "real": "Avatar",
+   "parody": "Avatartar Sauce"
+  },
+  {
+   "real": "Avengers: Endgame",
+   "parody": "Avengers: Endgame Theory"
+  },
+  {
+   "real": "Iron Man",
+   "parody": "Iron Mandatory Overtime"
+  },
+  {
+   "real": "Captain America",
+   "parody": "Captain Amerigo"
+  },
+  {
+   "real": "Thor",
+   "parody": "Sore"
+  },
+  {
+   "real": "The Hulk",
+   "parody": "The Bulk"
+  },
+  {
+   "real": "Spider-Man",
+   "parody": "Spider-Manager"
+  },
+  {
+   "real": "Batman",
+   "parody": "Bathman"
+  },
+  {
+   "real": "The Dark Knight",
+   "parody": "The Dark Late Night"
+  },
+  {
+   "real": "Joker",
+   "parody": "Jokester"
+  },
+  {
+   "real": "Superman",
+   "parody": "Super-Mansplain"
+  },
+  {
+   "real": "Wonder Woman",
+   "parody": "Wander Woman"
+  },
+  {
+   "real": "Aquaman",
+   "parody": "Aquamandatory"
+  },
+  {
+   "real": "Deadpool",
+   "parody": "Deadpull"
+  },
+  {
+   "real": "Black Panther",
+   "parody": "Black Pantry"
+  },
+  {
+   "real": "Guardians of the Galaxy",
+   "parody": "Guardians of the Gas Station"
+  },
+  {
+   "real": "Star Wars",
+   "parody": "Star Bores"
+  },
+  {
+   "real": "The Empire Strikes Back",
+   "parody": "The Empire Strikes Back Taxes"
+  },
+  {
+   "real": "Lord of the Rings",
+   "parody": "Lord of the Onion Rings"
+  },
+  {
+   "real": "The Hobbit",
+   "parody": "The Habit"
+  },
+  {
+   "real": "Harry Potter",
+   "parody": "Harry Pothead"
+  },
+  {
+   "real": "Twilight",
+   "parody": "Twilate"
+  },
+  {
+   "real": "The Hunger Games",
+   "parody": "The Hunger Pains"
+  },
+  {
+   "real": "Barbie",
+   "parody": "Barbecue"
+  },
+  {
+   "real": "Oppenheimer",
+   "parody": "Oppenheimer's Cousin Dale"
+  },
+  {
+   "real": "Dune",
+   "parody": "Dunes Buggy"
+  },
+  {
+   "real": "Mad Max: Fury Road",
+   "parody": "Mad Max: Furry Road"
+  },
+  {
+   "real": "The Godfather",
+   "parody": "The Godfather-In-Law"
+  },
+  {
+   "real": "Scarface",
+   "parody": "Scarfface"
+  },
+  {
+   "real": "Goodfellas",
+   "parody": "Goodfellers"
+  },
+  {
+   "real": "The Wolf of Wall Street",
+   "parody": "The Woof of Wall Street"
+  },
+  {
+   "real": "Pulp Fiction",
+   "parody": "Pulp Friction"
+  },
+  {
+   "real": "Kill Bill",
+   "parody": "Kill Phil"
+  },
+  {
+   "real": "Inglourious Basterds",
+   "parody": "Inglorious Bastards Who Can't Spell"
+  },
+  {
+   "real": "Django Unchained",
+   "parody": "Django Unchainsawed"
+  },
+  {
+   "real": "Taxi Driver",
+   "parody": "Taxi Diver"
+  },
+  {
+   "real": "Home Alone",
+   "parody": "Home Aloan"
+  },
+  {
+   "real": "Die Hard",
+   "parody": "Die Medium"
+  },
+  {
+   "real": "Rambo",
+   "parody": "Rambow"
+  },
+  {
+   "real": "Terminator",
+   "parody": "Determinator"
+  },
+  {
+   "real": "Predator",
+   "parody": "Pre-Date-Or"
+  },
+  {
+   "real": "Commando",
+   "parody": "Commandough"
+  },
+  {
+   "real": "Rush Hour",
+   "parody": "Rush Hour Traffic"
+  },
+  {
+   "real": "Bad Boys",
+   "parody": "Bad Boyz II Men"
+  },
+  {
+   "real": "Men in Black",
+   "parody": "Men in Slacks"
+  },
+  {
+   "real": "Independence Day",
+   "parody": "Indecisive Day"
+  },
+  {
+   "real": "Shrek",
+   "parody": "Shrekt"
+  },
+  {
+   "real": "Toy Story",
+   "parody": "Toy Sorry"
+  },
+  {
+   "real": "Finding Nemo",
+   "parody": "Finding Emo"
+  },
+  {
+   "real": "The Lion King",
+   "parody": "The Lyin' King"
+  },
+  {
+   "real": "Frozen",
+   "parody": "Frozen Burrito"
+  },
+  {
+   "real": "Cars",
+   "parody": "Carbs"
+  },
+  {
+   "real": "Kung Fu Panda",
+   "parody": "Kung Fu Pandemic"
+  },
+  {
+   "real": "Space Jam",
+   "parody": "Space Ham"
+  },
+  {
+   "real": "Grown Ups",
+   "parody": "Groan Ups"
+  },
+  {
+   "real": "Step Brothers",
+   "parody": "Stepdad Brothers"
+  },
+  {
+   "real": "Anchorman",
+   "parody": "Anchorbro"
+  },
+  {
+   "real": "Talladega Nights",
+   "parody": "Taladega Nights: The Ballad of Ricky Boring"
+  },
+  {
+   "real": "Superbad",
+   "parody": "Supermid"
+  },
+  {
+   "real": "The Hangover",
+   "parody": "The Hungover"
+  },
+  {
+   "real": "Mean Girls",
+   "parody": "Mean Gyms"
+  },
+  {
+   "real": "Napoleon Dynamite",
+   "parody": "Napoleon Dynamight"
+  },
+  {
+   "real": "Dodgeball",
+   "parody": "Dodgebrawl"
+  },
+  {
+   "real": "Happy Gilmore",
+   "parody": "Happy Gill-More"
+  },
+  {
+   "real": "Forrest Gump",
+   "parody": "Forrest Lump"
+  },
+  {
+   "real": "Jackass",
+   "parody": "Jackassery"
+  },
+  {
+   "real": "Borat",
+   "parody": "Bore-At"
+  },
+  {
+   "real": "Saw",
+   "parody": "Seesaw"
+  },
+  {
+   "real": "The Conjuring",
+   "parody": "The Conjugating"
+  },
+  {
+   "real": "Get Out",
+   "parody": "Get Outta Here"
+  },
+  {
+   "real": "Scream",
+   "parody": "Scream Cheese"
+  },
+  {
+   "real": "Halloween",
+   "parody": "Hallow-wean"
+  },
+  {
+   "real": "It",
+   "parody": "It (Dad's Garage)"
+  },
+  {
+   "real": "Inception",
+   "parody": "Incepshun"
+  },
+  {
+   "real": "Interstellar",
+   "parody": "Interstellar Tax Return"
+  },
+  {
+   "real": "Gravity",
+   "parody": "Gravy-ty"
+  },
+  {
+   "real": "The Martian",
+   "parody": "The Martini"
+  },
+  {
+   "real": "Moneyball",
+   "parody": "Money Brawl"
+  },
+  {
+   "real": "Remember the Titans",
+   "parody": "Remember the Titanics"
+  },
+  {
+   "real": "The Blind Side",
+   "parody": "The Blind Sonnen"
+  },
+  {
+   "real": "Friday Night Lights",
+   "parody": "Friday Night Fights"
+  },
+  {
+   "real": "Happy Feet",
+   "parody": "Happy Defeat"
+  },
+  {
+   "real": "Ratatouille",
+   "parody": "Rat-a-Tool-ey"
+  },
+  {
+   "real": "Despicable Me",
+   "parody": "Despicable Meme"
+  },
+  {
+   "real": "Minions",
+   "parody": "Minimum Wage Minions"
+  },
+  {
+   "real": "Pirates of the Caribbean",
+   "parody": "Pirates of the Crab-Bean"
+  },
+  {
+   "real": "Mission: Impossible",
+   "parody": "Mission: Improbable"
+  },
+  {
+   "real": "Speed",
+   "parody": "Mild Speed"
+  },
+  {
+   "real": "Point Break",
+   "parody": "Pointless Break"
+  },
+  {
+   "real": "Road House",
+   "parody": "Road Mouse"
+  },
+  {
+   "real": "Ready Player One",
+   "parody": "Ready Prayer One"
+  },
+  {
+   "real": "The Social Network",
+   "parody": "The Social Notwork"
+  },
+  {
+   "real": "Wall-E",
+   "parody": "Wall-Eee"
+  },
+  {
+   "real": "Up",
+   "parody": "Down"
+  }
+ ],
+ "show": [
+  {
+   "real": "Breaking Bad",
+   "parody": "Breaking Bread"
+  },
+  {
+   "real": "Better Call Saul",
+   "parody": "Better Call Paul"
+  },
+  {
+   "real": "Game of Thrones",
+   "parody": "Game of Phones"
+  },
+  {
+   "real": "House of the Dragon",
+   "parody": "House of the Wagon"
+  },
+  {
+   "real": "The Sopranos",
+   "parody": "The Sopra-Nos"
+  },
+  {
+   "real": "The Office",
+   "parody": "The Orifice"
+  },
+  {
+   "real": "Parks and Recreation",
+   "parody": "Parks and Wreck-reation"
+  },
+  {
+   "real": "Friends",
+   "parody": "Fiends"
+  },
+  {
+   "real": "Seinfeld",
+   "parody": "Swinefeld"
+  },
+  {
+   "real": "The Simpsons",
+   "parody": "The Simpletons"
+  },
+  {
+   "real": "Family Guy",
+   "parody": "Family Gym Guy"
+  },
+  {
+   "real": "South Park",
+   "parody": "South Parkour"
+  },
+  {
+   "real": "Rick and Morty",
+   "parody": "Prick and Morty"
+  },
+  {
+   "real": "Stranger Things",
+   "parody": "Stranger Thongs"
+  },
+  {
+   "real": "The Walking Dead",
+   "parody": "The Walking Wed"
+  },
+  {
+   "real": "Squid Game",
+   "parody": "Squib Game"
+  },
+  {
+   "real": "Peaky Blinders",
+   "parody": "Peaky Blunders"
+  },
+  {
+   "real": "Succession",
+   "parody": "Suck-cession"
+  },
+  {
+   "real": "Ted Lasso",
+   "parody": "Ted Lasagna"
+  },
+  {
+   "real": "The Last of Us",
+   "parody": "The Last of Us Ate the Snacks"
+  },
+  {
+   "real": "The Bear",
+   "parody": "The Beer"
+  },
+  {
+   "real": "Yellowstone",
+   "parody": "Yelling-stone"
+  },
+  {
+   "real": "The Boys",
+   "parody": "The Bros"
+  },
+  {
+   "real": "The Mandalorian",
+   "parody": "The Mandolin-ian"
+  },
+  {
+   "real": "Wednesday",
+   "parody": "Wednesday Afternoon"
+  },
+  {
+   "real": "Euphoria",
+   "parody": "Euphoric Diarrhea"
+  },
+  {
+   "real": "Love Island",
+   "parody": "Glove Island"
+  },
+  {
+   "real": "The Bachelor",
+   "parody": "The Batch-of-Lore"
+  },
+  {
+   "real": "Survivor",
+   "parody": "Survivor: Bankruptcy Island"
+  },
+  {
+   "real": "Big Brother",
+   "parody": "Big Bother"
+  },
+  {
+   "real": "Keeping Up with the Kardashians",
+   "parody": "Keeping Up with the Card-Dashians"
+  },
+  {
+   "real": "The Real Housewives",
+   "parody": "The Real Housewifebeaters' Lawyers"
+  },
+  {
+   "real": "Jersey Shore",
+   "parody": "Jersey Snore"
+  },
+  {
+   "real": "Duck Dynasty",
+   "parody": "Duck Dynasty: Revenge of the Ducks"
+  },
+  {
+   "real": "Shark Tank",
+   "parody": "Shark Tankini"
+  },
+  {
+   "real": "Kitchen Nightmares",
+   "parody": "Kitchen Nightsweats"
+  },
+  {
+   "real": "Hell's Kitchen",
+   "parody": "Hell's Kitchen Sink"
+  },
+  {
+   "real": "Love Is Blind",
+   "parody": "Love Is Braille"
+  },
+  {
+   "real": "Too Hot to Handle",
+   "parody": "Too Hot to Handle Sauce"
+  },
+  {
+   "real": "Cops",
+   "parody": "Copz"
+  },
+  {
+   "real": "Jackass",
+   "parody": "Jack-asked"
+  },
+  {
+   "real": "Ridiculousness",
+   "parody": "Ridicu-mess"
+  },
+  {
+   "real": "SpongeBob SquarePants",
+   "parody": "SpongeBob SquatPants"
+  },
+  {
+   "real": "Pokemon",
+   "parody": "Pokeyman"
+  },
+  {
+   "real": "Dragon Ball Z",
+   "parody": "Dragon Brawl Z"
+  },
+  {
+   "real": "Naruto",
+   "parody": "Nah-ruto"
+  },
+  {
+   "real": "One Piece",
+   "parody": "One Pizza"
+  },
+  {
+   "real": "Attack on Titan",
+   "parody": "Attack on Titan's Hamstrings"
+  },
+  {
+   "real": "Jeopardy!",
+   "parody": "Jeopardy-ish!"
+  },
+  {
+   "real": "Wheel of Fortune",
+   "parody": "Wheel of Misfortune"
+  },
+  {
+   "real": "The Price Is Right",
+   "parody": "The Purse Is Wrong"
+  },
+  {
+   "real": "Saturday Night Live",
+   "parody": "Saturday Night Lies"
+  },
+  {
+   "real": "The Tonight Show",
+   "parody": "The Tonight-ish Show"
+  },
+  {
+   "real": "Sesame Street",
+   "parody": "Sesame Beat"
+  },
+  {
+   "real": "Mister Rogers' Neighborhood",
+   "parody": "Mister Rogan's Neighborhood"
+  },
+  {
+   "real": "Seinfeld reruns",
+   "parody": "Swinefeld reruns"
+  },
+  {
+   "real": "Law & Order",
+   "parody": "Law & Odor"
+  },
+  {
+   "real": "CSI",
+   "parody": "C-S-Why"
+  },
+  {
+   "real": "Grey's Anatomy",
+   "parody": "Grey's Anatomy Class"
+  },
+  {
+   "real": "The Crown",
+   "parody": "The Crown Royal"
+  },
+  {
+   "real": "Downton Abbey",
+   "parody": "Downtown Abbey"
+  },
+  {
+   "real": "Top Gear",
+   "parody": "Top Gearbox"
+  },
+  {
+   "real": "Planet Earth",
+   "parody": "Planet Girth"
+  },
+  {
+   "real": "Dexter",
+   "parody": "Dexterity"
+  },
+  {
+   "real": "Twin Peaks",
+   "parody": "Twin Peeks"
+  },
+  {
+   "real": "The X-Files",
+   "parody": "The Ex-Files"
+  },
+  {
+   "real": "Lost",
+   "parody": "Lost and Found"
+  },
+  {
+   "real": "Prison Break",
+   "parody": "Prison Lunch Break"
+  },
+  {
+   "real": "24",
+   "parody": "23 and a Half"
+  },
+  {
+   "real": "Bluey",
+   "parody": "Blue-ey"
+  },
+  {
+   "real": "Paw Patrol",
+   "parody": "Claw Patrol"
+  },
+  {
+   "real": "Teenage Mutant Ninja Turtles",
+   "parody": "Teenage Mutant Ninja Hurdles"
+  },
+  {
+   "real": "Power Rangers",
+   "parody": "Power Strangers"
+  },
+  {
+   "real": "WWE Raw",
+   "parody": "WWE Raw Chicken"
+  },
+  {
+   "real": "Monday Night Football",
+   "parody": "Monday Night Food Ball"
+  }
+ ],
+ "musician": [
+  {
+   "real": "Eminem",
+   "parody": "M&M (Peanut)"
+  },
+  {
+   "real": "Drake",
+   "parody": "Drakeo the Snake"
+  },
+  {
+   "real": "Kendrick Lamar",
+   "parody": "Kendrick Llama"
+  },
+  {
+   "real": "Kanye West",
+   "parody": "Kanye Vest"
+  },
+  {
+   "real": "Taylor Swift",
+   "parody": "Taylor Shift"
+  },
+  {
+   "real": "Beyonce",
+   "parody": "Bey-Once-a-Week"
+  },
+  {
+   "real": "Rihanna",
+   "parody": "Ri-Hannah Montana"
+  },
+  {
+   "real": "Snoop Dogg",
+   "parody": "Snoop Hogg"
+  },
+  {
+   "real": "Dr. Dre",
+   "parody": "Dr. Dreary"
+  },
+  {
+   "real": "Ice Cube",
+   "parody": "Ice Cubed"
+  },
+  {
+   "real": "50 Cent",
+   "parody": "50 Sense"
+  },
+  {
+   "real": "Jay-Z",
+   "parody": "Jay-Zzz"
+  },
+  {
+   "real": "Lil Wayne",
+   "parody": "Lil Wane"
+  },
+  {
+   "real": "Travis Scott",
+   "parody": "Travis Scot-Free"
+  },
+  {
+   "real": "Post Malone",
+   "parody": "Post Baloney"
+  },
+  {
+   "real": "Bad Bunny",
+   "parody": "Bad Bunion"
+  },
+  {
+   "real": "Ed Sheeran",
+   "parody": "Ed Shearing"
+  },
+  {
+   "real": "Justin Bieber",
+   "parody": "Justin Beaver"
+  },
+  {
+   "real": "Ariana Grande",
+   "parody": "Ariana Venti"
+  },
+  {
+   "real": "Billie Eilish",
+   "parody": "Billy Eyelash"
+  },
+  {
+   "real": "Lady Gaga",
+   "parody": "Lady Gag-Gag"
+  },
+  {
+   "real": "Bruno Mars",
+   "parody": "Bruno Marsbar"
+  },
+  {
+   "real": "The Weeknd",
+   "parody": "The Weakened"
+  },
+  {
+   "real": "Doja Cat",
+   "parody": "Doja Catnap"
+  },
+  {
+   "real": "Nicki Minaj",
+   "parody": "Nicki Menage"
+  },
+  {
+   "real": "Cardi B",
+   "parody": "Cardio B"
+  },
+  {
+   "real": "Megan Thee Stallion",
+   "parody": "Megan Thee Scallion"
+  },
+  {
+   "real": "Lizzo",
+   "parody": "Fizzo"
+  },
+  {
+   "real": "Harry Styles",
+   "parody": "Hairy Styles"
+  },
+  {
+   "real": "Dua Lipa",
+   "parody": "Dua Liposuction"
+  },
+  {
+   "real": "Olivia Rodrigo",
+   "parody": "Olivia Rodeo"
+  },
+  {
+   "real": "SZA",
+   "parody": "S-Zzz-A"
+  },
+  {
+   "real": "Future",
+   "parody": "Past"
+  },
+  {
+   "real": "Metro Boomin",
+   "parody": "Metro Bloomin"
+  },
+  {
+   "real": "21 Savage",
+   "parody": "21 Sandwich"
+  },
+  {
+   "real": "Lil Uzi Vert",
+   "parody": "Lil Oozy Vert"
+  },
+  {
+   "real": "Playboi Carti",
+   "parody": "Playboy Party"
+  },
+  {
+   "real": "Tyler, the Creator",
+   "parody": "Tyler, the Crater"
+  },
+  {
+   "real": "Mac Miller",
+   "parody": "Mac N Cheese Miller"
+  },
+  {
+   "real": "Logic",
+   "parody": "Illogic"
+  },
+  {
+   "real": "Pitbull",
+   "parody": "Pitbull Terrier"
+  },
+  {
+   "real": "Flo Rida",
+   "parody": "Flo Rida Man"
+  },
+  {
+   "real": "Akon",
+   "parody": "Akorn"
+  },
+  {
+   "real": "T-Pain",
+   "parody": "T-Pane (Window)"
+  },
+  {
+   "real": "Nelly",
+   "parody": "Nellie the Elephant"
+  },
+  {
+   "real": "Usher",
+   "parody": "Usher (Ushers You To Your Seat)"
+  },
+  {
+   "real": "Chris Brown",
+   "parody": "Chris Brownie"
+  },
+  {
+   "real": "Shaggy",
+   "parody": "Saggy"
+  },
+  {
+   "real": "Vanilla Ice",
+   "parody": "Vanilla Rice"
+  },
+  {
+   "real": "MC Hammer",
+   "parody": "MC Hamster"
+  },
+  {
+   "real": "Coolio",
+   "parody": "Coolio-er"
+  },
+  {
+   "real": "Tupac",
+   "parody": "Tu-Pack (of Gum)"
+  },
+  {
+   "real": "Biggie Smalls",
+   "parody": "Biggie Medium"
+  },
+  {
+   "real": "Wu-Tang Clan",
+   "parody": "Woo-Tang Clam"
+  },
+  {
+   "real": "Run-DMC",
+   "parody": "Run-DMV"
+  },
+  {
+   "real": "Public Enemy",
+   "parody": "Public Frenemy"
+  },
+  {
+   "real": "Metallica",
+   "parody": "Metal-Liquor"
+  },
+  {
+   "real": "AC/DC",
+   "parody": "AC/DC Comics"
+  },
+  {
+   "real": "Guns N' Roses",
+   "parody": "Buns N' Noses"
+  },
+  {
+   "real": "Nirvana",
+   "parody": "Nervana"
+  },
+  {
+   "real": "Foo Fighters",
+   "parody": "Foo Lighters"
+  },
+  {
+   "real": "Red Hot Chili Peppers",
+   "parody": "Red Hot Chili Poppers"
+  },
+  {
+   "real": "Linkin Park",
+   "parody": "Linkin Parking"
+  },
+  {
+   "real": "Limp Bizkit",
+   "parody": "Limp Biscuit"
+  },
+  {
+   "real": "Creed",
+   "parody": "Creed (the Band, Sadly)"
+  },
+  {
+   "real": "Nickelback",
+   "parody": "Nickelback (Change Back)"
+  },
+  {
+   "real": "Coldplay",
+   "parody": "Cold Play-Doh"
+  },
+  {
+   "real": "Imagine Dragons",
+   "parody": "Imagine Wagons"
+  },
+  {
+   "real": "Maroon 5",
+   "parody": "Maroon 6"
+  },
+  {
+   "real": "The Rolling Stones",
+   "parody": "The Rolling Kidney Stones"
+  },
+  {
+   "real": "The Beatles",
+   "parody": "The Beetles"
+  },
+  {
+   "real": "Queen",
+   "parody": "Queen-Size Mattress"
+  },
+  {
+   "real": "Elvis Presley",
+   "parody": "Elvis Pressly"
+  },
+  {
+   "real": "Michael Jackson",
+   "parody": "Michael Jack-Son-of-a-Gun"
+  },
+  {
+   "real": "Prince",
+   "parody": "Prince (Formerly Known As Princess)"
+  },
+  {
+   "real": "Madonna",
+   "parody": "Madonnut"
+  },
+  {
+   "real": "Britney Spears",
+   "parody": "Britney Smears"
+  },
+  {
+   "real": "Celine Dion",
+   "parody": "Celine Dijon"
+  },
+  {
+   "real": "Dolly Parton",
+   "parody": "Dolly Carton"
+  },
+  {
+   "real": "Johnny Cash",
+   "parody": "Johnny Credit"
+  },
+  {
+   "real": "Willie Nelson",
+   "parody": "Willie Nelsons"
+  },
+  {
+   "real": "Garth Brooks",
+   "parody": "Garth Crooks"
+  },
+  {
+   "real": "Morgan Wallen",
+   "parody": "Morgan Wailin'"
+  },
+  {
+   "real": "Luke Combs",
+   "parody": "Luke Combovers"
+  },
+  {
+   "real": "Kenny Chesney",
+   "parody": "Kenny Cheesy"
+  },
+  {
+   "real": "Shania Twain",
+   "parody": "Shania Choo-Choo-Train"
+  },
+  {
+   "real": "Daft Punk",
+   "parody": "Daft Funk"
+  },
+  {
+   "real": "Skrillex",
+   "parody": "Skrill-Ex-Wife"
+  },
+  {
+   "real": "Marshmello",
+   "parody": "Marsh-Jello"
+  },
+  {
+   "real": "Calvin Harris",
+   "parody": "Calvin Hairless"
+  },
+  {
+   "real": "David Guetta",
+   "parody": "David Getta-Snack"
+  },
+  {
+   "real": "Avicii",
+   "parody": "A-Vicky"
+  },
+  {
+   "real": "DJ Khaled",
+   "parody": "DJ Khaled (Another One)"
+  },
+  {
+   "real": "Ice Spice",
+   "parody": "Ice Spice Rack"
+  },
+  {
+   "real": "Sexyy Red",
+   "parody": "Sexy Bread"
+  },
+  {
+   "real": "Kid Rock",
+   "parody": "Kid Rock Bottom"
+  },
+  {
+   "real": "Bon Jovi",
+   "parody": "Bon Jovial"
+  }
+ ],
+ "celeb": [
+  {
+   "real": "Kim Kardashian",
+   "parody": "Kim Card-Dashian"
+  },
+  {
+   "real": "Kylie Jenner",
+   "parody": "Kylie Jenga"
+  },
+  {
+   "real": "Kris Jenner",
+   "parody": "Kris Jenga Sr."
+  },
+  {
+   "real": "Elon Musk",
+   "parody": "Elon Muskrat"
+  },
+  {
+   "real": "Jeff Bezos",
+   "parody": "Jeff Bezoz"
+  },
+  {
+   "real": "Mark Zuckerberg",
+   "parody": "Mark Zuckerbot"
+  },
+  {
+   "real": "Bill Gates",
+   "parody": "Bill Gated-Community"
+  },
+  {
+   "real": "Oprah Winfrey",
+   "parody": "Oprah Winfreeze"
+  },
+  {
+   "real": "Ellen DeGeneres",
+   "parody": "Ellen De-Generous"
+  },
+  {
+   "real": "Dwayne Johnson",
+   "parody": "Dwayne 'The Rocky Road' Johnson"
+  },
+  {
+   "real": "Kevin Hart",
+   "parody": "Kevin Heart-Attack"
+  },
+  {
+   "real": "Will Smith",
+   "parody": "Will Smithers"
+  },
+  {
+   "real": "Jada Pinkett Smith",
+   "parody": "Jada Pinkett Smithers"
+  },
+  {
+   "real": "Chris Rock",
+   "parody": "Chris Rocky Road"
+  },
+  {
+   "real": "Tom Cruise",
+   "parody": "Tom Snooze"
+  },
+  {
+   "real": "Brad Pitt",
+   "parody": "Brad Pitstop"
+  },
+  {
+   "real": "Leonardo DiCaprio",
+   "parody": "Leonardo DiCappuccino"
+  },
+  {
+   "real": "Johnny Depp",
+   "parody": "Johnny Deep"
+  },
+  {
+   "real": "Keanu Reeves",
+   "parody": "Keanu Leaves"
+  },
+  {
+   "real": "Ryan Reynolds",
+   "parody": "Ryan Reynolds Wrap"
+  },
+  {
+   "real": "Ryan Gosling",
+   "parody": "Ryan Goslinging"
+  },
+  {
+   "real": "Mark Wahlberg",
+   "parody": "Mark Wahlburger"
+  },
+  {
+   "real": "Matthew McConaughey",
+   "parody": "Matthew McConaugh-hey-hey"
+  },
+  {
+   "real": "Nicolas Cage",
+   "parody": "Nicolas Cage Match"
+  },
+  {
+   "real": "Arnold Schwarzenegger",
+   "parody": "Arnold Schwarzen-ebay"
+  },
+  {
+   "real": "Sylvester Stallone",
+   "parody": "Sylvester Stallion"
+  },
+  {
+   "real": "Jason Statham",
+   "parody": "Jason Stat-Ham"
+  },
+  {
+   "real": "Vin Diesel",
+   "parody": "Vin Unleaded"
+  },
+  {
+   "real": "Jackie Chan",
+   "parody": "Jackie Chain"
+  },
+  {
+   "real": "Bruce Lee",
+   "parody": "Bruce Leigh-Ann"
+  },
+  {
+   "real": "Chuck Norris",
+   "parody": "Chuck Morris"
+  },
+  {
+   "real": "Jean-Claude Van Damme",
+   "parody": "Jean-Claude Van Damn"
+  },
+  {
+   "real": "Steven Seagal",
+   "parody": "Steven Seagull"
+  },
+  {
+   "real": "Danny Trejo",
+   "parody": "Danny Taco-Trejo"
+  },
+  {
+   "real": "Samuel L. Jackson",
+   "parody": "Samuel L. Jackson Five"
+  },
+  {
+   "real": "Morgan Freeman",
+   "parody": "Morgan Freeman (Paid Version)"
+  },
+  {
+   "real": "Denzel Washington",
+   "parody": "Denzel Washing-Machine"
+  },
+  {
+   "real": "Tom Hanks",
+   "parody": "Tom Hanks-a-Lot"
+  },
+  {
+   "real": "Jack Black",
+   "parody": "Jack Blackout"
+  },
+  {
+   "real": "Adam Sandler",
+   "parody": "Adam Sandals"
+  },
+  {
+   "real": "Pete Davidson",
+   "parody": "Pete Davidsun"
+  },
+  {
+   "real": "Zendaya",
+   "parody": "Zen-Day-Off"
+  },
+  {
+   "real": "Timothee Chalamet",
+   "parody": "Timothee Chalamelt"
+  },
+  {
+   "real": "Margot Robbie",
+   "parody": "Margot Robbery"
+  },
+  {
+   "real": "Jennifer Lopez",
+   "parody": "Jennifer Lo-Pez Dispenser"
+  },
+  {
+   "real": "Ben Affleck",
+   "parody": "Ben Aff-Lack"
+  },
+  {
+   "real": "Matt Damon",
+   "parody": "Matt Daymon"
+  },
+  {
+   "real": "Gordon Ramsay",
+   "parody": "Gordon Ramsey Bolton"
+  },
+  {
+   "real": "Guy Fieri",
+   "parody": "Guy Fiery"
+  },
+  {
+   "real": "Martha Stewart",
+   "parody": "Martha Steward"
+  },
+  {
+   "real": "Paris Hilton",
+   "parody": "Paris Hilton Garden Inn"
+  },
+  {
+   "real": "Charlie Sheen",
+   "parody": "Charlie Sheen-Winning"
+  },
+  {
+   "real": "Mike Tyson",
+   "parody": "Iron Mike Tysoff"
+  },
+  {
+   "real": "Floyd Mayweather",
+   "parody": "Floyd Mayweather-Forecast"
+  },
+  {
+   "real": "Muhammad Ali",
+   "parody": "Muhammad Al-Eh"
+  },
+  {
+   "real": "Jake Paul",
+   "parody": "Jake Pall"
+  },
+  {
+   "real": "Logan Paul",
+   "parody": "Logan Pall"
+  },
+  {
+   "real": "Tom Brady",
+   "parody": "Tom Braid-y"
+  },
+  {
+   "real": "Shaquille O'Neal",
+   "parody": "Shaquille O'Meal"
+  },
+  {
+   "real": "Charles Barkley",
+   "parody": "Charles Bark-ley"
+  },
+  {
+   "real": "Snooki",
+   "parody": "Snoozy"
+  },
+  {
+   "real": "Gene Simmons",
+   "parody": "Gene Simmers"
+  },
+  {
+   "real": "Steve Harvey",
+   "parody": "Steve Hardly"
+  },
+  {
+   "real": "Jerry Springer",
+   "parody": "Jerry Spring-Roll"
+  },
+  {
+   "real": "Dr. Phil",
+   "parody": "Dr. Fill"
+  },
+  {
+   "real": "Judge Judy",
+   "parody": "Judge Moody"
+  },
+  {
+   "real": "David Hasselhoff",
+   "parody": "David Hassle-hoff"
+  },
+  {
+   "real": "Pamela Anderson",
+   "parody": "Pamela Andersnore"
+  },
+  {
+   "real": "Hulk Hogan",
+   "parody": "Bulk Logan"
+  },
+  {
+   "real": "Randy Savage",
+   "parody": "Randy Cabbage"
+  },
+  {
+   "real": "Mr. T",
+   "parody": "Mr. Tea"
+  },
+  {
+   "real": "Steve-O",
+   "parody": "Steve-Oh-No"
+  },
+  {
+   "real": "Bear Grylls",
+   "parody": "Bear Grills"
+  },
+  {
+   "real": "Steve Irwin",
+   "parody": "Steve Irwin-Win"
+  },
+  {
+   "real": "Bob Ross",
+   "parody": "Bob Gloss"
+  },
+  {
+   "real": "Danny DeVito",
+   "parody": "Danny DeBurrito"
+  },
+  {
+   "real": "Owen Wilson",
+   "parody": "Owen Wow-son"
+  },
+  {
+   "real": "Jim Carrey",
+   "parody": "Jim Scary"
+  },
+  {
+   "real": "Will Ferrell",
+   "parody": "Will Feral"
+  },
+  {
+   "real": "Seth Rogen",
+   "parody": "Seth Rogaine"
+  },
+  {
+   "real": "Jonah Hill",
+   "parody": "Jonah Downhill"
+  },
+  {
+   "real": "Shia LaBeouf",
+   "parody": "Shia LaBeef"
+  },
+  {
+   "real": "Bill Murray",
+   "parody": "Bill Furry"
+  },
+  {
+   "real": "Christopher Walken",
+   "parody": "Christopher Walkin'"
+  },
+  {
+   "real": "Gary Busey",
+   "parody": "Gary Busy"
+  },
+  {
+   "real": "Flavor Flav",
+   "parody": "Flavor Flab"
+  },
+  {
+   "real": "Rick Ross",
+   "parody": "Rick Floss"
+  },
+  {
+   "real": "Diddy",
+   "parody": "Diddly-Squat"
+  }
+ ],
+ "game": [
+  {
+   "real": "Fortnite",
+   "parody": "Forty-Nite"
+  },
+  {
+   "real": "Minecraft",
+   "parody": "Mindcraft"
+  },
+  {
+   "real": "Call of Duty",
+   "parody": "Call of Booty"
+  },
+  {
+   "real": "Grand Theft Auto",
+   "parody": "Grand Theft Alpaca"
+  },
+  {
+   "real": "GTA VI",
+   "parody": "GTA VI (Still Loading)"
+  },
+  {
+   "real": "Elden Ring",
+   "parody": "Elder Ring Pop"
+  },
+  {
+   "real": "Dark Souls",
+   "parody": "Dark Socks"
+  },
+  {
+   "real": "League of Legends",
+   "parody": "League of Leg Days"
+  },
+  {
+   "real": "World of Warcraft",
+   "parody": "World of Warcrafts and Hobbies"
+  },
+  {
+   "real": "Roblox",
+   "parody": "Robblocks"
+  },
+  {
+   "real": "Among Us",
+   "parody": "Among Ussy"
+  },
+  {
+   "real": "Fall Guys",
+   "parody": "Fall Gals"
+  },
+  {
+   "real": "Rocket League",
+   "parody": "Pocket League"
+  },
+  {
+   "real": "FIFA",
+   "parody": "FIFU"
+  },
+  {
+   "real": "Madden",
+   "parody": "Maddening"
+  },
+  {
+   "real": "NBA 2K",
+   "parody": "NBA 2Kay"
+  },
+  {
+   "real": "UFC 5",
+   "parody": "CageBox 5"
+  },
+  {
+   "real": "Street Fighter",
+   "parody": "Treat Fighter"
+  },
+  {
+   "real": "Mortal Kombat",
+   "parody": "Mortal Kombucha"
+  },
+  {
+   "real": "Tekken",
+   "parody": "Tekkin' Naps"
+  },
+  {
+   "real": "Super Smash Bros.",
+   "parody": "Super Smash Bros Before Hoes"
+  },
+  {
+   "real": "Mario Kart",
+   "parody": "Mario Fart"
+  },
+  {
+   "real": "Super Mario",
+   "parody": "Super Mario Batali"
+  },
+  {
+   "real": "The Legend of Zelda",
+   "parody": "The Legend of Zelda's Cousin"
+  },
+  {
+   "real": "Pokemon Go",
+   "parody": "Pokey Go"
+  },
+  {
+   "real": "Tetris",
+   "parody": "Tetrish"
+  },
+  {
+   "real": "Pac-Man",
+   "parody": "Pac-Manager"
+  },
+  {
+   "real": "Sonic the Hedgehog",
+   "parody": "Sonic the Hedge Fund"
+  },
+  {
+   "real": "Halo",
+   "parody": "Hello"
+  },
+  {
+   "real": "Gears of War",
+   "parody": "Gears of Snore"
+  },
+  {
+   "real": "God of War",
+   "parody": "God of Warts"
+  },
+  {
+   "real": "The Last of Us",
+   "parody": "The Last of Ussy"
+  },
+  {
+   "real": "Red Dead Redemption",
+   "parody": "Red Dead Repossession"
+  },
+  {
+   "real": "Skyrim",
+   "parody": "Sky-Rimjob"
+  },
+  {
+   "real": "Fallout",
+   "parody": "Fall Down"
+  },
+  {
+   "real": "Cyberpunk 2077",
+   "parody": "Cyberpunk 2077 (Patch 3)"
+  },
+  {
+   "real": "Animal Crossing",
+   "parody": "Animal Cross-Training"
+  },
+  {
+   "real": "Candy Crush",
+   "parody": "Candy Crushed Windpipe"
+  },
+  {
+   "real": "Angry Birds",
+   "parody": "Angry Nerds"
+  },
+  {
+   "real": "Clash of Clans",
+   "parody": "Clash of Clams"
+  },
+  {
+   "real": "Wii Sports",
+   "parody": "Wee Sports"
+  },
+  {
+   "real": "Guitar Hero",
+   "parody": "Guitar Zero"
+  },
+  {
+   "real": "Punch-Out!!",
+   "parody": "Punch-Out!! (Settled)"
+  },
+  {
+   "real": "Duck Hunt",
+   "parody": "Duck Hunted"
+  },
+  {
+   "real": "Counter-Strike",
+   "parody": "Counter-Striker Coach"
+  },
+  {
+   "real": "Valorant",
+   "parody": "Valor-Can't"
+  },
+  {
+   "real": "Apex Legends",
+   "parody": "Apex Legumes"
+  },
+  {
+   "real": "Overwatch",
+   "parody": "Overwatched"
+  },
+  {
+   "real": "Starcraft",
+   "parody": "Starcrafts and Hobbies"
+  }
+ ],
+ "athlete": [
+  {
+   "real": "LeBron James",
+   "parody": "LeBrawn James"
+  },
+  {
+   "real": "Michael Jordan",
+   "parody": "Michael Jordan Almonds"
+  },
+  {
+   "real": "Kobe Bryant",
+   "parody": "Kobe Beef Bryant"
+  },
+  {
+   "real": "Stephen Curry",
+   "parody": "Stephen Curry Sauce"
+  },
+  {
+   "real": "Kevin Durant",
+   "parody": "Kevin Durant-Durant"
+  },
+  {
+   "real": "Shohei Ohtani",
+   "parody": "Shohei Oh-Tan-ny"
+  },
+  {
+   "real": "Aaron Judge",
+   "parody": "Aaron Jury Duty"
+  },
+  {
+   "real": "Cristiano Ronaldo",
+   "parody": "Cristiano Ronald-McDonald-o"
+  },
+  {
+   "real": "Lionel Messi",
+   "parody": "Lionel Messy"
+  },
+  {
+   "real": "Neymar",
+   "parody": "Neymar-ly Injured"
+  },
+  {
+   "real": "Kylian Mbappe",
+   "parody": "Kylian M-Bap-Bap"
+  },
+  {
+   "real": "Tiger Woods",
+   "parody": "Tiger Wood Chips"
+  },
+  {
+   "real": "Serena Williams",
+   "parody": "Serena Will-I-Am"
+  },
+  {
+   "real": "Usain Bolt",
+   "parody": "Usain Bolt-Cutter"
+  },
+  {
+   "real": "Simone Biles",
+   "parody": "Simone Biles of Paperwork"
+  },
+  {
+   "real": "Tom Brady",
+   "parody": "Tom Brady-Bunch"
+  },
+  {
+   "real": "Patrick Mahomes",
+   "parody": "Patrick Ma-Homes"
+  },
+  {
+   "real": "Travis Kelce",
+   "parody": "Travis Kelsey's Nine Lives"
+  },
+  {
+   "real": "Aaron Rodgers",
+   "parody": "Aaron Dodgers"
+  },
+  {
+   "real": "Wayne Gretzky",
+   "parody": "Wayne Gretz-Key Lime"
+  },
+  {
+   "real": "Connor McDavid",
+   "parody": "Connor McDavid-Goliath"
+  },
+  {
+   "real": "Lewis Hamilton",
+   "parody": "Lewis Hamilton Beach Blender"
+  },
+  {
+   "real": "Max Verstappen",
+   "parody": "Max Verstappin'"
+  },
+  {
+   "real": "Rafael Nadal",
+   "parody": "Rafael Nada"
+  },
+  {
+   "real": "Roger Federer",
+   "parody": "Roger Fed-Ex"
+  },
+  {
+   "real": "Novak Djokovic",
+   "parody": "Novak Joke-ovic"
+  },
+  {
+   "real": "Tyson Fury",
+   "parody": "Tyson Furry"
+  },
+  {
+   "real": "Anthony Joshua",
+   "parody": "Anthony Josh-Who-Ah"
+  },
+  {
+   "real": "Canelo Alvarez",
+   "parody": "Cannoli Alvarez"
+  },
+  {
+   "real": "Oleksandr Usyk",
+   "parody": "Oleksandr Use-It"
+  },
+  {
+   "real": "Manny Pacquiao",
+   "parody": "Manny Pac-Man-Quiao"
+  },
+  {
+   "real": "Oscar De La Hoya",
+   "parody": "Oscar De La Hoyoyo"
+  },
+  {
+   "real": "Evander Holyfield",
+   "parody": "Evander Holey-Field"
+  },
+  {
+   "real": "Deontay Wilder",
+   "parody": "Deontay Milder"
+  },
+  {
+   "real": "Shannon Sharpe",
+   "parody": "Shannon Sharp-Cheddar"
+  },
+  {
+   "real": "Skip Bayless",
+   "parody": "Skip Bayless-Than-Smart"
+  },
+  {
+   "real": "Stephen A. Smith",
+   "parody": "Stephen A. Smithereens"
+  },
+  {
+   "real": "Pat McAfee",
+   "parody": "Pat McAfee Coffee"
+  },
+  {
+   "real": "Jalen Hurts",
+   "parody": "Jalen Hurts (So Bad)"
+  },
+  {
+   "real": "Saquon Barkley",
+   "parody": "Saquon Barkley-Dog"
+  },
+  {
+   "real": "Giannis Antetokounmpo",
+   "parody": "Giannis Anteater-kounmpo"
+  },
+  {
+   "real": "Nikola Jokic",
+   "parody": "Nikola Joke-itch"
+  },
+  {
+   "real": "Victor Wembanyama",
+   "parody": "Victor Wemba-yum-yum"
+  },
+  {
+   "real": "Caitlin Clark",
+   "parody": "Caitlin Clerk"
+  },
+  {
+   "real": "Ronda Rousey",
+   "parody": "Wanda Drowsy"
+  },
+  {
+   "real": "Brock Lesnar",
+   "parody": "Brock Lessnar"
+  },
+  {
+   "real": "The Undertaker",
+   "parody": "The Undercaterer"
+  },
+  {
+   "real": "John Cena",
+   "parody": "John Cena (You Can't See Him Either)"
+  },
+  {
+   "real": "Stone Cold Steve Austin",
+   "parody": "Stone Cold Steve Awesome"
+  },
+  {
+   "real": "The Rock",
+   "parody": "The Rock (Ultra Thin)"
+  },
+  {
+   "real": "Ric Flair",
+   "parody": "Rick Flare"
+  },
+  {
+   "real": "Macho Man Randy Savage",
+   "parody": "Nacho Man Randy Cabbage"
+  },
+  {
+   "real": "Andre the Giant",
+   "parody": "Andre the Medium"
+  },
+  {
+   "real": "Roman Reigns",
+   "parody": "Roman Rains"
+  },
+  {
+   "real": "CM Punk",
+   "parody": "CM Spunk"
+  },
+  {
+   "real": "Rey Mysterio",
+   "parody": "Rey Mysterious Rash"
+  },
+  {
+   "real": "Bret Hart",
+   "parody": "Bret Heart-Burn"
+  },
+  {
+   "real": "Shawn Michaels",
+   "parody": "Shawn Michaels Arts and Crafts"
+  }
+ ],
+ "food": [
+  {
+   "real": "McDonald's",
+   "parody": "McDowell's"
+  },
+  {
+   "real": "Burger King",
+   "parody": "Burglar King"
+  },
+  {
+   "real": "Wendy's",
+   "parody": "Windy's"
+  },
+  {
+   "real": "Taco Bell",
+   "parody": "Taco Bellyache"
+  },
+  {
+   "real": "KFC",
+   "parody": "KFC (Kentucky Fried Cardio)"
+  },
+  {
+   "real": "Chick-fil-A",
+   "parody": "Chick-fil-Eh"
+  },
+  {
+   "real": "Popeyes",
+   "parody": "Pop-Eyes Swollen Shut"
+  },
+  {
+   "real": "Subway",
+   "parody": "Subwaist"
+  },
+  {
+   "real": "Chipotle",
+   "parody": "Chip-Hotel"
+  },
+  {
+   "real": "Domino's",
+   "parody": "Dominoes"
+  },
+  {
+   "real": "Pizza Hut",
+   "parody": "Pizza Hurt"
+  },
+  {
+   "real": "Papa John's",
+   "parody": "Papa Jaw's"
+  },
+  {
+   "real": "Little Caesars",
+   "parody": "Little Seizures"
+  },
+  {
+   "real": "Dunkin'",
+   "parody": "Dunkin' Donuts on Your Head"
+  },
+  {
+   "real": "Starbucks",
+   "parody": "Starbux"
+  },
+  {
+   "real": "Krispy Kreme",
+   "parody": "Crispy Creamed"
+  },
+  {
+   "real": "Waffle House",
+   "parody": "Waffle Brawlhouse"
+  },
+  {
+   "real": "IHOP",
+   "parody": "IHOP-ed Over the Bar"
+  },
+  {
+   "real": "Denny's",
+   "parody": "Denny's (2am Fight Club)"
+  },
+  {
+   "real": "Applebee's",
+   "parody": "Applebees' Knees"
+  },
+  {
+   "real": "Olive Garden",
+   "parody": "Olive Guarden"
+  },
+  {
+   "real": "Red Lobster",
+   "parody": "Red Mobster"
+  },
+  {
+   "real": "Outback Steakhouse",
+   "parody": "Outback Steakhouse Rules"
+  },
+  {
+   "real": "Texas Roadhouse",
+   "parody": "Texas Roundhouse"
+  },
+  {
+   "real": "Buffalo Wild Wings",
+   "parody": "Buffalo Wild Swings"
+  },
+  {
+   "real": "Hooters",
+   "parody": "Hooters (Owls, Allegedly)"
+  },
+  {
+   "real": "Cheesecake Factory",
+   "parody": "Cheesecake Fracture-y"
+  },
+  {
+   "real": "Five Guys",
+   "parody": "Five Guys One Burger"
+  },
+  {
+   "real": "In-N-Out",
+   "parody": "Win-N-Out"
+  },
+  {
+   "real": "Shake Shack",
+   "parody": "Shake Smack"
+  },
+  {
+   "real": "White Castle",
+   "parody": "White Hassle"
+  },
+  {
+   "real": "Arby's",
+   "parody": "Arby's (We Have the Meats)"
+  },
+  {
+   "real": "Sonic",
+   "parody": "Sonic Boom"
+  },
+  {
+   "real": "Panda Express",
+   "parody": "Panda Excess"
+  },
+  {
+   "real": "P.F. Chang's",
+   "parody": "P.F. Changs (The Subreddit)"
+  },
+  {
+   "real": "Golden Corral",
+   "parody": "Golden Corral of Shame"
+  },
+  {
+   "real": "Costco",
+   "parody": "Cost-Slow"
+  },
+  {
+   "real": "Walmart",
+   "parody": "Wall-Mart"
+  },
+  {
+   "real": "Target",
+   "parody": "Tar-Jay"
+  },
+  {
+   "real": "Cheetos",
+   "parody": "Cheaters"
+  },
+  {
+   "real": "Doritos",
+   "parody": "Dorito-Do-Rights"
+  },
+  {
+   "real": "Pringles",
+   "parody": "Pringle Bells"
+  },
+  {
+   "real": "Oreo",
+   "parody": "Ore-No"
+  },
+  {
+   "real": "Twinkies",
+   "parody": "Twinkie Toes"
+  },
+  {
+   "real": "Hot Pockets",
+   "parody": "Hot Pockets (Burned)"
+  },
+  {
+   "real": "Lunchables",
+   "parody": "Punchables"
+  },
+  {
+   "real": "Kraft Mac & Cheese",
+   "parody": "Craft Mac & Cheese"
+  },
+  {
+   "real": "Spam",
+   "parody": "Spam (The Email)"
+  },
+  {
+   "real": "Hot Cheetos",
+   "parody": "Hot Cheaters"
+  },
+  {
+   "real": "Takis",
+   "parody": "Ta-Keys"
+  },
+  {
+   "real": "Red Bull",
+   "parody": "Red Bullsh*t"
+  },
+  {
+   "real": "Monster Energy",
+   "parody": "Mobster Energy"
+  },
+  {
+   "real": "Prime Hydration",
+   "parody": "Prime Hydration (Not Primed)"
+  },
+  {
+   "real": "Gatorade",
+   "parody": "Gator-Aid"
+  },
+  {
+   "real": "Mountain Dew",
+   "parody": "Mountain Don't"
+  },
+  {
+   "real": "Four Loko",
+   "parody": "Four Loco Parentis"
+  },
+  {
+   "real": "White Claw",
+   "parody": "White Claw Machine"
+  },
+  {
+   "real": "Bud Light",
+   "parody": "Bud Slight"
+  },
+  {
+   "real": "Coors Light",
+   "parody": "Coors Lite Beer Lite"
+  },
+  {
+   "real": "Jack Daniel's",
+   "parody": "Jack Daniels' Cousin Tim"
+  },
+  {
+   "real": "Fireball",
+   "parody": "Fireballs"
+  },
+  {
+   "real": "Ensure",
+   "parody": "Ensure (Grandma's)"
+  },
+  {
+   "real": "Ozempic",
+   "parody": "Oz-Empty-ic"
+  },
+  {
+   "real": "Ghost Energy",
+   "parody": "Ghosted Energy"
+  },
+  {
+   "real": "Celsius",
+   "parody": "Fahrenheit"
+  },
+  {
+   "real": "Muscle Milk",
+   "parody": "Muscle Mulk"
+  }
+ ],
+ "app": [
+  {
+   "real": "TikTok",
+   "parody": "TikTak"
+  },
+  {
+   "real": "Instagram",
+   "parody": "Instagrump"
+  },
+  {
+   "real": "Twitter",
+   "parody": "Twatter"
+  },
+  {
+   "real": "X",
+   "parody": "Ex"
+  },
+  {
+   "real": "Facebook",
+   "parody": "Faceplant"
+  },
+  {
+   "real": "Snapchat",
+   "parody": "Snapped-Chat"
+  },
+  {
+   "real": "YouTube",
+   "parody": "YouTubes (Plural)"
+  },
+  {
+   "real": "Twitch",
+   "parody": "Twitchy"
+  },
+  {
+   "real": "Kick",
+   "parody": "Kick (the Streaming One)"
+  },
+  {
+   "real": "Reddit",
+   "parody": "Redd-it"
+  },
+  {
+   "real": "Discord",
+   "parody": "Dis-Chord"
+  },
+  {
+   "real": "OnlyFans",
+   "parody": "OnlyFighters"
+  },
+  {
+   "real": "Tinder",
+   "parody": "Tender"
+  },
+  {
+   "real": "Bumble",
+   "parody": "Bumble Bee Tuna"
+  },
+  {
+   "real": "Hinge",
+   "parody": "Unhinged"
+  },
+  {
+   "real": "Grindr",
+   "parody": "Grinder"
+  },
+  {
+   "real": "LinkedIn",
+   "parody": "LinkedOut"
+  },
+  {
+   "real": "Venmo",
+   "parody": "Venom-o"
+  },
+  {
+   "real": "Cash App",
+   "parody": "Cash Nap"
+  },
+  {
+   "real": "PayPal",
+   "parody": "PayPal-sy"
+  },
+  {
+   "real": "Uber",
+   "parody": "Uber-Rated"
+  },
+  {
+   "real": "DoorDash",
+   "parody": "DoorDashed Dreams"
+  },
+  {
+   "real": "Uber Eats",
+   "parody": "Uber Eats Your Paycheck"
+  },
+  {
+   "real": "Netflix",
+   "parody": "Netflicks (In the Groin)"
+  },
+  {
+   "real": "Hulu",
+   "parody": "Hula"
+  },
+  {
+   "real": "Disney+",
+   "parody": "Disney Minus"
+  },
+  {
+   "real": "Spotify",
+   "parody": "Spot-If-Fy"
+  },
+  {
+   "real": "Apple Music",
+   "parody": "Crabapple Music"
+  },
+  {
+   "real": "Amazon",
+   "parody": "Amazin'"
+  },
+  {
+   "real": "Google",
+   "parody": "Goggles"
+  },
+  {
+   "real": "ChatGPT",
+   "parody": "ChatG-Petty"
+  },
+  {
+   "real": "Siri",
+   "parody": "Siri-ously"
+  },
+  {
+   "real": "Alexa",
+   "parody": "Alexa, Play Despacito"
+  },
+  {
+   "real": "Zoom",
+   "parody": "Vroom"
+  },
+  {
+   "real": "Robinhood",
+   "parody": "Robbin'-Hood"
+  },
+  {
+   "real": "Coinbase",
+   "parody": "Coin-Debase"
+  },
+  {
+   "real": "Bitcoin",
+   "parody": "Bit-Con"
+  },
+  {
+   "real": "Dogecoin",
+   "parody": "Doge-Con"
+  },
+  {
+   "real": "Crypto.com",
+   "parody": "Crypto.con"
+  },
+  {
+   "real": "NFT",
+   "parody": "NF-Tea"
+  },
+  {
+   "real": "Duolingo",
+   "parody": "Duo-Lingo (Owl Threats)"
+  },
+  {
+   "real": "Pokemon Go",
+   "parody": "Poke-Go-Away"
+  },
+  {
+   "real": "Waze",
+   "parody": "Waze (Wrong Way)"
+  },
+  {
+   "real": "Yelp",
+   "parody": "Yelp! (Help!)"
+  },
+  {
+   "real": "Fitbit",
+   "parody": "Fat-Bit"
+  },
+  {
+   "real": "Peloton",
+   "parody": "Pelo-Done"
+  },
+  {
+   "real": "MyFitnessPal",
+   "parody": "MyFitnessEnemy"
+  },
+  {
+   "real": "Strava",
+   "parody": "Strava-ganza"
+  },
+  {
+   "real": "Ring Doorbell",
+   "parody": "Ring Doorbrawl"
+  },
+  {
+   "real": "Tesla",
+   "parody": "Tes-Lol"
+  }
+ ],
+ "streamer": [
+  {
+   "real": "MrBeast",
+   "parody": "MrBeef"
+  },
+  {
+   "real": "xQc",
+   "parody": "xQueso"
+  },
+  {
+   "real": "Kai Cenat",
+   "parody": "Kai Ce-NAP"
+  },
+  {
+   "real": "IShowSpeed",
+   "parody": "IShowSlow"
+  },
+  {
+   "real": "Adin Ross",
+   "parody": "Adin Gross"
+  },
+  {
+   "real": "Pokimane",
+   "parody": "Poki-Mayonnaise"
+  },
+  {
+   "real": "Ninja",
+   "parody": "Ninja Turtle"
+  },
+  {
+   "real": "Shroud",
+   "parody": "Shroud-of-Turin"
+  },
+  {
+   "real": "TimTheTatman",
+   "parody": "TimTheTaterTot"
+  },
+  {
+   "real": "DrDisrespect",
+   "parody": "DrDisinfect"
+  },
+  {
+   "real": "Hasan Piker",
+   "parody": "Hasan Pickles"
+  },
+  {
+   "real": "Ludwig",
+   "parody": "Ludwig van Beefoven"
+  },
+  {
+   "real": "KSI",
+   "parody": "K-S-Why"
+  },
+  {
+   "real": "Andrew Tate",
+   "parody": "Andrew Taint"
+  },
+  {
+   "real": "Bryce Hall",
+   "parody": "Bryce Hall Pass"
+  },
+  {
+   "real": "Charli D'Amelio",
+   "parody": "Charli D'Ameliorate"
+  },
+  {
+   "real": "Addison Rae",
+   "parody": "Addison Rash"
+  },
+  {
+   "real": "David Dobrik",
+   "parody": "David Doo-Brick"
+  },
+  {
+   "real": "PewDiePie",
+   "parody": "PewDiePie Crust"
+  },
+  {
+   "real": "Markiplier",
+   "parody": "Mark-Multiplier"
+  },
+  {
+   "real": "Jacksepticeye",
+   "parody": "Jack-Septic-Tank"
+  },
+  {
+   "real": "Dream",
+   "parody": "Daydream"
+  },
+  {
+   "real": "Corpse Husband",
+   "parody": "Corpse Husbandry"
+  },
+  {
+   "real": "Valkyrae",
+   "parody": "Valky-Hooray"
+  },
+  {
+   "real": "Sneako",
+   "parody": "Sneak-O-Pete"
+  },
+  {
+   "real": "Fresh & Fit",
+   "parody": "Flesh & Fat"
+  },
+  {
+   "real": "Hasbulla",
+   "parody": "Hasbulla-Bulla"
+  },
+  {
+   "real": "Bradley Martyn",
+   "parody": "Bradley Martini"
+  },
+  {
+   "real": "Liver King",
+   "parody": "Liver Prince (Raw)"
+  },
+  {
+   "real": "Joe Rogan Experience",
+   "parody": "The Joe Brogan Experience"
+  },
+  {
+   "real": "Theo Von",
+   "parody": "Theo Vaughn-Shaped"
+  },
+  {
+   "real": "Barstool",
+   "parody": "Barstool (Wobbly)"
+  },
+  {
+   "real": "Dave Portnoy",
+   "parody": "Dave Porknoy"
+  },
+  {
+   "real": "Mike Majlak",
+   "parody": "Mike Major-Lack"
+  },
+  {
+   "real": "Bryce Hall",
+   "parody": "Bryce Hall Monitor"
+  },
+  {
+   "real": "Faze Rug",
+   "parody": "Faze Rug Burn"
+  },
+  {
+   "real": "Logan Paul's Prime",
+   "parody": "Logan Pall's Primed"
+  },
+  {
+   "real": "Unus Annus",
+   "parody": "Unus Anus"
+  },
+  {
+   "real": "Mr. Beast Burger",
+   "parody": "MrBeef Burger"
+  }
+ ],
+ "meme": [
+  {
+   "real": "Rickroll",
+   "parody": "Rick-rolled-up"
+  },
+  {
+   "real": "Distracted Boyfriend",
+   "parody": "Distracted Boyfriend (Weight Cut Edition)"
+  },
+  {
+   "real": "This Is Fine",
+   "parody": "This Is Fine (Arena On Fire)"
+  },
+  {
+   "real": "Ok Boomer",
+   "parody": "Ok Boomerang"
+  },
+  {
+   "real": "Big Chungus",
+   "parody": "Big Chungus Heavyweight"
+  },
+  {
+   "real": "Doge",
+   "parody": "Doge (Much Wow, Very KO)"
+  },
+  {
+   "real": "Grumpy Cat",
+   "parody": "Grumpy Cat (Post-Fight)"
+  },
+  {
+   "real": "Sad Keanu",
+   "parody": "Sad Keanu Leaves"
+  },
+  {
+   "real": "Harambe",
+   "parody": "Harambe (Dicks Out, Respectfully)"
+  },
+  {
+   "real": "Florida Man",
+   "parody": "Florida Man (Fighting Out Of)"
+  },
+  {
+   "real": "Karen",
+   "parody": "Karen (Wants to See the Commission)"
+  },
+  {
+   "real": "Chad",
+   "parody": "Chad (Thundercock)"
+  },
+  {
+   "real": "Gigachad",
+   "parody": "Gigachad (Heavyweight)"
+  },
+  {
+   "real": "Skibidi Toilet",
+   "parody": "Skibidi Toilet (Walkout Song)"
+  },
+  {
+   "real": "Rizz",
+   "parody": "Rizz (Unspoken)"
+  },
+  {
+   "real": "Sigma",
+   "parody": "Sigma Grindset"
+  },
+  {
+   "real": "Mewing",
+   "parody": "Mewing (Jawline Gains)"
+  },
+  {
+   "real": "Gyatt",
+   "parody": "Gyatt Damn"
+  },
+  {
+   "real": "Ohio",
+   "parody": "Only in Ohio"
+  },
+  {
+   "real": "NPC",
+   "parody": "NPC (Non-Punching Character)"
+  },
+  {
+   "real": "Delulu",
+   "parody": "Delulu Is the Solulu"
+  },
+  {
+   "real": "Main Character Energy",
+   "parody": "Main Event Energy"
+  },
+  {
+   "real": "Touch Grass",
+   "parody": "Touch Mat"
+  },
+  {
+   "real": "It's Over 9000",
+   "parody": "It's Over 9000 (Purse, in Cents)"
+  },
+  {
+   "real": "Leeroy Jenkins",
+   "parody": "Leeroy Jenkins (Wrestling Coach)"
+  },
+  {
+   "real": "Nyan Cat",
+   "parody": "Nyan Cat Walkout"
+  },
+  {
+   "real": "Gangnam Style",
+   "parody": "Gangnam Style (Takedown)"
+  },
+  {
+   "real": "Ice Bucket Challenge",
+   "parody": "Ice Bath Challenge"
+  },
+  {
+   "real": "Tide Pod Challenge",
+   "parody": "Tide Pod Diet"
+  },
+  {
+   "real": "Planking",
+   "parody": "Planking (Sprawl Drill)"
+  },
+  {
+   "real": "Dab",
+   "parody": "The Dab (Celebration Penalty)"
+  },
+  {
+   "real": "Floss Dance",
+   "parody": "Floss Dance (Before the Fight)"
+  },
+  {
+   "real": "Griddy",
+   "parody": "The Griddy (After the Fight)"
+  },
+  {
+   "real": "Hawk Tuah",
+   "parody": "Hawk Tuah (Spit Bucket)"
+  },
+  {
+   "real": "Brat Summer",
+   "parody": "Brat Summer Camp"
+  },
+  {
+   "real": "Roman Empire",
+   "parody": "Roman Empire (Thinking About Rocko IV)"
+  },
+  {
+   "real": "Girl Dinner",
+   "parody": "Fighter Dinner (Rice Cake)"
+  },
+  {
+   "real": "Chill Guy",
+   "parody": "Chill Guy (Before the Weigh-In)"
+  },
+  {
+   "real": "Demure",
+   "parody": "Very Demure, Very Mindful (Ground and Pound)"
+  }
+ ],
+ "car": [
+  {
+   "real": "Lamborghini",
+   "parody": "Lamb-Bor-Ghini"
+  },
+  {
+   "real": "Ferrari",
+   "parody": "Fur-ari"
+  },
+  {
+   "real": "Rolls-Royce",
+   "parody": "Rolls-Roids"
+  },
+  {
+   "real": "Bentley",
+   "parody": "Bent-Lee"
+  },
+  {
+   "real": "Bugatti",
+   "parody": "Bug-Hatti"
+  },
+  {
+   "real": "McLaren",
+   "parody": "McLaren-Not-McLovin"
+  },
+  {
+   "real": "Porsche",
+   "parody": "Porch"
+  },
+  {
+   "real": "Tesla Cybertruck",
+   "parody": "Cybertruck (Panel Gaps)"
+  },
+  {
+   "real": "Hummer",
+   "parody": "Hummer (Fuel Bill)"
+  },
+  {
+   "real": "Ford F-150",
+   "parody": "Ford F-150 Liens"
+  },
+  {
+   "real": "Dodge Charger",
+   "parody": "Dodge Charger (Charges Pending)"
+  },
+  {
+   "real": "Honda Civic",
+   "parody": "Honda Civic Duty"
+  },
+  {
+   "real": "Toyota Prius",
+   "parody": "Toyota Pious"
+  },
+  {
+   "real": "Kia Soul",
+   "parody": "Kia Soul (Lost It)"
+  },
+  {
+   "real": "Smart Car",
+   "parody": "Dumb Car"
+  },
+  {
+   "real": "Jeep Wrangler",
+   "parody": "Jeep Wrangler of Wrestlers"
+  },
+  {
+   "real": "Mercedes G-Wagon",
+   "parody": "Mercedes G-Wagon-Wheel"
+  },
+  {
+   "real": "Range Rover",
+   "parody": "Range Rover (Repo'd)"
+  },
+  {
+   "real": "Chevy Impala",
+   "parody": "Chevy Impaled"
+  },
+  {
+   "real": "Nissan Altima",
+   "parody": "Nissan Ultimatum"
+  }
+ ],
+ "brand": [
+  {
+   "real": "Nike",
+   "parody": "Nikey"
+  },
+  {
+   "real": "Adidas",
+   "parody": "Adidaze"
+  },
+  {
+   "real": "Under Armour",
+   "parody": "Under Armpit"
+  },
+  {
+   "real": "Gucci",
+   "parody": "Goochi"
+  },
+  {
+   "real": "Louis Vuitton",
+   "parody": "Louis Vuitt-Off"
+  },
+  {
+   "real": "Supreme",
+   "parody": "Sub-Preme"
+  },
+  {
+   "real": "Versace",
+   "parody": "Ver-Sauce"
+  },
+  {
+   "real": "Balenciaga",
+   "parody": "Balencia-Gah"
+  },
+  {
+   "real": "Crocs",
+   "parody": "Crocks"
+  },
+  {
+   "real": "Yeezy",
+   "parody": "Queasy"
+  },
+  {
+   "real": "Apple",
+   "parody": "Crabapple"
+  },
+  {
+   "real": "Samsung",
+   "parody": "Samslung"
+  },
+  {
+   "real": "PlayStation",
+   "parody": "PlayStationary"
+  },
+  {
+   "real": "Xbox",
+   "parody": "X-Bocks"
+  },
+  {
+   "real": "Rolex",
+   "parody": "Ro-Lacks"
+  },
+  {
+   "real": "Hermes",
+   "parody": "Her-Mess"
+  },
+  {
+   "real": "Lululemon",
+   "parody": "Lulu-Lemon-Squeezy"
+  },
+  {
+   "real": "Gymshark",
+   "parody": "Gym-Sharknado"
+  },
+  {
+   "real": "Gold's Gym",
+   "parody": "Gold-Teeth Gym"
+  },
+  {
+   "real": "Planet Fitness",
+   "parody": "Planet Fitness (Lunk Alarm)"
+  },
+  {
+   "real": "CrossFit",
+   "parody": "Cross-Fitting Room"
+  },
+  {
+   "real": "Peloton",
+   "parody": "Pelo-Toast"
+  },
+  {
+   "real": "Oakley",
+   "parody": "Oak-Lee"
+  },
+  {
+   "real": "Ray-Ban",
+   "parody": "Ray-Banned"
+  },
+  {
+   "real": "Jordan Brand",
+   "parody": "Jordan Almond Brand"
+  },
+  {
+   "real": "Victoria's Secret",
+   "parody": "Victoria's Not-So-Secret"
+  },
+  {
+   "real": "Calvin Klein",
+   "parody": "Calvin Klean"
+  },
+  {
+   "real": "Tommy Hilfiger",
+   "parody": "Tommy Hill-Fighter"
+  },
+  {
+   "real": "Ralph Lauren",
+   "parody": "Ralph Lauren Bacall"
+  },
+  {
+   "real": "Patagonia",
+   "parody": "Patagonia-ish"
+  }
+ ]
+}

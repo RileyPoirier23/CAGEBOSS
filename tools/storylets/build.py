@@ -1,7 +1,10 @@
-import importlib, sys, os
+import importlib, sys, os, glob
 sys.path.insert(0, os.path.dirname(__file__))
 import dsl
-for m in ['legal', 'fighter', 'business', 'president', 'media', 'presser', 'fightnight', 'weird', 'world', 'venture', 'legend', 'acts']:
-    if os.path.exists(os.path.join(os.path.dirname(__file__), m + '.py')):
+ORDER = ['legal', 'fighter', 'business', 'president', 'media', 'presser', 'fightnight', 'weird', 'world', 'venture', 'legend', 'acts']
+here = os.path.dirname(__file__)
+extra = sorted(os.path.basename(p)[:-3] for p in glob.glob(os.path.join(here, '*.py')))
+for m in ORDER + [x for x in extra if x not in ORDER and x not in ('dsl', 'build')]:
+    if os.path.exists(os.path.join(here, m + '.py')):
         importlib.import_module(m)
 dsl.write()

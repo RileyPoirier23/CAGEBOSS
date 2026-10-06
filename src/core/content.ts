@@ -181,9 +181,12 @@ export interface CultureDef {
 
 export interface NameTables {
   cultures: CultureDef[];
-  nickAdj: string[];
-  nickNoun: string[];
   nicknames: string[];
+  nickStyle?: Record<string, string[]>;
+  nickCulture?: Record<string, string[]>;
+  nickTrait?: Record<string, string[]>;
+  nickHeavy?: string[];
+  nickFemale?: string[];
   gyms: string[];
   cutmen: string[];
   coachFirst: string[];
@@ -203,6 +206,8 @@ export interface TemplateBank {
   presser: Record<string, string[]>;
   ledgerQuips: string[];
   misc: Record<string, string[]>;
+  presserQ?: Record<string, string[]>;
+  recap?: Record<string, string[]>;
 }
 
 export interface DocContent {
@@ -238,6 +243,7 @@ export interface Content {
   templates: TemplateBank;
   docs: DocContent;
   commentary: CommentaryBank;
+  popculture: Record<string, { real: string; parody: string }[]>;
 }
 
 export interface CommentaryBank {
@@ -324,5 +330,6 @@ export function buildContent(files: Record<string, unknown>): Content {
     templates: get('documents/templates.json', { ticker: {}, social: {}, presser: {}, ledgerQuips: [], misc: {} }),
     docs: get('documents/docs.json', { substances: [], doctors: [], scans: [], countries: [], expenseItems: [], sponsorCategories: [] }),
     commentary: get('documents/commentary.json', { speakers: {}, booth: {}, fallback: {}, butler: {} }),
+    popculture: get('documents/popculture.json', {}),
   };
 }

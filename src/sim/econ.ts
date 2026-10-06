@@ -32,8 +32,14 @@ export function scale(s: GameState): number {
   return [1, 1, 2.2, 5, 10, 16][s.act] ?? 1;
 }
 
+/**
+ * Meters have diminishing returns: gains shrink as a meter nears 100 and
+ * losses bite harder from the top, so nothing sits pinned at 99 for a decade.
+ */
 export function adjustMeter(s: GameState, key: MeterKey, delta: number): void {
-  s.meters[key] = clamp(s.meters[key] + delta, 0, 100);
+  const v = s.meters[key];
+  const k = delta >= 0 ? clamp((100 - v) / 45, 0.12, 1.25) : clamp(v / 50, 0.35, 1.3);
+  s.meters[key] = clamp(v + delta * k, 0, 100);
 }
 
 export function adjustHidden(s: GameState, key: 'heat' | 'patience' | 'chaos', delta: number): void {
@@ -116,8 +122,8 @@ export function lastLedger(s: GameState) {
 export function driftMeters(s: GameState): void {
   for (const k of METER_KEYS) {
     const v = s.meters[k];
-    const target = 45;
-    s.meters[k] = clamp(v + (target - v) * 0.01, 0, 100);
+    const target = 48;
+    s.meters[k] = clamp(v + (target - v) * (v > 75 ? 0.03 : 0.015), 0, 100);
   }
   s.hidden.heat = clamp(s.hidden.heat - 0.3, 0, 100);
   s.hidden.chaos = clamp(s.hidden.chaos - 0.2, 0, 100);

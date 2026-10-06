@@ -8,7 +8,7 @@ import { Rng } from '../core/rng';
 import { clamp } from '../core/format';
 import { CAREER_WEEKS } from '../core/time';
 import { overall, fullName, addCareerLog } from './fighters';
-import { adjustMeter, adjustHidden, sumRecord, scale } from './econ';
+import { adjustMeter, adjustHidden, sumRecord, scale, spend, personal } from './econ';
 import { addNews } from './news';
 import { activateRulesForAct } from './rules';
 import { memoDoc } from './docs';
@@ -176,6 +176,20 @@ export function weeklyOwner(s: GameState, rng: Rng): void {
         : 'Revenue fell short of target. Please explain, in writing, using small words. -The Board';
     s.desk.queue.push(memoDoc(s, 'MEMO: MISSED TARGET', msg));
   }
+  // owners take their cut: anything above a ~6-month operating reserve is swept as a dividend
+  const recentWeeks = s.ledger.slice(-13);
+  const avgExpense = recentWeeks.length ? recentWeeks.reduce((t, l) => t + sumRecord(l.expenses), 0) / recentWeeks.length : 0;
+  const reserve = Math.max(1_500_000, avgExpense * 26);
+  if (s.promotion.cash > reserve) {
+    const share = s.flags.sold ? 0.8 : met ? 0.55 : 0.7;
+    const dividend = Math.round((s.promotion.cash - reserve) * share);
+    if (dividend > 0) {
+      spend(s, 'owner dividend', dividend);
+      personal(s, 'performance bonus', Math.round(dividend * 0.015));
+      adjustHidden(s, 'patience', Math.min(6, dividend / Math.max(1, s.owner.target) * 4));
+      s.desk.queue.push(memoDoc(s, 'MEMO: DIVIDEND', `The Board has collected a dividend of ${Math.round(dividend).toLocaleString()} dollars from "excess" cash. A small performance bonus has been deposited in your personal account. The Board thanks you for your service and reminds you that money in a bank account is "lazy".`));
+    }
+  }
   // next target: grow from what you actually did, with the act's ambitions on top
   const actual = s.owner.results[s.owner.results.length - 1].actual;
   const growth = met ? rng.float(1.03, 1.1) : rng.float(0.92, 1.0);
@@ -244,7 +258,17 @@ export function checkEndings(s: GameState): string | null {
     s.flags.broke_weeks = (Number(s.flags.broke_weeks) || 0) + 1;
     if (Number(s.flags.broke_weeks) >= 8) return setEnding(s, 'bankrupt');
   } else s.flags.broke_weeks = 0;
-  if (!sb?.noOwner && s.hidden.patience <= 0) return setEnding(s, 'forced_out');
+  if (!sb?.noOwner && s.hidden.patience <= 0) {
+    // one reprieve per career: the Board's final warning
+    if (!s.flags.final_warning) {
+      s.flags.final_warning = 1;
+      s.hidden.patience = 15;
+      s.desk.queue.push(memoDoc(s, 'MEMO: FINAL WARNING', 'The Board has voted 6-5 to give you one more chance. The deciding vote was cast by a man who "likes the fights". Do not make him regret it. -The Board'));
+      return null;
+    }
+    s.flags.out_weeks = (Number(s.flags.out_weeks) || 0) + 1;
+    if (Number(s.flags.out_weeks) >= 3) return setEnding(s, 'forced_out');
+  } else s.flags.out_weeks = 0;
   for (const id of ['desert', 'politics', 'slap_forever', 'secret_ref']) if (s.flags['ending_' + id]) return setEnding(s, id);
   // career end
   if (s.week >= CAREER_WEEKS && !sb?.infinite) return setEnding(s, finalEnding(s));

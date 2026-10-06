@@ -6,11 +6,12 @@ import type { Game } from '../app';
 import { PAL } from '../../art/palette';
 import { W, H, text, button, box, ScrollBox, clickable } from '../kit';
 import { fighterPortrait } from '../sprites';
-import { openWindow } from '../widgets';
+import { openWindow, selector, domInput } from '../widgets';
+import { spend } from '../../sim/econ';
 import { undisputed, interim } from '../../sim/rankings';
 import { divisionShort, divisionName, DIVISION_ORDER } from '../../sim/divisions';
 import { fullName } from '../../sim/fighters';
-import { record } from '../../core/format';
+import { record, money } from '../../core/format';
 import { openRoster } from './roster';
 
 export function drawBelt(design: { plate: number; strap: number; gem: number }, w = 40): Graphics {
@@ -90,7 +91,11 @@ export function openRankings(g: Game): void {
       bg.position.set(4, 6);
       row.addChild(bg);
       row.addChild(text(b.name + (b.symbolic ? ' (symbolic)' : ''), 50, 2, { small: true, color: b.symbolic ? PAL.plum : PAL.gold, width: 280 }));
-      row.addChild(text(`Holder: ${b.holder && s.fighters[b.holder] ? fullName(s.fighters[b.holder]) : 'VACANT'}  •  ${b.defenses} defenses  •  ${b.history.length} reigns`, 50, 11, { small: true, color: PAL.ash, width: 285 }));
+      row.addChild(text(`Holder: ${b.holder && s.fighters[b.holder] ? fullName(s.fighters[b.holder]) : 'VACANT'}  •  ${b.defenses} defenses  •  ${b.history.length} reigns`, 50, 11, { small: true, color: PAL.ash, width: 240 }));
+      row.addChild(button('DESIGN', 296, 4, 40, 13, () => {
+        w2.close();
+        openBeltDesigner(g, b.id, () => belts());
+      }, { small: true, fill: PAL.plum }));
       row.position.set(0, i * 24);
       sb.content.addChild(row);
     });
@@ -98,4 +103,46 @@ export function openRankings(g: Game): void {
     sb.refresh();
   };
   draw();
+}
+
+/** Belt designer: strap, plate and gem colours, plus the name (costs money outside the sandbox). */
+export function openBeltDesigner(g: Game, beltId: string, onDone: () => void): void {
+  const s = g.state!;
+  const belt = s.belts[beltId];
+  if (!belt) return;
+  const d = { ...belt.design };
+  const free = s.mode === 'sandbox';
+  const cost = Math.round(15000 * Math.max(1, s.act));
+  let name = belt.name;
+  const win = openWindow(g, 'Belt designer', 300, 170, { onClose: () => { input.remove(); onDone(); } });
+  const preview = new Container();
+  preview.position.set(90, 8);
+  win.body.addChild(preview);
+  const redraw = () => {
+    preview.removeChildren().forEach((c) => c.destroy());
+    preview.addChild(drawBelt(d, 120));
+  };
+  redraw();
+  const rows: [string, 'strap' | 'plate' | 'gem', string[]][] = [
+    ['Strap', 'strap', ['Black', 'Blood red', 'Navy', 'Bone white']],
+    ['Plate', 'plate', ['Gold', 'Silver', 'Bronze', 'Blacked out']],
+    ['Gem', 'gem', ['Ruby', 'Sapphire', 'Emerald', 'Amethyst']],
+  ];
+  rows.forEach(([label, key, names], i) => {
+    win.body.addChild(text(label.toUpperCase(), 10, 56 + i * 16, { small: true, color: PAL.ash }));
+    win.body.addChild(selector(60, 53 + i * 16, 120, names.map((n, k) => ({ value: k, label: n })), d[key], (v: number) => {
+      d[key] = v;
+      redraw();
+    }));
+  });
+  win.body.addChild(text('NAME', 10, 106, { small: true, color: PAL.ash }));
+  const p = win.frame.position;
+  const input = domInput(g, p.x + 60, p.y + 14 + 102, 228, 13, name, { maxLength: 48, onChange: (v) => (name = v) });
+  win.body.addChild(button(free ? 'SAVE DESIGN' : `COMMISSION IT (${money(cost)})`, 60, 128, 228, 16, () => {
+    if (!free) spend(s, 'belts', cost);
+    belt.design = { ...d };
+    belt.name = (name || belt.name).trim().slice(0, 48);
+    g.toast('New belt design unveiled. The champ poses with it. Twice.', PAL.gold);
+    win.close();
+  }, { fill: PAL.gold, textColor: PAL.ink }));
 }

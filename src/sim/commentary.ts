@@ -12,6 +12,7 @@ import { Rng } from '../core/rng';
 import { pronounize } from './fighters';
 import { divisionName } from './divisions';
 import { rematchTag, roman } from './events';
+import { expandPop } from './popculture';
 
 export const BOOTH_IDS = ['lon', 'blow', 'dc', 'braille', 'biscuit'] as const;
 
@@ -52,7 +53,7 @@ export function mangle(name: string, seed: number): string {
   const opts = [
     () => n.slice(0, Math.max(3, Math.ceil(n.length * 0.6))) + r.pick(['ski', 'son', 'ez', 'ington', 'ovich', 'man', 'stein']),
     () => r.pick(['Mc', 'O\'', 'Van ', 'De', 'Big ']) + n,
-    () => n.split('').reverse().join('').replace(/^./, (c) => c.toUpperCase()).toLowerCase().replace(/^./, (c) => c.toUpperCase()),
+    () => n.slice(0, 2) + n.slice(2).replace(/[aeiou]/g, (v) => ({ a: 'e', e: 'i', i: 'o', o: 'a', u: 'o' } as Record<string, string>)[v] ?? v),
     () => n.replace(/[aeiou]/, (v) => ({ a: 'o', e: 'a', i: 'e', o: 'u', u: 'i' } as Record<string, string>)[v] ?? v),
     () => r.pick(['Kevin', 'Brandon', 'Big Dog', 'Champ', 'My Guy', 'Number Seven']),
   ];
@@ -121,7 +122,7 @@ export function funFacts(s: GameState, f: Fighter): string[] {
   if (f.anim?.walkout) out.push(p(f.anim.walkout));
   const gen = (content().commentary.butler.facts_generic as string[]) ?? [];
   const r = new Rng(hashStr(f.id));
-  for (let i = 0; i < 2 && gen.length; i++) out.push(p(r.pick(gen)));
+  for (let i = 0; i < 2 && gen.length; i++) out.push(p(expandPop(r.pick(gen), r.int(1, 1e9))));
   return out;
 }
 
@@ -194,14 +195,19 @@ function vars(c: Ctx, xi: number): Record<string, string> {
     age: String(x.age), ref, belt, event: c.ev.name, venue, div: divisionName(c.bout.division),
     president: c.s.president.name, fact: c.rng.pick(facts),
     winner: win?.last ?? x.last, loser: lose?.last ?? y.last,
-    meeting: roman(c.bout.meeting ?? 1), bones: 'Bro Bones',
+    meeting: roman(c.bout.meeting ?? 1), bones: 'Bonez',
+    wins: String(x.record.w), fin: String(Math.max(0, Math.round(x.record.w * (x.styles.includes('Point Fighter') || x.styles.includes('Boring But Effective') ? 0.3 : 0.6)))),
     sa: String(Math.max(sc[0], sc[1])), sb: String(Math.min(sc[0], sc[1])),
     r: '1', ...(wa ? {} : {}),
   };
 }
 
-function fill(t: string, v: Record<string, string>, f: Fighter): string {
-  return sentenceCase(pronounize(t.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)), f));
+function fill(t: string, v: Record<string, string>, f: Fighter, seed?: number): string {
+  const out = sentenceCase(pronounize(expandPop(t.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m)), seed), f));
+  // shouted lines stay shouted, names included
+  const letters = t.replace(/\{\w+\}/g, '').replace(/[^A-Za-z]/g, '');
+  const caps = letters.replace(/[^A-Z]/g, '').length;
+  return letters.length > 8 && caps / letters.length > 0.8 ? out.toUpperCase() : out;
 }
 
 /** Pick an unused line for speaker/situation (with fallbacks). */
@@ -209,7 +215,7 @@ function pickLine(c: Ctx, sp: string, sit: string): string | null {
   const bank = content().commentary.booth[sp];
   if (!bank) return null;
   const chain = [sit, ...(content().commentary.fallback[sit] ?? [])];
-  if (sp === 'braille' || sp === 'biscuit') chain.unshift('any');
+  if (sp === 'braille' || sp === 'biscuit') chain.push('any');
   for (const k of chain) {
     const lines = (bank[k] ?? []).filter((l) => !c.used.has(l));
     if (lines.length) {
@@ -228,7 +234,7 @@ function line(c: Ctx, base: TickerLine | null, sp: string, sit: string, xi: numb
   v.r = String(round);
   const subj = xi === 1 ? c.B : c.A;
   return {
-    round, t: base?.t ?? 0, text: fill(raw, v, subj), side: -1, intensity: 0, act: 'talk',
+    round, t: base?.t ?? 0, text: fill(raw, v, subj, c.rng.int(1, 1e9)), side: -1, intensity: 0, act: 'talk',
     pos: base?.pos ?? 'stand', hp: base?.hp ?? [100, 100], key: 'booth:' + sit, speaker: sp,
   };
 }
@@ -295,7 +301,7 @@ export function commentate(s: GameState, ev: FightEvent, bout: Bout, lines: Tick
         if (sp === 'blow' && isBJJ(actor) && c.rng.chance(0.35)) use = 'fav_bjj';
       } else if (sit === 'lull') {
         sp = c.rng.pick(['lon', ...colors, ...colors]);
-        if (sp === 'lon' && c.rng.chance(0.45)) use = 'controversy';
+        if (sp === 'lon') use = c.rng.pick(['lull', 'lull', 'controversy', 'controversy', 'stats']);
         if (sp === 'dc') use = c.rng.pick(['lull', 'texted', 'texted', 'name_mixup', ...(bones ? ['bones'] : [])]);
         if (sp === 'blow' && c.rng.chance(0.15)) use = 'bias';
       } else sp = c.rng.pick(['lon', ...colors]);
@@ -368,7 +374,7 @@ export function butlerIntro(s: GameState, ev: FightEvent, bout: Bout, seed: numb
     };
     const fl = (t: string) => sentenceCase(pronounize(up(t).replace(/\{(\w+)\}/g, (m, k) => v[k] ?? m), f));
     const lines: string[] = [];
-    lines.push(fl(r.pick(bget(first ? 'blue' : 'red'))));
+    lines.push(fl(r.pick(bget(first ? 'blue' : 'red').filter((l) => belt || !/challenger/i.test(l)))));
     lines.push(fl(r.pick(bget('height'))) + ' ' + fl(r.pick(bget('weight'))).replace(/^./, (ch) => ch.toLowerCase()));
     if (big || r.chance(0.5)) lines.push(fl(r.pick(bget('origin'))) + ' ' + fl(r.pick(bget('gym'))).replace(/^./, (ch) => ch.toLowerCase()));
     lines.push(fl(r.pick(bget('record'))));
@@ -378,7 +384,7 @@ export function butlerIntro(s: GameState, ev: FightEvent, bout: Bout, seed: numb
       lines.push(fl(r.pick(bget('fact_lead')).replace('{fact}', fact)));
     }
     for (const t of lines) out.push({ text: t, corner: idx });
-    if (champ(f)) out.push({ text: up(r.pick(bget('champ_lead'))), corner: idx });
+    if (champ(f)) out.push({ text: up(r.pick(bget('champ_lead'))).replace(/\{HE\}/g, f.gender === 'W' ? 'SHE' : 'HE'), corner: idx });
     else out.push({ text: fl(r.pick(bget('name_lead'))), corner: idx });
     const name = `${f.first}${f.nick ? ` "${f.nick.toUpperCase()}"` : ''} ${f.last.toUpperCase()}!!!`;
     out.push({ text: big ? name.toUpperCase() : name, corner: idx });

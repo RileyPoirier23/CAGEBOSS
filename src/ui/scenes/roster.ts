@@ -47,14 +47,18 @@ export function openRoster(g: Game, onClose: () => void, focus?: string): void {
   const body = win.body;
   const draw = () => {
     body.removeChildren().forEach((c) => c.destroy({ children: true }));
-    const tabs: [Tab, string][] = [['ours', 'OUR ROSTER'], ['free', 'FREE AGENTS'], ['rivals', 'RIVAL ROSTERS'], ['legends', 'LEGENDS']];
-    tabs.forEach(([t, label], i) => body.addChild(button(label, 4 + i * 72, 0, 70, 12, () => { tab = t; scroll = 0; draw(); }, { small: true, fill: tab === t ? PAL.gold : PAL.slate, textColor: tab === t ? PAL.ink : PAL.bone })));
+    // everything on the left stays inside the 176px list column; the dossier owns the rest
+    const tabs: [Tab, string][] = [['ours', 'OURS'], ['free', 'FREE'], ['rivals', 'RIVALS'], ['legends', 'LEGENDS']];
+    tabs.forEach(([t, label], i) => body.addChild(button(label, 4 + i * 44, 0, 43, 12, () => { tab = t; scroll = 0; draw(); }, { small: true, fill: tab === t ? PAL.gold : PAL.slate, textColor: tab === t ? PAL.ink : PAL.bone })));
     const divs = ['all', ...DIVISION_ORDER.filter((d) => s.divisionsOpen.includes(d) || tab !== 'ours')];
-    divs.forEach((d, i) => body.addChild(button(d === 'all' ? 'ALL' : divisionShort(d), 4 + i * 26, 14, 25, 10, () => { div = d; scroll = 0; draw(); }, { small: true, fill: div === d ? PAL.steel : PAL.shadow })));
+    const perRow = Math.min(6, divs.length);
+    const dbw = Math.floor(176 / perRow);
+    divs.forEach((d, i) => body.addChild(button(d === 'all' ? 'ALL' : divisionShort(d), 4 + (i % perRow) * dbw, 14 + Math.floor(i / perRow) * 11, dbw - 1, 10, () => { div = d; scroll = 0; draw(); }, { small: true, fill: div === d ? PAL.steel : PAL.shadow })));
+    const listY = 14 + Math.ceil(divs.length / perRow) * 11 + 2;
     const list = fighters(tab).filter((f) => div === 'all' || f.division === div);
     list.sort((a, b) => (tab === 'free' ? seenOverall(b) + b.starPower - seenOverall(a) - a.starPower : DIVISION_ORDER.indexOf(a.division) - DIVISION_ORDER.indexOf(b.division) || seenOverall(b) - seenOverall(a)));
-    const sb = new ScrollBox(176, H - 48);
-    sb.position.set(4, 27);
+    const sb = new ScrollBox(176, H - 8 - 14 - listY - 12);
+    sb.position.set(4, listY);
     list.forEach((f, i) => {
       const row = clickable(new Container(), () => {
         selected = f.id;
@@ -78,7 +82,7 @@ export function openRoster(g: Game, onClose: () => void, focus?: string): void {
     });
     body.addChild(sb);
     sb.scrollTo(scroll);
-    body.addChild(text(`${list.length} fighters`, 4, H - 20, { small: true, color: PAL.grey }));
+    body.addChild(text(`${list.length} fighters`, 4, H - 8 - 14 - 9, { small: true, color: PAL.grey }));
     const f = selected ? s.fighters[selected] : list[0];
     if (f) body.addChild(dossier(f));
   };
@@ -110,8 +114,9 @@ export function openRoster(g: Game, onClose: () => void, focus?: string): void {
     const sc = effectiveScout(f);
     c.addChild(text(`OVR ~${seenOverall(f)}  POT ${seenPotential(f)}  STAR ${f.starPower}  HYPE ${Math.round(f.hype)}  FOLLOWERS ${compact(f.social.followers)}${f.streaming ? ' (STREAMER)' : ''}`, 74, 50, { small: true, color: PAL.ink, width: dw - 80 }));
     c.addChild(text(`SCOUTING: ${SCOUT_LABEL[sc]}`, 74, 59, { small: true, color: sc >= 2 ? PAL.moss : PAL.ember }));
-    const tabs = ['bio', 'skills', 'record', 'contract', 'legal', 'relations', 'timeline'];
-    tabs.forEach((t, i) => c.addChild(button(t.toUpperCase(), 5 + i * 39, 72, 38, 11, () => { dtab = t; draw(); }, { small: true, fill: dtab === t ? PAL.ink : PAL.woodLight })));
+    const tabs: [string, string][] = [['bio', 'BIO'], ['skills', 'SKILLS'], ['record', 'RECORD'], ['contract', 'CONTRACT'], ['legal', 'LEGAL'], ['relations', 'PEOPLE'], ['timeline', 'HISTORY']];
+    const tbw = Math.floor((dw - 10) / tabs.length);
+    tabs.forEach(([t, label], i) => c.addChild(button(label, 5 + i * tbw, 72, tbw - 1, 11, () => { dtab = t; draw(); }, { small: true, fill: dtab === t ? PAL.ink : PAL.woodLight })));
     const area = new ScrollBox(dw - 10, H - 28 - 86 - 18);
     area.position.set(5, 86);
     const tw = dw - 18;
@@ -194,10 +199,16 @@ export function openRoster(g: Game, onClose: () => void, focus?: string): void {
     c.addChild(area);
     area.refresh();
     // actions
-    const ay = H - 28 - 16;
+    let ay = H - 28 - 16;
     let ax = 5;
     const act = (label: string, fn: () => void, fill = PAL.slate, tip?: string) => {
       const w = measure(label, true) + 8;
+      if (ax + w > dw - 5 && ax > 5) {
+        // out of room: push the scroll area up and start a second row
+        ay -= 14;
+        area.setSize(dw - 10, ay - 86 - 3);
+        ax = 5;
+      }
       const bb = button(label, ax, ay, w, 12, fn, { small: true, fill, tooltip: tip });
       c.addChild(bb);
       ax += w + 3;
@@ -205,7 +216,7 @@ export function openRoster(g: Game, onClose: () => void, focus?: string): void {
     if (sc < 3) {
       const next = sc + 1;
       const cost = Math.round(SCOUT_COST[next] * Math.max(1, scale(s) * 0.5));
-      act(`SCOUT: ${SCOUT_LABEL[next]} ${money(cost)}`, () => {
+      act(`${['', 'BUY TAPE', 'SEND SCOUT', 'FULL WORKUP'][next]} ${money(cost)}`, () => {
         if (s.promotion.cash < cost) return alertBox(g, 'Broke', 'Not enough cash for scouting.');
         spend(s, 'scouting', cost);
         f.scout = next;
@@ -225,7 +236,7 @@ export function openRoster(g: Game, onClose: () => void, focus?: string): void {
     if (f.promotion === 'us' && f.status === 'active') {
       const better = content().names.cutmen.length;
       const cost = Math.round(4000 * Math.max(1, scale(s) * 0.6));
-      if (f.cutman.rating < 90 && better) act(`HIRE BETTER CUTMAN ${money(cost)}`, () => {
+      if (f.cutman.rating < 90 && better) act(`BETTER CUTMAN ${money(cost)}`, () => {
         if (s.promotion.cash < cost) return alertBox(g, 'Broke', 'Not enough cash.');
         spend(s, 'cutmen', cost);
         const rng = new Rng(s.rng);

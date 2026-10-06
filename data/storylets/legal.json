@@ -531,7 +531,7 @@
      "commission += 3",
      "follow('legal_domestic_outcome', 8)"
     ],
-    "result": "You suspend {him} and refer the matter to the authorities. The promotion makes a donation to a domestic-violence support organisation. It is the right call.",
+    "result": "You suspend {him} and refer the matter to the authorities. The promotion makes a donation to a domestic-violence support organization. It is the right call.",
     "ethics": 3
    },
    {

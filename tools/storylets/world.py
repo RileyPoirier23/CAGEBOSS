@@ -21,7 +21,7 @@ S(FILE, 'owner_boardroom', 'The Boardroom', 'owner',
   [C("Promise to hit the next target, no excuses", "patience += 12", "flag.boardroom_promise = 1", result="The chairman nods slowly. 'One quarter.' One quarter.", default=True),
    C("Flip the table (figuratively): 'You don't understand this business'", "patience -= 6", "fans += 2", "fighters += 2", result="A long silence. Then the youngest exec says 'he's kind of right'. He's fired immediately.", bot=1),
    C("Offer to take a pay cut", "patience += 8", "wealth -= 200000", "promotion.staff -= 500 * scale", result="Personal sacrifice. They love it. They don't love you, but they love it.", ethics=1)],
-  cond="patience < 30 && !(mode == 'sandbox')", cd=26)
+  cond="patience < 30 && !(mode == 'sandbox')", cd=40)
 
 S(FILE, 'owner_new_bosses', 'Meet The New Bosses', 'owner',
   [sc('boardroom', "The new owners from OmniVore introduce themselves. A man in a quarter-zip says 'synergy' four times in his first sentence. They want a 'content strategy', a 'fan engagement roadmap' and for you to stop swearing in press conferences.", "OmniVore VP of Synergy")],
@@ -123,7 +123,7 @@ S(FILE, 'legend_comeback', 'One More Fight', 'legend',
 S(FILE, 'legend_hof_speech', 'Hall of Fame Speech', 'legend',
   [sc('narration', "{subject.first} {subject.last} is being inducted into the Hall of Fame. {His} speech is scheduled for 8 minutes. {He} has written 41 pages.")],
   [C("Let {him} speak as long as {he} wants", "fans += 2", "media += 1", result="It goes 47 minutes. {He} thanks {his} cutman, {his} third-grade teacher and a dog. Everyone cries.", default=True),
-   C("Play the music at minute 8", "fans -= 1", result="Play-off music at minute 8. {He} keeps talking over it. Legend behaviour.", bot=1)],
+   C("Play the music at minute 8", "fans -= 1", result="Play-off music at minute 8. {He} keeps talking over it. Legend behavior.", bot=1)],
   roles={"subject": LEG("true", "f.star + 5")}, cd=52, chain='legends')
 
 S(FILE, 'legend_podcast_beef', 'Legends Beefing', 'legend',

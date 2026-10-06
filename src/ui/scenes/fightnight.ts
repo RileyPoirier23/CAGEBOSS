@@ -5,7 +5,10 @@
  */
 import { Container, Graphics } from 'pixi.js';
 import { Scene, Game, fullBg } from '../app';
-import type { Bout, FightEvent, TickerLine } from '../../core/types';
+import type { Bout, FightEvent, TickerLine, EventFinancials } from '../../core/types';
+import { PostFightPresser } from '../presser';
+import { setMusicContext, walkoutFor } from '../../audio/music';
+import { NewsRecap } from '../newsrecap';
 import { PAL, shade } from '../../art/palette';
 import { W, H, text, button, box, ScrollBox, paper, clickable } from '../kit';
 import { PixelText } from '../text';
@@ -26,7 +29,7 @@ import { sfx } from '../../audio/sfx';
 import { fmtFightDate } from '../../core/time';
 import { quickOdds, oddsString } from '../../sim/fight';
 
-type Step = 'intro' | 'card' | 'watch' | 'bonus' | 'done';
+type Step = 'intro' | 'card' | 'watch' | 'bonus' | 'presser' | 'recap' | 'done';
 
 const INTERVIEW: Record<string, string[]> = {
   win_ko: [
@@ -59,7 +62,10 @@ const INTERVIEW: Record<string, string[]> = {
   ],
 };
 
+const CAM_NAMES: Record<string, string> = { side: 'WIDE', tv: 'TV', top: 'TOP-DOWN' };
+
 export class FightNightScene extends Scene {
+  music = 'fightnight' as const;
   private step: Step = 'intro';
   private ev: FightEvent;
   private arena: ArenaView | null = null;
@@ -71,7 +77,10 @@ export class FightNightScene extends Scene {
   } | null = null;
   private subtitle: Container | null = null;
   private tickerBox: Container | null = null;
+  private ctrlBar: Container | null = null;
   private bonusSel = new Set<string>();
+  private presserView: PostFightPresser | null = null;
+  private recapView: NewsRecap | null = null;
   private pressersDone = 0;
 
   constructor(g: Game, evId: string) {
@@ -107,6 +116,8 @@ export class FightNightScene extends Scene {
       case 'card': return this.buildCard();
       case 'watch': return this.buildWatch();
       case 'bonus': return this.buildBonus();
+      case 'presser': return this.buildPresser();
+      case 'recap': return this.buildRecap();
       case 'done': return this.finish();
     }
   }
@@ -271,6 +282,8 @@ export class FightNightScene extends Scene {
       intro, introIdx: 0, cer: [], cerIdx: 0, cerWinner: -1, raised: false,
     };
     this.step = 'watch';
+    // walkout music: the red corner's song for the intro, straight into the fight if there's no intro
+    setMusicContext(intro.length ? 'walkout' : 'fight', walkoutFor(b.a));
     this.refresh();
   }
 
@@ -298,29 +311,21 @@ export class FightNightScene extends Scene {
     r.addChild(tb);
     this.tickerBox = tb;
     this.drawTicker();
-    r.addChild(button('SPEED x' + this.g.settings.fightSpeed, 4, H - 16, 50, 13, () => {
-      this.g.settings.fightSpeed = (this.g.settings.fightSpeed % 4) + 1;
-      this.g.applySettings();
-      this.refresh();
-    }, { small: true }));
-    r.addChild(button(p.paused ? 'PLAY' : 'PAUSE', 57, H - 16, 36, 13, () => {
-      p.paused = !p.paused;
-      this.refresh();
-    }, { small: true }));
-    const camNames: Record<string, string> = { side: 'WIDE', tv: 'TV', top: 'TOP-DOWN' };
-    r.addChild(button('CAM: ' + camNames[this.g.settings.fightCam ?? 'side'], 96, H - 16, 62, 13, () => {
-      const order = ['side', 'tv', 'top'] as const;
-      const cur = order.indexOf(this.g.settings.fightCam ?? 'side');
-      this.g.settings.fightCam = order[(cur + 1) % order.length];
-      this.g.applySettings();
-      this.arena?.setMode(this.g.settings.fightCam);
-      this.refresh();
-    }, { small: true, fill: PAL.steel }));
-    if (p.phase === 'intro') r.addChild(button('SKIP INTRO', 161, H - 16, 56, 13, () => this.endIntro(), { small: true, fill: PAL.plum }));
-    else r.addChild(button(p.phase === 'ceremony' ? 'SKIP' : 'SKIP TO END', 161, H - 16, 56, 13, () => this.skipToEnd(), { small: true, fill: PAL.blood }));
-    r.addChild(text(boutLabel(s, p.bout).toUpperCase(), 222, H - 12, { small: true, color: PAL.ash, width: W - 226, maxLines: 1 }));
-    if (p.phase === 'corner' && p.corner) r.addChild(p.corner);
-    if (p.phase === 'ringcard' && p.ringcard) r.addChild(p.ringcard);
+    const ctrl = new Container();
+    r.addChild(ctrl);
+    this.ctrlBar = ctrl;
+    this.drawControls();
+    // overlays live on the root, so a rebuild destroys them: rebuild them rather than re-adding dead objects
+    if (p.phase === 'corner') {
+      const reps = (p.bout.result?.corners ?? []).filter((c) => c.round === (p.lines[p.idx - 1]?.round ?? 1));
+      p.corner = reps.length ? cornerView(A, B, reps, reps[0].round) : null;
+      if (p.corner) r.addChild(p.corner);
+      else p.phaseT = 0;
+    }
+    if (p.phase === 'ringcard') {
+      p.ringcard = new RingCardWalk((p.lines[p.idx - 1]?.round ?? 1) + 1);
+      r.addChild(p.ringcard);
+    }
   }
 
   /** Big subtitle for Juiced Butler. */
@@ -338,6 +343,37 @@ export class FightNightScene extends Scene {
     if (!line.stage) sub.addChild(text('JUICED BUTLER', 16, 30 - h - 9, { small: true, color: PAL.gold, shadow: PAL.ink }));
     t.position.set(20, 30 - h + 4);
     sub.addChild(t);
+  }
+
+  /** The button strip under the fight. Redrawn in place: rebuilding the scene mid-fight would reset the arena. */
+  private drawControls(): void {
+    const c = this.ctrlBar;
+    const p = this.playing;
+    if (!c || c.destroyed || !p) return;
+    c.removeChildren().forEach((ch) => ch.destroy({ children: true }));
+    const s = this.g.state!;
+    c.addChild(button('SPEED x' + this.g.settings.fightSpeed, 4, H - 16, 50, 13, () => {
+      this.g.settings.fightSpeed = (this.g.settings.fightSpeed % 4) + 1;
+      this.g.applySettings();
+      this.drawControls();
+    }, { small: true }));
+    c.addChild(button(p.paused ? 'PLAY' : 'PAUSE', 57, H - 16, 36, 13, () => {
+      p.paused = !p.paused;
+      this.drawControls();
+    }, { small: true }));
+    c.addChild(button('CAM: ' + CAM_NAMES[this.g.settings.fightCam ?? 'side'], 96, H - 16, 62, 13, () => this.cycleCam(), { small: true, fill: PAL.steel }));
+    if (p.phase === 'intro') c.addChild(button('SKIP INTRO', 161, H - 16, 56, 13, () => this.endIntro(), { small: true, fill: PAL.plum }));
+    else c.addChild(button(p.phase === 'ceremony' ? 'SKIP' : 'SKIP TO END', 161, H - 16, 56, 13, () => this.skipToEnd(), { small: true, fill: PAL.blood }));
+    c.addChild(text(boutLabel(s, p.bout).toUpperCase(), 222, H - 12, { small: true, color: PAL.ash, width: W - 226, maxLines: 1 }));
+  }
+
+  private cycleCam(): void {
+    const order = ['side', 'tv', 'top'] as const;
+    const cur = order.indexOf(this.g.settings.fightCam ?? 'side');
+    this.g.settings.fightCam = order[(cur + 1) % order.length];
+    this.g.applySettings();
+    if (this.arena && !this.arena.destroyed) this.arena.setMode(this.g.settings.fightCam);
+    this.drawControls();
   }
 
   private drawTicker(): void {
@@ -384,6 +420,7 @@ export class FightNightScene extends Scene {
     p.timer = 0.8;
     this.arena?.startFight();
     this.say(null);
+    setMusicContext('fight');
     sfx('bell');
     this.refresh();
   }
@@ -414,12 +451,15 @@ export class FightNightScene extends Scene {
     p.cerWinner = res.winner === p.bout.a ? 0 : res.winner === p.bout.b ? 1 : -1;
     p.cerIdx = 0;
     p.phase = 'ceremony';
+    setMusicContext('fightnight');
     p.timer = 1.0;
     p.raised = false;
     this.refresh();
   }
 
   update(dt: number): void {
+    if (this.step === 'presser' && this.presserView && !this.presserView.destroyed) this.presserView.update(dt);
+    if (this.step === 'recap' && this.recapView && !this.recapView.destroyed) this.recapView.update(dt);
     const p = this.playing;
     if (this.step !== 'watch' || !p || !this.arena || this.arena.destroyed) return;
     const speed = [1, 0.6, 1, 2, 4][this.g.settings.fightSpeed] ?? 1;
@@ -523,6 +563,7 @@ export class FightNightScene extends Scene {
     this.playing = null;
     this.arena = null;
     this.subtitle = null;
+    setMusicContext('fightnight');
     this.step = 'card';
     this.refresh();
     this.postBout(p.bout, true);
@@ -618,13 +659,46 @@ export class FightNightScene extends Scene {
     r.addChild(sb);
     sb.refresh();
     r.addChild(text(`Selected: ${this.bonusSel.size}  (${money(this.bonusSel.size * bonusAmount(s))})`, 8, H - 22, { color: PAL.bone }));
-    r.addChild(button('POST-FIGHT PRESSER →', W - 150, H - 26, 142, 18, () => this.presser(true), { fill: PAL.steel }));
+    r.addChild(button('POST-FIGHT PRESSER →', W - 150, H - 26, 142, 18, () => this.wrapUp(), { fill: PAL.steel }));
+  }
+
+  /** Pay everybody, then the post-fight press conference and the TV recap. */
+  private wrapUp(): void {
+    const s = this.g.state!;
+    if (this.ev.status === 'scheduled') {
+      this.ev.fin = finalizeEvent(s, this.ev, [...this.bonusSel]);
+      sfx('cash');
+    }
+    this.step = 'presser';
+    this.refresh();
+  }
+
+  private finSafe(): EventFinancials {
+    return this.ev.fin ?? { attendance: 0, gate: 0, ppvBuys: 0, ppv: 0, broadcast: 0, sponsors: 0, merch: 0, purses: 0, bonuses: 0, venue: 0, production: 0 };
+  }
+
+  private buildPresser(): void {
+    this.presserView = new PostFightPresser(this.g, this.ev, this.finSafe(), [...this.bonusSel], () => {
+      this.presserView = null;
+      this.step = 'recap';
+      this.refresh();
+    });
+    this.root.addChild(this.presserView);
+  }
+
+  private buildRecap(): void {
+    this.recapView = new NewsRecap(this.g, this.ev, this.finSafe(), () => {
+      this.recapView = null;
+      this.finish();
+    });
+    this.root.addChild(this.recapView);
   }
 
   private finish(): void {
     const s = this.g.state!;
     if (this.ev.status === 'scheduled') {
       const fin = finalizeEvent(s, this.ev, [...this.bonusSel]);
+      this.ev.fin = fin;
       sfx('cash');
       this.g.toast(`Gate ${money(fin.gate)}  •  ${fin.attendance.toLocaleString()} fans${fin.ppvBuys ? `  •  ${fin.ppvBuys.toLocaleString()} PPV buys` : ''}`, PAL.gold);
     }

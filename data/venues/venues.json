@@ -418,5 +418,15 @@
   "tier": 1,
   "unlockAct": 1,
   "blurb": "Unsanctioned-feeling. Legally sanctioned. Barely."
+ },
+ {
+  "id": "fight_island",
+  "name": "Fight Island (Private Beach Cage)",
+  "region": "intl",
+  "capacity": 2500,
+  "cost": 90000,
+  "tier": 3,
+  "unlockAct": 99,
+  "blurb": "A billionaire's private island. A cage on the sand, a resort, a parrot, and jellyfish with opinions."
  }
 ]

@@ -125,24 +125,34 @@
    "{b}'s legs are doing the cha-cha slide!",
    "{b} is hurt! {b} is hurt!",
    "{b} wobbles like a folding table at a family reunion. HURT!",
-   "{b} is out on his feet and doesn't know it yet!"
+   "{b} is out on his feet and doesn't know it yet!",
+   "{b} is ROCKED! His legs just filed for divorce from the rest of his body!",
+   "{b} is out on his feet! He's doing the drunk-uncle-at-a-wedding shuffle!",
+   "{b} is fucked up! Badly! He's looking for his corner and finding the fucking concession stand!"
   ],
   "knockdown": [
    "{a} DROPS {b}!",
    "DOWN GOES {b}!",
    "{a} puts {b} on the canvas!",
-   "KNOCKDOWN! {a} sends {b} crashing to the mat!"
+   "KNOCKDOWN! {a} sends {b} crashing to the mat!",
+   "{b} goes DOWN! Ass on the canvas! Pride somewhere in the third row!",
+   "Flash knockdown! {b} hits the mat like a sack of wet laundry!"
   ],
   "ko_punch": [
    "GOOD NIGHT! {a} KNOCKS {b} OUT COLD!",
    "IT'S OVER! {b} is asleep before he hits the floor!",
    "{a} turns {b}'s lights OFF!",
    "{a} FLATLINES {b}! Face-first into the canvas!",
-   "{b} is out. Not 'hurt' out. 'What year is it' out. {a} WINS!"
+   "{b} is out. Not 'hurt' out. 'What year is it' out. {a} WINS!",
+   "LIGHTS OUT! {a} knocks {b} the FUCK out! He's snoring! Somebody get him a pillow and a lawyer!",
+   "GOOD FUCKING NIGHT! {b} is unconscious and his mouthpiece is in row four!",
+   "{a} TURNS {b}'S LIGHTS OFF! {b} is face down, ass up, and nobody's home!"
   ],
   "ko_kick": [
    "HEAD KICK KNOCKOUT! {a} sends {b} into next week!",
-   "{a} lands the head kick and {b} goes stiff as a plank! IT'S OVER!"
+   "{a} lands the head kick and {b} goes stiff as a plank! IT'S OVER!",
+   "HEAD KICK! {b}'s soul just left his body and is waiting outside for an Uber!",
+   "{a} kicks {b}'s head into next week! Absolutely fucking disgusting! Beautiful!"
   ],
   "ko_knee": [
    "KNEE! {b} IS OUT! {a} with a knee for the highlight reels!",
@@ -160,13 +170,17 @@
   "tko_gnp": [
    "{a} rains down punches and {ref} stops it! TKO!",
    "Ground and pound finish! {ref} pulls {a} off of {b}!",
-   "{a} turns {b}'s face into a crime scene. {ref} finally stops it!"
+   "{a} turns {b}'s face into a crime scene. {ref} finally stops it!",
+   "{a} is beating the ever-loving shit out of {b} on the ground! {ref} finally jumps in!",
+   "It's a mugging! {a} is pounding {b} like a cheap steak! STOPPAGE!"
   ],
   "late_ref": [
    "{ref} is letting this go WAY too long...",
    "{b} is eating shots and {ref} is just... watching. Like it's Netflix.",
    "Somebody tell {ref} he's allowed to stop this.",
-   "{ref} leans in, looks at {b}'s eyes, and decides he's fine. He is NOT fine."
+   "{ref} leans in, looks at {b}'s eyes, and decides he's fine. He is NOT fine.",
+   "{ref} is letting this go WAY too long! {b} is unconscious and {ref} is checking his fucking watch!",
+   "Jesus Christ, STOP THE FIGHT! {ref} is just standing there like he's waiting for a bus!"
   ],
   "takedown": [
    "{a} shoots in and gets the takedown!",
@@ -191,7 +205,9 @@
    "{b} TAPS! {a} wins by {hold}!",
    "TAP TAP TAP! {a} gets the {hold}!",
    "{b} taps out to the {hold}! What a finish!",
-   "{b} taps faster than a guy who just saw his ex at the bar. {a} wins by {hold}!"
+   "{b} taps faster than a guy who just saw his ex at the bar. {a} wins by {hold}!",
+   "{b} TAPS like his life depends on it! Because it fucking does!",
+   "{b} taps! Taps so fast he might've invented Morse code! {a} wins by {hold}!"
   ],
   "escape": [
    "{a} escapes the {hold}!",
@@ -200,11 +216,14 @@
   ],
   "wont_tap": [
    "{a} REFUSES to tap... OH NO. That's... that's broken.",
-   "{a} won't tap! Something just went SNAP!"
+   "{a} won't tap! Something just went SNAP!",
+   "{b} refuses to tap! Something is going to snap and it's not his fucking pride!"
   ],
   "limb_snap": [
    "{ref} jumps in! Technical submission! {b} is screaming. {a} wins by {hold}.",
-   "It's over, and so is that limb. {a} with the {hold}."
+   "It's over, and so is that limb. {a} with the {hold}.",
+   "OH GOD. You could hear that in the cheap seats. {b}'s arm now bends both fucking ways.",
+   "That arm is BROKEN. Snapped like a breadstick. Somebody in row two just threw up."
   ],
   "standup": [
    "{ref} stands them up for inactivity.",
@@ -263,7 +282,9 @@
   "cut": [
    "{b} is cut! Blood everywhere!",
    "{a} opens a cut over {b}'s eye! It's pouring!",
-   "{b} is bleeding badly. The cutman is going to earn his money tonight."
+   "{b} is bleeding badly. The cutman is going to earn his money tonight.",
+   "{b} is cut and pissing blood everywhere! The canvas looks like a murder scene!",
+   "Nasty cut on {b}! He's leaking like a fucking juice box!"
   ],
   "injury_shin": [
    "OH NO! {a}'s shin SNAPS on the check! That is horrific! It's over!",
@@ -290,11 +311,15 @@
   ],
   "foul_eyepoke": [
    "Eye poke! {ref} calls time. {b} is blinking furiously.",
-   "{a} pokes {b} in the eye. {ref} warns him."
+   "{a} pokes {b} in the eye. {ref} warns him.",
+   "EYE POKE! {a} damn near pulled {b}'s eyeball out like a fucking grape!"
   ],
   "foul_groin": [
    "LOW BLOW! {b} drops to his knees. {ref} calls time. Twenty thousand men wince at once.",
-   "{a} lands one right in the cup. {ref} gives {b} five minutes to recover."
+   "{a} lands one right in the cup. {ref} gives {b} five minutes to recover.",
+   "LOW BLOW! {a} punts {b} square in the nuts! His future children felt that!",
+   "Right in the fucking cup! {b} is on his knees asking God why! {ref} calls time!",
+   "{a} kicks {b} so hard in the balls that the cup is now a bowl. Time out!"
   ],
   "foul_fence": [
    "{a} grabs the fence! {ref} warns him.",
@@ -354,7 +379,12 @@
    "The crowd boos. They want violence.",
    "A fan runs past security and is immediately tackled.",
    "Someone throws a full beer. It lands on a commentator.",
-   "The 'boring' chants are starting."
+   "The 'boring' chants are starting.",
+   "The crowd is chanting 'FUCK HIM UP!' Not clear at whom. Possibly the referee.",
+   "Two drunk guys in section 112 are having a better fight than this one.",
+   "A fan in the front row is fully shirtless and screaming 'KILL HIM' at his own reflection on the jumbotron.",
+   "The crowd boos. Someone throws a full beer. It hits the commission. Big cheer.",
+   "'THIS IS BULLSHIT' chant breaks out. The arena DJ tries to drown it out with Sandstorm."
   ],
   "round_end": [
    "That's the end of round {r}!",
@@ -364,7 +394,8 @@
   "stool": [
    "{a}'s corner waves it off! He's done! Retired on the stool!",
    "{a} is not getting off that stool! His corner calls it!",
-   "{a} shakes his head. He's had enough. The fight is OVER!"
+   "{a} shakes his head. He's had enough. The fight is OVER!",
+   "{a} won't get off the stool! He's done! He's spitting blood into a bucket and quitting on camera!"
   ],
   "doctor": [
    "The doctor looks at {a}'s cut... and waves it off! Doctor stoppage!",
@@ -383,20 +414,27 @@
    "Three more minutes! He's breaking! Stay on him!",
    "Same thing, same thing! Jab and move! He's got nothing!",
    "He's gassing! Lean on him and make him carry your weight!",
-   "Beautiful round! Don't get cute. No spinning stuff!"
+   "Beautiful round! Don't get cute. No spinning stuff!",
+   "That's it! That's fucking it! Keep beating his ass! Don't you dare get creative!",
+   "He's broken! Look at him! He wants to go home! Don't let the motherfucker go home!"
   ],
   "coach_losing": [
    "You're down! You need this round! Stop waiting!",
    "He's beating you to the punch! Throw first, goddammit!",
    "I didn't drive eight hours to watch you get outpointed! WAKE UP!",
    "You gotta take him down! Shoot! SHOOT!",
-   "Your kids are watching! GO GET HIM!"
+   "Your kids are watching! GO GET HIM!",
+   "What the fuck are you doing out there? You're fighting like he's your landlord! Hit him!",
+   "Stop fucking around and throw something! I didn't drive nine hours for this shit!",
+   "He's a fucking bum! You're losing to a bum! Your mother is watching! Your EX is watching!"
   ],
   "coach_hurt": [
    "Breathe. Breathe. You're OK. Look at me. How many fingers?",
    "Clear your head! Stay tight! Don't trade with him!",
    "Survive the first minute, then go back to work!",
-   "Your legs are fine. Your legs are FINE. Stop shaking."
+   "Your legs are fine. Your legs are FINE. Stop shaking.",
+   "Breathe! BREATHE! Can you see? How many fingers? ...Fuck it, that's close enough.",
+   "Listen to me. LISTEN. Tie him up, hold on, and for God's sake stop bleeding on me."
   ],
   "coach_injured": [
    "How's the hand? Can you throw it? Then THROW IT anyway!",
@@ -407,7 +445,8 @@
   "coach_quit": [
    "That's it. I'm not letting you go back out there. You've got kids.",
    "I'm stopping it. You'll thank me in twenty years.",
-   "We're done. No shame. I'm calling it."
+   "We're done. No shame. I'm calling it.",
+   "That's enough. I'm not watching him kill you on pay-per-view. Your mom would fucking kill ME."
   ],
   "cutman_fine": [
    "Vaseline on the brows, ice on the neck. Nothing to fix.",
@@ -424,7 +463,9 @@
    "Cutman is working FRANTICALLY on that cut. It's ugly.",
    "Cutman: 'I need more time!' The doctor is coming over...",
    "The cut is pouring. The cutman looks worried. That's never good.",
-   "Cutman whispers 'oh no' and that's all you need to hear."
+   "Cutman whispers 'oh no' and that's all you need to hear.",
+   "The cutman is shoving Vaseline into that cut like he's caulking a fucking bathtub.",
+   "Cutman: 'I've seen worse.' He has not seen worse. Nobody has seen worse."
   ]
  },
  "social": {
@@ -432,80 +473,158 @@
    "WHY IS NOBODY TALKING ABOUT HOW {opp} CAN'T WRESTLE",
    "I'M THE CHAMP IN EVERYTHING BUT NAME. AND BELT. AND RECORD.",
    "{president} CALL ME. I KNOW YOU HAVE MY NUMBER. I SEE YOU READING THIS.",
-   "WOKE UP. CHOSE VIOLENCE. AGAIN."
+   "WOKE UP. CHOSE VIOLENCE. AGAIN.",
+   "I WOULD BEAT {opp} AND {pop_athlete} IN THE SAME NIGHT. BACK TO BACK. NO WATER BREAK.",
+   "{pop_app} BANNED ME AGAIN. SAYING THE TRUTH IS NOT A CRIME. SAYING IT IN CAPS APPARENTLY IS.",
+   "{opp} TRAINS LIKE A {pop_show} EXTRA. ALL DRAMA NO CARDIO.",
+   "WHO DA F*** IS {opp}???",
+   "SEND ME LOCATION {opp}. ACTUALLY DON'T, MY GPS IS BROKEN. I'LL FIND YOU AT {pop_food}.",
+   "THE JUDGES WERE WATCHING {pop_movie} ON THEIR PHONES. I'VE SEEN THE FOOTAGE. NOBODY BELIEVES ME.",
+   "MY CARDIO IS SO GOOD I RAN TO THE WEIGH-INS. FROM ANOTHER STATE.",
+   "I'M GONNA FUCK {opp} UP SO BAD HIS GRANDKIDS WILL FEEL IT",
+   "EVERYBODY IN THIS DIVISION IS A BUM. I SAID WHAT I SAID. COME GET ME, BITCHES",
+   "WHOEVER STOLE MY TUPPERWARE FROM THE GYM FRIDGE I WILL FIND YOU AND I WILL CHOKE YOU UNCONSCIOUS"
   ],
   "gym_selfies": [
    "Day 47 of camp. Sore in places I didn't know I had places.",
    "Mirror says champ. Scale says 9 lbs to go.",
    "2am cardio because sleep is for people without a fight coming.",
-   "Leg day. Can't feel my soul."
+   "Leg day. Can't feel my soul.",
+   "Leg day. Every day is leg day when your opponent throws calf kicks.",
+   "Coach said 'one more round'. That was four rounds ago. Send help. Send {pop_food}.",
+   "Pump so big my {pop_brand} shirt filed a complaint.",
+   "Sparring partner tapped. Then cried. Then tapped again. Good session.",
+   "New PR on the bench. New PR on the scale, unfortunately.",
+   "Recovery day: cold plunge, sauna, {pop_show} marathon, existential dread."
   ],
   "cryptic_quotes": [
    "The lion does not explain itself to the sheep.",
    "Some of y'all are gonna understand this tweet in about 6 weeks.",
    "Silence is also an answer.",
-   "The storm doesn't apologize."
+   "The storm doesn't apologize.",
+   "Snakes shed their skin. I shed my water weight. We are not the same.",
+   "When the student is ready, the teacher disappears. When the fighter is ready, the promoter disappears with the money.",
+   "Real ones know what this is about.",
+   "Silence is loud when the bell rings.",
+   "The wolf doesn't lose sleep over the opinions of {pop_app} users."
   ],
   "conspiracy_threads": [
    "Thread: why the judges are controlled by Big Cardio (1/47)",
    "Did you know the octagon has 8 sides? Coincidence? Look it up.",
    "They put something in the post-fight Gatorade. I'm just asking questions.",
-   "Birds aren't real and neither is {opp}'s chin."
+   "Birds aren't real and neither is {opp}'s chin.",
+   "Thread: {pop_celeb} has never been seen at a weigh-in. Never. Ask yourself why. (1/112)",
+   "The cage is an octagon. The stop sign is an octagon. They are telling us something.",
+   "Birds aren't real and neither is {opp}'s chin.",
+   "The commission uses a scale made by the same company that makes {pop_food}'s napkins. Connect the dots.",
+   "Fluoride in the water is why {opp} keeps missing weight. Wake up."
   ],
   "dad_jokes": [
    "Why did the BJJ guy bring a ladder? Because he heard about the high guard.",
    "My opponent said he'd kick my butt. I said that's illegal, it's a groin strike. Nobody laughed. Except me.",
-   "I told my wife I'm a great fighter. She said 'prove it, take out the trash'. Lost by decision."
+   "I told my wife I'm a great fighter. She said 'prove it, take out the trash'. Lost by decision.",
+   "Why don't fighters ever get lost? Because they always find a way to the ground. (I'm a wrestler.)",
+   "My opponent asked if I'm a good grappler. I said I'm holding my own. He did not laugh. He did tap.",
+   "What do you call a fighter who misses weight? Heavy-hearted. Also fined.",
+   "I told my kids I'm a professional fighter. They said 'then why do you lose every argument with Mom?'",
+   "I'm reading a book about anti-gravity takedowns. It's impossible to put down."
   ],
   "thirst_traps": [
    "New shorts just dropped. So did my body fat percentage.",
-   "Cut week glow up. Link in bio (it's a protein shake)."
+   "Cut week glow up. Link in bio (it's a protein shake).",
+   "Abs are temporary. Brain damage is forever. Anyway, here are my abs.",
+   "Shirtless in the snow. Not for content. Lost my shirt. Still content.",
+   "New photoshoot. Photographer said 'give me {pop_movie}'. I gave him {pop_meme}.",
+   "Weight cut day 4. Ass looking like a national treasure. Link in bio. Not that kind of link. Okay, that kind of link."
   ],
   "beefing_with_randoms": [
    "@{opp} I'd beat you, your coach and your coach's dad. Back to back.",
    "Some guy at the gas station said I looked 'smaller in person'. He's not at the gas station anymore. (He left. Normally. I'm not crazy.)",
-   "Accountant from Ohio thinks he could take me. Sir, I respect the confidence."
+   "Accountant from Ohio thinks he could take me. Sir, I respect the confidence.",
+   "A {pop_food} employee said I 'looked like I could use the salad'. I ordered three burgers out of spite.",
+   "@{opp} you fight like {pop_streamer} plays video games: loudly and badly.",
+   "Some kid at the mall said he could take me. I gave him a free seminar. His mom is suing.",
+   "Got into an argument with a {pop_app} bot. The bot won. I'm in camp now.",
+   "{pop_celeb} unfollowed me. I'll remember that.",
+   "Some fat fuck in my mentions says he'd beat me. Address? I'll come to you. I'll bring snacks. For after.",
+   "Bro you have 12 followers and one of them is your mom. Sit the fuck down."
   ],
   "motivational_slop": [
    "Your only competition is who you were yesterday. And also {opp}.",
    "Grind don't stop. (It stops on Sundays. Brunch.)",
-   "Discipline > motivation. Also caffeine > everything."
+   "Discipline > motivation. Also caffeine > everything.",
+   "They said I couldn't. I did. They said I shouldn't. I did that too. Lawyer says stop posting.",
+   "Success is 10% talent and 90% not checking {pop_app} during cardio.",
+   "Be the {pop_movie} you want to see in the world.",
+   "Wake up. Pray. Train. Eat. Train. Pray. Cry. Train. Sleep. Repeat.",
+   "Pressure makes diamonds. Pressure also makes you miss weight. Balance.",
+   "Pain is weakness leaving the body. So is diarrhea. Know the difference. Grind never stops.",
+   "They laughed at me when I said I'd be a fighter. Now they laugh at me for different reasons. Still grinding."
   ],
   "food_reviews": [
    "Rating gas station sushi out of 10: 4. Ate it anyway. Fighting Saturday.",
    "Cheat meal: 3 burgers, 2 milkshakes, 1 regret.",
-   "Chicken and rice for 8 weeks. I dream in broccoli."
+   "Chicken and rice for 8 weeks. I dream in broccoli.",
+   "{pop_food} review: 9/10. Would cut weight again just to earn it.",
+   "Tried the new {pop_food} item. Cutting starts tomorrow. Tomorrow starts tomorrow.",
+   "Nutritionist banned {pop_food}. I banned the nutritionist.",
+   "Post-weigh-in meal ranking: 1) {pop_food} 2) {pop_food} 3) Grandma's lasagna (she reads my posts).",
+   "Rice cakes are not food. Rice cakes are a punishment from God."
   ],
   "silent_lurker": [
    "..."
   ],
   "prayer_emojis": [
    "Blessed to be in the main event. God is good. {opp} is not.",
-   "Thank you Lord for this opportunity to punch a man in the face for money."
+   "Thank you Lord for this opportunity to punch a man in the face for money.",
+   "Blessed. Grateful. Humble. Also ready to hurt {opp}. All of the above.",
+   "Lord, give me strength, give me cardio, and give me {pop_food} after the weigh-ins. Amen.",
+   "Prayed on it. God said the left hook. Who am I to argue."
   ],
   "crypto_shilling": [
    "$KOCOIN to the moon. Not financial advice. It's absolutely financial advice.",
    "Just bought the dip. The dip keeps dipping. Holding.",
-   "If you're not in on {nick}COIN you're NGMI."
+   "If you're not in on {nick}COIN you're NGMI.",
+   "$KNOCK just went up 4000%. It's now worth one {pop_food} value meal. Generational wealth.",
+   "My coin is backed by real assets: my belt (not yet), my car (leased), and my word (questionable).",
+   "If you didn't buy $CHIN at launch, that's on you. If you did, also on you.",
+   "NFT drop: pictures of my bruises. Each one unique. Each one painful. Mint now."
   ],
   "live_streams": [
    "LIVE NOW: reacting to my own fight for the 400th time",
    "Stream tonight: me and the boys rate my opponent's haircut",
-   "Banned from streaming platform for 'excessive yelling'. Back tomorrow on a worse one."
+   "Banned from streaming platform for 'excessive yelling'. Back tomorrow on a worse one.",
+   "LIVE: trying the {pop_food} challenge 3 days before weigh-ins. Coach is on the way. Coach is angry.",
+   "LIVE: playing {pop_game} with {pop_streamer}. He's mad. I'm madder. It's a fight now.",
+   "LIVE NOW: reacting to {pop_movie} but every fight scene I pause and critique the footwork.",
+   "Stream starting: 24 hours awake, no food, weight cut edition. Chat, don't let me die."
   ],
   "meme_reposts": [
    "Me after cutting 30 lbs: [picture of a raisin]",
    "When the ref stands you up after 4 seconds on top: (crying cat)",
-   "{opp}'s chin vs my left hook (it's a picture of a glass vase)."
+   "{opp}'s chin vs my left hook (it's a picture of a glass vase).",
+   "Me watching {opp}'s highlight reel: {pop_meme}",
+   "Nobody: / Absolutely nobody: / Me at the weigh-in: {pop_meme}",
+   "My coach when I say I want to box {pop_streamer}: (man screaming into the void)",
+   "Rating my own walkout: {pop_meme}/10"
   ],
   "gaming_clips": [
    "Just hit Diamond rank. Training can wait.",
-   "Lost my main event in the video game version of the promotion. Throwing my controller in camp."
+   "Lost my main event in the video game version of the promotion. Throwing my controller in camp.",
+   "Hit a 30-kill game in {pop_game} the night before my fight. Priorities.",
+   "Created myself in the fighting game. Gave myself 99 cardio. Being realistic.",
+   "Lost to a 12-year-old in {pop_game}. He said I hit like {pop_celeb}. Using it as motivation."
   ],
   "generic": [
    "Training hard. Fight soon. Pray for {opp}.",
    "Back in {city}, back to basics.",
-   "Big things coming. Can't say what. Something big. Probably."
+   "Big things coming. Can't say what. Something big. Probably.",
+   "Camp is done. Cut is on. Pray for my kidneys.",
+   "Big things coming. Can't say what. My manager says I can't say anything. Anyway it's a fight.",
+   "Thank you {city} for always having my back. Except you, Gary.",
+   "Watched {pop_movie} for motivation. Now I'm unmotivated and sad. Training anyway.",
+   "Back in the gym. Back in pain. Back in the fucking lab. Let's work.",
+   "Just got my blood work back. Doctor said 'how are you alive.' Fight week baby."
   ],
   "fans": [
    "{promotion} cards lately are mid. Prove me wrong.",
@@ -516,7 +635,42 @@
    "Just bought a {promotion} hoodie for $90. It is 40% polyester and 60% regret.",
    "Braille Sonnen said the main event 'looked' close. Brother you are blind.",
    "Hot take: the bantamweights are carrying the whole sport.",
-   "Who even is {promotion}'s marketing team? A raccoon with a phone?"
+   "Who even is {promotion}'s marketing team? A raccoon with a phone?",
+   "I'd watch {promotion} over {pop_show} any day. And I LOVE {pop_show}.",
+   "Just saw a guy at {pop_food} who swears he sparred with a champion. He was wearing Crocs.",
+   "{president} looks like {pop_celeb} if {pop_celeb} lost a bet.",
+   "This card is stacked harder than a {pop_food} double stack.",
+   "Who needs {pop_streamer} boxing when we have {promotion}? (I watch both. Don't tell anyone.)",
+   "My wife left me for a BJJ black belt. Fair honestly. Respect the art.",
+   "Bring back the old judges. No wait. The old judges were also bad. Bring back nothing.",
+   "Me and the boys at the sports bar after one round of prelims: {pop_meme}",
+   "{promotion} should sign {pop_celeb}. They'd lose. I'd pay.",
+   "The commentary team is the real main event. Blow Hogan talked about elk for an entire round and I learned so much.",
+   "Sandwich Cormier called a fighter by the wrong name four times tonight. A record. Even for him.",
+   "Braille Sonnen picked the wrong fighter. Then the wrong sport. Legend.",
+   "Juiced Butler's 360 tonight was so fast it created a weather system.",
+   "Nerm Bean let that go on so long the fighter aged two years.",
+   "Is it just me or is every fight night now sponsored by {pop_food}?",
+   "If you're not watching the prelims you're not a real fan. I'm not watching the prelims.",
+   "PPV price went up again. Gonna watch it on a stream with 40 pop-ups for {pop_app}.",
+   "Just got banned from r/MMA for saying wrestling is boring. Worth it.",
+   "Reminder that {promotion} pays fighters less than {pop_streamer} makes from one sponsored post.",
+   "I fell asleep during the co-main and woke up to a knockout. Best night of my life.",
+   "That robbery tonight was worse than {pop_movie}'s ending.",
+   "{president} said 'we're the {pop_brand} of fighting'. Sir what does that mean.",
+   "My dad still thinks this is the same as {pop_show}. He's not entirely wrong.",
+   "Took my girlfriend to her first fight. She asked why they hug after trying to murder each other. I had no answer.",
+   "The walkout song was {pop_musician}. Instant win. Fight was boring but the walkout won.",
+   "HE'S HURT! (He was not hurt.)",
+   "Ref stood them up after 6 seconds. I've seen longer {pop_app} videos.",
+   "Pull that up Jaymee. (Nobody ever pulls it up.)",
+   "Main event delayed again because someone's eyebrow was 'loose'. This sport.",
+   "Me pretending I understand the scoring criteria: {pop_meme}",
+   "Just put my rent on the underdog. Feeling great. Feeling very great. Somebody hold me.",
+   "{promotion} commentary team sounds like three uncles fighting at Thanksgiving and I love every fucking second.",
+   "Ref let that fight go so long I aged a year. My kid started walking during round 3.",
+   "Bet my truck on the main event. Walking to work Monday. Worth it.",
+   "Imagine paying $79.99 to watch two grown men hug for 15 minutes. That's me. I'm imagining it. I did that."
   ]
  },
  "presser": {
@@ -525,19 +679,27 @@
    "I felt it land and I knew he was going to sleep. Goodnight, sweet prince.",
    "I want to thank God, my coach, and the guy who sold me that pre-workout. It's probably legal.",
    "That right hand has been sitting in my back pocket for six weeks. Felt good to use it.",
-   "He talked all week. Now he's quiet. Funny how that works."
+   "He talked all week. Now he's quiet. Funny how that works.",
+   "I fucking TOLD you! I told every one of you motherfuckers! Lights OUT!",
+   "I hit him so hard his family tree felt it. His cousins woke up with headaches.",
+   "I want to thank God, my coach, and whatever the fuck was in that pre-workout.",
+   "He said he'd knock me out. He's currently trying to remember what year it is. So."
   ],
   "win_sub": [
    "I caught that neck and I wasn't letting go. Not today.",
    "Jiu-jitsu is a beautiful art. Strangling people is also a beautiful art.",
    "He tapped. He knows he tapped. Everybody saw him tap.",
-   "I told him in the clinch, 'I'm gonna choke you.' He didn't believe me. He believes me now."
+   "I told him in the clinch, 'I'm gonna choke you.' He didn't believe me. He believes me now.",
+   "I told him I was gonna choke him out and he didn't believe me. Now he believes in a lot of things. Like naps.",
+   "He tapped like a fucking woodpecker. Respect to him, but also, ha."
   ],
   "win_dec": [
    "I wanted the finish, but a W is a W. My accountant doesn't care how.",
    "He was tough, man. Tougher than I thought. My face agrees.",
    "Fifteen minutes of hell. I need a cheeseburger and a CAT scan, in that order.",
-   "Not my best performance. Still beat him, though."
+   "Not my best performance. Still beat him, though.",
+   "Fifteen minutes of beating his ass. Judges finally got one right. Somebody check on them.",
+   "I won. I'm tired. My dick hurts. I don't know why my dick hurts. Great night."
   ],
   "win_other": [
    "A win is a win. We'll take it and go home.",
@@ -546,16 +708,26 @@
   "loss": [
    "I'll be back. I gotta go see a doctor first. Several doctors.",
    "No excuses. ...Okay, one excuse: food poisoning. Don't fact check that.",
-   "I'm gonna watch the tape, learn, and come back. Then probably watch it again and cry."
+   "I'm gonna watch the tape, learn, and come back. Then probably watch it again and cry.",
+   "I got my ass beat. That's it. That's the quote. Print that.",
+   "I'm gonna go home, sit in the shower with my clothes on, and think about my fucking choices.",
+   "He hit me harder than my divorce lawyer. And that bitch was expensive.",
+   "No excuses. I lost. Also, I had diarrhea since Tuesday. But no excuses."
   ],
   "robbed": [
    "I won that fight. Everyone in the building knows I won that fight. Those judges need glasses and a new career.",
-   "Three judges, zero eyes. Unbelievable."
+   "Three judges, zero eyes. Unbelievable.",
+   "That's fucking bullshit and everyone in this building knows it! Those judges should be in jail! Fuck it, I said it!",
+   "I got robbed in broad daylight! Somebody call the police! Actually, don't, I've got warrants. Kidding. Mostly.",
+   "Those judges couldn't score in a fucking strip club with a fistful of hundreds."
   ],
   "callout": [
    "And {opp}? Yeah, YOU. You've been running your mouth. Next card.",
    "Hey {president}! Give me {opp}! I'll do it for free! (Don't actually make me do it for free.)",
-   "I want the belt. I want the money. I want {opp}. In that order."
+   "I want the belt. I want the money. I want {opp}. In that order.",
+   "And {opp}! I see you, you little bitch! You're next! Sign the fucking contract!",
+   "{president}! Give me {opp}! I'll beat his ass for free! (Don't make me do it for free, I have a boat payment.)",
+   "Hey {opp}, I'm gonna fuck you up so bad your kids will be born flinching!"
   ]
  },
  "ledgerQuips": [
@@ -568,7 +740,12 @@
   "Line item 47: 'Misc. (do not ask)'.",
   "Your spouse wants to know why the credit card has a charge from a tiger sanctuary.",
   "Ticket sales are up. Morale is down. Same as last week, but louder.",
-  "If you squint, this ledger is a work of art. Please don't squint at it in court."
+  "If you squint, this ledger is a work of art. Please don't squint at it in court.",
+  "The accountant has started drinking at work. Then at lunch. Then in the car. Then on the toilet. Then at work again.",
+  "This week's financials, summarized by the CFO: 'oh, fuck.'",
+  "Somebody expensed a strip club as 'scouting'. The receipt says 'VIP scouting'.",
+  "The books are balanced the way a drunk is balanced: technically, briefly, and against a wall.",
+  "Legal has asked that the words 'creative accounting' stop appearing in the group chat. Legal is also in the group chat."
  ],
  "misc": {
   "newsBodies": [
@@ -577,12 +754,32 @@
    "Sources close to the matter describe the mood inside {promotion} as 'loud'.",
    "The story is developing. Like most {promotion} stories, it is developing badly.",
    "Fans online have reacted in a measured, thoughtful way (they have not).",
-   "One anonymous fighter told this outlet: 'Honestly? Business as usual.'"
+   "One anonymous fighter told this outlet: 'Honestly? Business as usual.'",
+   "{promotion} responded to a request for comment with a voicemail that was just {president} saying 'fuck off' and then 'sorry, wrong number.'",
+   "Sources describe the mood inside {promotion} as 'a hostage situation with catering.'",
+   "When reached for comment, {president} said 'print whatever the fuck you want, it's all promotion,' then asked if we wanted tickets."
   ],
   "slowNews": [
    "SLOW NEWS WEEK: LOCAL MAN STILL BELIEVES HE COULD BEAT A PRO FIGHTER",
    "NOTHING HAPPENED THIS WEEK. EXPERTS 'DEEPLY SUSPICIOUS'",
-   "QUIET WEEK AT {promotion}; STAFF REPORTEDLY 'TERRIFIED'"
+   "QUIET WEEK AT {promotion}; STAFF REPORTEDLY 'TERRIFIED'",
+   "SLOW NEWS WEEK: {pop_celeb} SPOTTED BUYING {pop_food}. FIGHT FANS 'NOT SURE WHY THIS IS NEWS'",
+   "NOTHING HAPPENED. HERE IS A RANKING OF EVERY {pop_movie} SEQUEL INSTEAD",
+   "LOCAL GYM CLAIMS TO HAVE TRAINED {pop_celeb} FOR 'ONE CLASS, IN 2011'",
+   "{pop_streamer} ANNOUNCES BOXING MATCH AGAINST A RETIRED MAILMAN",
+   "REPORT: 74% OF FIGHT FANS WOULD WATCH {pop_show} INSTEAD OF PRELIMS",
+   "{pop_app} OUTAGE CAUSES MASS TRASH-TALK SHORTAGE",
+   "SCIENTISTS CONFIRM WEIGHT CUTS 'PROBABLY BAD'; SPORT CONTINUES ANYWAY",
+   "{pop_athlete} SAYS HE 'COULD DEFINITELY DO MMA'; MMA DISAGREES",
+   "MAN WHO FINISHED {pop_game} ON HARD MODE CLAIMS HE 'GETS FIGHTING NOW'",
+   "SLOW WEEK: CAGE CLEANER SPEAKS OUT ON 'WHAT HE'S SEEN'",
+   "{pop_celeb} CALLED OUT BY RETIRED FIGHTER OVER 'GOOFY HANDSHAKE'",
+   "QUIET WEEK IN COMBAT SPORTS; {pop_meme} TRENDS INSTEAD",
+   "FIGHTER'S MOM REVIEWS {pop_movie}: 'NOT ENOUGH LEG KICKS'",
+   "SLOW NEWS WEEK: AREA FIGHTER SHITS SELF ON LIVE STREAM, CHAT CALLS IT 'ON BRAND'",
+   "SLOW NEWS WEEK: MAN AT GYM SAYS HE 'COULD TAKE' A HEAVYWEIGHT, IS CURRENTLY BEING FED THROUGH A STRAW",
+   "SLOW NEWS WEEK: REFEREE STILL HASN'T STOPPED A FIGHT FROM 2019",
+   "SLOW NEWS WEEK: JUDGE WHO SCORED LAST FIGHT 30-27 ADMITS HE 'MOSTLY WATCHED THE RING GIRLS'"
   ],
   "traitLines": [
    "Trash Talker|{He} has never had an unspoken thought and never will.",
@@ -615,7 +812,184 @@
    "Weight Misser|{He} has missed weight so often the scale has a restraining order.",
    "Reformed|{He} has turned {his} life around, and won't stop telling you about it.",
    "Martyr Complex|Everyone is out to get {him}. Sometimes they really are.",
-   "Sober|{He} is sober now and drinks an alarming amount of sparkling water."
+   "Sober|{He} is sober now and drinks an alarming amount of sparkling water.",
+   "Hothead|{He} has been kicked out of three gyms, two Applebee's and one funeral.",
+   "Party Animal|{He} has done a line of pre-workout off a stripper's back and called it 'cardio'.",
+   "Trash Talker|{He} once made a priest say 'fuck' at a christening.",
+   "Gambler|{He} has bet against {him}self twice. Won once. Lost the fight both times.",
+   "Crypto Bro|{He} lost {his} purse, {his} car and {his} marriage to a coin with a dog on it.",
+   "Streamer|{He} once streamed {his} own colonoscopy for subs. Peak viewers: 9,000.",
+   "Lazy|{He} has been 'starting camp Monday' for nineteen consecutive Mondays.",
+   "Diva|{He} demands a dressing room with blue M&Ms, a ring light and a priest. The priest is for the ring light.",
+   "Prankster|{He} put laxatives in the team's post-weigh-in smoothies. The team now has a trust problem and a plumbing problem."
+  ]
+ },
+ "presserQ": {
+  "to_winner": [
+   "{f}, congratulations. What's next for you?",
+   "{f}, walk us through the finish. Did you see it coming?",
+   "{f}, you looked {adj} out there. Was that the game plan?",
+   "{f}, who do you want next, and please be specific, my editor needs a headline.",
+   "{f}, your opponent said some things this week. Anything you want to say back?",
+   "{f}, there's a rumor you trained for this fight by watching {pop_movie}. Comment?",
+   "{f}, quick one: is it true you celebrated backstage with {pop_food}?",
+   "{f}, how does it feel? And can you describe it using only one word? Not that word.",
+   "{f}, that was a goddamn massacre. Do you feel bad at all?",
+   "{f}, is it true you told him 'goodnight, bitch' before the finish?"
+  ],
+  "to_champ": [
+   "Champ, how many more defenses before you ask for a raise?",
+   "Champ, is there anyone left in the division you haven't beaten?",
+   "Champ, there's talk of a super fight. Are you moving up, down or sideways?",
+   "Champ, {pop_celeb} posted about your fight. Have you seen it?"
+  ],
+  "to_loser": [
+   "{f}, tough night. What went wrong?",
+   "{f}, do you think the stoppage was early?",
+   "{f}, are you thinking about retirement?",
+   "{f}, you got your ass handed to you. What the hell happened?",
+   "{f}, on a scale of one to 'call my mom', how bad is the headache?"
+  ],
+  "to_robbed": [
+   "{f}, a lot of people think you won that fight. Do you?",
+   "{f}, what would you like to say to the judges?",
+   "{f}, will you appeal the decision? Can you appeal a decision? Can anyone?"
+  ],
+  "answer_winner": [
+   "Next? Next is a cheeseburger. Then the belt. In that order.",
+   "I want the champ. I want the champ's coach. I want the champ's coach's dog. I'm hungry.",
+   "I told you all. I told everybody. Nobody listens. Now they listen.",
+   "I'd like to thank God, my team, and {pop_food}, who are not a sponsor yet but should be.",
+   "I felt it land and I thought, 'that's a mortgage payment'.",
+   "Honestly I don't remember the second round. Can somebody tell me if I was good?",
+   "I'm not gonna call anybody out. I'm gonna call everybody out. Line up.",
+   "I watched {pop_movie} the night before. Very inspiring. Spoilers: I won.",
+   "Pay me, {president}. Pay me like you pay the guys with the big Instagrams.",
+   "I'm just happy to be here. I'm lying. I'm happy to be PAID.",
+   "That's what happens when you train hard and don't read the comments.",
+   "My kids are watching. Hi kids. Daddy hurt a man. Go to bed.",
+   "Feel bad? I feel fucking AMAZING. He'll feel bad. For like a month.",
+   "I don't want to sound arrogant, but I'm the best motherfucker on the planet. Next question.",
+   "I'm gonna celebrate with my family. Then without my family. Then probably at a Waffle House."
+  ],
+  "answer_champ": [
+   "I'm the best in the world. Write that down. Spell my name right this time.",
+   "Bring me whoever. Bring me two of them. I'll fight them on the same night if the money is right.",
+   "This belt goes everywhere with me. The grocery store. The dentist. The bath. Mostly the bath.",
+   "I'm not moving divisions. The divisions should move to me."
+  ],
+  "answer_loser": [
+   "I'll be back. I don't know when. I don't know how. My head hurts.",
+   "No excuses. Well, some excuses. I had a cold. And the lights were weird.",
+   "He was the better man tonight. Tomorrow I'll be the better man. At brunch.",
+   "I need to go home and look at my life. And my contract.",
+   "What happened is he punched me in the fucking face a lot. Next question.",
+   "I don't remember the second round. Or my PIN number. Somebody text my wife.",
+   "I'll be back. Right now I'm gonna go piss blood and think about my life."
+  ],
+  "answer_robbed": [
+   "I won that fight. Everybody here knows I won that fight. The guy who cleans the cage knows I won that fight.",
+   "The judges should be investigated. Or at least given glasses. Braille Sonnen had a better view.",
+   "I'm not mad. I'm disappointed. I'm also mad.",
+   "I'm not gonna say the judges are corrupt. I'm gonna say they're fucking blind, stupid AND corrupt. Fine me."
+  ],
+  "chaos": [
+   "{f} moves the {sponsor} bottles off the table and replaces them with water. The sponsor rep in the back row faints.",
+   "{f} answers the next question with sunglasses on, indoors, at night. Nobody can tell if {f}'s eyes are open.",
+   "A reporter's phone goes off. The ringtone is {pop_musician}. {f} starts dancing.",
+   "{f} has brought a small child to the table. The child takes the next question. The child is better at it.",
+   "{f} is eating {pop_food} at the podium. 'Weigh-ins are over,' {f} explains. Nobody argues.",
+   "Braille Sonnen asks a question to the empty chair at the end of the table. The chair does not respond. Braille calls it 'evasive'.",
+   "{f} stands up, says 'I'm done', walks into the curtain, and has to be shown the exit.",
+   "Someone in the back yells 'WHO DA F*** IS THAT GUY?' Nobody is sure who they mean. Everybody is offended.",
+   "{f} starts a livestream mid-press-conference. 4,000 viewers watch the press conference through {f}'s phone, which is pointed at the ceiling.",
+   "Juiced Butler wanders in, flexes once, and leaves without a word.",
+   "Sandwich Cormier walks in with a plate of wings and sits in the front row. Nobody asks why.",
+   "{f} answers a question by unzipping their bag, pulling out a full rotisserie chicken and eating it in silence for ninety seconds.",
+   "{f} tells a reporter to 'go fuck yourself' so warmly that the reporter says 'thank you'.",
+   "{f}'s phone goes off mid-answer. The ringtone is a moaning sound. {f} does not silence it.",
+   "{f} leans into the mic and says 'my balls are still numb' and then refuses to elaborate."
+  ],
+  "open_hype": [
+   "What a night. WHAT a night. If you didn't watch, you missed history, and you can still buy the replay for $79.99.",
+   "That was the greatest card in the history of the sport. I say that every time. This time I mean it more.",
+   "What a fucking night! Violence, blood, a guy shit himself in the co-main. That's a perfect card!",
+   "This was the best fucking event in the history of the sport and I will fight anybody who disagrees. Not personally. I'll have a guy do it."
+  ],
+  "open_thanks": [
+   "First of all, I want to thank every fighter on this card. They bled for you tonight. Some of them are still bleeding. Somebody get a towel.",
+   "These athletes put it all on the line. Respect to every single one of them. Even the ones who lost. Especially the ones who lost, honestly. Brutal."
+  ],
+  "open_rant": [
+   "Before we start: the judging tonight was a disgrace. I've seen better scoring at a kid's birthday party. The commission can call me.",
+   "I'm gonna say it: the refereeing was criminal tonight. Not literally. Lawyers are in the room. Figuratively criminal.",
+   "Before we start: the judging tonight was dogshit. Absolute dogshit. I've seen better scorekeeping at a fucking bowling alley.",
+   "I want to address the referee. Hey. Fuck you. Okay. Questions."
+  ]
+ },
+ "recap": {
+  "show": [
+   "SPORTSCENTRAL TONIGHT",
+   "WSPN FIGHT CENTRAL"
+  ],
+  "open": [
+   "Welcome to SportsCentral, I'm Stephen A. Shouty, and I am DISGUSTED. Also thrilled. Mostly disgusted.",
+   "Good evening, I'm Stephen A. Shouty, and tonight at {event} we saw some things. SOME THINGS.",
+   "Welcome back. Big night of fights at {venue}. Michael, I've been yelling since the prelims. I'm going to keep yelling."
+  ],
+  "ko_take": [
+   "{winner} put {loser} to SLEEP. To SLEEP! I'm talking pajamas! I'm talking a nightlight! A BEDTIME STORY!",
+   "Let me tell you something about {winner}: that is a GROWN man doing GROWN man things to {loser}'s FACE!",
+   "{loser} is going to wake up tomorrow and ask what year it is. And somebody is going to have to tell him.",
+   "{winner} didn't just knock {loser} out, he knocked him out of his GENERATIONAL WEALTH! His grandkids are gonna wake up concussed!",
+   "{loser} got knocked so cold they had to thaw him out with a hair dryer! A HAIR DRYER!"
+  ],
+  "sub_take": [
+   "{winner} strangled {loser} like a guy who's been waiting in line at {pop_food} for forty minutes!",
+   "That's a black belt, that's a BLACK BELT! {loser} had no business being on the ground with {winner}! NO BUSINESS!"
+  ],
+  "dec_take": [
+   "{winner} won on the cards, and I'm going to be honest with you, I fell asleep. Twice. Woke up for the scorecards.",
+   "Fifteen minutes of {winner} doing just enough. JUST enough! You know who else does just enough? My accountant!",
+   "Fifteen minutes of absolute nonsense. I've had colonoscopies with more excitement. AND BETTER LIGHTING."
+  ],
+  "robbery_take": [
+   "ROBBERY! That was a ROBBERY! I want the judges INVESTIGATED! I want the scorecards CARBON DATED!",
+   "{loser} got ROBBED, and I'm not going to sit here and pretend otherwise! I'm going to STAND here and pretend otherwise! No! I'm SITTING! IT WAS A ROBBERY!",
+   "That decision was a CRIME! I want those judges arrested, tried, and forced to watch the fight again with their EYES OPEN!",
+   "I've seen less robbery in a Fast and Furious movie! And they rob a VAULT with CARS!"
+  ],
+  "upset_take": [
+   "NOBODY gave {winner} a chance! NOBODY! Not me, not you, not {winner}'s MOTHER!",
+   "The upset of the YEAR! The bookmakers are crying! I'm crying! Michael's eye is crying!"
+  ],
+  "champ_take": [
+   "And STILL... {winner}! I'm telling you, this is the best champion we've seen since... since the LAST one I said that about!",
+   "We have a NEW champion! {winner}! I called it! I didn't call it. Somebody called it. It doesn't matter! NEW CHAMP!"
+  ],
+  "biscuit": [
+   "Stephen, mate, calm down. Your voice is doing the thing again.",
+   "Bloody hell, Stephen, you said the same thing last week about a completely different fighter.",
+   "I'll be honest, I watched it with one eye and still saw it better than you did.",
+   "I'm just glad someone else got hit in the face for once. Makes a nice change.",
+   "Proper performance, that. Absolute scenes. Can we wrap this up? I've got a train.",
+   "Stephen, mate, you're spitting on me. You're actually spitting on me. Fucking hell.",
+   "Shut the fuck up, Stephen. Sorry. Shut the HECK up. Producer's looking at me.",
+   "I've been knocked out eleven times and I still make more sense than you, you shouty bastard."
+  ],
+  "ratings_good": [
+   "The numbers are in: {buys} buys. {promotion} beat {rival} this week, and they want you to know about it.",
+   "Ratings are UP. {promotion} topped the combat sports chart this week. {president} is reportedly doing laps of his office."
+  ],
+  "ratings_bad": [
+   "Ratings, though: down. {rival} outdrew them with a card headlined by a guy who sells mattresses. Brutal.",
+   "Viewership was soft. Very soft. Softer than {loser}'s chin, apparently."
+  ],
+  "signoff": [
+   "That's all for tonight. STAY OFF THE WEED! I mean it this time!",
+   "We'll be right back after this message from {pop_food}. They paid for this sentence.",
+   "Goodnight, and remember: protect yourself at all times. Especially from me. I'm very loud.",
+   "That's the show. Stay violent, stay hydrated, and for the love of God, stop texting me, Sandwich."
   ]
  }
 }

@@ -3,6 +3,7 @@
  * effects, follow-up scheduling and text templating.
  */
 import type { GameState, StoryletDef, StoryletInstance, Fighter, ChoiceDef, MeterKey } from '../core/types';
+import { expandPop } from '../sim/popculture';
 import { METER_KEYS } from '../core/types';
 import { content } from '../core/content';
 import { Rng } from '../core/rng';
@@ -370,6 +371,9 @@ export function weeklyQuota(s: GameState, rng: Rng): number {
 }
 
 /** Pick and instantiate this week's random storylets. */
+/** Balance instrumentation (tools/sim.ts): how often each storylet was eligible. */
+export const STORYLET_STATS: { on: boolean; eligible: Record<string, number> } = { on: false, eligible: {} };
+
 export function selectWeek(s: GameState, rng: Rng, quota = weeklyQuota(s, rng), stats?: Record<string, number>): StoryletInstance[] {
   const out: StoryletInstance[] = [];
   const base = globalEnv(s, rng);
@@ -396,11 +400,16 @@ export function selectWeek(s: GameState, rng: Rng, quota = weeklyQuota(s, rng), 
     const roles = eligible(s, d, rng, base, viewCache);
     if (!roles) continue;
     if (stats) stats[d.id] = (stats[d.id] ?? 0) + 1;
+    if (STORYLET_STATS.on) STORYLET_STATS.eligible[d.id] = (STORYLET_STATS.eligible[d.id] ?? 0) + 1;
     const h = s.storylets.history[d.id];
-    const fresh = !h ? 3.5 : 1 / (1 + h.count * 0.9);
+    // not every eligible storylet is "in the air" every week; keeps any one from dominating
+    if (!rng.chance(h ? 0.36 : 0.6)) continue;
+    // police blotter stuff is rarer than everything else (it still happens plenty)
+    if (['legal', 'speech', 'doping'].includes(d.category) && !d.followupOnly && !rng.chance(Math.min(0.75, 0.35 + s.hidden.chaos / 200))) continue;
+    const fresh = !h ? 2.5 : 1 / (1 + h.count * 0.9);
     const recentCat = (s.storylets.categoryLog[d.category] ?? []).filter((wk) => s.week - wk < 4).length;
     const catDamp = 1 / (1 + recentCat * 0.7);
-    const scandal = ['legal', 'speech', 'doping', 'president', 'weird'].includes(d.category) ? 0.7 + s.hidden.chaos / 60 : 1;
+    const scandal = ['legal', 'speech', 'doping'].includes(d.category) ? Math.min(0.45, 0.1 + s.hidden.chaos / 160) : ['president', 'weird'].includes(d.category) ? 0.7 + s.hidden.chaos / 60 : 1;
     candidates.push({ d, roles, w: (d.weight ?? 10) * fresh * catDamp * scandal });
   }
   const perCat: Record<string, number> = {};
@@ -408,7 +417,7 @@ export function selectWeek(s: GameState, rng: Rng, quota = weeklyQuota(s, rng), 
     const idx = rng.weightedIndex(candidates.map((c) => c.w));
     if (idx < 0) break;
     const c = candidates.splice(idx, 1)[0];
-    if ((perCat[c.d.category] ?? 0) >= 2) {
+    if ((perCat[c.d.category] ?? 0) >= (['legal', 'doping', 'speech'].includes(c.d.category) ? 1 : 2)) {
       i--;
       continue;
     }
@@ -442,7 +451,8 @@ export function fireCategory(
       continue;
     }
     const h = s.storylets.history[d.id];
-    cands.push({ d, roles, w: (d.weight ?? 10) * (!h ? 3 : 1 / (1 + h.count)) });
+    if (STORYLET_STATS.on) STORYLET_STATS.eligible[d.id] = (STORYLET_STATS.eligible[d.id] ?? 0) + 1;
+    cands.push({ d, roles, w: (d.weight ?? 10) * (!h ? 3 : 1 / (1 + h.count * 1.6)) });
   }
   const pick = rng.weighted(cands, (c) => c.w);
   if (!pick) return null;
@@ -475,13 +485,17 @@ export function renderText(s: GameState, inst: StoryletInstance, text: string): 
   env.presidentLast = s.president.name.split(' ').slice(-1)[0];
   env.promotion = s.promotion.name;
   env.owner = s.owner.name;
-  return text.replace(/\{(\$?)([a-zA-Z_][a-zA-Z0-9_.]*)\}/g, (m, dollar: string, path: string) => {
+  const out = text.replace(/\{(\$?)([a-zA-Z_][a-zA-Z0-9_.]*)\}/g, (m, dollar: string, path: string) => {
+    if (path.startsWith('pop')) return m;
     let v: any = env;
     for (const part of path.split('.')) v = v === undefined || v === null ? undefined : v[part];
     if (v === undefined || v === null) return m;
     if (dollar) return money(Number(v));
     return String(v);
   });
+  let h = 0;
+  for (const ch of inst.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return expandPop(out, h + (inst.week ?? 0));
 }
 
 export function availableChoices(s: GameState, inst: StoryletInstance, rng = new Rng(s.rng)): number[] {

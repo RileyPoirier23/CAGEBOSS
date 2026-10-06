@@ -26,6 +26,36 @@ const SMALL_LH = 7;
 let resolution = 1;
 const live = new Set<PixelText>();
 
+export function getRenderResolution(): number {
+  return resolution;
+}
+
+/**
+ * Texture resolution for pixel-art render caches (the arena): texels land on
+ * whole device pixels, roughly two per game pixel.
+ */
+export function pixelArtResolution(): number {
+  const p = Math.max(1, Math.round(resolution / 2));
+  return resolution / p;
+}
+
+// ---------------------------------------------------------------- profanity filter (off by default: the game is rated R)
+let bleep = false;
+const SWEARS = /\b(mother)?fuck(ing|in'|ed|er|ers|s|head|wit|face)?\b|\bshit(ty|ting|s|head|show)?\b|\bbullshit\b|\bhorseshit\b|\bdogshit\b|\bbitch(es)?\b|\bass(hole|holes)?\b|\bdick(s)?\b|\bgoddamn(it)?\b|\bbastard(s)?\b|\bballs\b|\bwhorehouse\b|\bcrack\b/gi;
+const GRAWLIX = '#$%&!@*';
+
+/** Streamer-safe mode: swap swears for grawlix (#$%&!). */
+export function setBleep(on: boolean): void {
+  if (bleep === on) return;
+  bleep = on;
+  for (const t of live) t.rebuild();
+}
+
+export function bleepText(s: string): string {
+  if (!bleep) return s;
+  return s.replace(SWEARS, (w) => Array.from(w, (_, i) => GRAWLIX[i % GRAWLIX.length]).join(''));
+}
+
 export function setTextResolution(r: number): void {
   if (Math.abs(r - resolution) < 1e-6) return;
   resolution = r;
@@ -37,9 +67,12 @@ export function setTextResolution(r: number): void {
 
 /** Actual small-text glyph pixel size in logical units (whole device pixels, never larger than nominal). */
 function smallK(): number {
+  // HD small text is off: small text uses the chunky Cagebook small face (now with lowercase).
+  if (!HD_SMALL) return 0;
   const px = Math.floor(resolution * SMALL_NOMINAL + 1e-6);
   return px >= 1 ? px / resolution : 0;
 }
+const HD_SMALL = false;
 
 function buildAtlas(face: FontFace): Atlas {
   const chars = Object.keys(face.glyphs);
@@ -136,7 +169,7 @@ export class PixelText extends Container {
     // glyph pixel size in logical units; layout (wrapping) always uses the nominal size
     const scale = (this.opts.scale ?? 1) * (this.hd ? k : 1);
     const layoutScale = (this.opts.scale ?? 1) * (this.hd ? SMALL_NOMINAL : 1);
-    let text = normalizeText(this.str ?? '');
+    let text = normalizeText(bleepText(this.str ?? ''));
     // single-line small text reads as a label: keep the small-caps look
     if (small && !this.opts.width) text = upperKeepMarkup(text);
     let lines = this.opts.width ? wrapText(face, text, Math.floor(this.opts.width / layoutScale)) : text.split('\n');
@@ -210,19 +243,18 @@ function upperKeepMarkup(s: string): string {
   return s.replace(/(\{#[0-9a-fA-F]{6}\}|\{\/\})|([^{]+|\{)/g, (_m, tag, txt) => tag ?? txt.toUpperCase());
 }
 
-/** Layout width of a single line. Small text measures as an (upper-cased) label at nominal size. */
+/** Layout width of a single line. Small text measures as an (upper-cased) label. */
 export function measure(text: string, small = false): number {
   if (!small) return measureLine(MAIN_FACE, text);
-  return Math.ceil(measureLine(MAIN_FACE, upperKeepMarkup(normalizeText(text))) * SMALL_NOMINAL);
+  return measureLine(SMALL_FACE, upperKeepMarkup(normalizeText(text)));
 }
 
 export function wrap(text: string, width: number, small = false): string[] {
-  if (!small) return wrapText(MAIN_FACE, text, width);
-  return wrapText(MAIN_FACE, text, Math.floor(width / SMALL_NOMINAL));
+  return wrapText(small ? SMALL_FACE : MAIN_FACE, text, width);
 }
 
 export function lineHeight(small = false): number {
-  return small ? SMALL_LH : MAIN_FACE.lineHeight;
+  return small ? SMALL_FACE.lineHeight : MAIN_FACE.lineHeight;
 }
 
 /** Colour markup helper. */

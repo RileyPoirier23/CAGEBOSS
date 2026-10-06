@@ -16,7 +16,7 @@ import { clamp } from '../core/format';
 import { content } from '../core/content';
 import { generateWeekDocs, weighInDoc, checkPair, memoDoc } from './docs';
 import { buildPaper, addNews } from './news';
-import { selectWeek, expirePending, resolveStorylet, def as storyDef, availableChoices, trigger } from '../storylets/engine';
+import { selectWeek, expirePending, resolveStorylet, def as storyDef, availableChoices, trigger, fireCategory } from '../storylets/engine';
 import { weeklyContracts, makeOffer } from './contracts';
 import { weeklyLegal, decideBail } from './legal';
 import { weeklyRivals, weeklyMarket, weeklyOwner, checkActProgress, checkEndings, hallOfFame } from './world';
@@ -529,12 +529,15 @@ export function simulateWeek(s: GameState, policy: Policy): WeekReport {
   withRng(s, (rng) => {
     policy.weekly(s, rng);
     // storylets (may spawn more; loop until settled)
-    for (let guard = 0; guard < 10 && s.storylets.pending.length; guard++) {
-      for (const inst of s.storylets.pending.slice()) {
-        const opts = availableChoices(s, inst, rng);
-        resolveStorylet(s, inst.iid, policy.choose(s, inst.iid, opts, rng), rng);
+    const settle = () => {
+      for (let guard = 0; guard < 10 && s.storylets.pending.length; guard++) {
+        for (const inst of s.storylets.pending.slice()) {
+          const opts = availableChoices(s, inst, rng);
+          resolveStorylet(s, inst.iid, policy.choose(s, inst.iid, opts, rng), rng);
+        }
       }
-    }
+    };
+    settle();
     // paperwork
     for (const d of s.desk.queue.slice()) {
       if (d.type === 'bail') {
@@ -547,7 +550,26 @@ export function simulateWeek(s: GameState, policy: Policy): WeekReport {
     }
     for (const n of s.negotiations.slice()) policy.negotiate(s, n.id, rng);
     const ev = eventThisWeek(s);
-    if (ev) runEventHeadless(s, ev, rng, policy.bonuses ? (e) => policy.bonuses!(s, e) : undefined);
+    if (ev) {
+      // the press, before and after; fight-night chaos after big bouts (mirrors the UI)
+      const presser = (post: boolean) => {
+        const reps = content().reporters.filter((x) => !s.media.reporters[x.id]?.banned);
+        if (!reps.length) return;
+        fireCategory(s, 'presser', rng, { postFight: post, eventName: ev.name }, { reporter: rng.pick(reps).id }, ev.id);
+        settle();
+      };
+      presser(false);
+      if (rng.chance(0.5)) presser(false);
+      runEventHeadless(s, ev, rng, policy.bonuses ? (e) => policy.bonuses!(s, e) : undefined, (b) => {
+        if (!b.result || !rng.chance(b.position <= 1 ? 0.55 : 0.18)) return;
+        const r = b.result;
+        fireCategory(s, 'fightnight', rng, {
+          lastWinner: r.winner ?? '', lastLoser: r.loser ?? '', lastA: b.a, lastB: b.b, lastMethod: r.method, lastRobbery: r.robbery, lastMain: b.position === 0, lastTitle: !!b.title,
+        }, {}, ev.id);
+        settle();
+      });
+      presser(true);
+    }
   });
   return endWeek(s);
 }

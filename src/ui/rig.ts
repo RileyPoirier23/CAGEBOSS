@@ -171,175 +171,340 @@ export function lerpRig(a: Rig, b: Rig, k: number): Rig {
   return r;
 }
 
-/** Render a rig. x,y = feet position; facing 1 right / -1 left. */
+/**
+ * Render a rig as a proper body: tapered, outlined, two-tone muscle shapes
+ * (biceps, forearms, quads, calves), a shaped torso with pecs/abs/lats, fight
+ * shorts, gloves with cuffs and thumbs, and a head with jaw, nose, ear, eye,
+ * brow, mouth and hair. Clothed figures (referee, Juiced Butler) use the same
+ * body with shirt / trousers / shoes. x,y = feet; facing 1 right / -1 left.
+ * Drawn at sub-pixel precision; the arena pixelates the result.
+ */
 export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 | -1, L: Look2, scale = 1): void {
-  const tx = (p: [number, number]): [number, number] => [Math.round(x + p[0] * facing * scale), Math.round(y + p[1] * scale)];
+  type V = [number, number];
+  const o = L.outfit;
+  const T = (p: V): V => [x + p[0] * facing * scale, y + p[1] * scale];
+  const add = (a: V, b: V, k = 1): V => [a[0] + b[0] * k, a[1] + b[1] * k];
+  const lerp = (a: V, b: V, t: number): V => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
   const OUT = 0x120d10;
-  if (L.outfit) return drawClothed(g, rig, x, y, facing, L, scale);
+  const build = Math.min(3, L.build + (o?.bulk ?? 0) / 2);
+  const fem = L.female;
   const skin = L.skin;
-  const skinB = shade(skin, -0.22); // far limbs
-  const skinL = shade(skin, 0.1);
-  const w = (L.build === 2 ? 9 : L.build === 1 ? 7.5 : 6.5) * scale;
-  const limb = (a: Joint, b: Joint, width: number, color: number) => {
-    const [x1, y1] = tx(rig[a]);
-    const [x2, y2] = tx(rig[b]);
-    g.moveTo(x1, y1).lineTo(x2, y2).stroke({ color, width, cap: 'round' });
+  const skinFar = shade(skin, -0.2);
+  const s = scale;
+
+  /** Tapered limb polygon (screen space) through a, mid, b with widths. */
+  const limbPts = (a: V, b: V, wa: number, wm: number, wb: number, grow = 0): number[] => {
+    const A = T(a);
+    const B = T(b);
+    const dx = B[0] - A[0];
+    const dy = B[1] - A[1];
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len;
+    const ny = dx / len;
+    const M: V = [A[0] + dx * 0.42, A[1] + dy * 0.42];
+    const h = (w: number) => ((w + grow) * s) / 2;
+    return [
+      A[0] + nx * h(wa), A[1] + ny * h(wa), M[0] + nx * h(wm), M[1] + ny * h(wm), B[0] + nx * h(wb), B[1] + ny * h(wb),
+      B[0] - nx * h(wb), B[1] - ny * h(wb), M[0] - nx * h(wm), M[1] - ny * h(wm), A[0] - nx * h(wa), A[1] - ny * h(wa),
+    ];
   };
-  const outline = (a: Joint, b: Joint, width: number) => limb(a, b, width + 2 * scale, OUT);
-  // ---- far side (back arm & back leg)
-  outline('hip', 'knB', w);
-  outline('knB', 'ftB', w * 0.8);
-  limb('hip', 'knB', w, skinB);
-  {
-    const [bx1, by1] = tx(rig.hip);
-    const [bx2, by2] = tx(rig.knB);
-    g.moveTo(bx1, by1).lineTo(bx1 + (bx2 - bx1) * 0.55, by1 + (by2 - by1) * 0.55).stroke({ color: shade(L.trunks, -0.25), width: w + 1, cap: 'round' });
+  /** Shadow strip along the side of a limb facing away from the light (down/right on screen). */
+  const limbShade = (a: V, b: V, wa: number, wm: number, wb: number, color: number) => {
+    const A = T(a);
+    const B = T(b);
+    const dx = B[0] - A[0];
+    const dy = B[1] - A[1];
+    const len = Math.hypot(dx, dy) || 1;
+    let nx = -dy / len;
+    let ny = dx / len;
+    if (nx + ny < 0) {
+      nx = -nx;
+      ny = -ny;
+    }
+    const M: V = [A[0] + dx * 0.42, A[1] + dy * 0.42];
+    const h = (w: number, f: number) => (w * s * f) / 2;
+    g.poly([
+      A[0] + nx * h(wa, 0.15), A[1] + ny * h(wa, 0.15), M[0] + nx * h(wm, 0.15), M[1] + ny * h(wm, 0.15), B[0] + nx * h(wb, 0.15), B[1] + ny * h(wb, 0.15),
+      B[0] + nx * h(wb, 1), B[1] + ny * h(wb, 1), M[0] + nx * h(wm, 1), M[1] + ny * h(wm, 1), A[0] + nx * h(wa, 1), A[1] + ny * h(wa, 1),
+    ]).fill(color);
+  };
+  interface Seg { a: V; b: V; wa: number; wm: number; wb: number; color: number; shadow: number }
+  /** Outline every segment first, then fill, so joints merge cleanly. */
+  const group = (segs: Seg[], joints: { p: V; r: number; color: number }[] = []) => {
+    for (const q of segs) g.poly(limbPts(q.a, q.b, q.wa, q.wm, q.wb, 2)).fill(OUT);
+    for (const j of joints) g.circle(...T(j.p), (j.r + 1) * s).fill(OUT);
+    for (const q of segs) g.poly(limbPts(q.a, q.b, q.wa, q.wm, q.wb)).fill(q.color);
+    for (const j of joints) g.circle(...T(j.p), j.r * s).fill(j.color);
+    for (const q of segs) limbShade(q.a, q.b, q.wa, q.wm, q.wb, q.shadow);
+  };
+
+  // widths
+  const bw = build * (fem ? 0.6 : 1);
+  const UA = { a: 6.4 + bw, m: 7.6 + bw * 1.4, b: 5 + bw * 0.6 }; // upper arm (bicep bulge)
+  const FA = { a: 5.4 + bw * 0.6, m: 5.2 + bw * 0.5, b: 4 }; // forearm
+  const TH = { a: 9.5 + bw * 1.3, m: 9.8 + bw * 1.4, b: 6.4 + bw * 0.4 }; // thigh
+  const CA = { a: 6 + bw * 0.4, m: 7 + bw * 0.6, b: 3.8 }; // calf
+  const armC = o ? o.top : skin;
+  const armFarC = o ? shade(o.top, -0.25) : skinFar;
+  const legC = o ? o.bottom : skin;
+  const legFarC = o ? shade(o.bottom, -0.25) : skinFar;
+  const shoe = 0x0c0c0e;
+
+  const foot = (ft: V, kn: V, color: number) => {
+    // foot points forward (along facing), heel slightly back
+    const f = T(ft);
+    const lift = Math.max(0, -ft[1]) > 4; // airborne foot: point the toes along the shin
+    const dir: V = lift ? [ft[0] - kn[0], ft[1] - kn[1]] : [1, 0];
+    const dl = Math.hypot(dir[0], dir[1]) || 1;
+    const ux = (dir[0] / dl) * facing;
+    const uy = dir[1] / dl;
+    const p = [f[0] - ux * 2 * s, f[1] - 1.5 * s, f[0] + ux * 7 * s, f[1] + uy * 7 * s - 1 * s, f[0] + ux * 7 * s, f[1] + uy * 7 * s + 1 * s, f[0] - ux * 2.5 * s, f[1] + 1.5 * s];
+    g.poly(p).fill(OUT).stroke({ color: OUT, width: 2 * s });
+    g.poly(p).fill(o ? shoe : color);
+    if (!o) g.moveTo(f[0] - ux * 1 * s, f[1] - 1.5 * s).lineTo(f[0] + ux * 1.5 * s, f[1] - 1.5 * s).stroke({ color: 0xe8e0d0, width: 1.2 * s }); // ankle tape
+  };
+  const glove = (ha: V, el: V, color: number, near: boolean) => {
+    const H = T(ha);
+    const E = T(el);
+    const dx = H[0] - E[0];
+    const dy = H[1] - E[1];
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    if (o) {
+      // bare hand (referee / announcer)
+      g.circle(H[0], H[1], 3 * s).fill(OUT);
+      g.circle(H[0], H[1], 2.2 * s).fill(near ? skin : skinFar);
+      if (o.mic && !near) {
+        g.rect(H[0] - 1 * s, H[1] - 6 * s, 2 * s, 5 * s).fill(0x1a1a1a);
+        g.circle(H[0], H[1] - 7 * s, 2 * s).fill(0x3a3a44);
+      }
+      return;
+    }
+    const r = 4.3 * s;
+    const C: V = [H[0] + ux * 1 * s, H[1] + uy * 1 * s];
+    g.circle(C[0], C[1], r + 1 * s).fill(OUT);
+    g.circle(C[0], C[1], r).fill(color);
+    g.circle(C[0] - uy * 2.6 * s, C[1] + ux * 2.6 * s, 1.8 * s).fill(OUT); // thumb
+    g.circle(C[0] - uy * 2.6 * s, C[1] + ux * 2.6 * s, 1.1 * s).fill(color);
+    // cuff / velcro strap
+    const cx = H[0] - ux * 3.2 * s;
+    const cy = H[1] - uy * 3.2 * s;
+    g.moveTo(cx - uy * 3.4 * s, cy + ux * 3.4 * s).lineTo(cx + uy * 3.4 * s, cy - ux * 3.4 * s).stroke({ color: OUT, width: 3.4 * s });
+    g.moveTo(cx - uy * 2.6 * s, cy + ux * 2.6 * s).lineTo(cx + uy * 2.6 * s, cy - ux * 2.6 * s).stroke({ color: shade(color, near ? -0.35 : -0.5), width: 2 * s });
+    g.circle(C[0] + ux * 1.2 * s - 1 * s, C[1] + uy * 1.2 * s - 1.4 * s, 1.1 * s).fill(shade(color, 0.4)); // shine
+  };
+
+  // ------------------------------------------------------------ far leg & far arm
+  group(
+    [
+      { a: rig.hip, b: rig.knB, wa: TH.a, wm: TH.m, wb: TH.b, color: legFarC, shadow: shade(legFarC, -0.18) },
+      { a: rig.knB, b: rig.ftB, wa: CA.a, wm: CA.m, wb: CA.b, color: legFarC, shadow: shade(legFarC, -0.18) },
+    ],
+    [{ p: rig.knB, r: TH.b / 2, color: legFarC }],
+  );
+  foot(rig.ftB, rig.knB, legFarC);
+  if (!o) {
+    // far shorts leg
+    group([{ a: rig.hip, b: lerp(rig.hip, rig.knB, 0.5), wa: TH.a + 2, wm: TH.m + 2.2, wb: TH.m + 1.6, color: shade(L.trunks, -0.25), shadow: shade(L.trunks, -0.4) }]);
   }
-  limb('knB', 'ftB', w * 0.8, skinB);
-  const [fbx, fby] = tx(rig.ftB);
-  g.rect(fbx - 3 * scale, fby - 2 * scale, 7 * scale, 3 * scale).fill(skinB);
-  outline('shB', 'elB', w * 0.75);
-  outline('elB', 'haB', w * 0.7);
-  limb('shB', 'elB', w * 0.75, skinB);
-  limb('elB', 'haB', w * 0.7, skinB);
-  // ---- torso
-  const [nx, ny] = tx(rig.neck);
-  const [hx, hy] = tx(rig.hip);
-  const tw = (L.build === 2 ? 15 : L.build === 1 ? 12.5 : 11) * scale;
-  g.moveTo(nx, ny).lineTo(hx, hy).stroke({ color: OUT, width: tw + 2 * scale, cap: 'round' });
-  g.moveTo(nx, ny).lineTo(hx, hy).stroke({ color: skin, width: tw, cap: 'round' });
-  // chest highlight / abs shading
-  const mx = (nx + hx) / 2;
-  const my = (ny + hy) / 2;
-  g.circle(Math.round(mx + 2 * facing * scale), Math.round(my - 6 * scale), Math.max(1, 2.5 * scale)).fill(skinL);
-  if (L.build === 2) g.circle(Math.round(mx + 3 * facing * scale), Math.round(my + 5 * scale), 4 * scale).fill(shade(skin, 0.04));
-  if (L.female) g.moveTo(nx, ny + 3 * scale).lineTo(mx, my).stroke({ color: 0x2a2a2a, width: tw * 0.9 });
-  if (L.tattoo >= 2) g.rect(Math.round(mx - 2 * scale), Math.round(my - 4 * scale), 3 * scale, 5 * scale).fill(shade(skin, -0.45));
-  // trunks
-  g.moveTo(hx, hy - 4 * scale).lineTo(hx, hy + 5 * scale).stroke({ color: OUT, width: tw + 4 * scale, cap: 'butt' });
-  g.moveTo(hx, hy - 3 * scale).lineTo(hx, hy + 4 * scale).stroke({ color: L.trunks, width: tw + 2 * scale, cap: 'butt' });
-  g.moveTo(hx - tw / 2, hy - 3 * scale).lineTo(hx + tw / 2, hy - 3 * scale).stroke({ color: L.trim, width: 1.5 * scale });
-  // ---- near leg
-  outline('hip', 'knF', w);
-  outline('knF', 'ftF', w * 0.8);
-  limb('hip', 'knF', w, L.trunks);
-  limb('knF', 'ftF', w * 0.8, skin);
-  // thigh in trunks then skin from mid-thigh
-  const [kx, ky] = tx(rig.knF);
-  g.moveTo(hx + (kx - hx) * 0.55, hy + (ky - hy) * 0.55).lineTo(kx, ky).stroke({ color: skin, width: w, cap: 'round' });
-  g.moveTo(hx, hy).lineTo(hx + (kx - hx) * 0.55, hy + (ky - hy) * 0.55).stroke({ color: L.trunks, width: w + 1, cap: 'round' });
-  const [ffx, ffy] = tx(rig.ftF);
-  g.rect(ffx - 3 * scale, ffy - 2 * scale, 8 * scale, 3 * scale).fill(skin);
-  // ---- head
-  const [hdx, hdy] = tx(rig.head);
-  const hr = 7 * scale;
-  g.circle(hdx, hdy, hr + 1 * scale).fill(OUT);
-  g.circle(hdx, hdy, hr).fill(skin);
-  // jaw shadow & ear
-  g.circle(hdx - 2 * facing * scale, hdy + 1 * scale, 2 * scale).fill(shade(skin, -0.15));
-  // eye & brow
-  g.rect(Math.round(hdx + 3 * facing * scale - (facing < 0 ? 2 * scale : 0)), Math.round(hdy - 2 * scale), 2 * scale, 2 * scale).fill(0x1c1714);
+  group(
+    [
+      { a: rig.shB, b: rig.elB, wa: UA.a, wm: UA.m, wb: UA.b, color: armFarC, shadow: shade(armFarC, -0.18) },
+      { a: rig.elB, b: rig.haB, wa: FA.a, wm: FA.m, wb: FA.b, color: armFarC, shadow: shade(armFarC, -0.18) },
+    ],
+    [{ p: rig.elB, r: UA.b / 2, color: armFarC }, { p: rig.shB, r: UA.a / 2, color: armFarC }],
+  );
+  glove(rig.haB, rig.elB, shade(L.glove, -0.2), false);
+
+  // ------------------------------------------------------------ torso
+  const nk = rig.neck;
+  const hp = rig.hip;
+  const len = Math.hypot(hp[0] - nk[0], hp[1] - nk[1]) || 1;
+  const u: V = [(hp[0] - nk[0]) / len, (hp[1] - nk[1]) / len]; // spine, downward
+  const f: V = [-u[1], u[0]].map((v) => -v) as V; // forward (toward facing)
+  const tw = (fem ? 11 : 12.5) + build * 2.4;
+  const P = (along: number, fwd: number): V => add(add(nk, u, len * along), f, fwd);
+  const belly = build >= 2 ? 1.6 : 0;
+  const torso: V[] = [
+    P(-0.04, tw * 0.15), // throat
+    P(0.08, tw * 0.5), // front shoulder
+    P(0.3, tw * 0.6 + (fem ? 0.6 : 0)), // chest
+    P(0.45, tw * 0.5), // under pec
+    P(0.72, tw * 0.42 + belly), // belly
+    P(1.02, tw * 0.46), // hip front
+    P(1.02, -tw * 0.46), // hip back
+    P(0.72, -tw * 0.4), // lower back
+    P(0.36, -tw * 0.56), // lats
+    P(0.06, -tw * 0.44), // rear shoulder
+    P(-0.05, -tw * 0.12), // trap
+  ];
+  const tp = torso.flatMap((p) => T(p));
+  const torsoC = o ? o.top : skin;
+  g.poly(tp).fill(torsoC).stroke({ color: OUT, width: 2 * s, join: 'round' });
+  // back half in shadow
+  g.poly([P(0.1, -tw * 0.05), P(0.05, -tw * 0.42), P(0.36, -tw * 0.54), P(0.72, -tw * 0.38), P(1.0, -tw * 0.44), P(1.0, -tw * 0.08), P(0.5, -tw * 0.1)].flatMap((p) => T(p))).fill(shade(torsoC, -0.16));
+  const line = (a: V, b: V, c: number, w = 1) => {
+    const A = T(a);
+    const B = T(b);
+    g.moveTo(A[0], A[1]).lineTo(B[0], B[1]).stroke({ color: c, width: w * s, cap: 'round' });
+  };
+  if (!o) {
+    const dk = shade(skin, -0.28);
+    if (!fem) {
+      line(P(0.44, tw * 0.48), P(0.4, tw * 0.02), dk); // pec line
+      g.circle(...T(P(0.36, tw * 0.44)), 0.9 * s).fill(shade(skin, -0.35)); // nipple
+      line(P(0.15, tw * 0.45), P(0.22, tw * 0.1), shade(skin, 0.12), 1.2); // pec highlight
+      if (build < 2) for (let i = 0; i < 3; i++) line(P(0.56 + i * 0.11, tw * 0.22), P(0.56 + i * 0.11, tw * 0.42), dk, 0.9); // abs
+      else line(P(0.62, tw * 0.3), P(0.8, tw * 0.38), dk, 0.9); // gut fold
+      if (L.beard >= 3) g.poly([P(0.22, tw * 0.1), P(0.3, tw * 0.32), P(0.4, tw * 0.12)].flatMap((p) => T(p))).fill(shade(skin, -0.22)); // chest hair
+    } else {
+      // sports bra
+      const bra = [P(0.12, tw * 0.5), P(0.3, tw * 0.62), P(0.46, tw * 0.52), P(0.46, -tw * 0.52), P(0.12, -tw * 0.44)].flatMap((p) => T(p));
+      g.poly(bra).fill(0x1c1c22).stroke({ color: OUT, width: 1 * s });
+      line(P(0.42, tw * 0.5), P(0.42, -tw * 0.5), L.trim, 1.2);
+      for (let i = 0; i < 2; i++) line(P(0.6 + i * 0.12, tw * 0.22), P(0.6 + i * 0.12, tw * 0.38), dk, 0.8);
+    }
+    g.circle(...T(P(0.86, tw * 0.3)), 0.7 * s).fill(dk); // navel
+    if (L.tattoo >= 2) {
+      // rib piece: a little script + star
+      line(P(0.3, -tw * 0.18), P(0.62, -tw * 0.26), shade(skin, -0.45), 0.8);
+      line(P(0.36, -tw * 0.32), P(0.58, -tw * 0.36), shade(skin, -0.45), 0.8);
+    }
+  } else {
+    if (o.shirt !== undefined) {
+      line(P(0.0, tw * 0.25), P(0.55, tw * 0.3), o.shirt, 2.6);
+      if (o.tie !== undefined) {
+        g.circle(...T(P(0.04, tw * 0.28)), 1.6 * s).fill(o.tie); // bow tie
+        g.circle(...T(P(0.04, tw * 0.16)), 1.3 * s).fill(o.tie);
+      }
+      for (let i = 0; i < 3; i++) g.circle(...T(P(0.62 + i * 0.12, tw * 0.3)), 0.6 * s).fill(0x2a2a30); // jacket buttons
+    } else {
+      line(P(0.02, tw * 0.1), P(0.95, tw * 0.1), shade(o.top, 0.2), 0.8); // ref shirt placket
+    }
+  }
+
+  // ------------------------------------------------------------ near leg + shorts / trousers
+  group(
+    [
+      { a: rig.hip, b: rig.knF, wa: TH.a, wm: TH.m, wb: TH.b, color: legC, shadow: shade(legC, -0.15) },
+      { a: rig.knF, b: rig.ftF, wa: CA.a, wm: CA.m, wb: CA.b, color: legC, shadow: shade(legC, -0.15) },
+    ],
+    [{ p: rig.knF, r: TH.b / 2, color: legC }],
+  );
+  if (!o) {
+    line(lerp(rig.knF, rig.ftF, 0.3), lerp(rig.knF, rig.ftF, 0.62), shade(skin, 0.1), 1.3); // shin highlight
+    line(lerp(rig.hip, rig.knF, 0.62), lerp(rig.hip, rig.knF, 0.9), shade(skin, -0.18), 1); // quad line
+  }
+  foot(rig.ftF, rig.knF, skin);
+  if (!o) {
+    // fight shorts: waist block + near leg, waistband trim, side stripe, little logo
+    const wb: V[] = [P(0.86, tw * 0.5), P(0.86, -tw * 0.5), P(1.08, -tw * 0.5), P(1.08, tw * 0.5)];
+    g.poly(wb.flatMap((p) => T(p))).fill(L.trunks).stroke({ color: OUT, width: 1.6 * s });
+    group([{ a: rig.hip, b: lerp(rig.hip, rig.knF, 0.52), wa: TH.a + 2.4, wm: TH.m + 2.6, wb: TH.m + 2, color: L.trunks, shadow: shade(L.trunks, -0.22) }]);
+    line(P(0.88, tw * 0.5), P(0.88, -tw * 0.5), L.trim, 1.8); // waistband
+    line(lerp(rig.hip, rig.knF, 0.08), lerp(rig.hip, rig.knF, 0.5), L.trim, 1.1); // side stripe
+    g.rect(...T(add(lerp(rig.hip, rig.knF, 0.28), f, 2)), 2.2 * s, 1.6 * s).fill(shade(L.trim, -0.1)); // logo patch
+  } else {
+    line(P(0.9, tw * 0.48), P(0.9, -tw * 0.48), 0x0c0c0e, 1.6); // belt
+  }
+
+  // ------------------------------------------------------------ neck & head
+  const hd = rig.head;
+  group([{ a: lerp(nk, hd, -0.1), b: lerp(nk, hd, 0.75), wa: 6 + build, wm: 5.6 + build, wb: 5.2 + build * 0.5, color: skin, shadow: shade(skin, -0.16) }]);
+  const H = T(hd);
+  const hr = 7 * s;
+  const fx = facing * s; // forward x unit on screen
+  // jaw & chin, nose
+  const jaw = [H[0] - 3 * fx, H[1] + 4 * s, H[0] + 3 * fx, H[1] + 7 * s, H[0] + 6.6 * fx, H[1] + 5 * s, H[0] + 7.4 * fx, H[1] + 1 * s, H[0] + 2 * fx, H[1] - 2 * s];
+  g.circle(H[0], H[1], hr + 1 * s).fill(OUT);
+  g.poly(jaw).fill(OUT).stroke({ color: OUT, width: 2 * s, join: 'round' });
+  g.circle(H[0], H[1], hr).fill(skin);
+  g.poly(jaw).fill(skin);
+  // back-of-skull shadow
+  g.circle(H[0] - 3.4 * fx, H[1] + 1.4 * s, hr * 0.5).fill(shade(skin, -0.12));
+  const nose = [H[0] + 6.8 * fx, H[1] - 1.5 * s, H[0] + 9 * fx, H[1] + 1.6 * s, H[0] + 6.6 * fx, H[1] + 2.2 * s];
+  g.poly(nose).fill(skin).stroke({ color: OUT, width: 1 * s, join: 'round' });
+  g.poly(nose).fill(skin);
+  // ear
+  g.ellipse(H[0] - 1.6 * fx, H[1] + 1 * s, 1.2 * s, 1.9 * s).fill(shade(skin, -0.2));
+  g.rect(H[0] - 1.6 * fx - 0.4 * s, H[1] + 0.4 * s, 0.8 * s, 1.2 * s).fill(shade(skin, -0.4));
+  // eye: white, pupil, lid; brow
+  g.rect(H[0] + (facing > 0 ? 3.8 : -5.4) * s, H[1] - 1.8 * s, 1.6 * s, 1.2 * s).fill(0xd6cec2);
+  g.rect(H[0] + (facing > 0 ? 4.6 : -5.4) * s, H[1] - 1.8 * s, 0.9 * s, 1.2 * s).fill(0x14100e);
+  line([hd[0] + 3.6, hd[1] - 2.1], [hd[0] + 5.6, hd[1] - 2.1], shade(skin, -0.4), 0.7);
+  line([hd[0] + 2.6, hd[1] - 3.6], [hd[0] + 6.4, hd[1] - 3.2], shade(L.hairColor, -0.1), 1.3);
+  // mouth (+ mouthguard flash for fighters)
+  line([hd[0] + 4.6, hd[1] + 3.6], [hd[0] + 6.6, hd[1] + 3.2], shade(skin, -0.5), 0.9);
+  if (!o) line([hd[0] + 5.2, hd[1] + 3.4], [hd[0] + 6.4, hd[1] + 3.2], L.trim === 0xe8d8b0 ? 0xd04040 : 0x3a6ad0, 0.7);
   // hair
   const hc = L.hairColor;
-  const arc = (r: number, a0: number, a1: number, color: number, width: number) => {
-    g.moveTo(hdx + Math.cos(a0) * r, hdy + Math.sin(a0) * r);
-    g.arc(hdx, hdy, r, a0, a1).stroke({ color, width });
+  const hcD = shade(hc, -0.25);
+  const arcCap = (r: number, a0: number, a1: number, color: number, width: number) => {
+    const start = facing > 0 ? a0 : Math.PI - a1;
+    const end = facing > 0 ? a1 : Math.PI - a0;
+    g.moveTo(H[0] + Math.cos(start) * r, H[1] + Math.sin(start) * r);
+    g.arc(H[0], H[1], r, start, end).stroke({ color, width });
   };
   switch (L.hairStyle) {
     case 0:
-      g.circle(Math.round(hdx - 1 * facing * scale), Math.round(hdy - 4 * scale), 1.5 * scale).fill(shade(skin, 0.25));
+      g.circle(H[0] - 1 * fx, H[1] - 4.4 * s, 1.4 * s).fill(shade(skin, 0.28)); // bald shine
       break;
     case 1:
-      arc(hr, Math.PI * 1.05, Math.PI * 1.95, hc, 2 * scale);
+      arcCap(hr - 1 * s, Math.PI * 1.05, Math.PI * 1.98, hcD, 2.2 * s);
       break;
     case 4:
-      g.rect(Math.round(hdx - 2 * scale), Math.round(hdy - hr - 4 * scale), 4 * scale, 6 * scale).fill(hc);
+      g.poly([H[0] - 3 * fx, H[1] - hr + 1 * s, H[0] + 1 * fx, H[1] - hr - 5 * s, H[0] + 4 * fx, H[1] - hr + 1 * s]).fill(hc).stroke({ color: OUT, width: 1 * s });
       break;
     case 5:
     case 6:
-      arc(hr, Math.PI * 0.95, Math.PI * 2.05, hc, 3.5 * scale);
-      g.moveTo(hdx - 5 * facing * scale, hdy).lineTo(hdx - 8 * facing * scale, hdy + 10 * scale).stroke({ color: hc, width: 3 * scale, cap: 'round' });
+      arcCap(hr - 0.5 * s, Math.PI * 0.95, Math.PI * 2.02, hc, 3.6 * s);
+      g.poly([H[0] - 4 * fx, H[1] - 2 * s, H[0] - 7.5 * fx, H[1] - 1 * s, H[0] - 8.5 * fx, H[1] + (fem ? 12 : 8) * s, H[0] - 4.5 * fx, H[1] + (fem ? 11 : 7) * s]).fill(hc).stroke({ color: OUT, width: 1 * s });
+      if (L.hairStyle === 6) for (let i = 0; i < 4; i++) line([hd[0] - 6 + i * 2.6, hd[1] - 6.4 + Math.abs(i - 1.5)], [hd[0] - 6.4 + i * 2.6, hd[1] - 3], hcD, 0.7);
       break;
     case 7:
-      arc(hr, Math.PI * 1.0, Math.PI * 2.0, hc, 3 * scale);
-      g.circle(Math.round(hdx - 6 * facing * scale), Math.round(hdy - 6 * scale), 3 * scale).fill(hc);
+      arcCap(hr - 0.8 * s, Math.PI * 1.0, Math.PI * 2.0, hc, 3 * s);
+      g.circle(H[0] - 6 * fx, H[1] - 5.5 * s, 3 * s).fill(OUT);
+      g.circle(H[0] - 6 * fx, H[1] - 5.5 * s, 2.3 * s).fill(hc);
       break;
     default:
-      arc(hr, Math.PI * 1.0, Math.PI * 2.0, hc, 3 * scale);
+      arcCap(hr - 0.6 * s, Math.PI * 1.0, Math.PI * 2.02, hc, 3.2 * s);
+      g.poly([H[0] - 6.5 * fx, H[1] - 3 * s, H[0] - 7.2 * fx, H[1] + 1.5 * s, H[0] - 4.5 * fx, H[1] - 1 * s]).fill(hc); // sideburn / back
   }
-  if (L.beard === 3) arc(hr - 1 * scale, Math.PI * 0.1, Math.PI * 0.9, hc, 3 * scale);
-  else if (L.beard === 2 || L.beard === 4) g.rect(Math.round(hdx + (facing > 0 ? 1 : -4) * scale), Math.round(hdy + 3 * scale), 3 * scale, 3 * scale).fill(hc);
-  // ---- near arm with glove
-  outline('shF', 'elF', w * 0.75);
-  outline('elF', 'haF', w * 0.7);
-  limb('shF', 'elF', w * 0.75, skin);
-  limb('elF', 'haF', w * 0.7, skin);
-  // gloves (far one first, darker)
-  const [gbx, gby] = tx(rig.haB);
-  g.circle(gbx, gby, 4 * scale).fill(OUT);
-  g.circle(gbx, gby, 3.2 * scale).fill(shade(L.glove, -0.2));
-  const [gfx, gfy] = tx(rig.haF);
-  g.circle(gfx, gfy, 4.4 * scale).fill(OUT);
-  g.circle(gfx, gfy, 3.6 * scale).fill(L.glove);
-  g.rect(gfx - 1 * scale, gfy - 2 * scale, 2 * scale, 1 * scale).fill(shade(L.glove, 0.35));
-}
+  if (L.beard === 3) {
+    g.poly([H[0] - 2.4 * fx, H[1] + 3 * s, H[0] + 3 * fx, H[1] + 7.6 * s, H[0] + 7 * fx, H[1] + 5.4 * s, H[0] + 7.3 * fx, H[1] + 3.6 * s, H[0] + 4.6 * fx, H[1] + 4.4 * s, H[0] + 0.5 * fx, H[1] + 1.4 * s]).fill(hc);
+  } else if (L.beard === 2 || L.beard === 4) {
+    line([hd[0] + 4.4, hd[1] + 2.6], [hd[0] + 6.8, hd[1] + 2.4], hc, 1.3); // moustache
+    if (L.beard === 2) g.circle(H[0] + 5.6 * fx, H[1] + 5.8 * s, 1.4 * s).fill(hc); // goatee
+  } else if (L.beard === 1) {
+    for (let i = 0; i < 4; i++) g.circle(H[0] + (1 + i * 1.6) * fx, H[1] + (4.4 + (i % 2)) * s, 0.5 * s).fill(shade(skin, -0.32)); // stubble
+  }
 
-/** Clothed figure: referee shirt, Juiced Butler's straining tuxedo. */
-function drawClothed(g: Graphics, rig: Rig, x: number, y: number, facing: 1 | -1, L: Look2, scale: number): void {
-  const o = L.outfit!;
-  const tx = (p: [number, number]): [number, number] => [Math.round(x + p[0] * facing * scale), Math.round(y + p[1] * scale)];
-  const OUT = 0x120d10;
-  const bulk = o.bulk ?? 0;
-  const w = (7 + bulk) * scale;
-  const seg = (a: Joint, b: Joint, width: number, color: number) => {
-    const [x1, y1] = tx(rig[a]);
-    const [x2, y2] = tx(rig[b]);
-    g.moveTo(x1, y1).lineTo(x2, y2).stroke({ color: OUT, width: width + 2 * scale, cap: 'round' });
-    g.moveTo(x1, y1).lineTo(x2, y2).stroke({ color, width, cap: 'round' });
-  };
-  const topB = shade(o.top, -0.25);
-  const botB = shade(o.bottom, -0.25);
-  // far leg & arm
-  seg('hip', 'knB', w, botB);
-  seg('knB', 'ftB', w * 0.85, botB);
-  const [fbx, fby] = tx(rig.ftB);
-  g.rect(fbx - 3 * scale, fby - 2 * scale, 8 * scale, 3 * scale).fill(0x0a0a0a);
-  seg('shB', 'elB', w * 0.85, topB);
-  seg('elB', 'haB', w * 0.8, topB);
-  const [hbx, hby] = tx(rig.haB);
-  g.circle(hbx, hby, 2.6 * scale).fill(shade(L.skin, -0.2));
-  if (o.mic) g.rect(hbx - 1 * scale, hby - 5 * scale, 2 * scale, 5 * scale).fill(0x1a1a1a).rect(hbx - 1.5 * scale, hby - 7 * scale, 3 * scale, 3 * scale).fill(0x4a4a4a);
-  // torso
-  const [nx, ny] = tx(rig.neck);
-  const [hx, hy] = tx(rig.hip);
-  const tw = (12 + bulk * 2) * scale;
-  g.moveTo(nx, ny).lineTo(hx, hy).stroke({ color: OUT, width: tw + 2 * scale, cap: 'round' });
-  g.moveTo(nx, ny).lineTo(hx, hy).stroke({ color: o.top, width: tw, cap: 'round' });
-  if (o.shirt !== undefined) {
-    g.moveTo(nx + 1 * facing * scale, ny + 1 * scale).lineTo(nx + (hx - nx) * 0.6 + 1 * facing * scale, ny + (hy - ny) * 0.6).stroke({ color: o.shirt, width: 3 * scale });
+  // ------------------------------------------------------------ near arm (+ glove)
+  group(
+    [
+      { a: rig.shF, b: rig.elF, wa: UA.a, wm: UA.m, wb: UA.b, color: armC, shadow: shade(armC, -0.15) },
+      { a: rig.elF, b: rig.haF, wa: FA.a, wm: FA.m, wb: FA.b, color: armC, shadow: shade(armC, -0.15) },
+    ],
+    [{ p: rig.elF, r: UA.b / 2, color: armC }, { p: rig.shF, r: UA.a / 2, color: armC }],
+  );
+  if (!o) {
+    line(lerp(rig.shF, rig.elF, 0.25), lerp(rig.shF, rig.elF, 0.6), shade(skin, 0.12), 1.2); // bicep highlight
+    if (L.tattoo >= 1) {
+      // tribal arm band: two dark rings around the upper arm
+      for (const t of [0.34, 0.46]) {
+        const A = T(rig.shF);
+        const B = T(rig.elF);
+        const dx = B[0] - A[0];
+        const dy = B[1] - A[1];
+        const l = Math.hypot(dx, dy) || 1;
+        const c: V = [A[0] + dx * t, A[1] + dy * t];
+        const hw = (UA.m * s) / 2;
+        g.moveTo(c[0] - (dy / l) * hw, c[1] + (dx / l) * hw).lineTo(c[0] + (dy / l) * hw, c[1] - (dx / l) * hw).stroke({ color: shade(skin, -0.55), width: 1.1 * s });
+      }
+    }
   }
-  if (o.tie !== undefined) g.rect(nx - 2 * scale + 1 * facing * scale, ny + 1 * scale, 5 * scale, 2 * scale).fill(o.tie);
-  // near leg
-  seg('hip', 'knF', w, o.bottom);
-  seg('knF', 'ftF', w * 0.85, o.bottom);
-  const [ffx, ffy] = tx(rig.ftF);
-  g.rect(ffx - 3 * scale, ffy - 2 * scale, 9 * scale, 3 * scale).fill(0x0a0a0a);
-  // head
-  const [hdx, hdy] = tx(rig.head);
-  const hr = 7 * scale;
-  g.circle(hdx, hdy, hr + 1 * scale).fill(OUT);
-  g.circle(hdx, hdy, hr).fill(L.skin);
-  g.rect(Math.round(hdx + 3 * facing * scale - (facing < 0 ? 2 * scale : 0)), Math.round(hdy - 2 * scale), 2 * scale, 2 * scale).fill(0x1c1714);
-  if (L.hairStyle === 0) g.circle(Math.round(hdx - 1 * facing * scale), Math.round(hdy - 4 * scale), 2 * scale).fill(shade(L.skin, 0.3));
-  else {
-    g.moveTo(hdx + Math.cos(Math.PI) * hr, hdy);
-    g.arc(hdx, hdy, hr, Math.PI, Math.PI * 2).stroke({ color: L.hairColor, width: 3 * scale });
-  }
-  // near arm
-  seg('shF', 'elF', w * 0.85, o.top);
-  seg('elF', 'haF', w * 0.8, o.top);
-  const [hfx, hfy] = tx(rig.haF);
-  g.circle(hfx, hfy, 2.8 * scale).fill(L.skin);
+  glove(rig.haF, rig.elF, L.glove, true);
 }
 
 export function trunksFor(corner: 0 | 1): number {

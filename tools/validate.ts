@@ -36,6 +36,7 @@ const err = (s: StoryletDef | null, msg: string) => errors.push(`${s ? `[${s.id}
 const warn = (s: StoryletDef | null, msg: string) => warnings.push(`${s ? `[${s.id}]` : ''} ${msg}`);
 
 const c = loadContent();
+const POP_KINDS = new Set(Object.keys(c.popculture ?? {}));
 const ids = new Map<string, StoryletDef>();
 for (const s of c.storylets) {
   if (ids.has(s.id)) err(s, `duplicate id (also in ${ids.get(s.id)!.file})`);
@@ -89,12 +90,13 @@ for (const s of c.storylets) {
       }
     }
   });
-  // text placeholders
+  // text placeholders ({pop_<kind>} resolves through data/documents/popculture.json)
   const texts = [...s.scenes.map((x) => x.text + ' ' + (x.speaker ?? '') + ' ' + (x.title ?? '')), ...s.choices.map((x) => x.label + ' ' + (x.result ?? ''))];
   for (const t of texts) {
     for (const m of t.matchAll(/\{\$?([a-zA-Z_][a-zA-Z0-9_]*)(?:\.[a-zA-Z0-9_.]+)?\}/g)) {
       const root = m[1];
       if (['he', 'his', 'him', 'He', 'His', 'president', 'presidentLast', 'promotion', 'owner', 'vars'].includes(root)) continue;
+      if (root === 'pop' || (root.startsWith('pop_') && POP_KINDS.has(root.slice(4)))) continue;
       if (!roles.has(root) && !vars.has(root)) err(s, `text references unknown {${root}}`);
     }
   }

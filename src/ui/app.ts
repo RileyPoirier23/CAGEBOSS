@@ -9,7 +9,10 @@ import { setColorblind, PAL } from '../art/palette';
 import { setMuted, setMusic, setVolumes, sfx } from '../audio/sfx';
 import { W, H, tooltip, clearChildren, dimmer, box, text } from './kit';
 import { bus } from '../core/events';
-import { setTextResolution } from './text';
+import { setTextResolution, setBleep } from './text';
+import { desktop } from '../desktop';
+import { LoadingScreen } from './loading';
+import { configureMusic, setMusicContext, skipTrack, unlockMusic, onTrackChange, type MusicContext } from '../audio/music';
 
 export interface Settings {
   textSpeed: number; // 1 slow .. 3 fast, 4 instant
@@ -22,7 +25,11 @@ export interface Settings {
   fightSpeed: number; // 1..4
   clockSpeed: number; // multiplier for the desk clock (0 = paused/relaxed)
   fightCam?: 'side' | 'tv' | 'top'; // spectating camera
+  musicVolume?: number; // soundtrack volume 0..1
+  soundtrackV?: number; // settings migration marker
   intros?: boolean; // Juiced Butler introductions before watched bouts
+  bleep?: boolean; // streamer mode: grawlix instead of swears
+  fullscreen?: boolean; // desktop build only
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -31,7 +38,9 @@ const DEFAULT_SETTINGS: Settings = {
   colorblind: false,
   reduceShake: false,
   mute: false,
-  music: false,
+  music: true,
+  musicVolume: 0.6,
+  soundtrackV: 1,
   sfxVolume: 0.5,
   fightSpeed: 2,
   clockSpeed: 1,
@@ -39,6 +48,8 @@ const DEFAULT_SETTINGS: Settings = {
 
 export abstract class Scene {
   root = new Container();
+  /** what the soundtrack should be doing while this scene is up */
+  music: MusicContext = 'office';
   constructor(protected g: Game) {}
   abstract build(): void;
   enter(): void {
@@ -62,6 +73,8 @@ export class Game {
   modalLayer = new Container();
   toastLayer = new Container();
   tipLayer = new Container();
+  loadLayer = new Container();
+  private loader: LoadingScreen | null = null;
   scene: Scene | null = null;
   modals: Container[] = [];
   state: GameState | null = null;
@@ -86,7 +99,7 @@ export class Game {
     parent.appendChild(this.app.canvas);
     this.app.stage.addChild(this.stage);
     this.stage.addChild(this.sceneLayer, this.modalLayer, this.toastLayer);
-    this.app.stage.addChild(this.tipLayer);
+    this.app.stage.addChild(this.tipLayer, this.loadLayer);
     tooltip.attach(this.tipLayer);
     this.app.stage.eventMode = 'static';
     this.app.stage.hitArea = { contains: () => true };
@@ -96,12 +109,17 @@ export class Game {
     this.resize();
     window.addEventListener('keydown', (e) => this.handleKey(e));
     this.app.ticker.add((t: Ticker) => this.tick(t.deltaMS / 1000));
-    // unlock audio on first interaction
+    // browsers only allow audio after the first click / key press
     const unlock = () => {
-      setMusic(this.settings.music);
+      unlockMusic();
       window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
     };
     window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
+    onTrackChange((t) => {
+      if (this.settings.music && !this.settings.mute) this.toast(`NOW PLAYING: ${t.title.toUpperCase()} - ${t.artist.toUpperCase()}`, PAL.gold, { top: true, small: true });
+    });
   }
 
   resize(): void {
@@ -117,10 +135,19 @@ export class Game {
   }
 
   applySettings(): void {
+    setBleep(!!this.settings.bleep);
+    desktop?.setFullscreen(this.settings.fullscreen !== false);
+    // the old chiptune setting defaulted to off; the soundtrack defaults to on
+    if (this.settings.soundtrackV !== 1) {
+      this.settings.soundtrackV = 1;
+      this.settings.music = true;
+      this.settings.musicVolume = this.settings.musicVolume ?? 0.6;
+    }
     setColorblind(this.settings.colorblind);
     setMuted(this.settings.mute);
     setVolumes(this.settings.sfxVolume, 0.25);
-    setMusic(this.settings.music);
+    setMusic(false); // procedural chiptune retired in favour of the soundtrack
+    configureMusic({ enabled: this.settings.music, muted: this.settings.mute, volume: this.settings.musicVolume ?? 0.6 });
     storeJSON('cageboss.settings', this.settings);
     if (this.app) this.resize();
   }
@@ -135,7 +162,29 @@ export class Game {
     tooltip.hide();
     this.scene = scene;
     this.sceneLayer.addChild(scene.root);
+    setMusicContext(scene.music);
     scene.enter();
+  }
+
+  /**
+   * Show a loading screen, run the (possibly heavy) work once it has painted,
+   * keep it up for at least `minTime` seconds, then fade it out.
+   */
+  loading(label: string, work: () => void, minTime = 0.9): void {
+    if (this.loader) this.loader.destroy({ children: true });
+    const ls = new LoadingScreen(label);
+    this.loader = ls;
+    this.loadLayer.addChild(ls);
+    const start = performance.now();
+    // two frames so the screen is actually visible before we block
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      try {
+        work();
+      } finally {
+        const left = Math.max(0, minTime * 1000 - (performance.now() - start));
+        setTimeout(() => (ls.done = true), left);
+      }
+    }));
   }
 
   /** Push a modal container (gets a dimmer behind it). */
@@ -168,15 +217,15 @@ export class Game {
     this.shakeT = Math.max(this.shakeT, dur);
   }
 
-  toast(msg: string, color: number = PAL.bone): void {
-    const t = text(msg, 4, 3, { color, width: 200 });
+  toast(msg: string, color: number = PAL.bone, opts: { top?: boolean; small?: boolean } = {}): void {
+    const t = text(msg, 4, 3, { color, width: 200, small: opts.small });
     const w = t.textWidth + 8;
     const h = t.textHeight + 7;
     const c = new Container();
     c.addChild(box(w, h, PAL.night, PAL.ash, { shadow: true }));
     c.addChild(t);
-    c.x = W - w - 4;
-    c.y = H - 4 - h - this.toasts.length * (h + 2);
+    c.x = opts.top ? Math.floor((W - w) / 2) : W - w - 4;
+    c.y = opts.top ? 2 : H - 4 - h - this.toasts.length * (h + 2);
     this.toastLayer.addChild(c);
     this.toasts.push({ node: c, t: 2.6 });
   }
@@ -186,6 +235,10 @@ export class Game {
   }
 
   private tick(dt: number): void {
+    if (this.loader && !this.loader.update(dt)) {
+      this.loader.destroy({ children: true });
+      this.loader = null;
+    }
     if (this.shakeT > 0) {
       this.shakeT -= dt;
       const m = this.shakeT > 0 ? this.shakeMag : 0;
@@ -218,6 +271,10 @@ export class Game {
     const tag = (e.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     for (let i = this.keyHandlers.length - 1; i >= 0; i--) if (this.keyHandlers[i](e)) return;
+    if (e.key === 'n' || e.key === 'N') {
+      skipTrack();
+      return;
+    }
     if (e.key === 'm' || e.key === 'M') {
       this.settings.mute = !this.settings.mute;
       this.applySettings();

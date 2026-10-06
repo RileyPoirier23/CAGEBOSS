@@ -163,13 +163,25 @@ export function domInput(
   window.addEventListener('resize', onResize);
   el.addEventListener('input', () => opts.onChange?.(el.value));
   el.addEventListener('keydown', (e) => e.stopPropagation());
+  // The input belongs to whatever window (or scene) is on top right now. It goes away with it,
+  // and hides while another window covers it, so it never floats over unrelated screens.
+  const owner: Container | undefined = g.modals[g.modals.length - 1] ?? g.scene?.root;
+  const ownerIsModal = g.modals.length > 0;
+  const sync = () => {
+    const covered = ownerIsModal ? g.modals[g.modals.length - 1] !== owner : g.modals.length > 0;
+    el.style.display = covered ? 'none' : '';
+  };
+  g.app.ticker.add(sync);
+  const remove = () => {
+    g.app.ticker.remove(sync);
+    window.removeEventListener('resize', onResize);
+    el.remove();
+  };
+  owner?.once('destroyed', remove);
   return {
     el,
     value: () => el.value,
-    remove: () => {
-      window.removeEventListener('resize', onResize);
-      el.remove();
-    },
+    remove,
   };
 }
 
