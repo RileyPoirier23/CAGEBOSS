@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CAGE BOSS</string>
+    <string name="title_activity_main">CAGE BOSS</string>
+    <string name="package_name">ca.clicks506.cageboss</string>
+    <string name="custom_url_scheme">ca.clicks506.cageboss</string>
+</resources>

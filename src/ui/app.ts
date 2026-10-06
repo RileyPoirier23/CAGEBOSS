@@ -6,7 +6,7 @@ import { Application, Container, TextureStyle, Graphics, Ticker } from 'pixi.js'
 import type { GameState } from '../core/types';
 import { loadJSON, storeJSON, saveToSlot } from '../core/save';
 import { setColorblind, PAL } from '../art/palette';
-import { setMuted, setMusic, setVolumes, sfx } from '../audio/sfx';
+import { setMuted, setMusic, setVolumes, sfx, unlock as sfxUnlock } from '../audio/sfx';
 import { W, H, tooltip, clearChildren, dimmer, box, text } from './kit';
 import { bus } from '../core/events';
 import { setTextResolution, setBleep } from './text';
@@ -31,6 +31,7 @@ export interface Settings {
   bleep?: boolean; // streamer mode: grawlix instead of swears
   fullscreen?: boolean; // desktop build only
   bleets?: boolean; // live Bleeter feed while watching fights
+  tvSafe?: number; // TV-safe margin in % of each edge (consoles / TVs)
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -107,27 +108,45 @@ export class Game {
     this.app.stage.on('globalpointermove', (e) => tooltip.move(e.global.x, e.global.y));
     this.applySettings();
     window.addEventListener('resize', () => this.resize());
+    // phones: safe-area insets / rotation change the host box without always firing resize
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => this.resize()).observe(parent);
     this.resize();
     window.addEventListener('keydown', (e) => this.handleKey(e));
     this.app.ticker.add((t: Ticker) => this.tick(t.deltaMS / 1000));
     // browsers only allow audio after the first click / key press
-    const unlock = () => {
+    // (touch only counts as a user gesture on pointerup / touchend, hence the extra events for iOS)
+    const gestures = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const;
+    const unlock = (e: Event) => {
       unlockMusic();
-      window.removeEventListener('pointerdown', unlock);
-      window.removeEventListener('keydown', unlock);
+      sfxUnlock();
+      if (e.type === 'pointerdown' && (e as PointerEvent).pointerType === 'touch') return; // wait for the pointerup
+      gestures.forEach((t) => window.removeEventListener(t, unlock, true));
     };
-    window.addEventListener('pointerdown', unlock);
-    window.addEventListener('keydown', unlock);
+    gestures.forEach((t) => window.addEventListener(t, unlock, true));
     onTrackChange((t) => {
       if (this.settings.music && !this.settings.mute) this.showNowPlaying(t.title, t.artist);
     });
   }
 
   resize(): void {
-    const s = this.settings.uiScale || Math.max(1, Math.floor(Math.min(window.innerWidth / W, window.innerHeight / H)));
-    this.scale = s;
     const c = this.app.canvas;
-    const res = s * (window.devicePixelRatio || 1);
+    // fit inside the host box (it already excludes phone safe-area insets), minus the TV-safe margin
+    const host = c.parentElement;
+    const safe = 1 - 2 * Math.max(0, Math.min(10, this.settings.tvSafe ?? 0)) / 100;
+    const aw = (host?.clientWidth || window.innerWidth) * safe;
+    const ah = (host?.clientHeight || window.innerHeight) * safe;
+    const dpr = window.devicePixelRatio || 1;
+    let s = this.settings.uiScale;
+    if (!s) {
+      // whole *device* pixels per game pixel keeps nearest-neighbour sharp on high-DPI screens
+      const fit = Math.min((aw * dpr) / W, (ah * dpr) / H);
+      let dev = Math.max(1, Math.floor(fit + 1e-6));
+      // small phones: a whole-pixel fit can waste a third of the screen; fill it instead
+      if (dpr >= 2 && matchMedia('(pointer: coarse)').matches && dev / fit < 0.8) dev = Math.floor(fit * 4) / 4;
+      s = dev / dpr;
+    }
+    this.scale = s;
+    const res = s * dpr;
     this.app.renderer.resize(W, H, res);
     setTextResolution(res);
     c.style.width = W * s + 'px';

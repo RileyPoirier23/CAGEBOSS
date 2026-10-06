@@ -29,6 +29,23 @@ function ac(): AudioContext | null {
   return ctx;
 }
 
+/**
+ * Call from a user gesture: creates / resumes the AudioContext and plays one silent
+ * sample, which is what iOS WebKit needs before Web Audio will make a sound.
+ */
+export function unlock(): void {
+  const c = ac();
+  if (!c) return;
+  try {
+    const src = c.createBufferSource();
+    src.buffer = c.createBuffer(1, 1, 22050);
+    src.connect(c.destination);
+    src.start(0);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function setMuted(m: boolean): void {
   muted = m;
   if (master) master.gain.value = m ? 0 : sfxVol;
