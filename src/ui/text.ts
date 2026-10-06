@@ -26,6 +26,19 @@ const SMALL_LH = 7;
 let resolution = 1;
 const live = new Set<PixelText>();
 
+export function getRenderResolution(): number {
+  return resolution;
+}
+
+/**
+ * Texture resolution for pixel-art render caches (the arena): texels land on
+ * whole device pixels, roughly two per game pixel.
+ */
+export function pixelArtResolution(): number {
+  const p = Math.max(1, Math.round(resolution / 2));
+  return resolution / p;
+}
+
 export function setTextResolution(r: number): void {
   if (Math.abs(r - resolution) < 1e-6) return;
   resolution = r;
@@ -37,9 +50,12 @@ export function setTextResolution(r: number): void {
 
 /** Actual small-text glyph pixel size in logical units (whole device pixels, never larger than nominal). */
 function smallK(): number {
+  // HD small text is off: small text uses the chunky Cagebook small face (now with lowercase).
+  if (!HD_SMALL) return 0;
   const px = Math.floor(resolution * SMALL_NOMINAL + 1e-6);
   return px >= 1 ? px / resolution : 0;
 }
+const HD_SMALL = false;
 
 function buildAtlas(face: FontFace): Atlas {
   const chars = Object.keys(face.glyphs);
@@ -210,19 +226,18 @@ function upperKeepMarkup(s: string): string {
   return s.replace(/(\{#[0-9a-fA-F]{6}\}|\{\/\})|([^{]+|\{)/g, (_m, tag, txt) => tag ?? txt.toUpperCase());
 }
 
-/** Layout width of a single line. Small text measures as an (upper-cased) label at nominal size. */
+/** Layout width of a single line. Small text measures as an (upper-cased) label. */
 export function measure(text: string, small = false): number {
   if (!small) return measureLine(MAIN_FACE, text);
-  return Math.ceil(measureLine(MAIN_FACE, upperKeepMarkup(normalizeText(text))) * SMALL_NOMINAL);
+  return measureLine(SMALL_FACE, upperKeepMarkup(normalizeText(text)));
 }
 
 export function wrap(text: string, width: number, small = false): string[] {
-  if (!small) return wrapText(MAIN_FACE, text, width);
-  return wrapText(MAIN_FACE, text, Math.floor(width / SMALL_NOMINAL));
+  return wrapText(small ? SMALL_FACE : MAIN_FACE, text, width);
 }
 
 export function lineHeight(small = false): number {
-  return small ? SMALL_LH : MAIN_FACE.lineHeight;
+  return small ? SMALL_FACE.lineHeight : MAIN_FACE.lineHeight;
 }
 
 /** Colour markup helper. */

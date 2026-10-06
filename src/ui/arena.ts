@@ -9,7 +9,7 @@ import { Container, Graphics } from 'pixi.js';
 import type { Fighter, TickerLine, CornerReport } from '../core/types';
 import { PAL, shade, lerpColor } from '../art/palette';
 import { text } from './kit';
-import { PixelText } from './text';
+import { PixelText, pixelArtResolution } from './text';
 import { portrait } from './sprites';
 import { sfx } from '../audio/sfx';
 import { Rig, Pose, POSES, drawRig, lerpRig, lookFor, stanceGuard, Look2 } from './rig';
@@ -70,7 +70,8 @@ const TCY = 76;
 const TR = 66;
 
 export class ArenaView extends Container {
-  private world = new Container();
+  private world = new Container(); // camera transform
+  private worldInner = new Container(); // pixel-art render cache
   private bg = new Graphics();
   private crowd = new Graphics();
   private lights = new Graphics();
@@ -79,6 +80,7 @@ export class ArenaView extends Container {
   private front = new Graphics();
   private top = new Graphics();
   private topFx = new Graphics();
+  private topWorld = new Container();
   private hud = new Container();
   private hudG = new Graphics();
   private tv = new Container();
@@ -132,8 +134,14 @@ export class ArenaView extends Container {
     ];
     this.ref = { rig: { ...POSES.stand }, pose: 'stand', x: AW / 2 + 70, tx: AW / 2 + 70, facing: -1, look: REF_LOOK, visible: true, spin: 0 };
     this.butler = { rig: { ...POSES.mic }, pose: 'mic', x: AW / 2, tx: AW / 2, facing: 1, look: BUTLER_LOOK, visible: false, spin: 0 };
-    this.world.addChild(this.bg, this.crowd, this.lights, this.fighters, this.fx, this.front);
-    this.addChild(this.world, this.top, this.topFx, this.topLabels, this.hudG, this.hud, this.tv);
+    this.worldInner.addChild(this.bg, this.crowd, this.lights, this.fighters, this.fx, this.front);
+    this.world.addChild(this.worldInner);
+    this.topWorld.addChild(this.top, this.topFx);
+    this.addChild(this.world, this.topWorld, this.topLabels, this.hudG, this.hud, this.tv);
+    // pixel-art look: the arena renders into a low-res buffer (no anti-aliasing)
+    const res = pixelArtResolution();
+    this.worldInner.cacheAsTexture({ resolution: res, antialias: false });
+    this.topWorld.cacheAsTexture({ resolution: res, antialias: false });
     this.drawBg();
     this.drawTopStatic();
     this.hud.addChild(text(`${A.first[0]}. ${A.last}`, 6, 3, { color: PAL.bone }));
@@ -155,8 +163,7 @@ export class ArenaView extends Container {
     this.mode = m;
     const top = m === 'top' && this.scene === 'fight';
     this.world.visible = !top;
-    this.top.visible = top;
-    this.topFx.visible = top;
+    this.topWorld.visible = top;
     this.topLabels.visible = top;
     this.tv.visible = m === 'tv';
     if (m !== 'tv') this.applyCam(AW / 2, AH / 2, 1, true);
@@ -747,8 +754,13 @@ export class ArenaView extends Container {
       a.rig = lerpRig(a.rig, tgt, Math.min(1, dt * 10));
     }
     this.updateCam(dt);
-    if (this.mode === 'top' && this.scene === 'fight') this.drawTop(dt);
-    else this.drawSide(dt, ground);
+    if (this.mode === 'top' && this.scene === 'fight') {
+      this.drawTop(dt);
+      this.topWorld.updateCacheTexture();
+    } else {
+      this.drawSide(dt, ground);
+      this.worldInner.updateCacheTexture();
+    }
     this.drawHud(dt);
   }
 
@@ -1038,6 +1050,7 @@ export function cornerView(A: Fighter, B: Fighter, reports: CornerReport[], roun
     const cut: Look2 = { ...L, trunks: 0x2a2a2a, trim: 0x444444, glove: 0xe0e0e0, hairStyle: 0, beard: 3, build: 2, skin: 0xc08e64 };
     drawRig(st, POSES.clinch, ox + (i === 0 ? 186 : 118), 108, i === 0 ? -1 : 1, cut, 0.7);
     c.addChild(st);
+    st.cacheAsTexture({ resolution: pixelArtResolution(), antialias: false });
     c.addChild(text(f.last.toUpperCase(), ox + 88, 18, { color: PAL.bone }));
     c.addChild(text(`HP ${rep?.hp ?? '?'}  ${rep?.scoreGuess ?? ''}${rep?.injury ? '  • ' + rep.injury.toUpperCase() : ''}`, ox + 88, 28, { small: true, color: rep && rep.hp < 40 ? PAL.blood : PAL.ash, width: AW / 2 - 96 }));
     c.addChild(text(`COACH: "${rep?.coach ?? 'Breathe.'}"`, ox + 10, 110, { small: true, width: AW / 2 - 20, color: PAL.bone, maxLines: 3 }));
@@ -1056,6 +1069,7 @@ export class RingCardWalk extends Container {
   constructor(round: number) {
     super();
     this.addChild(this.g);
+    this.g.cacheAsTexture({ resolution: pixelArtResolution(), antialias: false });
     this.cardLabel = text(`ROUND ${round}`, 0, 0, { color: PAL.ink });
     this.addChild(this.cardLabel);
   }
@@ -1070,6 +1084,7 @@ export class RingCardWalk extends Container {
     drawRig(g, rig, Math.round(x), FLOOR, 1, this.L);
     g.rect(Math.round(x - 14), FLOOR - 112, 36, 15).fill(0xf0eadc).stroke({ color: PAL.ink, width: 1 });
     this.cardLabel.position.set(Math.round(x - 11), FLOOR - 108);
+    g.updateCacheTexture();
     return x < AW + 40;
   }
 }

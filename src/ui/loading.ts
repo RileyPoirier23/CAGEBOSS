@@ -5,7 +5,7 @@
 import { Container, Graphics } from 'pixi.js';
 import { PAL } from '../art/palette';
 import { W, H, text } from './kit';
-import type { PixelText } from './text';
+import { pixelArtResolution, type PixelText } from './text';
 import { POSES, drawRig, lerpRig, type Rig, type Look2, type Pose } from './rig';
 import { expandPop } from '../sim/popculture';
 
@@ -75,6 +75,7 @@ export class LoadingScreen extends Container {
     this.addChild(text('CAGE BOSS', 0, 34, { width: W, align: 'center', scale: 3, color: PAL.gold, shadow: PAL.blood }));
     this.addChild(text(label.toUpperCase(), 0, 66, { width: W, align: 'center', color: PAL.bone }));
     this.addChild(this.g, this.bar);
+    this.g.cacheAsTexture({ resolution: pixelArtResolution(), antialias: false });
     const tip = expandPop(TIPS[Math.floor(Math.random() * TIPS.length)]);
     this.addChild(text(tip, 40, H - 44, { width: W - 80, align: 'center', color: PAL.ash, small: true, maxLines: 3 }));
     this.status = text('', 0, 196, { width: W, align: 'center', color: PAL.grey, small: true });
@@ -96,6 +97,7 @@ export class LoadingScreen extends Container {
     g.ellipse(W / 2, 176, 26, 4).fill({ color: 0x000000, alpha: 0.5 });
     g.ellipse(W / 2, 176, 60, 8).stroke({ color: PAL.blood, width: 1, alpha: 0.5 });
     drawRig(g, this.rig, Math.round(W / 2 - 6 + Math.sin(this.t * 4) * 2), 176, 1, LOOK, 1.1);
+    g.updateCacheTexture();
     // progress bar (theatre)
     const p = this.done ? 1 : Math.min(0.92, 1 - Math.exp(-this.t * 2.2));
     const b = this.bar;

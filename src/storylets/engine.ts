@@ -371,6 +371,9 @@ export function weeklyQuota(s: GameState, rng: Rng): number {
 }
 
 /** Pick and instantiate this week's random storylets. */
+/** Balance instrumentation (tools/sim.ts): how often each storylet was eligible. */
+export const STORYLET_STATS: { on: boolean; eligible: Record<string, number> } = { on: false, eligible: {} };
+
 export function selectWeek(s: GameState, rng: Rng, quota = weeklyQuota(s, rng), stats?: Record<string, number>): StoryletInstance[] {
   const out: StoryletInstance[] = [];
   const base = globalEnv(s, rng);
@@ -397,6 +400,7 @@ export function selectWeek(s: GameState, rng: Rng, quota = weeklyQuota(s, rng), 
     const roles = eligible(s, d, rng, base, viewCache);
     if (!roles) continue;
     if (stats) stats[d.id] = (stats[d.id] ?? 0) + 1;
+    if (STORYLET_STATS.on) STORYLET_STATS.eligible[d.id] = (STORYLET_STATS.eligible[d.id] ?? 0) + 1;
     const h = s.storylets.history[d.id];
     const fresh = !h ? 3.5 : 1 / (1 + h.count * 0.9);
     const recentCat = (s.storylets.categoryLog[d.category] ?? []).filter((wk) => s.week - wk < 4).length;
@@ -443,6 +447,7 @@ export function fireCategory(
       continue;
     }
     const h = s.storylets.history[d.id];
+    if (STORYLET_STATS.on) STORYLET_STATS.eligible[d.id] = (STORYLET_STATS.eligible[d.id] ?? 0) + 1;
     cands.push({ d, roles, w: (d.weight ?? 10) * (!h ? 3 : 1 / (1 + h.count)) });
   }
   const pick = rng.weighted(cands, (c) => c.w);

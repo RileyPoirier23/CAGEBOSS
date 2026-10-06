@@ -73,11 +73,16 @@ export class PixelBuf {
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const bayer = (x: number, y: number) => (BAYER[(y & 3) * 4 + (x & 3)] + 0.5) / 16;
 
-/** Pick from a ramp (dark..light) with ordered dithering between steps. */
+/**
+ * Pick from a ramp (dark..light). Flat cel bands like Papers, Please; only a
+ * thin dithered seam where two bands meet so it doesn't look airbrushed.
+ */
 function ramp(cols: number[], v: number, x: number, y: number): number {
   const t = Math.max(0, Math.min(0.999, v)) * (cols.length - 1);
   const i = Math.floor(t);
-  return t - i > bayer(x, y) ? cols[Math.min(cols.length - 1, i + 1)] : cols[i];
+  const f = t - i;
+  if (f > 0.42 && f < 0.58) return (x + y) % 2 ? cols[Math.min(cols.length - 1, i + 1)] : cols[i];
+  return f >= 0.5 ? cols[Math.min(cols.length - 1, i + 1)] : cols[i];
 }
 
 /** Head shapes: half-widths at crown / temple / cheek / jaw / chin (fractions of face height). */
@@ -110,9 +115,10 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
   const grey = Math.max(0, Math.min(1, (age - 36) / 14));
   const skin = SKIN_TONES[look.skin % SKIN_TONES.length];
   const SK = [shade(skin, -0.42), shade(skin, -0.26), shade(skin, -0.12), skin, shade(skin, 0.1), shade(skin, 0.2)];
+  const SKL = [shade(skin, -0.24), skin, shade(skin, 0.12)]; // flat 3-tone lighting (shadow / base / light)
   const OUT = shade(skin, -0.62);
   const hairBase = lerpColor(HAIR_COLORS[look.hairColor % HAIR_COLORS.length], 0xa8a59e, grey);
-  const HR = [shade(hairBase, -0.4), shade(hairBase, -0.2), hairBase, shade(hairBase, 0.18)];
+  const HR = [shade(hairBase, -0.35), shade(hairBase, -0.18), hairBase, shade(hairBase, 0.15)];
   const attire = inp.attire ?? (variant === 'reporter' ? 'suit' : variant === 'mugshot' ? 'shirt' : 'shirtless');
   const accent = inp.accent ?? (variant === 'press' ? PAL.steel : 0x3a3441);
 
@@ -209,7 +215,7 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
       const nx = (x - CX) / half;
       const v = 0.62 - nx * 0.28 - (y - shoulderY) / 50;
       let c: number;
-      if (attire === 'shirtless') c = ramp(SK, v, x, y);
+      if (attire === 'shirtless') c = ramp(SKL, v, x, y);
       else if (attire === 'suit') c = ramp([0x16161c, 0x20202a, 0x2c2c38], v, x, y);
       else if (attire === 'shirt') c = ramp([0xa8a296, 0xc8c2b4, 0xe2ddd0], v, x, y);
       else if (attire === 'hoodie') c = ramp([shade(accent, -0.45), shade(accent, -0.25), accent], v, x, y);
@@ -297,7 +303,7 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
     for (let x = CX - neckW; x < CX + neckW; x++) {
       const nx = (x - CX) / neckW;
       const v = 0.5 - nx * 0.3 - (y < chinY + 2 ? 0.25 : 0);
-      b.set(x, y, ramp(SK, v, x, y));
+      b.set(x, y, ramp(SKL, v, x, y));
     }
     b.set(CX - neckW - 1, y, OUT);
     b.set(CX + neckW, y, OUT);
@@ -334,7 +340,7 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
       // cheekbone highlight & under-cheek hollow
       if (ny > 0.5 && ny < 0.58 && Math.abs(nx) > 0.45 && Math.abs(nx) < 0.8) v += 0.12;
       if (ny > 0.64 && ny < 0.74 && Math.abs(nx) > 0.5) v -= 0.12;
-      b.set(x, y, ramp(SK, v, x, y));
+      b.set(x, y, ramp(SKL, v, x, y));
     }
     b.set(CX - hw - 1, y, OUT);
     b.set(CX + hw, y, OUT);
