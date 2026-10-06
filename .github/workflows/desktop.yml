@@ -1,12 +1,15 @@
 name: Desktop build
 
-# Builds the Windows game (installer + portable .exe) on a real Windows runner so the
-# icon and version info get stamped into the .exe. Run it from the Actions tab, or push
-# a tag like v0.2.0 to publish a GitHub Release with the downloads attached.
+# Builds the Windows game (installer + portable .exe) on a real Windows runner.
+# Every push to main or a claude/* branch uploads the .exe files as a downloadable
+# artifact (Actions tab -> the run -> Artifacts). Pushing a tag like v0.2.0 also
+# publishes a GitHub Release with the downloads attached.
 on:
   workflow_dispatch:
   push:
+    branches: ['main', 'master', 'claude/**']
     tags: ['v*']
+    paths-ignore: ['**.md']
 
 permissions:
   contents: write
