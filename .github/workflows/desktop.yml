@@ -59,6 +59,14 @@ jobs:
           v="v$(node -p "require('./package.json').version")"
           echo "tag=$v" >> "$GITHUB_OUTPUT"
           if gh release view "$v" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then echo "needed=false" >> "$GITHUB_OUTPUT"; else echo "needed=true" >> "$GITHUB_OUTPUT"; fi
+      # release notes come from the commit message (the website's "What's new" reads them)
+      - name: Release notes
+        if: startsWith(github.ref, 'refs/tags/v') || steps.rel.outputs.needed == 'true'
+        shell: bash
+        env:
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          printf '%s\n' "${MSG:-New build of CAGE BOSS.}" | grep -viE '^(co-authored-by|claude-session):' > release-notes.md || echo "New build of CAGE BOSS." > release-notes.md
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v') || steps.rel.outputs.needed == 'true'
         uses: softprops/action-gh-release@v2
@@ -66,6 +74,7 @@ jobs:
           tag_name: ${{ steps.rel.outputs.tag }}
           target_commitish: ${{ github.sha }}
           name: CAGE BOSS ${{ steps.rel.outputs.tag }}
+          body_path: release-notes.md
           # latest.yml + .blockmap are what installed copies read to update themselves
           files: |
             release/*.exe
