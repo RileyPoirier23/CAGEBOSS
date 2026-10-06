@@ -1,0 +1,19 @@
+[
+  { "id": "bar_fight", "name": "Simple Battery (Bar Fight)", "severity": 2, "bail": [2500, 15000], "desc": "Got into it with a guy who said he 'could take him'. He could not." },
+  { "id": "dui", "name": "Driving Under the Influence", "severity": 2, "bail": [1500, 10000], "desc": "Blew a .19 in a Lamborghini with a dealer plate." },
+  { "id": "reckless_hit_run", "name": "Reckless Driving & Leaving the Scene", "severity": 4, "bail": [25000, 150000], "desc": "Rear-ended a car at 90mph, then fled on foot, then came back for his phone.", "serious": true },
+  { "id": "domestic", "name": "Domestic Incident", "severity": 4, "bail": [10000, 75000], "desc": "A domestic incident was reported. This is not a joke and should not be handled like one.", "serious": true },
+  { "id": "tax_evasion", "name": "Tax Evasion", "severity": 3, "bail": [20000, 100000], "desc": "Hasn't filed taxes since the fight he won by 'IRS Submission'." },
+  { "id": "gym_fraud", "name": "Gym Membership Fraud", "severity": 2, "bail": [5000, 25000], "desc": "Charged 400 members for 'lifetime memberships' and then closed the gym." },
+  { "id": "weapons", "name": "Unlicensed Firearm Possession", "severity": 3, "bail": [15000, 80000], "desc": "Found with a handgun in his gym bag at the airport. 'It's for bears.'" },
+  { "id": "phone_smash", "name": "Criminal Mischief (Fan's Phone)", "severity": 1, "bail": [1000, 5000], "desc": "Smashed a fan's phone into 30 pieces because they filmed him eating at Applebee's." },
+  { "id": "airport_brawl", "name": "Disorderly Conduct (Airport)", "severity": 2, "bail": [2000, 12000], "desc": "Fought a TSA agent over a 4oz bottle of 'pre-workout'." },
+  { "id": "possession", "name": "Possession of a Controlled Substance", "severity": 2, "bail": [3000, 20000], "desc": "Pulled over with enough party favors to stock a music festival." },
+  { "id": "assault_fan", "name": "Assault (Fan Altercation)", "severity": 3, "bail": [10000, 50000], "desc": "Took a heckler's 'come down here and say that' literally." },
+  { "id": "racing", "name": "Street Racing", "severity": 2, "bail": [2500, 15000], "desc": "Drag raced a cop car. Did not know it was a cop car. Won, though." },
+  { "id": "wire_fraud", "name": "Wire Fraud (Crypto)", "severity": 3, "bail": [30000, 200000], "desc": "His meme coin 'KNOCKOUTCOIN' rugpulled 11,000 fans." },
+  { "id": "animal", "name": "Exotic Animal Violation", "severity": 1, "bail": [1500, 8000], "desc": "Kept a tiger in a condo. The tiger is fine. The condo is not." },
+  { "id": "vandalism", "name": "Vandalism", "severity": 1, "bail": [500, 4000], "desc": "Spray-painted his opponent's name on a billboard, with a crude drawing next to it." },
+  { "id": "trespass", "name": "Trespassing (Opponent's Gym)", "severity": 1, "bail": [500, 3000], "desc": "Showed up at his rival's gym at 3am 'to talk'." },
+  { "id": "president_casino", "name": "Battery (Casino Floor)", "severity": 3, "bail": [20000, 60000], "desc": "The President allegedly slapped a whale at the craps table. On camera." }
+]

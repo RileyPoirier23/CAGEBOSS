@@ -1,0 +1,164 @@
+[
+ {
+  "id": "nerm_bean",
+  "name": "Nerm Bean",
+  "role": "referee",
+  "bias": "late",
+  "fouls": "lenient",
+  "standups": "slow",
+  "competence": 60,
+  "desc": "Legendary 'let 'em fight' energy. Has watched a man get turned into a pinata and thought 'he's still intelligently defending'. Lets a lot of shots to the back of the head slide."
+ },
+ {
+  "id": "big_yawn",
+  "name": "Big Yawn McCarty",
+  "role": "referee",
+  "bias": "fair",
+  "fouls": "fair",
+  "standups": "fair",
+  "competence": 88,
+  "desc": "The gold standard. Says 'Let's get it on!' and means it. Will stand over a KO'd fighter like a disappointed dad."
+ },
+ {
+  "id": "mark_godawful",
+  "name": "Mark Godawful",
+  "role": "referee",
+  "bias": "fair",
+  "fouls": "strict",
+  "standups": "fair",
+  "competence": 86,
+  "desc": "British, stern, takes points for fence grabs like it's a personal insult to the Crown."
+ },
+ {
+  "id": "mario_snoozaki",
+  "name": "Mario Yamasnoozy",
+  "role": "referee",
+  "bias": "early",
+  "fouls": "strict",
+  "standups": "fast",
+  "competence": 40,
+  "desc": "Stops fights when a fighter blinks too hard. Has deducted points for 'bad vibes'. Somehow still licensed."
+ },
+ {
+  "id": "dan_miragliolotta",
+  "name": "Dan Mirag-Lotta",
+  "role": "referee",
+  "bias": "fair",
+  "fouls": "lenient",
+  "standups": "slow",
+  "competence": 55,
+  "desc": "Built like a vending machine. Lets ground fights marinate for a full podcast episode before standing them up."
+ },
+ {
+  "id": "teeth_peterson",
+  "name": "Teeth Peterson",
+  "role": "referee",
+  "bias": "early",
+  "fouls": "fair",
+  "standups": "fair",
+  "competence": 70,
+  "desc": "Safety first. Fans boo him every time and he does not care one bit."
+ },
+ {
+  "id": "jason_hurtsdog",
+  "name": "Jason Hurtsdog",
+  "role": "referee",
+  "bias": "fair",
+  "fouls": "fair",
+  "standups": "fast",
+  "competence": 92,
+  "desc": "So good you forget he's there, which is the point. Fighters actually like him, which is suspicious."
+ },
+ {
+  "id": "steve_spaghetti",
+  "name": "Steve Mazzaspaghetti",
+  "role": "referee",
+  "bias": "late",
+  "fouls": "lenient",
+  "standups": "slow",
+  "competence": 22,
+  "desc": "Has been told about the KO three times. Still standing there. Allegedly asked 'is he OK?' to a man who was asleep."
+ },
+ {
+  "id": "rowdy_regional",
+  "name": "Rusty Gaskins",
+  "role": "referee",
+  "bias": "late",
+  "fouls": "lenient",
+  "standups": "fast",
+  "competence": 35,
+  "desc": "Regional ref who also works as a mall cop. Says 'fight!' in a whisper. Smells like menthols."
+ },
+ {
+  "id": "adelaide_birdbrain",
+  "name": "Adelaide Bird-Brain",
+  "role": "judge",
+  "bias": "bad",
+  "competence": 15,
+  "desc": "Has scored a round 10-8 for the guy who got knocked down twice. Watches the fight through a keyhole, apparently."
+ },
+ {
+  "id": "cecil_peepholes",
+  "name": "Cecil Peepholes",
+  "role": "judge",
+  "bias": "grappling",
+  "competence": 30,
+  "desc": "Thinks leg kicks are 'not real strikes'. Scores a takedown like a nuclear launch."
+ },
+ {
+  "id": "derek_dreary",
+  "name": "Derek Dreary",
+  "role": "judge",
+  "bias": "fair",
+  "competence": 80,
+  "desc": "Reasonable. Boring. Correct. Nobody has ever made a meme about him."
+ },
+ {
+  "id": "sal_damaretto",
+  "name": "Sal D'Amaretto",
+  "role": "judge",
+  "bias": "fair",
+  "competence": 82,
+  "desc": "Has judged ten thousand fights and looks like it. Gets it right more than anyone wants to admit."
+ },
+ {
+  "id": "chris_leeway",
+  "name": "Chris Leeway",
+  "role": "judge",
+  "bias": "aggression",
+  "competence": 55,
+  "desc": "Loves forward pressure. Will give a round to a man walking into punches as long as he's walking forward."
+ },
+ {
+  "id": "mike_dingdong",
+  "name": "Mike Ding-Dong Bell",
+  "role": "judge",
+  "bias": "striking",
+  "competence": 65,
+  "desc": "Strike counter at heart. Doesn't care about your top control, buddy."
+ },
+ {
+  "id": "junichiro_kamijoke",
+  "name": "Junichiro Kamijoke",
+  "role": "judge",
+  "bias": "fair",
+  "competence": 78,
+  "desc": "Quiet, precise, impossible to bribe (we checked)."
+ },
+ {
+  "id": "doug_crossbow",
+  "name": "Doug Crossbow",
+  "role": "judge",
+  "bias": "grappling",
+  "competence": 60,
+  "desc": "Old-school wrestling guy. Thinks lying on someone is a love language."
+ },
+ {
+  "id": "hometown_hal",
+  "name": "Hometown Hal",
+  "role": "judge",
+  "bias": "hometown",
+  "competence": 35,
+  "desc": "Every fighter born within 50 miles of the venue is the greatest he's ever seen."
+ }
+]

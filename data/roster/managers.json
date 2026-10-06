@@ -1,0 +1,194 @@
+[
+ {
+  "id": "abdelpass",
+  "name": "Ali Abdel-Pass",
+  "licensed": true,
+  "license": "AC-10417",
+  "shady": 10,
+  "agency": "Pass Management Group (manages 40% of the roster, somehow)"
+ },
+ {
+  "id": "altar",
+  "name": "Audie Altar",
+  "licensed": true,
+  "license": "AC-14156",
+  "shady": 25,
+  "agency": "Altar Sports & Entertainment"
+ },
+ {
+  "id": "kawaii",
+  "name": "Ken Kawaii",
+  "licensed": true,
+  "license": "AC-17895",
+  "shady": 15,
+  "agency": "First Round Mgmt"
+ },
+ {
+  "id": "tito_cousin",
+  "name": "Tito's Cousin Ray",
+  "licensed": false,
+  "license": "PENDING",
+  "shady": 70,
+  "agency": "Family Business LLC"
+ },
+ {
+  "id": "dad",
+  "name": "\"My Dad\"",
+  "licensed": false,
+  "license": "PENDING",
+  "shady": 40,
+  "agency": "N/A (it's his dad)"
+ },
+ {
+  "id": "swole",
+  "name": "Brad Swoleman",
+  "licensed": true,
+  "license": "AC-29112",
+  "shady": 35,
+  "agency": "Swole Group Worldwide"
+ },
+ {
+  "id": "flim",
+  "name": "Dex Flimflam",
+  "licensed": false,
+  "license": "PENDING",
+  "shady": 90,
+  "agency": "Flimflam & Associates (a P.O. box)"
+ },
+ {
+  "id": "nina",
+  "name": "Nina Sharkovic",
+  "licensed": true,
+  "license": "AC-36590",
+  "shady": 20,
+  "agency": "Sharkovic Sports Law"
+ },
+ {
+  "id": "benny",
+  "name": "Benny 'Ten Percent' Ruiz",
+  "licensed": true,
+  "license": "AC-40329",
+  "shady": 45,
+  "agency": "Ten Percent Talent"
+ },
+ {
+  "id": "pastor",
+  "name": "Pastor Gene Holloway",
+  "licensed": true,
+  "license": "AC-44068",
+  "shady": 30,
+  "agency": "Blessed Combat Ministries"
+ },
+ {
+  "id": "crypto",
+  "name": "Tyler 'TBags' Bagwell",
+  "licensed": false,
+  "license": "PENDING",
+  "shady": 85,
+  "agency": "NFTalent (rugged twice)"
+ },
+ {
+  "id": "glen",
+  "name": "Glen from the Gym",
+  "licensed": false,
+  "license": "PENDING",
+  "shady": 30,
+  "agency": "The Gym (Glen)"
+ },
+ {
+  "id": "vlad",
+  "name": "Vladislav Kontrakt",
+  "licensed": true,
+  "license": "AC-55285",
+  "shady": 55,
+  "agency": "Eastern Bloc Athletes"
+ },
+ {
+  "id": "rosa",
+  "name": "Rosa Mendoza",
+  "licensed": true,
+  "license": "AC-59024",
+  "shady": 10,
+  "agency": "Mendoza Boxing & MMA"
+ },
+ {
+  "id": "felix",
+  "name": "Felix Tenpercenter",
+  "licensed": true,
+  "license": "AC-62763",
+  "shady": 40,
+  "agency": "Tenpercenter Sports"
+ },
+ {
+  "id": "whale",
+  "name": "Marvin 'The Whale' Gold",
+  "licensed": true,
+  "license": "AC-66502",
+  "shady": 60,
+  "agency": "Gold Standard Management"
+ },
+ {
+  "id": "lucky",
+  "name": "Lucky Pham",
+  "licensed": false,
+  "license": "PENDING",
+  "shady": 65,
+  "agency": "Lucky Star Promotions (also a nail salon)"
+ },
+ {
+  "id": "ex",
+  "name": "His Ex-Wife",
+  "licensed": false,
+  "license": "PENDING",
+  "shady": 50,
+  "agency": "Spite Management Inc."
+ },
+ {
+  "id": "wes",
+  "name": "Wes Dunbar Esq.",
+  "licensed": true,
+  "license": "AC-77719",
+  "shady": 15,
+  "agency": "Dunbar Legal & Fighter Rep"
+ },
+ {
+  "id": "nobody",
+  "name": "Self-Managed",
+  "licensed": true,
+  "license": "AC-81458",
+  "shady": 5,
+  "agency": "Himself (God help him)"
+ },
+ {
+  "id": "influ",
+  "name": "Kayden Klout",
+  "licensed": true,
+  "license": "AC-85197",
+  "shady": 50,
+  "agency": "Klout House Agency"
+ },
+ {
+  "id": "mortimer",
+  "name": "Mortimer Vance III",
+  "licensed": true,
+  "license": "AC-88936",
+  "shady": 35,
+  "agency": "Vance Capital Athletes"
+ },
+ {
+  "id": "sal",
+  "name": "Sal Benedetto",
+  "licensed": false,
+  "license": "PENDING",
+  "shady": 80,
+  "agency": "Benedetto Waste Management (fighters division)"
+ },
+ {
+  "id": "jo",
+  "name": "Jo 'Jab' Okonkwo",
+  "licensed": true,
+  "license": "AC-96414",
+  "shady": 10,
+  "agency": "Jab Management"
+ }
+]

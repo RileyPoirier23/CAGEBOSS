@@ -1,0 +1,434 @@
+{
+ "ticker": {
+  "opening": [
+   "{ref} brings them together. Gloves touch... sort of. HERE WE GO!",
+   "Round 1! {a} and {b} meet in the center of the cage.",
+   "{ref} waves them in. The crowd is already drunk and screaming.",
+   "And we're underway! {a} takes the center, {b} circles."
+  ],
+  "round_start": [
+   "Round {r}! Both fighters off the stools.",
+   "Round {r} begins. {ref} gets them going again.",
+   "Here's round {r}. Somebody needs to make something happen.",
+   "Round {r}. The crowd wants blood and nachos, in that order."
+  ],
+  "counter": [
+   "{a} times the counter perfectly!",
+   "{a} makes {b} pay for that miss!",
+   "Beautiful counter from {a}!",
+   "{b} whiffs and {a} cracks him right on the button!"
+  ],
+  "miss_kick": [
+   "{a} throws a high kick... nowhere near.",
+   "{a} slips on the follow-through of a kick. Embarrassing.",
+   "{a} with a kick that hits mostly air and pride.",
+   "Spinning kick from {a}! Lands on absolutely nothing."
+  ],
+  "miss_punch": [
+   "{a} swings and misses.",
+   "{a} loads up on a haymaker. {b} sees it coming from the parking lot.",
+   "{a} throws a wild right, misses by a zip code.",
+   "{a} pumps the jab, {b} slips it.",
+   "{a} lunges in with a big right hand. Air."
+  ],
+  "land_jab": [
+   "{a} lands a stiff jab.",
+   "{a} snaps {b}'s head back with the jab.",
+   "Double jab from {a}.",
+   "{a} pecks away with the jab. Death by a thousand paper cuts.",
+   "{a} finds a home for the jab."
+  ],
+  "land_cross": [
+   "{a} lands a hard right hand!",
+   "Straight cross from {a} right down the pipe!",
+   "{a} cracks {b} with the cross.",
+   "{a} plants a right hand on {b}'s chin."
+  ],
+  "land_hook": [
+   "Left hook from {a} lands flush!",
+   "{a} hooks {b} to the jaw!",
+   "{a} with a looping hook that lands!",
+   "{a} digs a hook around the guard."
+  ],
+  "land_uppercut": [
+   "Uppercut from {a} splits the guard!",
+   "{a} comes up the middle with an uppercut!",
+   "{a} with a nasty uppercut in the pocket!"
+  ],
+  "land_body": [
+   "{a} rips a shot to the body!",
+   "{a} goes downstairs. {b} felt that one in his lunch.",
+   "Liver shot from {a}! {b} winces.",
+   "{a} digs a hook to the ribs."
+  ],
+  "land_combo": [
+   "{a} puts together a beautiful combination!",
+   "1-2-3 from {a}, all landing!",
+   "{a} unloads a combo, {b} eats most of it!",
+   "Flurry from {a}! {b} covers up!"
+  ],
+  "land_overhand": [
+   "Big overhand right from {a} lands!",
+   "{a} throws the overhand like he's mad at his landlord. It lands!",
+   "Overhand bomb from {a} clips {b}!"
+  ],
+  "land_legkick": [
+   "{a} chops the lead leg.",
+   "Nasty leg kick from {a}! That's gonna bruise like a Nissan Altima.",
+   "{a} slams a low kick into {b}'s thigh.",
+   "{a} kicks the leg again. {b} is starting to limp."
+  ],
+  "land_calfkick": [
+   "Calf kick from {a}! {b}'s foot is flapping like a wet sock.",
+   "{a} goes back to the calf kick. {b} hates it.",
+   "{a} with the calf kick. That's how you ruin a man's week."
+  ],
+  "land_bodykick": [
+   "Thudding body kick from {a}!",
+   "{a} whips a kick into the ribs. That sounded like a car door.",
+   "{a} lands a body kick that echoes through the arena."
+  ],
+  "land_headkick": [
+   "HEAD KICK from {a}! It lands but {b} eats it!",
+   "{a} goes upstairs with the kick and catches {b} on the ear!"
+  ],
+  "land_knee": [
+   "{a} drives a knee into {b}'s midsection!",
+   "Knee from the clinch by {a}!",
+   "{a} lands a knee to the body. {b} doubles over."
+  ],
+  "land_elbow": [
+   "{a} slices {b} with an elbow!",
+   "Sharp elbow from {a} in close!",
+   "{a} lands a short elbow. Those things cut like a deli slicer."
+  ],
+  "land_dirty": [
+   "Dirty boxing from {a} against the fence.",
+   "{a} lands short shots in the clinch.",
+   "{a} rattles off uppercuts in the clinch."
+  ],
+  "land_spinning": [
+   "SPINNING BACK FIST from {a} lands!",
+   "{a} spins and connects! The crowd loses its mind!",
+   "Spinning elbow from {a}! What a shot!"
+  ],
+  "land_flying": [
+   "FLYING KNEE from {a}! It connects!",
+   "{a} launches a flying knee and clips {b}!"
+  ],
+  "land_superman": [
+   "Superman punch from {a} lands!",
+   "{a} with the superman punch. Cape not included."
+  ],
+  "rocked": [
+   "{b} is ROCKED!",
+   "{b}'s legs are doing the cha-cha slide!",
+   "{b} is hurt! {b} is hurt!",
+   "{b} looks like he just found out what his ex said about him. HURT!",
+   "{b} wobbles! Somebody check on that man's soul!"
+  ],
+  "knockdown": [
+   "{a} DROPS {b}!",
+   "DOWN GOES {b}! DOWN GOES {b}!",
+   "{a} puts {b} on the canvas!",
+   "KNOCKDOWN! {a} sends {b} crashing to the mat!"
+  ],
+  "ko_punch": [
+   "GOOD NIGHT! {a} KNOCKS {b} OUT COLD!",
+   "IT'S OVER! {b} is asleep before he hits the floor!",
+   "{a} turns {b}'s lights OFF! Somebody call his mom!",
+   "OH MY GOD! {a} FLATLINES {b}! He's doing the faceplant!",
+   "{b} is out. Like, out out. Like 'what year is it' out. {a} WINS!"
+  ],
+  "ko_kick": [
+   "HEAD KICK KNOCKOUT! {a} DECAPITATES {b}! (Not literally. Legal says to clarify.)",
+   "{a} lands the head kick and {b} goes stiff as a board! IT'S OVER!"
+  ],
+  "ko_knee": [
+   "KNEE! KNEE! {b} IS OUT! {a} with a knee for the highlight reels!",
+   "{a} lands a knee that sends {b} to another dimension!"
+  ],
+  "ko_elbow": [
+   "ELBOW KO! {a} switches off {b}'s brain like a breaker box!",
+   "{a} lands a short elbow and {b} crumples! WOW!"
+  ],
+  "tko_punches": [
+   "{ref} jumps in! It's all over! {a} wins by TKO!",
+   "{ref} has seen enough! {a} gets the stoppage!",
+   "Stoppage! {b} was taking unanswered shots and {ref} waves it off!"
+  ],
+  "tko_gnp": [
+   "{a} rains down punches and {ref} stops it! TKO!",
+   "Ground and pound finish! {ref} pulls {a} off of {b}!",
+   "{a} turns {b}'s face into a crime scene. {ref} stops it!"
+  ],
+  "late_ref": [
+   "{ref} is letting this go WAY too long...",
+   "{b} is eating shots and {ref} is just... watching. Like it's Netflix.",
+   "Somebody tell {ref} he's allowed to stop this.",
+   "{ref} leans in, looks at {b}'s eyes, decides 'nah, he's good'. He is NOT good."
+  ],
+  "takedown": [
+   "{a} shoots in and gets the takedown!",
+   "Double-leg from {a}! {b} is on his back!",
+   "{a} trips {b} to the mat!",
+   "{a} dumps {b} with a beautiful takedown!",
+   "{a} picks {b} up and SLAMS him!"
+  ],
+  "sprawl": [
+   "{a} sprawls and stuffs the takedown.",
+   "{a} defends the shot beautifully.",
+   "{a} stuffs the takedown and pushes the head down.",
+   "Great takedown defense from {a}."
+  ],
+  "sub_attempt": [
+   "{a} is hunting a {hold}!",
+   "{a} goes for the {hold}!",
+   "{hold} attempt from {a}! This could be it!",
+   "{a} snatches a {hold}... is it tight?"
+  ],
+  "tap": [
+   "{b} TAPS! {a} wins by {hold}!",
+   "TAP TAP TAP! {a} gets the {hold}!",
+   "{b} taps out to the {hold}! What a finish!",
+   "{b} taps like he's sending a text to his ex. {a} wins by {hold}!"
+  ],
+  "escape": [
+   "{a} escapes the {hold}!",
+   "{a} fights out of the {hold}!",
+   "{a} pops free from the {hold}. Close call!"
+  ],
+  "wont_tap": [
+   "{a} REFUSES to tap... OH NO. That's... that's broken.",
+   "{a} won't tap! Something just went SNAP!"
+  ],
+  "limb_snap": [
+   "{ref} jumps in! Technical submission! {b} is screaming. {a} wins by {hold}.",
+   "It's over, and so is {b}'s limb. {a} with the {hold}."
+  ],
+  "standup": [
+   "{ref} stands them up for inactivity.",
+   "Not much happening on the ground. {ref} brings them back to their feet.",
+   "{ref} has seen enough cuddling. Stand-up!"
+  ],
+  "getup": [
+   "{a} works back to the feet.",
+   "{a} scrambles up against the cage.",
+   "{a} wall-walks back up."
+  ],
+  "sweep": [
+   "{a} reverses position! Great sweep!",
+   "Sweep from {a}! Now he's on top!",
+   "{a} flips {b} over like a pancake!"
+  ],
+  "gnp": [
+   "{a} lands ground and pound.",
+   "{a} postures up and lands some punches.",
+   "{a} drops hammerfists from the top."
+  ],
+  "gnp_elbow": [
+   "{a} drops a vicious elbow from the top!",
+   "{a} slices {b} open with elbows from the top!"
+  ],
+  "ground_control": [
+   "{a} holds top position.",
+   "{a} controls {b} on the mat. Riveting stuff.",
+   "{a} lies on {b}. The crowd starts booing.",
+   "{a} grinds on top. Somebody in the crowd yells 'GET A ROOM'."
+  ],
+  "clinch": [
+   "{a} ties {b} up in the clinch.",
+   "{a} pushes {b} into the fence."
+  ],
+  "clinch_work": [
+   "{a} works for underhooks against the cage.",
+   "Grinding clinch work from {a}.",
+   "{a} leans on {b} against the fence. Fans check their phones."
+  ],
+  "break_clinch": [
+   "{a} breaks away from the clinch.",
+   "They separate."
+  ],
+  "feint": [
+   "{a} feints, {b} flinches.",
+   "{a} stalks forward.",
+   "Lots of feints, not a lot of fighting.",
+   "{a} circles out. {b} follows."
+  ],
+  "showboat": [
+   "{a} drops his hands and taunts {b}! Disrespectful!",
+   "{a} does a little dance in the middle of the cage. The crowd eats it up.",
+   "{a} points at {b} and laughs. This man has no fear and possibly no brain."
+  ],
+  "cut": [
+   "{b} is cut! Blood everywhere!",
+   "{a} opens a cut over {b}'s eye! The cage looks like a crime scene!",
+   "{b} is bleeding badly! The cutman is going to earn his money tonight."
+  ],
+  "injury_shin": [
+   "OH NO! {a}'s shin SNAPS on the check! That is horrific! It's over!",
+   "{a} throws a leg kick and his leg... folds. Oh my god. It's over."
+  ],
+  "injury_hand": [
+   "{a} is shaking that right hand. Something's wrong.",
+   "{a} winces after that punch. Broken hand?"
+  ],
+  "injury_orbital": [
+   "{b}'s eye is swelling shut. That orbital might be broken.",
+   "{b} is blinking hard. He can't see out of that eye."
+  ],
+  "injury_knee": [
+   "{a}'s knee buckles in the scramble! He's grabbing it! It's over!",
+   "Ugh! {a}'s knee gives out on the takedown. That's an injury stoppage."
+  ],
+  "injury_shoulder": [
+   "{a}'s shoulder pops on that takedown! He's in real pain!",
+   "{a} lands awkwardly. That shoulder looks wrong."
+  ],
+  "injury_elbow": [
+   "{a} got out but that elbow is hyperextended. Ouch."
+  ],
+  "foul_eyepoke": [
+   "Eye poke! {ref} calls time. {b} is blinking furiously.",
+   "{a} pokes {b} in the eye. {ref} warns him."
+  ],
+  "foul_groin": [
+   "LOW BLOW! {b} drops to his knees. {ref} calls time. The entire crowd crosses their legs.",
+   "{a} lands one right in the jewels. {ref} gives {b} time to recover his dignity."
+  ],
+  "foul_fence": [
+   "{a} grabs the fence! {ref} warns him.",
+   "Fence grab by {a}! {ref} slaps his hand off."
+  ],
+  "foul_backhead": [
+   "{a} is hitting the back of the head! {ref} warns him."
+  ],
+  "foul_knee_grounded": [
+   "ILLEGAL KNEE! {a} kneed {b} while he was down! {ref} calls time!"
+  ],
+  "foul_headbutt": [
+   "Headbutt from {a}! {ref} steps in!"
+  ],
+  "foul_glove": [
+   "{a} is holding the gloves. {ref} warns him."
+  ],
+  "foul_missed_eyepoke": [
+   "{a} pokes {b} in the eye and {ref} misses it entirely.",
+   "Eye poke! ...{ref} didn't see it. {b} is fighting with one eye now."
+  ],
+  "foul_missed_groin": [
+   "That was a low blow! {ref} lets it slide! The crowd is furious!",
+   "{a} kicks {b} square in the cup and {ref} says 'keep fighting'. Unreal."
+  ],
+  "foul_missed_fence": [
+   "{a} is grabbing the fence to stop the takedown. {ref} is looking at his shoelaces."
+  ],
+  "foul_missed_backhead": [
+   "{a} is hammering the back of {b}'s head. {ref}? Nothing. Classic.",
+   "Rabbit punches from {a}! {ref} lets them fight!"
+  ],
+  "foul_missed_knee_grounded": [
+   "Was that a knee to a downed opponent?! {ref} lets it go! Unbelievable!"
+  ],
+  "foul_missed_headbutt": [
+   "Was that a headbutt? {ref} didn't see anything. {b} is bleeding now."
+  ],
+  "foul_missed_glove": [
+   "{a} is holding {b}'s glove and punching. {ref} is busy existing."
+  ],
+  "deduction": [
+   "{ref} takes a point from {a} for {foul}!",
+   "POINT DEDUCTION! {ref} takes one from {a} ({foul})."
+  ],
+  "cannot_continue": [
+   "{a} can't continue! The doctor is waving it off!",
+   "{a} is unable to continue. This is a mess."
+  ],
+  "dq": [
+   "{ref} has seen enough! {a} is DISQUALIFIED!",
+   "DISQUALIFICATION! {a} loses the fight on a foul!"
+  ],
+  "crowd": [
+   "The crowd starts a 'USA' chant even though neither fighter is American.",
+   "Somebody in row 9 is throwing up. Great energy.",
+   "The crowd boos. They want violence.",
+   "A fan runs past security and is immediately tackled.",
+   "The crowd is chanting something unrepeatable.",
+   "Someone throws a full beer. It lands on a commentator."
+  ],
+  "round_end": [
+   "That's the end of round {r}!",
+   "The horn sounds to end round {r}.",
+   "Round {r} is in the books."
+  ],
+  "stool": [
+   "{a}'s corner waves it off! He's done! Retired on the stool!",
+   "{a} is not getting off that stool! His corner calls it!",
+   "{a} shakes his head. He's had enough. The fight is OVER!"
+  ],
+  "doctor": [
+   "The doctor looks at {a}'s cut... and waves it off! Doctor stoppage!",
+   "That cut is too deep. The doctor has stopped the fight!"
+  ],
+  "decision": [
+   "We're going to the judges' scorecards... {detail}!",
+   "After all rounds, it's going to the judges. {detail}!"
+  ],
+  "decision_robbery": [
+   "The judges have spoken... {detail}. THE CROWD IS LIVID! ROBBERY!",
+   "{detail}?! Are they watching the same fight?! The arena is raining boos!"
+  ],
+  "coach_winning": [
+   "You're up! Keep doing what you're doing, stay off the fence!",
+   "Three more minutes, baby! He's breaking! Stay on him!",
+   "Same thing, same thing! Jab and move! He's got nothing!",
+   "He's gassing! Make him carry your weight!",
+   "Beautiful round! Don't get cute! No spinning shit!"
+  ],
+  "coach_losing": [
+   "You're down! You need this round! Stop waiting!",
+   "He's beating you to the punch! Throw first, goddammit!",
+   "I didn't drive eight hours to watch you get outpointed! WAKE UP!",
+   "You gotta take him down! Shoot! SHOOT!",
+   "Your wife's watching! Your KIDS are watching! GO GET HIM!"
+  ],
+  "coach_hurt": [
+   "Breathe. Breathe. You're OK. Look at me. How many fingers?",
+   "Clear your head! Stay tight! Don't trade with him!",
+   "Survive the first minute, then go back to work!",
+   "Your legs are fine. Your legs are FINE. Stop shaking."
+  ],
+  "coach_injured": [
+   "How's the hand? Can you throw it? Then THROW IT anyway!",
+   "You can fight through that, right? ...Right?",
+   "Don't let him see it! Don't show him it hurts!",
+   "It's broken? Who cares! Adrenaline, baby!"
+  ],
+  "coach_quit": [
+   "That's it. I'm not letting you go out there. You've got kids.",
+   "I'm stopping it. You'll thank me in 20 years.",
+   "We're done. No shame. I'm calling it."
+  ],
+  "cutman_fine": [
+   "Cutman slaps on some Vaseline and calls it a day.",
+   "Cutman: 'Nothing to work on. Enjoy your water.'",
+   "Cutman presses the enswell to the cheekbone. Just maintenance."
+  ],
+  "cutman_cut": [
+   "Cutman jams a Q-tip of adrenaline into the cut. Bleeding slows.",
+   "Cutman works the cut with gauze and pressure. Looking OK.",
+   "Cutman: 'Hold still, I'm doing God's work here.'",
+   "Cutman packs the cut with something that's almost definitely legal."
+  ],
+  "cutman_bad": [
+   "Cutman is working FRANTICALLY on that cut. It's ugly.",
+   "Cutman: 'I need more time!' Doctor is coming over...",
+   "The cut is pouring. The cutman looks worried. That's never good.",
+   "Cutman whispers 'oh no' and that's all you need to hear."
+  ]
+ },
+ "social": {},
+ "presser": {},
+ "ledgerQuips": [],
+ "misc": {}
+}

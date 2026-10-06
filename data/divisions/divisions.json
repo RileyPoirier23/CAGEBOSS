@@ -1,0 +1,13 @@
+[
+  { "id": "fly", "name": "Flyweight", "short": "FLY", "limit": 125, "gender": "M", "openAct": 1 },
+  { "id": "bantam", "name": "Bantamweight", "short": "BW", "limit": 135, "gender": "M", "openAct": 1 },
+  { "id": "feather", "name": "Featherweight", "short": "FW", "limit": 145, "gender": "M", "openAct": 1 },
+  { "id": "light", "name": "Lightweight", "short": "LW", "limit": 155, "gender": "M", "openAct": 1 },
+  { "id": "welter", "name": "Welterweight", "short": "WW", "limit": 170, "gender": "M", "openAct": 1 },
+  { "id": "middle", "name": "Middleweight", "short": "MW", "limit": 185, "gender": "M", "openAct": 1 },
+  { "id": "lightheavy", "name": "Light Heavyweight", "short": "LHW", "limit": 205, "gender": "M", "openAct": 1 },
+  { "id": "heavy", "name": "Heavyweight", "short": "HW", "limit": 265, "gender": "M", "openAct": 1 },
+  { "id": "wstraw", "name": "Women's Strawweight", "short": "WSW", "limit": 115, "gender": "W", "openAct": 3 },
+  { "id": "wfly", "name": "Women's Flyweight", "short": "WFLY", "limit": 125, "gender": "W", "openAct": 3 },
+  { "id": "wbantam", "name": "Women's Bantamweight", "short": "WBW", "limit": 135, "gender": "W", "openAct": 3 }
+]

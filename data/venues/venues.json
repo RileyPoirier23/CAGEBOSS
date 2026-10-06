@@ -1,0 +1,422 @@
+[
+ {
+  "id": "vfw_hall",
+  "name": "VFW Hall #1138",
+  "region": "bayou",
+  "capacity": 900,
+  "cost": 6000,
+  "tier": 1,
+  "unlockAct": 1,
+  "blurb": "Wood paneling, a bar that serves only Coors, and a cage borrowed from a dog breeder."
+ },
+ {
+  "id": "casino_ballroom",
+  "name": "Lucky Buck Casino Ballroom",
+  "region": "mojave",
+  "capacity": 1800,
+  "cost": 14000,
+  "tier": 1,
+  "unlockAct": 1,
+  "blurb": "Smells like cigarettes and broken dreams. Free buffet for fighters (do not eat the shrimp)."
+ },
+ {
+  "id": "county_fair",
+  "name": "Tri-County Fairgrounds Arena",
+  "region": "great_lakes",
+  "capacity": 2600,
+  "cost": 16000,
+  "tier": 1,
+  "unlockAct": 1,
+  "blurb": "Shared with a monster truck rally. The cage has tire marks."
+ },
+ {
+  "id": "rodeo_pavilion",
+  "name": "Bluebonnet Rodeo Pavilion",
+  "region": "lone_star",
+  "capacity": 3500,
+  "cost": 22000,
+  "tier": 1,
+  "unlockAct": 1,
+  "blurb": "Dirt floor, great acoustics, faint smell of bull."
+ },
+ {
+  "id": "college_arena",
+  "name": "State U. Memorial Fieldhouse",
+  "region": "great_lakes",
+  "capacity": 6500,
+  "cost": 48000,
+  "tier": 2,
+  "unlockAct": 1,
+  "blurb": "Basketball court with a cage on it. The mascot keeps trying to get in."
+ },
+ {
+  "id": "harbor_arena",
+  "name": "Harborfront Arena",
+  "region": "atlantic",
+  "capacity": 9000,
+  "cost": 85000,
+  "tier": 2,
+  "unlockAct": 2,
+  "blurb": "A real arena with real seats and a real union crew that hates you."
+ },
+ {
+  "id": "desert_events",
+  "name": "Golden Mirage Events Center",
+  "region": "mojave",
+  "capacity": 12000,
+  "cost": 140000,
+  "tier": 3,
+  "unlockAct": 2,
+  "blurb": "The fight capital. Whales in front row, Elvis impersonators in the cheap seats."
+ },
+ {
+  "id": "garden_arena",
+  "name": "Metropolitan Garden",
+  "region": "atlantic",
+  "capacity": 19000,
+  "cost": 320000,
+  "tier": 4,
+  "unlockAct": 3,
+  "blurb": "The mecca. Selling it out means you've made it. Not selling it out means a hit piece."
+ },
+ {
+  "id": "o2_style",
+  "name": "Thames Dome Arena",
+  "region": "albion",
+  "capacity": 17000,
+  "cost": 260000,
+  "tier": 3,
+  "unlockAct": 3,
+  "special": "international",
+  "blurb": "Events at 3am local time so the American TV slot works. The fans are drunk regardless."
+ },
+ {
+  "id": "rio_arena",
+  "name": "Arena Carioca do Povo",
+  "region": "brasilia",
+  "capacity": 15000,
+  "cost": 210000,
+  "tier": 3,
+  "unlockAct": 3,
+  "special": "international",
+  "blurb": "The loudest crowd on earth. They will chant death threats at your main event in perfect rhythm."
+ },
+ {
+  "id": "aussie_dome",
+  "name": "Southern Cross Stadium",
+  "region": "southern_cross",
+  "capacity": 45000,
+  "cost": 600000,
+  "tier": 4,
+  "unlockAct": 3,
+  "special": "international",
+  "blurb": "Record crowds, record sunburns, record amounts of beer thrown at the octagon."
+ },
+ {
+  "id": "military_base",
+  "name": "Fort Liberty-ish Hangar 9",
+  "region": "lone_star",
+  "capacity": 7000,
+  "cost": 30000,
+  "tier": 2,
+  "unlockAct": 2,
+  "special": "military",
+  "blurb": "Troops-only event. Great PR. A colonel will demand a photo op."
+ },
+ {
+  "id": "rooftop",
+  "name": "Skyline Parking Garage Rooftop",
+  "region": "pacific",
+  "capacity": 4000,
+  "cost": 180000,
+  "tier": 3,
+  "unlockAct": 3,
+  "special": "rooftop",
+  "blurb": "An outdoor event on a rooftop. Wind, helicopters and liability. The influencers love it."
+ },
+ {
+  "id": "football_stadium",
+  "name": "Big Oil Bowl",
+  "region": "lone_star",
+  "capacity": 60000,
+  "cost": 1100000,
+  "tier": 5,
+  "unlockAct": 4,
+  "blurb": "A stadium show. Nobody in the top deck can see anything. Everyone buys a $19 beer anyway."
+ },
+ {
+  "id": "desert_kingdom",
+  "name": "Royal Qasr Mega-Pavilion",
+  "region": "qasr",
+  "capacity": 30000,
+  "cost": 0,
+  "tier": 5,
+  "unlockAct": 4,
+  "special": "desert",
+  "blurb": "The Kingdom pays YOU to come. Gold-plated cage. Several human rights groups would like a word."
+ },
+ {
+  "id": "the_orb",
+  "name": "The Orb",
+  "region": "mojave",
+  "capacity": 17000,
+  "cost": 2500000,
+  "tier": 5,
+  "unlockAct": 5,
+  "special": "sphere",
+  "blurb": "A giant LED sphere the size of God's ego. The walls can show the fighters' search history. Please don't."
+ },
+ {
+  "id": "strip_mall",
+  "name": "Strip Mall Fight Pit (Next to a Cash Advance)",
+  "region": "bayou",
+  "capacity": 400,
+  "cost": 2500,
+  "tier": 1,
+  "unlockAct": 1,
+  "blurb": "Folding chairs, a cage zip-tied together, and a nail salon sharing the AC."
+ },
+ {
+  "id": "bowling_alley",
+  "name": "Lucky Strike Lanes & Brawl",
+  "region": "great_lakes",
+  "capacity": 700,
+  "cost": 4000,
+  "tier": 1,
+  "unlockAct": 1,
+  "blurb": "Fights between lanes 6 and 7. Bowling continues during the main event."
+ },
+ {
+  "id": "barn",
+  "name": "Uncle Dale's Barn",
+  "region": "lone_star",
+  "capacity": 1200,
+  "cost": 5000,
+  "tier": 1,
+  "unlockAct": 1,
+  "blurb": "Hay bales for seats. A goat watches every fight with judgement."
+ },
+ {
+  "id": "church_gym",
+  "name": "First Baptist Gymnasium",
+  "region": "bayou",
+  "capacity": 1100,
+  "cost": 3000,
+  "tier": 1,
+  "unlockAct": 1,
+  "blurb": "Pastor insists on a prayer before each round and no cursing (lol)."
+ },
+ {
+  "id": "nightclub",
+  "name": "Club Concussion",
+  "region": "pacific",
+  "capacity": 1500,
+  "cost": 18000,
+  "tier": 1,
+  "unlockAct": 1,
+  "blurb": "Bottle service cageside. The DJ refuses to stop during fights."
+ },
+ {
+  "id": "ape_x",
+  "name": "The Ape-X",
+  "region": "mojave",
+  "capacity": 400,
+  "cost": 25000,
+  "tier": 2,
+  "unlockAct": 2,
+  "blurb": "Empty TV studio venue. You can hear every punch, grunt and fart."
+ },
+ {
+  "id": "t_mobster",
+  "name": "T-Mobster Arena",
+  "region": "mojave",
+  "capacity": 20000,
+  "cost": 450000,
+  "tier": 4,
+  "unlockAct": 3,
+  "blurb": "The fight capital's crown jewel. Celebrities cageside pretending to know what a kimura is."
+ },
+ {
+  "id": "msquared",
+  "name": "Madison Squared Garden",
+  "region": "atlantic",
+  "capacity": 20000,
+  "cost": 500000,
+  "tier": 5,
+  "unlockAct": 4,
+  "blurb": "The world's most famous arena. Costs more than your house. Smells like 1974."
+ },
+ {
+  "id": "barfclays",
+  "name": "Barfclays Center",
+  "region": "atlantic",
+  "capacity": 17000,
+  "cost": 300000,
+  "tier": 4,
+  "unlockAct": 3,
+  "blurb": "Brooklyn hipsters ironically cheering for wrestlers."
+ },
+ {
+  "id": "cryptocon_arena",
+  "name": "Crypto.con Arena",
+  "region": "pacific",
+  "capacity": 19000,
+  "cost": 380000,
+  "tier": 4,
+  "unlockAct": 3,
+  "blurb": "Named after a sponsor that may not exist by fight night."
+ },
+ {
+  "id": "ozone",
+  "name": "The O-Zone",
+  "region": "albion",
+  "capacity": 20000,
+  "cost": 320000,
+  "tier": 4,
+  "unlockAct": 3,
+  "blurb": "London's dome. Fights at 4am so America can watch. The crowd is three pints deep at 9pm.",
+  "special": "international"
+ },
+ {
+  "id": "ethibad",
+  "name": "Ethi-Bad Arena",
+  "region": "qasr",
+  "capacity": 18000,
+  "cost": 0,
+  "tier": 4,
+  "unlockAct": 4,
+  "blurb": "Fight Island-ish. Gorgeous. Air-conditioned. Ethically air-conditioned.",
+  "special": "desert"
+ },
+ {
+  "id": "roger_that",
+  "name": "Roger That Place",
+  "region": "great_lakes",
+  "capacity": 18000,
+  "cost": 260000,
+  "tier": 3,
+  "unlockAct": 3,
+  "blurb": "Canada! Everyone's polite until the main event.",
+  "special": "international"
+ },
+ {
+  "id": "saitama",
+  "name": "Saitama Super-Duper Arena",
+  "region": "southern_cross",
+  "capacity": 37000,
+  "cost": 520000,
+  "tier": 4,
+  "unlockAct": 4,
+  "blurb": "Legendary Japanese arena. Fans politely silent, then lose their minds at a heel hook.",
+  "special": "international"
+ },
+ {
+  "id": "jeunesse",
+  "name": "Arena Jeunesse-ish",
+  "region": "brasilia",
+  "capacity": 14000,
+  "cost": 180000,
+  "tier": 3,
+  "unlockAct": 3,
+  "blurb": "Rio. The crowd will chant 'you're going to die' at your fighters. Lovingly.",
+  "special": "international"
+ },
+ {
+  "id": "mexico_arena",
+  "name": "Arena Mexico-ish",
+  "region": "lone_star",
+  "capacity": 16000,
+  "cost": 200000,
+  "tier": 3,
+  "unlockAct": 3,
+  "blurb": "Altitude so high your heavyweights gas in 40 seconds.",
+  "special": "international"
+ },
+ {
+  "id": "paris_arena",
+  "name": "Accor-Dion Arena",
+  "region": "albion",
+  "capacity": 15000,
+  "cost": 240000,
+  "tier": 3,
+  "unlockAct": 3,
+  "blurb": "Paris. Fans boo the national anthem of whoever is winning.",
+  "special": "international"
+ },
+ {
+  "id": "perth_rac",
+  "name": "RAC-ket Arena",
+  "region": "southern_cross",
+  "capacity": 15000,
+  "cost": 230000,
+  "tier": 3,
+  "unlockAct": 3,
+  "blurb": "Perth. Middle of the night. Somebody brings a kangaroo.",
+  "special": "international"
+ },
+ {
+  "id": "abu_beach",
+  "name": "Fight Beach (The Island)",
+  "region": "qasr",
+  "capacity": 2000,
+  "cost": 0,
+  "tier": 3,
+  "unlockAct": 4,
+  "blurb": "An actual island. Fighters can't leave. Nobody asks why.",
+  "special": "desert"
+ },
+ {
+  "id": "prison_yard",
+  "name": "State Correctional Yard (Charity Event)",
+  "region": "bayou",
+  "capacity": 800,
+  "cost": 1000,
+  "tier": 2,
+  "unlockAct": 2,
+  "blurb": "'Rehabilitation through violence.' The warden is a big fan.",
+  "special": "military"
+ },
+ {
+  "id": "aircraft_carrier",
+  "name": "USS Sponsorship (Aircraft Carrier)",
+  "region": "pacific",
+  "capacity": 5000,
+  "cost": 400000,
+  "tier": 3,
+  "unlockAct": 3,
+  "blurb": "Fights on a flight deck. The Navy wants you to know it's a recruitment opportunity.",
+  "special": "military"
+ },
+ {
+  "id": "white_house_lawn",
+  "name": "The Big Lawn (Federal)",
+  "region": "atlantic",
+  "capacity": 5000,
+  "cost": 0,
+  "tier": 5,
+  "unlockAct": 5,
+  "blurb": "A fight on the lawn of a very important building. Secret Service working the cage door.",
+  "special": "rooftop"
+ },
+ {
+  "id": "cruise_ship",
+  "name": "Royal Caribbean-ish Cruise Deck",
+  "region": "southern_cross",
+  "capacity": 1500,
+  "cost": 90000,
+  "tier": 2,
+  "unlockAct": 2,
+  "blurb": "Fights at sea. Norovirus is the real heavyweight champ.",
+  "special": "rooftop"
+ },
+ {
+  "id": "waffle_lot",
+  "name": "Waffle Hut Parking Lot (Midnight)",
+  "region": "bayou",
+  "capacity": 300,
+  "cost": 500,
+  "tier": 1,
+  "unlockAct": 1,
+  "blurb": "Unsanctioned-feeling. Legally sanctioned. Barely."
+ }
+]

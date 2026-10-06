@@ -1,0 +1,484 @@
+/**
+ * Fight Night: faceoffs -> pre-fight press conference -> the card (watch or
+ * sim each bout) -> post-fight interviews & fight-night chaos -> performance
+ * bonuses -> post-fight presser -> ledger.
+ */
+import { Container, Graphics } from 'pixi.js';
+import { Scene, Game, fullBg } from '../app';
+import type { Bout, FightEvent, TickerLine } from '../../core/types';
+import { PAL, shade } from '../../art/palette';
+import { W, H, text, button, box, ScrollBox, paper, clickable } from '../kit';
+import { PixelText } from '../text';
+import { fighterPortrait, reporterPortrait } from '../sprites';
+import { ArenaView, cornerView, RingCardWalk, AW, AH } from '../arena';
+import { runBout, applyBout, finalizeEvent, defaultBonuses, bonusAmount, autoFixCard, boutLabel, cardDraw } from '../../sim/events';
+import { fireCategory } from '../../storylets/engine';
+import { playStorylet } from '../dialog';
+import { Rng } from '../../core/rng';
+import { content } from '../../core/content';
+import { money, record } from '../../core/format';
+import { fullName, pronounize } from '../../sim/fighters';
+import { rankLabel } from '../../sim/rankings';
+import { routePhase } from '../flow';
+import { sfx } from '../../audio/sfx';
+import { fmtFightDate } from '../../core/time';
+import { quickOdds, oddsString } from '../../sim/fight';
+
+type Step = 'intro' | 'card' | 'watch' | 'bonus' | 'done';
+
+const INTERVIEW: Record<string, string[]> = {
+  win_ko: [
+    'I told everybody! I TOLD everybody! Lights out, baby!',
+    'I felt it land and I knew he was going to sleep. Goodnight, sweet prince.',
+    'I want to thank God, my coach, and the guy who sold me that pre-workout. It\'s probably legal.',
+    'That right hand has been sitting in my back pocket for six weeks. Felt good to finally use it.',
+  ],
+  win_sub: [
+    'I caught that neck and I wasn\'t letting go. Not today.',
+    'Jiu-jitsu is a beautiful art. Strangling people is also a beautiful art.',
+    'He tapped. He knows he tapped. Everybody saw him tap.',
+  ],
+  win_dec: [
+    'I would\'ve liked the finish, but a W is a W. My accountant doesn\'t care how.',
+    'He was tough, man. Tougher than I thought. My face agrees.',
+    'Three rounds of hell. I need a cheeseburger and a CAT scan, in that order.',
+  ],
+  win_other: ['A win is a win. We\'ll take it and go home.', 'Not how I wanted it to end, but I\'ll take the money.'],
+  loss: [
+    'I\'ll be back. I gotta go see a doctor first. Several doctors.',
+    'No excuses. ...Okay, one excuse: I had food poisoning. Don\'t fact check that.',
+    'I\'m gonna watch the tape, learn, and come back. Then probably watch it again and cry.',
+  ],
+  robbed: ['I won that fight. Everyone in the building knows I won that fight. The judges need glasses AND a lobotomy.'],
+  callout: [
+    'And {opp}? Yeah, YOU. You\'ve been running your mouth. Let\'s go. Next card.',
+    'Hey {president}! Give me {opp}! I\'ll do it for free! (Don\'t actually make me do it for free.)',
+    'I want the belt. I want the money. I want {opp}. In that order.',
+  ],
+};
+
+export class FightNightScene extends Scene {
+  private step: Step = 'intro';
+  private ev: FightEvent;
+  private arena: ArenaView | null = null;
+  private playing: { bout: Bout; lines: TickerLine[]; idx: number; timer: number; paused: boolean; phase: 'fight' | 'corner' | 'ringcard' | 'end'; phaseT: number; ringcard: RingCardWalk | null; corner: Container | null } | null = null;
+  private tickerBox: Container | null = null;
+  private bonusSel = new Set<string>();
+  private pressersDone = 0;
+
+  constructor(g: Game, evId: string) {
+    super(g);
+    this.ev = g.state!.events.find((e) => e.id === evId)!;
+  }
+
+  enter(): void {
+    const s = this.g.state!;
+    autoFixCard(s, this.ev);
+    if (this.ev.card.every((b) => b.status !== 'scheduled')) this.step = this.ev.card.some((b) => b.status === 'done') ? 'bonus' : 'done';
+    else if (this.ev.notes.includes('started')) this.step = 'card';
+    super.enter();
+  }
+
+  build(): void {
+    const r = this.root;
+    r.addChild(fullBg(0x120e14));
+    switch (this.step) {
+      case 'intro': return this.buildIntro();
+      case 'card': return this.buildCard();
+      case 'watch': return this.buildWatch();
+      case 'bonus': return this.buildBonus();
+      case 'done': return this.finish();
+    }
+  }
+
+  private live(): Bout[] {
+    return this.ev.card.filter((b) => b.status !== 'cancelled').sort((a, b) => a.position - b.position);
+  }
+
+  // ------------------------------------------------------------ intro
+  private buildIntro(): void {
+    const s = this.g.state!;
+    const r = this.root;
+    const v = content().venues.find((x) => x.id === this.ev.venue);
+    r.addChild(text(this.ev.name.toUpperCase(), 0, 8, { width: W, align: 'center', scale: 2, color: PAL.gold, shadow: PAL.ink }));
+    r.addChild(text(`${fmtFightDate(this.ev.week)}  •  ${v?.name ?? this.ev.venue}  •  ${this.ev.ppv ? 'LIVE ON PAY-PER-VIEW' : 'LIVE ON TV'}`, 0, 28, { width: W, align: 'center', color: PAL.ash, small: true }));
+    const main = this.live()[0];
+    if (main) {
+      const A = s.fighters[main.a];
+      const B = s.fighters[main.b];
+      r.addChild(text('MAIN EVENT FACEOFF', 0, 42, { width: W, align: 'center', color: PAL.blood }));
+      const pa = fighterPortrait(A, 64, 'press');
+      pa.position.set(120, 56);
+      r.addChild(pa);
+      const pb = fighterPortrait(B, 64, 'press');
+      pb.position.set(W - 184, 56);
+      pb.scale.x = -1;
+      pb.x += 64;
+      r.addChild(pb);
+      r.addChild(text('VS', 0, 80, { width: W, align: 'center', scale: 2, color: PAL.blood }));
+      r.addChild(text(`${fullName(A)}\n${record(A.record)}  ${rankLabel(s, A.id)}`, 8, 70, { width: 108, color: PAL.bone, small: true, align: 'right' }));
+      r.addChild(text(`${fullName(B)}\n${record(B.record)}  ${rankLabel(s, B.id)}`, W - 116, 70, { width: 108, color: PAL.bone, small: true }));
+      r.addChild(text(boutLabel(s, main), 0, 124, { width: W, align: 'center', color: PAL.gold, small: true }));
+      const p = quickOdds(A, B);
+      r.addChild(text(`ODDS ${oddsString(p)} / ${oddsString(1 - p)}  •  CARD DRAW ${Math.round(cardDraw(s, this.ev))}`, 0, 132, { width: W, align: 'center', color: PAL.ash, small: true }));
+    }
+    const card = this.live();
+    card.slice(1, 7).forEach((b, i) => {
+      r.addChild(text(`${s.fighters[b.a]?.last ?? '?'} vs ${s.fighters[b.b]?.last ?? '?'}${b.title ? ' ★' : ''}`, 0, 146 + i * 9, { width: W, align: 'center', color: PAL.bone, small: true }));
+    });
+    if (this.ev.notes.length) r.addChild(text(this.ev.notes.filter((n) => n !== 'started').slice(-3).join('  '), 8, 214, { small: true, color: PAL.ember, width: W - 16 }));
+    r.addChild(button(`PRESS CONFERENCE (${2 - this.pressersDone})`, 8, H - 26, 130, 18, () => this.presser(false), { fill: PAL.steel, disabled: this.pressersDone >= 2 }));
+    r.addChild(button('START THE EVENT →', W - 138, H - 26, 130, 18, () => {
+      this.ev.notes.push('started');
+      this.step = 'card';
+      sfx('roar');
+      this.refresh();
+    }, { fill: PAL.blood }));
+    sfx('crowd');
+  }
+
+  /** Raised hands: pick a reporter, answer their question. */
+  private presser(post: boolean): void {
+    const s = this.g.state!;
+    const reps = content().reporters.filter((x) => !s.media.reporters[x.id]?.banned);
+    if (!reps.length) return this.afterPresser(post);
+    const rng = new Rng(s.rng);
+    const hands = rng.sample(reps, 3);
+    s.rng = rng.state;
+    const frame = new Container();
+    const wrap = this.g.modal(frame, { dim: 0.7 });
+    frame.addChild(box(W - 40, 150, PAL.night, PAL.ash, { bevel: true })).position.set(20, 50);
+    frame.addChild(text(post ? 'POST-FIGHT PRESS CONFERENCE' : 'PRE-FIGHT PRESS CONFERENCE', 26, 55, { color: PAL.gold }));
+    frame.addChild(text('Hands go up. Who do you call on?', 26, 67, { small: true, color: PAL.ash }));
+    hands.forEach((rep, i) => {
+      const c = clickable(new Container(), () => {
+        this.g.closeModal(wrap);
+        const rng2 = new Rng(s.rng);
+        const inst = fireCategory(s, 'presser', rng2, { postFight: post, eventName: this.ev.name }, { reporter: rep.id }, this.ev.id);
+        s.rng = rng2.state;
+        if (!inst) return this.afterPresser(post);
+        playStorylet(this.g, inst, () => this.afterPresser(post));
+      });
+      c.addChild(reporterPortrait(rep, 64));
+      c.addChild(text(rep.name, 0, 68, { small: true, width: 120, color: PAL.bone }));
+      c.addChild(text(content().outlets.find((o) => o.id === rep.outlet)?.name ?? '', 0, 76, { small: true, width: 120, color: PAL.ash }));
+      const rel = s.media.reporters[rep.id]?.rel ?? 0;
+      c.addChild(text(rel > 20 ? 'friendly' : rel < -20 ? 'HOSTILE' : 'neutral', 0, 84, { small: true, color: rel > 20 ? PAL.moss : rel < -20 ? PAL.blood : PAL.ash }));
+      c.position.set(40 + i * 140, 80);
+      frame.addChild(c);
+    });
+    frame.addChild(button('END PRESSER', W - 120, 182, 92, 14, () => {
+      this.g.closeModal(wrap);
+      this.afterPresser(post, true);
+    }, { small: true }));
+  }
+
+  private afterPresser(post: boolean, ended = false): void {
+    if (post) return this.finish();
+    this.pressersDone++;
+    if (!ended && this.pressersDone < 2) this.presser(false);
+    else this.refresh();
+  }
+
+  // ------------------------------------------------------------ card
+  private buildCard(): void {
+    const s = this.g.state!;
+    const r = this.root;
+    r.addChild(text(this.ev.name.toUpperCase() + '  •  THE CARD', 8, 6, { color: PAL.gold }));
+    const live = this.live();
+    const sb = new ScrollBox(W - 16, H - 52);
+    sb.position.set(8, 18);
+    // show in running order: prelims first
+    const order = live.slice().reverse();
+    order.forEach((b, i) => {
+      const A = s.fighters[b.a];
+      const B = s.fighters[b.b];
+      const row = new Container();
+      const done = b.status === 'done' && b.result;
+      row.addChild(box(W - 22, 22, done ? 0x1e1a20 : b.position === 0 ? 0x3a2228 : 0x2a2430, PAL.shadow));
+      row.addChild(text(b.position === 0 ? 'MAIN' : b.position === 1 ? 'CO-MAIN' : b.position < 5 ? 'MAIN CARD' : 'PRELIM', 4, 3, { small: true, color: b.position === 0 ? PAL.gold : PAL.ash }));
+      row.addChild(text(`${A ? fullName(A) : '?'}  vs  ${B ? fullName(B) : '?'}${b.title ? '  ★ ' + (s.belts[b.title]?.name ?? '') : ''}`, 4, 11, { color: PAL.bone, width: 300, maxLines: 1 }));
+      if (done) {
+        const res = b.result!;
+        const w = res.winner ? s.fighters[res.winner] : null;
+        row.addChild(text(w ? `${w.last} by ${res.method} (${res.detail}) R${res.round} ${res.time}` : `${res.detail}`, 300, 7, { small: true, color: PAL.moss, width: W - 330 }));
+      } else {
+        row.addChild(button('WATCH', W - 92, 4, 34, 14, () => this.watch(b), { small: true, fill: PAL.blood }));
+        row.addChild(button('SIM', W - 56, 4, 30, 14, () => this.simBout(b), { small: true, fill: PAL.slate }));
+      }
+      row.position.set(0, i * 24);
+      sb.content.addChild(row);
+    });
+    r.addChild(sb);
+    sb.refresh();
+    const remaining = live.filter((b) => b.status === 'scheduled');
+    const prelims = remaining.filter((b) => b.position >= 5);
+    r.addChild(button('SIM ALL PRELIMS', 8, H - 26, 100, 18, () => {
+      prelims.sort((a, b) => b.position - a.position).forEach((b) => this.simBout(b, true));
+      this.refresh();
+    }, { small: true, disabled: !prelims.length }));
+    r.addChild(button('SIM EVERYTHING', 112, H - 26, 100, 18, () => {
+      remaining.sort((a, b) => b.position - a.position).forEach((b) => this.simBout(b, true));
+      this.refresh();
+    }, { small: true, disabled: !remaining.length }));
+    if (!remaining.length) r.addChild(button('BONUSES & WRAP UP →', W - 150, H - 26, 142, 18, () => { this.step = 'bonus'; this.refresh(); }, { fill: PAL.blood }));
+    else r.addChild(text('Watch a fight, or sim it. Prelims run first, main event last.', 220, H - 21, { small: true, color: PAL.ash }));
+  }
+
+  private simBout(b: Bout, quiet = false): void {
+    const s = this.g.state!;
+    const rng = new Rng(s.rng);
+    runBout(s, this.ev, b, rng, false);
+    applyBout(s, this.ev, b, rng);
+    s.rng = rng.state;
+    if (!quiet) {
+      this.postBout(b, false);
+    }
+  }
+
+  // ------------------------------------------------------------ watch
+  private watch(b: Bout): void {
+    const s = this.g.state!;
+    const rng = new Rng(s.rng);
+    runBout(s, this.ev, b, rng, true);
+    s.rng = rng.state;
+    this.playing = { bout: b, lines: b.result!.ticker ?? [], idx: 0, timer: 0.6, paused: false, phase: 'fight', phaseT: 0, ringcard: null, corner: null };
+    this.step = 'watch';
+    this.refresh();
+  }
+
+  private buildWatch(): void {
+    const s = this.g.state!;
+    const r = this.root;
+    const p = this.playing!;
+    const A = s.fighters[p.bout.a];
+    const B = s.fighters[p.bout.b];
+    this.arena = new ArenaView(A, B, p.bout.rounds);
+    this.arena.position.set(0, 0);
+    r.addChild(this.arena);
+    const tb = new Container();
+    tb.position.set(0, AH);
+    r.addChild(tb);
+    this.tickerBox = tb;
+    this.drawTicker();
+    r.addChild(button('SPEED x' + this.g.settings.fightSpeed, 4, H - 16, 54, 13, () => {
+      this.g.settings.fightSpeed = (this.g.settings.fightSpeed % 4) + 1;
+      this.g.applySettings();
+      this.refresh();
+    }, { small: true }));
+    r.addChild(button(p.paused ? 'PLAY' : 'PAUSE', 62, H - 16, 40, 13, () => {
+      p.paused = !p.paused;
+      this.refresh();
+    }, { small: true }));
+    r.addChild(button('SKIP TO END', 106, H - 16, 64, 13, () => this.skipToEnd(), { small: true, fill: PAL.blood }));
+    r.addChild(text(boutLabel(s, p.bout).toUpperCase(), 176, H - 12, { small: true, color: PAL.ash }));
+    // replay lines already shown
+    for (let i = 0; i < p.idx; i++) this.arena.cue(p.lines[i]);
+    if (p.phase === 'corner' && p.corner) r.addChild(p.corner);
+    if (p.phase === 'ringcard' && p.ringcard) r.addChild(p.ringcard);
+  }
+
+  private drawTicker(): void {
+    const tb = this.tickerBox;
+    const p = this.playing;
+    if (!tb || !p || tb.destroyed) return;
+    tb.removeChildren().forEach((c) => c.destroy({ children: true }));
+    tb.addChild(box(W, H - AH - 18, PAL.ink, PAL.shadow));
+    const shown = p.lines.slice(Math.max(0, p.idx - 9), p.idx);
+    shown.forEach((l, i) => {
+      const newest = i === shown.length - 1;
+      tb.addChild(text(`R${l.round} ${Math.floor(l.t / 60)}:${String(l.t % 60).padStart(2, '0')}  ${l.text}`, 6, 3 + i * 9, {
+        small: !newest, color: newest ? (l.intensity >= 3 ? PAL.gold : PAL.bone) : PAL.grey, width: W - 12, maxLines: 1,
+      }));
+    });
+    // crowd meter
+    const last = p.lines[p.idx - 1];
+    const inten = last ? last.intensity : 1;
+    tb.addChild(text('CROWD', W - 60, H - AH - 30, { small: true, color: PAL.ash }));
+    tb.addChild(box(30, 5, PAL.shadow)).position.set(W - 34, H - AH - 30);
+    tb.addChild(box(Math.max(2, inten * 10), 5, inten >= 3 ? PAL.blood : PAL.gold)).position.set(W - 34, H - AH - 30);
+  }
+
+  private skipToEnd(): void {
+    const p = this.playing;
+    if (!p) return;
+    p.idx = p.lines.length;
+    p.phase = 'end';
+    p.phaseT = 0.1;
+    this.endWatch();
+  }
+
+  update(dt: number): void {
+    const p = this.playing;
+    if (this.step !== 'watch' || !p || !this.arena || this.arena.destroyed) return;
+    const speed = [1, 0.6, 1, 2, 4][this.g.settings.fightSpeed] ?? 1;
+    this.arena.update(dt);
+    if (p.paused || this.g.modals.length) return;
+    if (p.phase === 'corner') {
+      p.phaseT -= dt * speed;
+      if (p.phaseT <= 0) {
+        p.corner?.destroy({ children: true });
+        p.corner = null;
+        const nextRound = (p.lines[p.idx - 1]?.round ?? 1) + 1;
+        p.ringcard = new RingCardWalk(nextRound);
+        this.root.addChild(p.ringcard);
+        p.phase = 'ringcard';
+      }
+      return;
+    }
+    if (p.phase === 'ringcard') {
+      if (!p.ringcard || !p.ringcard.update(dt * speed)) {
+        p.ringcard?.destroy({ children: true });
+        p.ringcard = null;
+        p.phase = 'fight';
+        sfx('bell');
+      }
+      return;
+    }
+    if (p.phase === 'end') return;
+    p.timer -= dt * speed;
+    if (p.timer > 0) return;
+    if (p.idx >= p.lines.length) {
+      p.phase = 'end';
+      this.arena.update(0);
+      setTimeout(() => this.endWatch(), 1200 / speed);
+      return;
+    }
+    const line = p.lines[p.idx++];
+    this.arena.cue(line);
+    this.drawTicker();
+    p.timer = line.intensity >= 3 ? 1.6 : line.act === 'bell' ? 0.9 : 0.95;
+    // round ended: corners cutaway
+    if (line.act === 'bell' && p.idx < p.lines.length) {
+      const reps = (p.bout.result?.corners ?? []).filter((c) => c.round === line.round);
+      if (reps.length) {
+        p.corner = cornerView(this.g.state!.fighters[p.bout.a], this.g.state!.fighters[p.bout.b], reps, line.round);
+        this.root.addChild(p.corner);
+        p.phase = 'corner';
+        p.phaseT = 4.5;
+      }
+    }
+  }
+
+  private endWatch(): void {
+    const p = this.playing;
+    if (!p || p.phase === 'done' as any) return;
+    (p as any).phase = 'done';
+    const s = this.g.state!;
+    const rng = new Rng(s.rng);
+    applyBout(s, this.ev, p.bout, rng);
+    s.rng = rng.state;
+    this.playing = null;
+    this.arena = null;
+    this.step = 'card';
+    this.refresh();
+    this.postBout(p.bout, true);
+  }
+
+  /** Result card + post-fight interview, then maybe fight-night chaos. */
+  private postBout(b: Bout, watched: boolean): void {
+    const s = this.g.state!;
+    const res = b.result!;
+    const main = b.position <= 2;
+    if (!watched && !main) return;
+    const frame = new Container();
+    const wrap = this.g.modal(frame, { dim: 0.6 });
+    const bw = 380;
+    frame.addChild(box(bw, 168, PAL.night, PAL.gold, { bevel: true, shadow: true })).position.set((W - bw) / 2, 40);
+    const x0 = (W - bw) / 2 + 8;
+    const w = res.winner ? s.fighters[res.winner] : null;
+    const l = res.loser ? s.fighters[res.loser] : null;
+    frame.addChild(text(w ? `WINNER: ${fullName(w).toUpperCase()}` : res.method === 'NC' ? 'NO CONTEST' : 'DRAW', x0, 46, { color: PAL.gold }));
+    frame.addChild(text(`${res.method} (${res.detail})  R${res.round} ${res.time}  •  Ref: ${res.referee}`, x0, 57, { small: true, color: PAL.ash, width: bw - 16 }));
+    if (res.method === 'DEC' || res.method === 'DRAW') frame.addChild(text(`Scorecards: ${res.scores.map((sc, i) => `${res.judges[i]} ${sc[0]}-${sc[1]}`).join(', ')}${res.robbery ? '  ROBBERY!' : ''}`, x0, 66, { small: true, color: res.robbery ? PAL.blood : PAL.ash, width: bw - 16 }));
+    if (res.injuries.length) frame.addChild(text(`Injuries: ${res.injuries.map((i) => `${s.fighters[i.fighter]?.last} - ${i.name}`).join(', ')}`, x0, 75, { small: true, color: PAL.blood, width: bw - 16 }));
+    const speaker = w ?? s.fighters[b.a];
+    const por = fighterPortrait(speaker, 64, 'plain');
+    por.position.set(x0, 86);
+    frame.addChild(por);
+    const rng = new Rng(s.rng ^ 0x1234);
+    let key = res.robbery && l ? 'robbed' : res.method === 'KO' || res.method === 'TKO' ? 'win_ko' : res.method === 'SUB' ? 'win_sub' : res.method === 'DEC' ? 'win_dec' : 'win_other';
+    const bank = { ...INTERVIEW, ...(content().templates.presser ?? {}) };
+    const opp = l ?? s.fighters[b.b];
+    const fill = (str: string) => pronounize(str.replace(/\{opp\}/g, opp?.last ?? 'him').replace(/\{president\}/g, s.president.name.split(' ').slice(-1)[0]), speaker);
+    let quote = fill(rng.pick(bank[key] ?? INTERVIEW.win_other));
+    if (w && (w.traits.includes('Trash Talker') || w.traits.includes('Showman')) && rng.chance(0.6)) {
+      const rival = Object.values(s.fighters).find((f) => f.division === w.division && f.id !== w.id && f.promotion === 'us' && f.status === 'active' && f.id !== l?.id);
+      if (rival) quote += ' ' + rng.pick(bank.callout ?? INTERVIEW.callout).replace(/\{opp\}/g, rival.last).replace(/\{president\}/g, s.president.name.split(' ').slice(-1)[0]);
+    }
+    if (res.robbery && l) {
+      key = 'robbed';
+      quote = fill(rng.pick(bank.robbed ?? INTERVIEW.robbed));
+    }
+    frame.addChild(text(`POST-FIGHT INTERVIEW (${speaker.last}, still bleeding):`, x0 + 72, 88, { small: true, color: PAL.ash, width: bw - 90 }));
+    frame.addChild(text(`"${quote}"`, x0 + 72, 98, { color: PAL.bone, width: bw - 90 }));
+    frame.addChild(button('CONTINUE', (W + bw) / 2 - 76, 188, 68, 14, () => {
+      this.g.closeModal(wrap);
+      this.fightNightChaos(b);
+    }, { fill: PAL.moss }));
+  }
+
+  private fightNightChaos(b: Bout): void {
+    const s = this.g.state!;
+    const rng = new Rng(s.rng);
+    const chance = b.position <= 1 ? 0.55 : 0.18;
+    if (!rng.chance(chance)) {
+      s.rng = rng.state;
+      this.refresh();
+      return;
+    }
+    const r = b.result!;
+    const inst = fireCategory(s, 'fightnight', rng, {
+      lastWinner: r.winner ?? '', lastLoser: r.loser ?? '', lastA: b.a, lastB: b.b, lastMethod: r.method, lastRobbery: r.robbery, lastMain: b.position === 0, lastTitle: !!b.title,
+    }, {}, this.ev.id);
+    s.rng = rng.state;
+    if (!inst) return this.refresh();
+    playStorylet(this.g, inst, () => this.refresh());
+  }
+
+  // ------------------------------------------------------------ bonuses & wrap up
+  private buildBonus(): void {
+    const s = this.g.state!;
+    const r = this.root;
+    if (!this.bonusSel.size) defaultBonuses(this.ev).forEach((id) => this.bonusSel.add(id));
+    r.addChild(text('PERFORMANCE BONUSES', 8, 8, { color: PAL.gold }));
+    r.addChild(text(`Each bonus costs ${money(bonusAmount(s))}. Fighters remember who got paid (and who didn't).`, 8, 20, { small: true, color: PAL.ash }));
+    const done = this.live().filter((b) => b.status === 'done' && b.result);
+    const sb = new ScrollBox(W - 16, H - 70);
+    sb.position.set(8, 32);
+    done.forEach((b, i) => {
+      const res = b.result!;
+      const row = new Container();
+      row.addChild(box(W - 22, 20, 0x24212a, PAL.shadow));
+      row.addChild(text(`${s.fighters[b.a]?.last} vs ${s.fighters[b.b]?.last}: ${res.method} R${res.round}  (quality ${res.fotn})`, 4, 6, { small: true, color: PAL.bone, width: 230 }));
+      [b.a, b.b].forEach((id, j) => {
+        const sel = this.bonusSel.has(id);
+        row.addChild(button(`${sel ? '✓ ' : ''}${s.fighters[id]?.last}`, 250 + j * 102, 3, 98, 14, () => {
+          if (sel) this.bonusSel.delete(id);
+          else this.bonusSel.add(id);
+          this.refresh();
+        }, { small: true, fill: sel ? PAL.moss : PAL.shadow }));
+      });
+      row.position.set(0, i * 22);
+      sb.content.addChild(row);
+    });
+    r.addChild(sb);
+    sb.refresh();
+    r.addChild(text(`Selected: ${this.bonusSel.size}  (${money(this.bonusSel.size * bonusAmount(s))})`, 8, H - 22, { color: PAL.bone }));
+    r.addChild(button('POST-FIGHT PRESSER →', W - 150, H - 26, 142, 18, () => this.presser(true), { fill: PAL.steel }));
+  }
+
+  private finish(): void {
+    const s = this.g.state!;
+    if (this.ev.status === 'scheduled') {
+      const fin = finalizeEvent(s, this.ev, [...this.bonusSel]);
+      sfx('cash');
+      this.g.toast(`Gate ${money(fin.gate)}  •  ${fin.attendance.toLocaleString()} fans${fin.ppvBuys ? `  •  ${fin.ppvBuys.toLocaleString()} PPV buys` : ''}`, PAL.gold);
+    }
+    s.phase = 'ledger';
+    this.g.autosave();
+    routePhase(this.g);
+  }
+}
+
+export { Graphics, PixelText, paper, shade };

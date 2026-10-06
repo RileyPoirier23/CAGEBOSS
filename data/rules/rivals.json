@@ -1,0 +1,6 @@
+[
+  { "id": "bellatrix", "name": "Bellatrix Fighting Championship", "short": "BFC", "type": "regional", "aggression": 0.4, "startCash": 3000000, "strength": 45, "color": 7368816, "owner": "Scott Croaker", "blurb": "The perennial number two. Runs tournaments, signs your castoffs, and loses money with a smile.", "enterAct": 1 },
+  { "id": "pfl_ish", "name": "Professional Fighters' Lounge", "short": "PFL", "type": "startup", "aggression": 0.6, "startCash": 8000000, "strength": 35, "color": 5022320, "owner": "Donn Davies-Moneybags", "blurb": "Season format! Playoffs! A million dollar prize! A business model held together with petro-state money and hope.", "enterAct": 2 },
+  { "id": "qasr_fc", "name": "Qasr Royal Fighting League", "short": "QRFL", "type": "foreign", "aggression": 0.8, "startCash": 60000000, "strength": 30, "color": 12886602, "owner": "His Excellency's Cousin", "blurb": "Deep-pocketed foreign league that pays triple and asks no questions except 'will you smile in the photos?'", "enterAct": 3 },
+  { "id": "golden_promotions", "name": "Golden Gloves Combat Group", "short": "GBC", "type": "boxing", "aggression": 0.7, "startCash": 25000000, "strength": 25, "color": 13942858, "owner": "Oskar De La Hoopla", "blurb": "A boxing promoter muscling into MMA. Poaches stars for 'crossover' fights and lawsuits.", "enterAct": 3 }
+]

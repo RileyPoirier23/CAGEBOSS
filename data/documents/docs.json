@@ -1,0 +1,302 @@
+{
+ "substances": [
+  {
+   "code": "DRS-4",
+   "name": "Drostanolone (Drost)",
+   "banned": true,
+   "act": 2
+  },
+  {
+   "code": "EPO-X",
+   "name": "Erythropoietin",
+   "banned": true,
+   "act": 2
+  },
+  {
+   "code": "TRB-1",
+   "name": "Turinabol metabolite",
+   "banned": true,
+   "act": 2
+  },
+  {
+   "code": "STN-7",
+   "name": "Stanozolol",
+   "banned": true,
+   "act": 2
+  },
+  {
+   "code": "MLD-9",
+   "name": "Meldonium",
+   "banned": true,
+   "act": 3
+  },
+  {
+   "code": "OST-2",
+   "name": "Ostarine (tainted supplement special)",
+   "banned": true,
+   "act": 3
+  },
+  {
+   "code": "CAF-1",
+   "name": "Caffeine (a LOT of it)",
+   "banned": false,
+   "act": 0
+  },
+  {
+   "code": "THC-0",
+   "name": "Marijuana (out of competition)",
+   "banned": false,
+   "act": 0
+  },
+  {
+   "code": "IBU-2",
+   "name": "Ibuprofen",
+   "banned": false,
+   "act": 0
+  },
+  {
+   "code": "CRT-5",
+   "name": "Creatine",
+   "banned": false,
+   "act": 0
+  },
+  {
+   "code": "BCA-3",
+   "name": "BCAA 'Blue Razz' flavour",
+   "banned": false,
+   "act": 0
+  },
+  {
+   "code": "HGH-8",
+   "name": "Human Growth Hormone",
+   "banned": true,
+   "act": 4
+  }
+ ],
+ "doctors": [
+  {
+   "name": "Dr. Ruth Calloway",
+   "license": "MD-48213",
+   "real": true
+  },
+  {
+   "name": "Dr. Anil Bhatt",
+   "license": "MD-77120",
+   "real": true
+  },
+  {
+   "name": "Dr. Gloria Esposito",
+   "license": "MD-30988",
+   "real": true
+  },
+  {
+   "name": "Dr. Hank Pruitt",
+   "license": "MD-12047",
+   "real": true
+  },
+  {
+   "name": "Dr. Mei Tanaka",
+   "license": "MD-55361",
+   "real": true
+  },
+  {
+   "name": "Dr. Oluwaseun Adeyemi",
+   "license": "MD-61902",
+   "real": true
+  },
+  {
+   "name": "Dr. Frank 'Doc' Holliday",
+   "license": "MD-00420",
+   "real": false
+  },
+  {
+   "name": "Dr. Nick Riviera-ish",
+   "license": "MD-99999",
+   "real": false
+  },
+  {
+   "name": "Dr. Chad Gainz (Chiropractor)",
+   "license": "DC-11111",
+   "real": false
+  },
+  {
+   "name": "Dr. Steve (Online Certificate)",
+   "license": "WEB-3321",
+   "real": false
+  },
+  {
+   "name": "Dr. Brenda Cutler",
+   "license": "MD-48218",
+   "real": false
+  }
+ ],
+ "scans": [
+  "Blood Panel",
+  "MRI",
+  "Eye Exam",
+  "EKG",
+  "Hepatitis Panel"
+ ],
+ "countries": [
+  {
+   "name": "England",
+   "visa": true,
+   "blocksArrests": true
+  },
+  {
+   "name": "Brazil",
+   "visa": true,
+   "blocksArrests": false
+  },
+  {
+   "name": "Australia",
+   "visa": true,
+   "blocksArrests": true
+  },
+  {
+   "name": "Kingdom of Qasr",
+   "visa": true,
+   "blocksArrests": false
+  },
+  {
+   "name": "Canada",
+   "visa": true,
+   "blocksArrests": true
+  },
+  {
+   "name": "Japan",
+   "visa": true,
+   "blocksArrests": true
+  },
+  {
+   "name": "Mexico",
+   "visa": true,
+   "blocksArrests": false
+  }
+ ],
+ "expenseItems": [
+  {
+   "item": "Sparring partners (4 weeks)",
+   "low": 800,
+   "high": 2600
+  },
+  {
+   "item": "Nutritionist / meal prep",
+   "low": 600,
+   "high": 2400
+  },
+  {
+   "item": "Altitude tent rental",
+   "low": 400,
+   "high": 1500
+  },
+  {
+   "item": "Physio sessions",
+   "low": 300,
+   "high": 1800
+  },
+  {
+   "item": "Strength coach",
+   "low": 500,
+   "high": 2200
+  },
+  {
+   "item": "Cryotherapy",
+   "low": 200,
+   "high": 900
+  },
+  {
+   "item": "Travel to camp",
+   "low": 300,
+   "high": 1900
+  },
+  {
+   "item": "Hand wraps & tape",
+   "low": 40,
+   "high": 200
+  },
+  {
+   "item": "Sauna suit",
+   "low": 60,
+   "high": 250
+  },
+  {
+   "item": "IV recovery drips",
+   "low": 200,
+   "high": 1200
+  },
+  {
+   "item": "Jet ski 'for cardio'",
+   "low": 9000,
+   "high": 14000,
+   "absurd": "Luxury item"
+  },
+  {
+   "item": "Emotional support python",
+   "low": 1500,
+   "high": 4000,
+   "absurd": "Pet expense"
+  },
+  {
+   "item": "Bottle service (team bonding)",
+   "low": 2500,
+   "high": 8000,
+   "absurd": "Nightlife"
+  },
+  {
+   "item": "Gold chain (mental health)",
+   "low": 4000,
+   "high": 12000,
+   "absurd": "Jewellery"
+  },
+  {
+   "item": "Lambo lease (visualisation)",
+   "low": 6000,
+   "high": 15000,
+   "absurd": "Luxury item"
+  },
+  {
+   "item": "Psychic consultation",
+   "low": 300,
+   "high": 2000,
+   "absurd": "Not a medical expense"
+  },
+  {
+   "item": "Hypnotist",
+   "low": 500,
+   "high": 2500,
+   "absurd": "Not a medical expense"
+  },
+  {
+   "item": "Kratom (bulk)",
+   "low": 300,
+   "high": 900,
+   "absurd": "Controlled-ish substance"
+  },
+  {
+   "item": "Strip club 'networking'",
+   "low": 1500,
+   "high": 6000,
+   "absurd": "Nightlife"
+  },
+  {
+   "item": "Tattoo of the promotion logo",
+   "low": 800,
+   "high": 3000,
+   "absurd": "Cosmetic"
+  }
+ ],
+ "sponsorCategories": [
+  "energy",
+  "apparel",
+  "betting",
+  "crypto",
+  "alcohol",
+  "supplement",
+  "fastfood",
+  "auto",
+  "tech",
+  "cbd",
+  "adult"
+ ]
+}
