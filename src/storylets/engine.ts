@@ -3,6 +3,7 @@
  * effects, follow-up scheduling and text templating.
  */
 import type { GameState, StoryletDef, StoryletInstance, Fighter, ChoiceDef, MeterKey } from '../core/types';
+import { expandPop } from '../sim/popculture';
 import { METER_KEYS } from '../core/types';
 import { content } from '../core/content';
 import { Rng } from '../core/rng';
@@ -475,13 +476,17 @@ export function renderText(s: GameState, inst: StoryletInstance, text: string): 
   env.presidentLast = s.president.name.split(' ').slice(-1)[0];
   env.promotion = s.promotion.name;
   env.owner = s.owner.name;
-  return text.replace(/\{(\$?)([a-zA-Z_][a-zA-Z0-9_.]*)\}/g, (m, dollar: string, path: string) => {
+  const out = text.replace(/\{(\$?)([a-zA-Z_][a-zA-Z0-9_.]*)\}/g, (m, dollar: string, path: string) => {
+    if (path.startsWith('pop')) return m;
     let v: any = env;
     for (const part of path.split('.')) v = v === undefined || v === null ? undefined : v[part];
     if (v === undefined || v === null) return m;
     if (dollar) return money(Number(v));
     return String(v);
   });
+  let h = 0;
+  for (const ch of inst.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return expandPop(out, h + (inst.week ?? 0));
 }
 
 export function availableChoices(s: GameState, inst: StoryletInstance, rng = new Rng(s.rng)): number[] {

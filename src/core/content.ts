@@ -238,6 +238,7 @@ export interface Content {
   templates: TemplateBank;
   docs: DocContent;
   commentary: CommentaryBank;
+  popculture: Record<string, { real: string; parody: string }[]>;
 }
 
 export interface CommentaryBank {
@@ -324,5 +325,6 @@ export function buildContent(files: Record<string, unknown>): Content {
     templates: get('documents/templates.json', { ticker: {}, social: {}, presser: {}, ledgerQuips: [], misc: {} }),
     docs: get('documents/docs.json', { substances: [], doctors: [], scans: [], countries: [], expenseItems: [], sponsorCategories: [] }),
     commentary: get('documents/commentary.json', { speakers: {}, booth: {}, fallback: {}, butler: {} }),
+    popculture: get('documents/popculture.json', {}),
   };
 }

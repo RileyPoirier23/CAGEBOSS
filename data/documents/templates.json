@@ -432,80 +432,148 @@
    "WHY IS NOBODY TALKING ABOUT HOW {opp} CAN'T WRESTLE",
    "I'M THE CHAMP IN EVERYTHING BUT NAME. AND BELT. AND RECORD.",
    "{president} CALL ME. I KNOW YOU HAVE MY NUMBER. I SEE YOU READING THIS.",
-   "WOKE UP. CHOSE VIOLENCE. AGAIN."
+   "WOKE UP. CHOSE VIOLENCE. AGAIN.",
+   "I WOULD BEAT {opp} AND {pop_athlete} IN THE SAME NIGHT. BACK TO BACK. NO WATER BREAK.",
+   "{pop_app} BANNED ME AGAIN. SAYING THE TRUTH IS NOT A CRIME. SAYING IT IN CAPS APPARENTLY IS.",
+   "{opp} TRAINS LIKE A {pop_show} EXTRA. ALL DRAMA NO CARDIO.",
+   "WHO DA F*** IS {opp}???",
+   "SEND ME LOCATION {opp}. ACTUALLY DON'T, MY GPS IS BROKEN. I'LL FIND YOU AT {pop_food}.",
+   "THE JUDGES WERE WATCHING {pop_movie} ON THEIR PHONES. I'VE SEEN THE FOOTAGE. NOBODY BELIEVES ME.",
+   "MY CARDIO IS SO GOOD I RAN TO THE WEIGH-INS. FROM ANOTHER STATE."
   ],
   "gym_selfies": [
    "Day 47 of camp. Sore in places I didn't know I had places.",
    "Mirror says champ. Scale says 9 lbs to go.",
    "2am cardio because sleep is for people without a fight coming.",
-   "Leg day. Can't feel my soul."
+   "Leg day. Can't feel my soul.",
+   "Leg day. Every day is leg day when your opponent throws calf kicks.",
+   "Coach said 'one more round'. That was four rounds ago. Send help. Send {pop_food}.",
+   "Pump so big my {pop_brand} shirt filed a complaint.",
+   "Sparring partner tapped. Then cried. Then tapped again. Good session.",
+   "New PR on the bench. New PR on the scale, unfortunately.",
+   "Recovery day: cold plunge, sauna, {pop_show} marathon, existential dread."
   ],
   "cryptic_quotes": [
    "The lion does not explain itself to the sheep.",
    "Some of y'all are gonna understand this tweet in about 6 weeks.",
    "Silence is also an answer.",
-   "The storm doesn't apologize."
+   "The storm doesn't apologize.",
+   "Snakes shed their skin. I shed my water weight. We are not the same.",
+   "When the student is ready, the teacher disappears. When the fighter is ready, the promoter disappears with the money.",
+   "Real ones know what this is about.",
+   "Silence is loud when the bell rings.",
+   "The wolf doesn't lose sleep over the opinions of {pop_app} users."
   ],
   "conspiracy_threads": [
    "Thread: why the judges are controlled by Big Cardio (1/47)",
    "Did you know the octagon has 8 sides? Coincidence? Look it up.",
    "They put something in the post-fight Gatorade. I'm just asking questions.",
-   "Birds aren't real and neither is {opp}'s chin."
+   "Birds aren't real and neither is {opp}'s chin.",
+   "Thread: {pop_celeb} has never been seen at a weigh-in. Never. Ask yourself why. (1/112)",
+   "The cage is an octagon. The stop sign is an octagon. They are telling us something.",
+   "Birds aren't real and neither is {opp}'s chin.",
+   "The commission uses a scale made by the same company that makes {pop_food}'s napkins. Connect the dots.",
+   "Fluoride in the water is why {opp} keeps missing weight. Wake up."
   ],
   "dad_jokes": [
    "Why did the BJJ guy bring a ladder? Because he heard about the high guard.",
    "My opponent said he'd kick my butt. I said that's illegal, it's a groin strike. Nobody laughed. Except me.",
-   "I told my wife I'm a great fighter. She said 'prove it, take out the trash'. Lost by decision."
+   "I told my wife I'm a great fighter. She said 'prove it, take out the trash'. Lost by decision.",
+   "Why don't fighters ever get lost? Because they always find a way to the ground. (I'm a wrestler.)",
+   "My opponent asked if I'm a good grappler. I said I'm holding my own. He did not laugh. He did tap.",
+   "What do you call a fighter who misses weight? Heavy-hearted. Also fined.",
+   "I told my kids I'm a professional fighter. They said 'then why do you lose every argument with Mom?'",
+   "I'm reading a book about anti-gravity takedowns. It's impossible to put down."
   ],
   "thirst_traps": [
    "New shorts just dropped. So did my body fat percentage.",
-   "Cut week glow up. Link in bio (it's a protein shake)."
+   "Cut week glow up. Link in bio (it's a protein shake).",
+   "Abs are temporary. Brain damage is forever. Anyway, here are my abs.",
+   "Shirtless in the snow. Not for content. Lost my shirt. Still content.",
+   "New photoshoot. Photographer said 'give me {pop_movie}'. I gave him {pop_meme}."
   ],
   "beefing_with_randoms": [
    "@{opp} I'd beat you, your coach and your coach's dad. Back to back.",
    "Some guy at the gas station said I looked 'smaller in person'. He's not at the gas station anymore. (He left. Normally. I'm not crazy.)",
-   "Accountant from Ohio thinks he could take me. Sir, I respect the confidence."
+   "Accountant from Ohio thinks he could take me. Sir, I respect the confidence.",
+   "A {pop_food} employee said I 'looked like I could use the salad'. I ordered three burgers out of spite.",
+   "@{opp} you fight like {pop_streamer} plays video games: loudly and badly.",
+   "Some kid at the mall said he could take me. I gave him a free seminar. His mom is suing.",
+   "Got into an argument with a {pop_app} bot. The bot won. I'm in camp now.",
+   "{pop_celeb} unfollowed me. I'll remember that."
   ],
   "motivational_slop": [
    "Your only competition is who you were yesterday. And also {opp}.",
    "Grind don't stop. (It stops on Sundays. Brunch.)",
-   "Discipline > motivation. Also caffeine > everything."
+   "Discipline > motivation. Also caffeine > everything.",
+   "They said I couldn't. I did. They said I shouldn't. I did that too. Lawyer says stop posting.",
+   "Success is 10% talent and 90% not checking {pop_app} during cardio.",
+   "Be the {pop_movie} you want to see in the world.",
+   "Wake up. Pray. Train. Eat. Train. Pray. Cry. Train. Sleep. Repeat.",
+   "Pressure makes diamonds. Pressure also makes you miss weight. Balance."
   ],
   "food_reviews": [
    "Rating gas station sushi out of 10: 4. Ate it anyway. Fighting Saturday.",
    "Cheat meal: 3 burgers, 2 milkshakes, 1 regret.",
-   "Chicken and rice for 8 weeks. I dream in broccoli."
+   "Chicken and rice for 8 weeks. I dream in broccoli.",
+   "{pop_food} review: 9/10. Would cut weight again just to earn it.",
+   "Tried the new {pop_food} item. Cutting starts tomorrow. Tomorrow starts tomorrow.",
+   "Nutritionist banned {pop_food}. I banned the nutritionist.",
+   "Post-weigh-in meal ranking: 1) {pop_food} 2) {pop_food} 3) Grandma's lasagna (she reads my posts).",
+   "Rice cakes are not food. Rice cakes are a punishment from God."
   ],
   "silent_lurker": [
    "..."
   ],
   "prayer_emojis": [
    "Blessed to be in the main event. God is good. {opp} is not.",
-   "Thank you Lord for this opportunity to punch a man in the face for money."
+   "Thank you Lord for this opportunity to punch a man in the face for money.",
+   "Blessed. Grateful. Humble. Also ready to hurt {opp}. All of the above.",
+   "Lord, give me strength, give me cardio, and give me {pop_food} after the weigh-ins. Amen.",
+   "Prayed on it. God said the left hook. Who am I to argue."
   ],
   "crypto_shilling": [
    "$KOCOIN to the moon. Not financial advice. It's absolutely financial advice.",
    "Just bought the dip. The dip keeps dipping. Holding.",
-   "If you're not in on {nick}COIN you're NGMI."
+   "If you're not in on {nick}COIN you're NGMI.",
+   "$KNOCK just went up 4000%. It's now worth one {pop_food} value meal. Generational wealth.",
+   "My coin is backed by real assets: my belt (not yet), my car (leased), and my word (questionable).",
+   "If you didn't buy $CHIN at launch, that's on you. If you did, also on you.",
+   "NFT drop: pictures of my bruises. Each one unique. Each one painful. Mint now."
   ],
   "live_streams": [
    "LIVE NOW: reacting to my own fight for the 400th time",
    "Stream tonight: me and the boys rate my opponent's haircut",
-   "Banned from streaming platform for 'excessive yelling'. Back tomorrow on a worse one."
+   "Banned from streaming platform for 'excessive yelling'. Back tomorrow on a worse one.",
+   "LIVE: trying the {pop_food} challenge 3 days before weigh-ins. Coach is on the way. Coach is angry.",
+   "LIVE: playing {pop_game} with {pop_streamer}. He's mad. I'm madder. It's a fight now.",
+   "LIVE NOW: reacting to {pop_movie} but every fight scene I pause and critique the footwork.",
+   "Stream starting: 24 hours awake, no food, weight cut edition. Chat, don't let me die."
   ],
   "meme_reposts": [
    "Me after cutting 30 lbs: [picture of a raisin]",
    "When the ref stands you up after 4 seconds on top: (crying cat)",
-   "{opp}'s chin vs my left hook (it's a picture of a glass vase)."
+   "{opp}'s chin vs my left hook (it's a picture of a glass vase).",
+   "Me watching {opp}'s highlight reel: {pop_meme}",
+   "Nobody: / Absolutely nobody: / Me at the weigh-in: {pop_meme}",
+   "My coach when I say I want to box {pop_streamer}: (man screaming into the void)",
+   "Rating my own walkout: {pop_meme}/10"
   ],
   "gaming_clips": [
    "Just hit Diamond rank. Training can wait.",
-   "Lost my main event in the video game version of the promotion. Throwing my controller in camp."
+   "Lost my main event in the video game version of the promotion. Throwing my controller in camp.",
+   "Hit a 30-kill game in {pop_game} the night before my fight. Priorities.",
+   "Created myself in the fighting game. Gave myself 99 cardio. Being realistic.",
+   "Lost to a 12-year-old in {pop_game}. He said I hit like {pop_celeb}. Using it as motivation."
   ],
   "generic": [
    "Training hard. Fight soon. Pray for {opp}.",
    "Back in {city}, back to basics.",
-   "Big things coming. Can't say what. Something big. Probably."
+   "Big things coming. Can't say what. Something big. Probably.",
+   "Camp is done. Cut is on. Pray for my kidneys.",
+   "Big things coming. Can't say what. My manager says I can't say anything. Anyway it's a fight.",
+   "Thank you {city} for always having my back. Except you, Gary.",
+   "Watched {pop_movie} for motivation. Now I'm unmotivated and sad. Training anyway."
   ],
   "fans": [
    "{promotion} cards lately are mid. Prove me wrong.",
@@ -516,7 +584,37 @@
    "Just bought a {promotion} hoodie for $90. It is 40% polyester and 60% regret.",
    "Braille Sonnen said the main event 'looked' close. Brother you are blind.",
    "Hot take: the bantamweights are carrying the whole sport.",
-   "Who even is {promotion}'s marketing team? A raccoon with a phone?"
+   "Who even is {promotion}'s marketing team? A raccoon with a phone?",
+   "I'd watch {promotion} over {pop_show} any day. And I LOVE {pop_show}.",
+   "Just saw a guy at {pop_food} who swears he sparred with a champion. He was wearing Crocs.",
+   "{president} looks like {pop_celeb} if {pop_celeb} lost a bet.",
+   "This card is stacked harder than a {pop_food} double stack.",
+   "Who needs {pop_streamer} boxing when we have {promotion}? (I watch both. Don't tell anyone.)",
+   "My wife left me for a BJJ black belt. Fair honestly. Respect the art.",
+   "Bring back the old judges. No wait. The old judges were also bad. Bring back nothing.",
+   "Me and the boys at the sports bar after one round of prelims: {pop_meme}",
+   "{promotion} should sign {pop_celeb}. They'd lose. I'd pay.",
+   "The commentary team is the real main event. Blow Hogan talked about elk for an entire round and I learned so much.",
+   "Sandwich Cormier called a fighter by the wrong name four times tonight. A record. Even for him.",
+   "Braille Sonnen picked the wrong fighter. Then the wrong sport. Legend.",
+   "Juiced Butler's 360 tonight was so fast it created a weather system.",
+   "Nerm Bean let that go on so long the fighter aged two years.",
+   "Is it just me or is every fight night now sponsored by {pop_food}?",
+   "If you're not watching the prelims you're not a real fan. I'm not watching the prelims.",
+   "PPV price went up again. Gonna watch it on a stream with 40 pop-ups for {pop_app}.",
+   "Just got banned from r/MMA for saying wrestling is boring. Worth it.",
+   "Reminder that {promotion} pays fighters less than {pop_streamer} makes from one sponsored post.",
+   "I fell asleep during the co-main and woke up to a knockout. Best night of my life.",
+   "That robbery tonight was worse than {pop_movie}'s ending.",
+   "{president} said 'we're the {pop_brand} of fighting'. Sir what does that mean.",
+   "My dad still thinks this is the same as {pop_show}. He's not entirely wrong.",
+   "Took my girlfriend to her first fight. She asked why they hug after trying to murder each other. I had no answer.",
+   "The walkout song was {pop_musician}. Instant win. Fight was boring but the walkout won.",
+   "HE'S HURT! (He was not hurt.)",
+   "Ref stood them up after 6 seconds. I've seen longer {pop_app} videos.",
+   "Pull that up Jaymee. (Nobody ever pulls it up.)",
+   "Main event delayed again because someone's eyebrow was 'loose'. This sport.",
+   "Me pretending I understand the scoring criteria: {pop_meme}"
   ]
  },
  "presser": {
@@ -582,7 +680,20 @@
   "slowNews": [
    "SLOW NEWS WEEK: LOCAL MAN STILL BELIEVES HE COULD BEAT A PRO FIGHTER",
    "NOTHING HAPPENED THIS WEEK. EXPERTS 'DEEPLY SUSPICIOUS'",
-   "QUIET WEEK AT {promotion}; STAFF REPORTEDLY 'TERRIFIED'"
+   "QUIET WEEK AT {promotion}; STAFF REPORTEDLY 'TERRIFIED'",
+   "SLOW NEWS WEEK: {pop_celeb} SPOTTED BUYING {pop_food}. FIGHT FANS 'NOT SURE WHY THIS IS NEWS'",
+   "NOTHING HAPPENED. HERE IS A RANKING OF EVERY {pop_movie} SEQUEL INSTEAD",
+   "LOCAL GYM CLAIMS TO HAVE TRAINED {pop_celeb} FOR 'ONE CLASS, IN 2011'",
+   "{pop_streamer} ANNOUNCES BOXING MATCH AGAINST A RETIRED MAILMAN",
+   "REPORT: 74% OF FIGHT FANS WOULD WATCH {pop_show} INSTEAD OF PRELIMS",
+   "{pop_app} OUTAGE CAUSES MASS TRASH-TALK SHORTAGE",
+   "SCIENTISTS CONFIRM WEIGHT CUTS 'PROBABLY BAD'; SPORT CONTINUES ANYWAY",
+   "{pop_athlete} SAYS HE 'COULD DEFINITELY DO MMA'; MMA DISAGREES",
+   "MAN WHO FINISHED {pop_game} ON HARD MODE CLAIMS HE 'GETS FIGHTING NOW'",
+   "SLOW WEEK: CAGE CLEANER SPEAKS OUT ON 'WHAT HE'S SEEN'",
+   "{pop_celeb} CALLED OUT BY RETIRED FIGHTER OVER 'GOOFY HANDSHAKE'",
+   "QUIET WEEK IN COMBAT SPORTS; {pop_meme} TRENDS INSTEAD",
+   "FIGHTER'S MOM REVIEWS {pop_movie}: 'NOT ENOUGH LEG KICKS'"
   ],
   "traitLines": [
    "Trash Talker|{He} has never had an unspoken thought and never will.",
