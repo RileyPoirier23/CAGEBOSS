@@ -15,9 +15,9 @@
     "namegen": "tsx tools/namegen.ts",
     "desktop": "vite build && electron .",
     "desktop:windowed": "vite build && electron . --windowed",
-    "dist:win": "tsc --noEmit && vite build && electron-builder --win portable nsis --x64",
-    "dist:linux": "tsc --noEmit && vite build && electron-builder --linux AppImage --x64",
-    "dist:win:nowine": "tsc --noEmit && vite build && electron-builder --win dir --x64 -c.win.signAndEditExecutable=false && node tools/stamp-exe.mjs \"release/win-unpacked/CAGE BOSS.exe\" build/icon.ico && electron-builder --win portable --x64 --prepackaged release/win-unpacked -c.win.signAndEditExecutable=false"
+    "dist:win": "tsc --noEmit && vite build && electron-builder --win portable nsis --x64 --publish never",
+    "dist:linux": "tsc --noEmit && vite build && electron-builder --linux AppImage --x64 --publish never",
+    "dist:win:nowine": "tsc --noEmit && vite build && electron-builder --win dir --x64 -c.win.signAndEditExecutable=false && node tools/stamp-exe.mjs \"release/win-unpacked/CAGE BOSS.exe\" build/icon.ico && electron-builder --win portable --x64 --prepackaged release/win-unpacked -c.win.signAndEditExecutable=false --publish never"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
