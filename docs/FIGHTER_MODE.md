@@ -2,6 +2,45 @@
 
 Play one fighter's career instead of the promotion. Heavy inspiration from **Bruisers 2D Boxing** (real 2D boxing: slips, counters, head movement, distance control, light/medium/heavy punches, stamina, a life-sim career with meals, weight, vitals, a day job, stocking your corner, amateur → pro → bareknuckle circuits, real-time aging and accumulated damage). CAGE BOSS adapts that to MMA and keeps the Papers, Please desk feel and the R-rated satire.
 
+## What the Bruisers trailer shows (reference video from the owner)
+- **Fight HUD:**
+  - A heart-rate readout ("104 BPM") instead of a plain stamina bar; it climbs as you work.
+  - Round timer in the middle.
+  - A body silhouette next to each portrait that changes colour per body part as it takes damage.
+- **Presentation:** round-card girl, referee in the ring, flags waving in the crowd, side-on pixel fighters with heavy blood in bareknuckle fights.
+- **Cutman mini-game:**
+  - First-person close-up of the fighter's swollen face with your gloved hand.
+  - Tools: swell pad, gauze and so on. Shows the injury zone and its severity ("Left Eye: Swelling") and a pressure meter you keep in the sweet spot.
+  - Controls: move tool (L stick), switch tool (LB/RB), apply pressure (Y), refresh tool (X), plus a "skip mini game" button.
+- **Calendar:** day and week ("Thursday, Week 0").
+- **Divisions:** separate amateur, professional and bareknuckle divisions with their own branded screens.
+- **Rankings:** a long numbered ladder per division (positions 41–58 visible) with a score per fighter. You climb it one fight at a time.
+- **Condition screen:**
+  - Anatomy view with health per body part: head, jaw, body, left/right arm, left/right hand.
+  - Explanations, e.g. "Left Hand health determines how much bite is in any left-handed punch; an injured hand means loss of power".
+  - Treatment costs money at a sports medicine clinic.
+- **Hospital:** things can go badly wrong, and you end up in a hospital bed.
+- **Meal plan:** a fake meal-delivery website ("BruiseFuel") with breakfast, lunch, dinner and snack. It shows vitamins, minerals, water and glucose totals and the total cost.
+- **Job mini-games:** e.g. flipping tyres against a timer for cash ("Time 26 · $27").
+- **Newspaper:** a front page reports your results.
+- **Next-fight panel:** opponent, purse, your level and form.
+- **Underground:**
+  - A green-terminal "darknet" shop with PEDs, gear (locked at first) and gambling.
+  - Illegal card games.
+  - Bareknuckle fights for cash.
+- **Story:** a crime and mob undercurrent (shadowy men at the door, a gun, an intro cinematic), and you rise "through boxing".
+- **UI:** fully controller-driven with LB/RB tabs and button glyphs on screen.
+
+### How CAGE BOSS uses it
+- Fight HUD: BPM readout plus a per-part body silhouette, already planned as head/body/legs, extended to arms, hands and jaw.
+- Cutman mini-game: built exactly as above (tool switch, pressure meter, injury zones, skip option) and tied to staff quality.
+- Condition screen: an anatomy view with per-part health, treatment costs and lasting injuries.
+- Divisions and ladders: amateur, regional, CAGE BOSS (pro) and bareknuckle, each with a numbered ladder and level/form.
+- Meal planning: a parody meal-kit website ("GainzBox"?) feeding the weight cut and vitals.
+- Day job: work mini-games for cash early in the career.
+- Underground: a darknet-style shop for PEDs, gear and gambling. Generated and custom fighters only; parody fighters get gear and gambling but not PEDs.
+- Calendar: day-by-day weeks with events on specific days.
+
 ## Pick your fighter
 - Any fighter on the roster (parody legends, marquee parodies, generated fighters) or create one.
 - Three base archetypes with distinct strengths and weaknesses: **Striker** (hand speed, counters, footwork), **Wrestler** (takedowns, top control, cardio), **Submission specialist** (scrambles, chains, off-back offence). Hybrids come from training.
