@@ -5,6 +5,8 @@ import { POLICIES } from '../src/sim/policies';
 import { makeSave, parseSave, exportSave } from '../src/core/save';
 import { makeDoc } from '../src/sim/docs';
 import { Rng } from '../src/core/rng';
+import { content } from '../src/core/content';
+import { activateRule } from '../src/sim/rules';
 
 describe('simulation', () => {
   it('is deterministic for a seed', () => {
@@ -45,6 +47,8 @@ describe('simulation', () => {
 
   it('bad documents carry discoverable violations', () => {
     const s = newGame(4);
+    // the desk unlocks document types week by week; jump to a busy desk
+    for (const r of content().rules) activateRule(s, r.id, false);
     const ft = Object.values(s.fighters).find((f) => f.promotion === 'us')!;
     const rng = new Rng(1);
     let found = 0;

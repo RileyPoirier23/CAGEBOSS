@@ -84,6 +84,9 @@ export interface RuleDef {
   docTypes: string[];
   params?: Record<string, number | string | string[]>;
   announce?: string; // newspaper notice when it activates
+  week?: number; // career week (0-based) it unlocks on the desk (announced by a bulletin memo)
+  reactive?: string; // story trigger that can bring it in early (see src/sim/docs.ts REACTIVE)
+  bulletin?: string; // desk memo text the morning it starts
 }
 
 export interface RivalDef {
@@ -219,6 +222,8 @@ export interface DocContent {
   countries: { name: string; visa: boolean; blocksArrests: boolean }[];
   expenseItems: { item: string; low: number; high: number; absurd?: string }[];
   sponsorCategories: string[];
+  /** desk interrogation replies, keyed by forgery kind (src/sim/docs.ts) */
+  interrogation?: Record<string, { excuse?: string[]; fix?: string[]; bribe?: string[]; clean?: string[] }>;
 }
 
 export interface Content {

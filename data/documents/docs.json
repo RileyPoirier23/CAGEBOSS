@@ -298,5 +298,382 @@
   "tech",
   "cbd",
   "adult"
- ]
+ ],
+ "interrogation": {
+  "generic": {
+   "excuse": [
+    "\"Look, I don't read the papers, I just sign 'em. Sometimes I sign 'em twice. For luck.\"",
+    "\"That's not a mistake, that's a creative choice.\"",
+    "\"My guy said this was fine. My guy is in jail now, but he said it was fine.\"",
+    "\"Can we not do this today? I've got a cut on my eyelid and a custody hearing.\"",
+    "\"I'm gonna be honest with you, boss. No I'm not.\""
+   ],
+   "clean": [
+    "\"Huh. Good catch. The office must have sent the wrong copy.\"",
+    "\"My team handles the paperwork. I'll have a word with them.\"",
+    "\"That's on us. Honest mistake, won't happen again.\"",
+    "\"Ah, the intern filled that one out. Let me get it sorted.\""
+   ],
+   "fix": [
+    "\"Ah, hell. Gimme that.\" (scribbles) \"There. Fixed.\""
+   ],
+   "bribe": [
+    "(slides an envelope across the desk) \"There's {amount} in there that says this paperwork is perfect.\"",
+    "\"What if I told you {amount} could make your eyes a little worse? Temporarily.\"",
+    "\"Let's call it a processing fee. {amount}. Cash. Smells like gym bag, spends like money.\""
+   ]
+  },
+  "name": {
+   "fix": [
+    "\"They spelled my name wrong AGAIN? I swear to God.\" (fixes it)",
+    "\"That's my cousin's spelling. Long story. Here.\" (fixes it)"
+   ],
+   "excuse": [
+    "\"It's pronounced the same. Who cares about letters?\""
+   ],
+   "clean": [
+    "\"Ha, they always spell it wrong. Here, I'll correct it.\""
+   ]
+  },
+  "division": {
+   "fix": [
+    "\"Weight class? Oh, I wrote what I weighed at Thanksgiving. Fixed.\"",
+    "\"Wrong box. My hand slipped. Here.\""
+   ],
+   "excuse": [
+    "\"I can make either weight. I can make ANY weight. Watch me cut a leg off.\""
+   ],
+   "clean": [
+    "\"That's the old form from before I moved divisions. One sec.\""
+   ]
+  },
+  "sig": {
+   "excuse": [
+    "\"That IS my signature. I sign different when I'm hydrated.\"",
+    "\"My hand's broken. That's my left-hand signature. And my mum's handwriting.\"",
+    "\"My manager signed it. He's basically me. Spiritually.\""
+   ],
+   "bribe": [
+    "\"Signatures are a social construct. You know what isn't? {amount}.\""
+   ]
+  },
+  "purse": {
+   "excuse": [
+    "\"We agreed that number in spirit, my friend. In SPIRIT.\"",
+    "\"That's the purse plus inflation plus vibes.\"",
+    "\"My client deserves that money. Have you SEEN his chin? It's priceless.\""
+   ],
+   "fix": [
+    "\"Okay, okay. Old number. I was testing you. You passed.\" (fixes it)",
+    "\"Fine! Fine. Strike it out. Put the real one. You're a monster.\""
+   ],
+   "bribe": [
+    "\"Tell you what. Approve it and {amount} of the difference finds its way to you. Everybody eats.\""
+   ]
+  },
+  "bonus": {
+   "fix": [
+    "\"Win bonus? Oh, I added a zero. Easy to do. Fixed.\"",
+    "\"That was a typo. A typo in my favour, which is the best kind. Fixed.\""
+   ],
+   "clean": [
+    "\"Must be a typo from our accountant. Let me fix that number.\""
+   ]
+  },
+  "replicense": {
+   "excuse": [
+    "\"That number's close enough. It's got most of the same digits.\"",
+    "\"My licence is in the mail. The mail is in my car. My car got towed.\"",
+    "\"I'm licensed in Nevada. Spiritually Nevada.\""
+   ],
+   "bribe": [
+    "\"How about I license YOU with {amount}, and we both forget the registry exists?\""
+   ]
+  },
+  "rule:manager_license": {
+   "excuse": [
+    "\"Licence? I'm his DAD. That's a licence. It's called being his DAD.\"",
+    "\"I've managed fighters for twenty years. Never needed a licence. Also never paid taxes.\"",
+    "\"I'm not a manager, I'm a 'life coach'. Different thing.\""
+   ],
+   "clean": [
+    "\"We're switching representation. The new agreement will come from a licensed rep.\""
+   ]
+  },
+  "exclusive": {
+   "fix": [
+    "\"The lawyer must've dropped page three. Here.\" (staples it back in)",
+    "\"Exclusivity? Yeah, yeah, I'm exclusive. Like a nightclub. Fixed.\""
+   ],
+   "clean": [
+    "\"That page fell out. Here's the full contract.\""
+   ]
+  },
+  "idphoto": {
+   "excuse": [
+    "\"I got a haircut. And a beard. And a new face. Allergic reaction.\"",
+    "\"That's an old photo. I was younger. And a different guy.\"",
+    "\"My twin brother? I don't have a twin brother. He's at home. Not fighting. Shut up.\""
+   ],
+   "bribe": [
+    "\"Faces change, boss. {amount} doesn't. Stamp it.\""
+   ]
+  },
+  "idexpired": {
+   "fix": [
+    "\"Oh, I renewed it this morning. Here's the new card. Still warm.\"",
+    "\"The commission mailed me the new one. It was in my sock. Here.\""
+   ],
+   "excuse": [
+    "\"Expired? It's like milk. Still good for a few days after.\""
+   ],
+   "clean": [
+    "\"Ah, I've got the renewed licence right here.\""
+   ]
+  },
+  "idnumber": {
+   "fix": [
+    "\"Somebody fat-fingered the number. Here, compare the card. Fixed it.\""
+   ],
+   "clean": [
+    "\"Clerical error at the office, I'll correct it.\""
+   ]
+  },
+  "doctor": {
+   "excuse": [
+    "\"Dr. Steve is VERY real. He has a website and a van.\"",
+    "\"He's a chiropractor, but he's a really GOOD chiropractor. He cracked my whole brain.\"",
+    "\"My doctor doesn't believe in registries. Or germs.\""
+   ],
+   "bribe": [
+    "\"The real doctor wanted {amount}. I'll just give it to you instead. Efficient.\""
+   ]
+  },
+  "doclicense": {
+   "excuse": [
+    "\"That's the doctor's NEW licence number. He changed it. For tax reasons.\"",
+    "\"One digit off? That's practically the same doctor.\""
+   ],
+   "bribe": [
+    "\"Close enough for government work. And for {amount}, close enough for you.\""
+   ]
+  },
+  "stale": {
+   "excuse": [
+    "\"My brain hasn't changed since then. Ask anyone. Ask my ex.\"",
+    "\"I'm healthy as a horse. A horse that's been punched a lot, but still.\"",
+    "\"Exams are expensive, boss. My body is a temple. A temple nobody inspects.\""
+   ],
+   "clean": [
+    "\"We booked a fresh exam, it's just not back yet.\""
+   ]
+  },
+  "scan": {
+   "fix": [
+    "\"The MRI place is faxing it now.\" (fax machine screams) \"See?\"",
+    "\"Here, it was stapled to my parking ticket.\""
+   ],
+   "excuse": [
+    "\"I don't do MRIs. They make me claustrophobic. And honest.\""
+   ],
+   "clean": [
+    "\"The clinic left a page out. I'll get them to send it.\""
+   ]
+  },
+  "sum": {
+   "excuse": [
+    "\"Math is a social construct.\"",
+    "\"That's the total plus the stuff I forgot to write down. You know. Camp stuff.\"",
+    "\"I rounded. Up. Aggressively.\""
+   ],
+   "fix": [
+    "\"Ugh. Fine. I'll eat the difference.\" (crosses out the total)",
+    "\"Okay, the calculator's lying, but fine, put the real number.\""
+   ],
+   "bribe": [
+    "\"Let's say the difference is {amount} and it's yours. A finder's fee. For not finding anything.\""
+   ]
+  },
+  "receipt": {
+   "excuse": [
+    "\"The receipt is wrong. The guy at the gas station is a liar.\"",
+    "\"That receipt's from before the tip. I tip like a champion.\""
+   ],
+   "fix": [
+    "\"Oh, THAT receipt. Yeah, okay, use the receipt number.\" (corrects the line)"
+   ],
+   "bribe": [
+    "\"Receipts fade, boss. So can your memory. {amount} worth of fading.\""
+   ]
+  },
+  "luxury": {
+   "excuse": [
+    "\"The jet ski IS cardio. Have you ever fallen off a jet ski? CARDIO.\"",
+    "\"The python is for emotional support. I'm very emotional. Especially about this python.\"",
+    "\"Bottle service is team bonding. We bonded so hard. Two guys are engaged now.\"",
+    "\"The strip club was networking. I networked my whole paycheck.\""
+   ],
+   "fix": [
+    "\"Fine. Take it off. The python will be devastated.\""
+   ],
+   "bribe": [
+    "\"How about a gold chain for you too? Or {amount}. Same thing, less neck.\""
+   ]
+  },
+  "cap": {
+   "excuse": [
+    "\"Sparring partners cost more now. Inflation. Also I broke three of them.\"",
+    "\"Quality costs money, boss. That's premium physio. The guy has HANDS.\""
+   ],
+   "clean": [
+    "\"Our camp costs ran over. We'll split that line into two invoices next time.\""
+   ]
+  },
+  "banned": {
+   "excuse": [
+    "\"Tainted steak. I ate a Mexican cow. A very jacked Mexican cow.\"",
+    "\"It's from my girlfriend. Kissing. She's on stuff. I'm not on stuff. I'm on HER.\"",
+    "\"That's my nasal spray. I have a very muscular nose.\"",
+    "\"I don't know how that got in my pee, I've never even SEEN my pee.\""
+   ],
+   "bribe": [
+    "\"What if the lab spilled the sample? Labs spill stuff. {amount} worth of spilling.\""
+   ]
+  },
+  "pg": {
+   "excuse": [
+    "\"Picograms? Those are tiny. That's like a crumb of a crumb. Environmental. My whole gym is environmental.\"",
+    "\"I took a supplement called 'Definitely Legal Gainz'. It said legal on it.\""
+   ],
+   "bribe": [
+    "\"Them numbers could go down. Numbers go down all the time. Especially with {amount} behind them.\""
+   ]
+  },
+  "panel": {
+   "fix": [
+    "\"The lab ran it, they just forgot to print that bit. Calling them... here.\"",
+    "\"Page two was stuck to my protein bar. Here.\""
+   ],
+   "excuse": [
+    "\"They didn't test for EPO because I don't do EPO. Saves everyone time.\""
+   ],
+   "clean": [
+    "\"The lab missed a test. We'll get the full panel sent over.\""
+   ]
+  },
+  "drugstale": {
+   "excuse": [
+    "\"My pee is like wine. It gets better with age.\"",
+    "\"I'm clean, boss, I've been clean for months. That sample proves it. From months ago.\""
+   ],
+   "clean": [
+    "\"A new sample's been taken, results are pending.\""
+   ]
+  },
+  "strikes": {
+   "excuse": [
+    "\"I was at my cousin's wedding. For three weeks. In international waters.\"",
+    "\"The testers came at 6 AM. Nobody is anywhere at 6 AM.\"",
+    "\"I was hiding from the testers. For unrelated reasons.\""
+   ],
+   "bribe": [
+    "\"What's a strike between friends? {amount}, that's what.\""
+   ]
+  },
+  "hidden": {
+   "excuse": [
+    "\"That arrest doesn't count. It was a misunderstanding with a horse.\"",
+    "\"Prior arrests? I thought it said 'prior ARTISTS'. I put none. I'm not artistic.\""
+   ],
+   "bribe": [
+    "\"Records get lost, boss. Envelopes get found. This one has {amount} in it.\""
+   ]
+  },
+  "passport": {
+   "excuse": [
+    "\"Expired? It's got my face on it. My face hasn't expired.\""
+   ],
+   "clean": [
+    "\"I've got a renewal appointment next week, I promise.\""
+   ]
+  },
+  "tourist": {
+   "fix": [
+    "\"Oh, wrong box. I'm not a tourist. I'm here to hurt people professionally. Fixed.\""
+   ],
+   "clean": [
+    "\"Wrong visa form, my agent will refile as an athlete.\""
+   ]
+  },
+  "outlet": {
+   "excuse": [
+    "\"Big Dave's Fight Blog has OVER forty readers.\"",
+    "\"We're a podcast. Well, we're going to be. We bought a microphone.\""
+   ]
+  },
+  "pressphoto": {
+   "excuse": [
+    "\"That's me. I've been through a lot. Mostly airports.\"",
+    "\"Credential photos are notoriously unflattering. And of a different person.\""
+   ]
+  },
+  "rule:press_creds": {
+   "excuse": [
+    "\"I'm a different guy. Look at the moustache. Different moustache, different guy.\""
+   ]
+  },
+  "rule:weigh_tolerance": {
+   "excuse": [
+    "\"The scale is drunk. Somebody give the scale a coffee.\"",
+    "\"That's water weight. And burrito weight. Mostly burrito.\"",
+    "\"I'm on weight in my heart.\"",
+    "\"I'll make it. Give me an hour and a sauna and I'll lose a kidney.\""
+   ],
+   "bribe": [
+    "\"Scales are delicate instruments. {amount} makes them more delicate.\""
+   ],
+   "clean": [
+    "\"Rough cut. I'll go back to the sauna, give me a minute.\""
+   ]
+  },
+  "rule:ko_suspension": {
+   "excuse": [
+    "\"I feel great! How many fingers? Don't tell me. Eleven.\"",
+    "\"Suspension? I was just napping. On the canvas. In front of twenty thousand people.\""
+   ],
+   "clean": [
+    "\"The doctors said I'm nearly cleared. I'll wait for the official date.\""
+   ]
+  },
+  "rule:court_dates": {
+   "excuse": [
+    "\"The judge loves fights. He'll understand. He'll probably be there.\"",
+    "\"My lawyer says court is optional if you're busy.\""
+   ]
+  },
+  "rule:sponsor_conflicts": {
+   "excuse": [
+    "\"I'll wear one on each butt cheek. Problem solved.\""
+   ],
+   "clean": [
+    "\"I didn't realise those deals clashed. My agent will sort it.\""
+   ]
+  },
+  "rule:betting_ban": {
+   "excuse": [
+    "\"It's not betting, it's 'predictive entertainment'.\""
+   ],
+   "clean": [
+    "\"That deal was signed before the ban, I'll let them know.\""
+   ]
+  },
+  "rule:crypto_ban": {
+   "excuse": [
+    "\"It's not crypto. It's a community. A community that's down ninety percent.\""
+   ],
+   "clean": [
+    "\"I'll tell them the patch is a no-go.\""
+   ]
+  }
+ }
 }
