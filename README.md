@@ -6,7 +6,29 @@ press conferences, watch the fights, and try to stay out of prison.
 
 The full design spec lives in [`CAGE_BOSS_GAME_SPEC.md`](CAGE_BOSS_GAME_SPEC.md).
 
-## Running the game
+## Playing (Windows)
+
+CAGE BOSS is a desktop game. Grab `CAGE-BOSS-<version>-setup.exe` (installer, adds a desktop
+shortcut) or `CAGE-BOSS-<version>-portable.exe` (no install, just double-click) from the
+repo's **Releases** page, or from the **Actions → Desktop build** run artifacts.
+
+Rated R: swearing, crude jokes, violence. Settings has a streamer-safe bleep mode.
+
+It starts fullscreen; `F11` or `Alt+Enter` toggles windowed. Saves live in your user profile
+(`%APPDATA%/CAGE BOSS`).
+
+### Building the .exe yourself
+
+```bash
+npm install
+npm run dist:win       # -> release/CAGE-BOSS-<version>-setup.exe and -portable.exe
+npm run desktop        # run the desktop build without packaging
+```
+
+Pushing a tag like `v0.2.0` runs the GitHub workflow that builds both .exe files on Windows
+and attaches them to a Release.
+
+## Running from source (dev)
 
 Requires **Node.js 18+**.
 
@@ -37,7 +59,7 @@ python3 tools/popculture_src.py            # rebuild the pop-culture parody bank
 
 ## Controls
 
-- Mouse for everything. `M` mutes.
+- Mouse for everything. `M` mutes, `N` skips to the next soundtrack song, `F11` fullscreen (desktop).
 - Desk: `I`/`Space` inspect mode, `R` rulebook (drag the title bar, `+`/`-` or `[`/`]` to zoom), `C` calculator
   (auto-tallies camp expense reports; type numbers while it's open), `A`/`D`/`E`/`B` stamps, arrow keys / `J`/`K` cycle the inbox.
 - Fight view: `CAM` button switches wide / TV / top-down cameras; `SKIP INTRO` skips Juiced Butler.

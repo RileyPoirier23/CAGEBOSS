@@ -45,9 +45,14 @@ export class PaperScene extends Scene {
       }
       sheet.addChild(new Graphics().rect(8, y, 220, 1).fill(PAL.slate));
       y += 4;
+      // stories stop where the notices box (if any) begins, so nothing prints on top of anything
+      const noticeH = p.notices.length ? 10 + p.notices.length * 14 + 4 : 0;
       for (const st of p.stories.slice(0, 5)) {
-        if (y > ph - 30) break;
         const h = text(st.headline, 8, y, { width: 220, color: PAL.ink, small: true, maxLines: 3 });
+        if (y + h.textHeight + 2 + 7 > ph - 8 - noticeH) {
+          h.destroy();
+          break;
+        }
         sheet.addChild(h);
         y += h.textHeight + 2;
         sheet.addChild(text('- ' + st.outlet, 8, y, { small: true, color: PAL.grey }));
@@ -68,10 +73,13 @@ export class PaperScene extends Scene {
       sheet.addChild(text('THE FEED', 240, 38, { color: PAL.ink }));
       let fy = 50;
       for (const post of p.feed.slice(0, 7)) {
-        if (fy > ph - 20) break;
+        const t = text(post.text, 240, fy + 7, { small: true, width: 94, color: PAL.ink, maxLines: 4 });
+        if (fy + 7 + t.textHeight + 2 + 6 > ph - 6) {
+          t.destroy();
+          break;
+        }
         sheet.addChild(text(post.handle, 240, fy, { small: true, color: PAL.steel }));
         fy += 7;
-        const t = text(post.text, 240, fy, { small: true, width: 94, color: PAL.ink, maxLines: 4 });
         sheet.addChild(t);
         fy += t.textHeight + 2;
         sheet.addChild(text('♥ ' + compact(post.likes), 240, fy, { small: true, color: PAL.grey }));

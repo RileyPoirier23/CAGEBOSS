@@ -10,6 +10,7 @@ import { setMuted, setMusic, setVolumes, sfx } from '../audio/sfx';
 import { W, H, tooltip, clearChildren, dimmer, box, text } from './kit';
 import { bus } from '../core/events';
 import { setTextResolution, setBleep } from './text';
+import { desktop } from '../desktop';
 import { LoadingScreen } from './loading';
 import { configureMusic, setMusicContext, skipTrack, unlockMusic, onTrackChange, type MusicContext } from '../audio/music';
 
@@ -28,6 +29,7 @@ export interface Settings {
   soundtrackV?: number; // settings migration marker
   intros?: boolean; // Juiced Butler introductions before watched bouts
   bleep?: boolean; // streamer mode: grawlix instead of swears
+  fullscreen?: boolean; // desktop build only
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -134,6 +136,7 @@ export class Game {
 
   applySettings(): void {
     setBleep(!!this.settings.bleep);
+    desktop?.setFullscreen(this.settings.fullscreen !== false);
     // the old chiptune setting defaulted to off; the soundtrack defaults to on
     if (this.settings.soundtrackV !== 1) {
       this.settings.soundtrackV = 1;

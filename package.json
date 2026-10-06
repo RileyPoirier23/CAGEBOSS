@@ -12,17 +12,58 @@
     "test": "vitest run",
     "sim": "tsx tools/sim.ts",
     "validate": "tsx tools/validate.ts",
-    "namegen": "tsx tools/namegen.ts"
-  },
-  "dependencies": {
-    "lz-string": "^1.5.0",
-    "pixi.js": "^8.22.0"
+    "namegen": "tsx tools/namegen.ts",
+    "desktop": "vite build && electron .",
+    "desktop:windowed": "vite build && electron . --windowed",
+    "dist:win": "tsc --noEmit && vite build && electron-builder --win portable nsis --x64",
+    "dist:linux": "tsc --noEmit && vite build && electron-builder --linux AppImage --x64"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
+    "lz-string": "^1.5.0",
+    "pixi.js": "^8.22.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.2",
     "vitest": "^5.0.3"
+  },
+  "main": "electron/main.cjs",
+  "author": "Riley \"Monkey Man\" Poirier",
+  "build": {
+    "appId": "com.rpoirier.cageboss",
+    "productName": "CAGE BOSS",
+    "copyright": "Riley \"Monkey Man\" Poirier",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "build/icon.png",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "icon": "build/icon.png",
+      "artifactName": "CAGE-BOSS-${version}-${arch}-${target}.${ext}"
+    },
+    "portable": {
+      "artifactName": "CAGE-BOSS-${version}-portable.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "CAGE BOSS",
+      "artifactName": "CAGE-BOSS-${version}-setup.exe"
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "category": "Game",
+      "artifactName": "CAGE-BOSS-${version}.${ext}"
+    }
   }
 }

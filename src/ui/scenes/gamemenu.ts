@@ -11,10 +11,11 @@ import { openLoad } from './loadmenu';
 import { TitleScene } from './title';
 import { exportRosterPack, importRosterPack } from '../rosterpack';
 import { openJukebox } from './jukebox';
+import { desktop } from '../../desktop';
 
 export function openGameMenu(g: Game, onClose: () => void): void {
   const s = g.state!;
-  const win = openWindow(g, 'Menu', 220, 232, { onClose });
+  const win = openWindow(g, 'Menu', 220, desktop ? 247 : 232, { onClose });
   let y = 4;
   win.body.addChild(text(s.difficulty === 'ironman' ? 'IRONMAN: autosave only.' : 'Save to slot:', 8, y, { small: true, color: PAL.ash }));
   y += 10;
@@ -49,4 +50,8 @@ export function openGameMenu(g: Game, onClose: () => void): void {
     g.state = null;
     g.goto(new TitleScene(g));
   }), { small: true, fill: PAL.blood }));
+  if (desktop) {
+    y += 15;
+    win.body.addChild(button('QUIT TO DESKTOP', 8, y, 204, 13, () => confirm(g, 'Quit the game? Progress since the last autosave (start of today) is lost.', () => desktop!.quit()), { small: true, fill: PAL.blood }));
+  }
 }

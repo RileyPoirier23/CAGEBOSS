@@ -10,6 +10,7 @@ import { openSettings } from './settings';
 import { openLoad } from './loadmenu';
 import { NewGameScene } from './newgame';
 import { openCredits } from './credits';
+import { desktop } from '../../desktop';
 
 interface Drop {
   x: number;
@@ -50,11 +51,12 @@ export class TitleScene extends Scene {
       ['SETTINGS', () => openSettings(this.g)],
       ['CREDITS', () => openCredits(this.g)],
     ];
+    if (desktop) items.push(['QUIT GAME', () => desktop!.quit()]);
     items.forEach(([label, fn], i) => {
       menu.addChild(button(label, 0, i * 17, 96, 14, fn, { fill: PAL.night, border: PAL.ash }));
     });
     menu.x = Math.floor((W - 96) / 2);
-    menu.y = 150;
+    menu.y = desktop ? 146 : 150;
     r.addChild(menu);
     r.addChild(text('v0.1  •  M = MUTE  •  ALL CHARACTERS ARE FICTIONAL. ANY RESEMBLANCE IS A LAWSUIT WAITING TO HAPPEN.', 0, H - 9, { small: true, width: W, align: 'center', color: PAL.grey }));
   }

@@ -2,10 +2,11 @@ import type { Game } from '../app';
 import { PAL } from '../../art/palette';
 import { text, button } from '../kit';
 import { openJukebox } from './jukebox';
+import { desktop } from '../../desktop';
 import { openWindow, selector, checkbox, stepper } from '../widgets';
 
 export function openSettings(g: Game, onClose?: () => void): void {
-  const win = openWindow(g, 'Settings', 260, 253, { onClose });
+  const win = openWindow(g, 'Settings', 260, desktop ? 268 : 253, { onClose });
   const b = win.body;
   const s = g.settings;
   const save = () => g.applySettings();
@@ -51,5 +52,9 @@ export function openSettings(g: Game, onClose?: () => void): void {
   y += 15;
   b.addChild(checkbox(8, y, 'Bleep the swearing (streamer mode)', !!s.bleep, (v) => { s.bleep = v; save(); g.scene?.refresh(); }));
   y += 15;
+  if (desktop) {
+    b.addChild(checkbox(8, y, 'Fullscreen (F11)', s.fullscreen !== false, (v) => { s.fullscreen = v; save(); }));
+    y += 15;
+  }
   b.addChild(button('JUKEBOX...', 8, y, 80, 13, () => openJukebox(g), { small: true, fill: PAL.plum }));
 }
