@@ -1,0 +1,784 @@
+[
+ {
+  "id": "fn_mic_callout_boss",
+  "title": "Calling Out The Boss",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "{subject.first} grabs the mic after the win, still bleeding. \"And {presidentLast}! I KNOW you're watching! PAY ME! Pay me what you pay the guys with the big Instagrams!\" Twenty thousand people chant 'PAY HIM'.",
+    "speaker": "{subject.first} {subject.last}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Walk into the cage and hug {him} on camera",
+    "effects": [
+     "subject.loyalty += 10",
+     "fans += 3",
+     "raise(subject, 20)",
+     "fighters += 2"
+    ],
+    "result": "You hug {him}. You announce a raise on the mic. The crowd goes insane. Your accountant goes pale.",
+    "ethics": 1
+   },
+   {
+    "label": "Laugh it off from cageside",
+    "effects": [
+     "subject.beef += 8",
+     "fans += 1",
+     "news('callout', 0.2, 4)"
+    ],
+    "result": "You laugh. {He} doesn't. The clip trends anyway.",
+    "default": true
+   },
+   {
+    "label": "Cut {his} mic",
+    "effects": [
+     "subject.beef += 20",
+     "fans -= 3",
+     "media -= 2",
+     "fighters -= 2"
+    ],
+    "result": "The mic dies mid-sentence. The crowd boos you for six straight minutes.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.id == lastWinner"
+   }
+  },
+  "conditions": "lastWinner != ''",
+  "weight": 14,
+  "cooldownWeeks": 6
+ },
+ {
+  "id": "fn_mic_callout_rival",
+  "title": "The Callout",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "{subject.first} points into the crowd at {other.first} {other.last}. \"YOU! You've been ducking me for a year! Get in here!\" {other.last} stands up and takes off {his} jacket. Security is getting nervous.",
+    "speaker": "{subject.first} {subject.last}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Let {other.last} in the cage for a faceoff",
+    "effects": [
+     "rivalry(subject, other)",
+     "subject.hype += 10",
+     "other.hype += 8",
+     "fans += 3",
+     "commission -= 1"
+    ],
+    "result": "The faceoff almost turns into a fight. The fight between them is now the most anticipated on the planet.",
+    "bot": 2
+   },
+   {
+    "label": "Have security keep them apart",
+    "effects": [
+     "rivalry(subject, other)",
+     "subject.hype += 5"
+    ],
+    "result": "Shoving through security. Great footage. Nobody gets hurt.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.id == lastWinner"
+   },
+   "other": {
+    "type": "fighter",
+    "where": "f.ours && f.id != lastWinner && f.id != lastLoser && f.division == subject.division"
+   }
+  },
+  "conditions": "lastWinner != ''",
+  "weight": 14,
+  "cooldownWeeks": 6
+ },
+ {
+  "id": "fn_brawl_cage",
+  "title": "Post-Fight Brawl",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "The final bell is followed by a different bell: {subject.last}'s cornerman shoves {other.last}'s cornerman. Within ten seconds there are fourteen people in the cage, one of them is a commentator, and one is just a guy in a hot dog costume."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay commission fines and move on ({$fine})",
+    "effects": [
+     "spend('fines', vars.fine)",
+     "commission -= 3",
+     "fans += 2"
+    ],
+    "result": "The hot-dog guy is the only one who lands a clean punch. The commission fines everyone except the hot dog.",
+    "default": true
+   },
+   {
+    "label": "Suspend both corners",
+    "effects": [
+     "commission += 2",
+     "subject.morale -= 4",
+     "other.morale -= 4",
+     "media += 1"
+    ],
+    "result": "Both cornermen are banned for six months. One of them is somebody's dad.",
+    "ethics": 1
+   },
+   {
+    "label": "Book a rematch immediately",
+    "effects": [
+     "rivalry(subject, other)",
+     "subject.hype += 8",
+     "other.hype += 8",
+     "commission -= 4"
+    ],
+    "result": "'You want more? You got it.' The rematch is the biggest fight of the season.",
+    "bot": 2
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.id == lastA"
+   },
+   "other": {
+    "type": "fighter",
+    "where": "f.id == lastB"
+   }
+  },
+  "cooldownWeeks": 6,
+  "vars": {
+   "fine": "rand(10, 30) * 1000 * scale"
+  }
+ },
+ {
+  "id": "fn_fan_invasion",
+  "title": "Cage Invader",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "A shirtless fan sprinted past security, climbed the cage and tried to hug {subject.first}. {subject.first} instinctively double-legged him. The crowd is chanting {subject.last}'s name AND the fan's name, which they somehow know."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Ban the fan for life",
+    "effects": [
+     "media += 1",
+     "commission += 1"
+    ],
+    "result": "Banned. He's a hero online. He starts a podcast.",
+    "default": true
+   },
+   {
+    "label": "Give the fan a tryout",
+    "effects": [
+     "fans += 4",
+     "commission -= 2",
+     "media += 1"
+    ],
+    "result": "The fan, Kevin, signs a regional contract. He's 0-3 now, but he's happy.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.id == lastWinner"
+   }
+  },
+  "conditions": "lastWinner != ''",
+  "weight": 8,
+  "cooldownWeeks": 6
+ },
+ {
+  "id": "fn_refuses_leave",
+  "title": "Won't Leave The Cage",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "{subject.first} lost and refuses to leave the cage. {He} is sitting cross-legged in the center, demanding the fight be overturned. The next fight's walkout music is playing. {He} is not moving.",
+    "speaker": "{subject.first} {subject.last}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Promise to review the result",
+    "effects": [
+     "subject.morale += 4",
+     "commission -= 1"
+    ],
+    "result": "'We'll review it.' {He} leaves. Nobody reviews anything.",
+    "default": true
+   },
+   {
+    "label": "Have security carry {him} out",
+    "effects": [
+     "subject.beef += 15",
+     "fans -= 1",
+     "media += 1"
+    ],
+    "result": "Four security guards carry {him} out like a rolled-up rug. {He} waves to the crowd the whole time.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.id == lastLoser"
+   }
+  },
+  "conditions": "lastLoser != '' && lastRobbery",
+  "weight": 14,
+  "cooldownWeeks": 6
+ },
+ {
+  "id": "fn_robbery_outrage",
+  "title": "ROBBERY!",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "The decision is read and the arena erupts. Fans are throwing beer at the judges' table. {subject.first} {subject.last}, who lost, is pointing at the scorecards and mouthing words the broadcast cannot air. The network is on the phone."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay {subject.last} {his} win bonus anyway",
+    "effects": [
+     "spend('bonuses', 10000 * scale)",
+     "subject.loyalty += 15",
+     "fans += 3",
+     "fighters += 2"
+    ],
+    "result": "'Everyone saw who won.' The fans love it. The commission does not love the implication.",
+    "ethics": 1
+   },
+   {
+    "label": "Demand the commission review the judges",
+    "effects": [
+     "commission -= 3",
+     "fans += 2",
+     "media += 1"
+    ],
+    "result": "The commission 'reviews' it. The result stands. The judges are reassigned to a different bad event.",
+    "default": true
+   },
+   {
+    "label": "Say nothing",
+    "effects": [
+     "fans -= 3",
+     "subject.morale -= 6"
+    ],
+    "result": "Silence. It's loudest at the next event.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.id == lastLoser"
+   }
+  },
+  "conditions": "lastRobbery",
+  "weight": 18,
+  "cooldownWeeks": 6
+ },
+ {
+  "id": "fn_late_stoppage",
+  "title": "Stoppage Review",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "The ref let that go WAY too long. {subject.first} took twelve unanswered punches after {he} was clearly out. Commentators are furious. {His} corner is screaming at the ref. The doctor is already in the cage."
+   }
+  ],
+  "choices": [
+   {
+    "label": "File a formal complaint about the referee",
+    "effects": [
+     "commission -= 2",
+     "fighters += 3",
+     "media += 2",
+     "subject.loyalty += 6"
+    ],
+    "result": "The commission thanks you for your 'input'. The ref is assigned to the next card anyway.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Say nothing; refs are the commission's job",
+    "effects": [
+     "fighters -= 2"
+    ],
+    "result": "{His} family watched the replay. They remember who said nothing.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.id == lastLoser"
+   }
+  },
+  "conditions": "lastLoser != '' && (lastMethod == 'TKO' || lastMethod == 'KO')",
+  "cooldownWeeks": 6
+ },
+ {
+  "id": "fn_bonus_beg",
+  "title": "Bonus Begging",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "{subject.first} uses the post-fight interview to beg for a bonus: \"I got three kids, a mortgage and a cat with diabetes. Please. The cat needs insulin, {presidentLast}.\"",
+    "speaker": "{subject.first} {subject.last}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Give {him} a bonus on the spot ({$fee})",
+    "effects": [
+     "spend('bonuses', vars.fee)",
+     "subject.loyalty += 10",
+     "fans += 2",
+     "fighters += 1"
+    ],
+    "result": "The cat gets its insulin. The cat gets a following. You get the warmest press of your career.",
+    "ethics": 1
+   },
+   {
+    "label": "No special treatment",
+    "effects": [
+     "subject.morale -= 4"
+    ],
+    "result": "{He} posts a picture of the cat looking disappointed. It's devastating.",
+    "bot": 1,
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.id == lastWinner"
+   }
+  },
+  "conditions": "lastWinner != ''",
+  "weight": 12,
+  "cooldownWeeks": 6,
+  "vars": {
+   "fee": "rand(5, 10) * 1000 * scale"
+  }
+ },
+ {
+  "id": "fn_short_notice_injury",
+  "title": "Pulled Mid-Event",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "Backstage panic: a fighter on the main card just tore a hamstring warming up. {subject.first} {subject.last} has already fought tonight... and won... and says {he}'ll fight again if you double {his} money.",
+    "speaker": "{subject.first} {subject.last}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Let {him} fight twice",
+    "effects": [
+     "spend('purses', 20000 * scale)",
+     "subject.hype += 15",
+     "subject.damage += 6",
+     "commission -= 5",
+     "fans += 4"
+    ],
+    "result": "It is wildly irresponsible and the crowd has never been louder. {He} survives. Barely.",
+    "bot": 2,
+    "ethics": -2
+   },
+   {
+    "label": "Scrap the bout",
+    "effects": [
+     "fans -= 1"
+    ],
+    "result": "A shorter card. The crowd boos. The doctor exhales.",
+    "ethics": 1,
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.id == lastWinner"
+   }
+  },
+  "conditions": "lastWinner != '' && !lastMain",
+  "weight": 4,
+  "cooldownWeeks": 6
+ },
+ {
+  "id": "fn_cornerman_fight",
+  "title": "The Corners Go At It",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "Between rounds, {subject.last}'s coach and {other.last}'s coach started screaming at each other across the cage. Now they're both in the cage, in matching team polos, wrestling. Neither of them has trained in 20 years. It looks like two grandpas fighting over a parking space."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Fine both teams",
+    "effects": [
+     "commission += 1",
+     "media += 1"
+    ],
+    "result": "Both fined. Both claim victory.",
+    "default": true
+   },
+   {
+    "label": "Book the coaches on the next card",
+    "effects": [
+     "fans += 4",
+     "commission -= 3",
+     "media -= 1"
+    ],
+    "result": "'COACHES' CORNER: THE GRUDGE MATCH'. They both get winded during the walkout.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.id == lastA"
+   },
+   "other": {
+    "type": "fighter",
+    "where": "f.id == lastB"
+   }
+  },
+  "weight": 6,
+  "cooldownWeeks": 6
+ },
+ {
+  "id": "fn_celebrity_cageside",
+  "title": "Celebrity Cageside",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "A famous pop star is cageside and got splashed with blood from {subject.last}'s cut. Her reps are furious. Her fans are thrilled. Her outfit is now 'ruined but iconic'."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Send flowers and a lifetime ticket",
+    "effects": [
+     "media += 2",
+     "fans += 2"
+    ],
+    "result": "She posts a selfie with the blood stain. Your promotion trends among 14-year-olds.",
+    "default": true
+   },
+   {
+    "label": "Sell the outfit at auction for charity",
+    "effects": [
+     "earn('charity', 50000 * scale)",
+     "media += 3",
+     "fans += 1"
+    ],
+    "result": "It sells for a ridiculous amount. The pop star approves.",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.id == lastLoser"
+   }
+  },
+  "conditions": "lastLoser != ''",
+  "weight": 6,
+  "cooldownWeeks": 6
+ },
+ {
+  "id": "fn_ko_celebration",
+  "title": "The Celebration",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "{subject.first} celebrates the knockout by doing a backflip off the cage, landing badly, and spraining {his} ankle. It's the most injured {he}'s been all night.",
+    "speaker": "{subject.first} {subject.last}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay for the X-ray",
+    "effects": [
+     "injure(subject, 3, 'sprained ankle (celebration)')",
+     "spend('medical', 2000 * scale)"
+    ],
+    "result": "Ankle sprain. The clip of the fall has more views than the knockout.",
+    "default": true
+   },
+   {
+    "label": "Fine {him} for 'unsafe celebrating'",
+    "effects": [
+     "subject.morale -= 3",
+     "fans -= 1"
+    ],
+    "result": "The fans think the fine is ridiculous. They're right."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.id == lastWinner"
+   }
+  },
+  "conditions": "lastWinner != '' && (lastMethod == 'KO' || lastMethod == 'TKO')",
+  "weight": 8,
+  "cooldownWeeks": 6
+ },
+ {
+  "id": "fn_title_tears",
+  "title": "New Champion",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "{subject.first} {subject.last} is the new champion, crying uncontrollably, holding the belt like a newborn. {He} wants you to put it on {him} personally.",
+    "speaker": "{subject.first} {subject.last}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Wrap the belt around {his} waist",
+    "effects": [
+     "subject.loyalty += 10",
+     "fans += 2",
+     "subject.hype += 5"
+    ],
+    "result": "You do it. You both cry. The photo is on every front page.",
+    "default": true
+   },
+   {
+    "label": "Let a legend do it",
+    "effects": [
+     "fans += 3",
+     "subject.loyalty += 5",
+     "media += 1"
+    ],
+    "result": "A Hall of Famer straps it on. Everyone cries. Even the security guard."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.id == lastWinner"
+   }
+  },
+  "conditions": "lastTitle && lastWinner != ''",
+  "weight": 16,
+  "cooldownWeeks": 6
+ },
+ {
+  "id": "fn_retire_in_cage",
+  "title": "Gloves In The Center",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "{subject.first} {subject.last} lost, sat on the canvas for a moment, then took off {his} gloves and left them in the center of the cage. The arena goes quiet.",
+    "speaker": "{subject.first} {subject.last}"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Respect it",
+    "effects": [
+     "retire(subject)",
+     "fans += 2",
+     "media += 2"
+    ],
+    "result": "A standing ovation. {He} walks out with {his} kids. A good ending.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Talk {him} out of it backstage",
+    "effects": [
+     "subject.morale -= 4",
+     "subject.loyalty += 5"
+    ],
+    "result": "'Sleep on it.' {He} sleeps on it. {He} unretires before breakfast."
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.id == lastLoser && f.age >= 34"
+   }
+  },
+  "conditions": "lastLoser != ''",
+  "cooldownWeeks": 6
+ },
+ {
+  "id": "fn_judge_heckled",
+  "title": "Judges Under Siege",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "The judges' table is under siege. Somebody threw a nacho tray. Adelaide Bird-Brain is hiding under the table with her scorecard. The crowd is chanting 'GLASSES! GLASSES!'"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Have security escort the judges out",
+    "effects": [
+     "commission += 1"
+    ],
+    "result": "The judges leave through the loading dock. Adelaide is wearing a disguise. It's a hat.",
+    "default": true
+   },
+   {
+    "label": "Grab the mic and calm the crowd",
+    "effects": [
+     "fans += 2",
+     "media += 1"
+    ],
+    "result": "You give a speech about respect. Somebody throws a nacho at you. You eat it. The crowd cheers."
+   }
+  ],
+  "conditions": "lastRobbery",
+  "weight": 8,
+  "cooldownWeeks": 6
+ },
+ {
+  "id": "fn_dirty_cutman",
+  "title": "The Cutman Controversy",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "Footage shows {subject.last}'s cutman applying 'something' to {his} cut that made the bleeding stop instantly. The other corner says it's illegal. The cutman says it's 'family recipe Vaseline'."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Order the substance tested",
+    "effects": [
+     "commission += 2",
+     "media += 1"
+    ],
+    "result": "It's Vaseline. Mostly. Partly something from a gas station. The result stands.",
+    "default": true
+   },
+   {
+    "label": "Hire that cutman for the whole promotion",
+    "effects": [
+     "spend('cutmen', 15000 * scale)",
+     "commission -= 2"
+    ],
+    "result": "The cutman now works every card. Nobody bleeds. Nobody asks.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.id == lastWinner"
+   }
+  },
+  "conditions": "lastWinner != ''",
+  "weight": 5,
+  "cooldownWeeks": 6
+ },
+ {
+  "id": "fn_ring_card",
+  "title": "Ring Card Controversy",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "The ring card holder tripped on the cage step and fell into the commentary table. She's fine. The commentator's headset is not. The broadcast is now 90 seconds of static and Blow Hogan yelling 'SHE'S HURT! SHE'S HURT!'"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Give her the night off with pay",
+    "effects": [
+     "media += 1"
+    ],
+    "result": "She gets a standing ovation on her way out. Best reaction of the night.",
+    "default": true
+   },
+   {
+    "label": "Make it a highlight package",
+    "effects": [
+     "fans += 1",
+     "media -= 1"
+    ],
+    "result": "Tasteless and very popular."
+   }
+  ],
+  "weight": 4
+ },
+ {
+  "id": "fn_parking_lot",
+  "title": "Parking Lot Fight",
+  "category": "fightnight",
+  "scenes": [
+   {
+    "type": "fightnight",
+    "text": "After the event, {subject.first} {subject.last} got into a fight in the arena parking lot with a fan who called {him} a 'can'. The fan was also a can. It was a short fight."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay the fan to go away ({$fee})",
+    "effects": [
+     "spend('settlements', vars.fee)",
+     "heat += 1"
+    ],
+    "result": "The fan goes away. Slowly. With a new car.",
+    "bot": 1
+   },
+   {
+    "label": "Let the police handle it",
+    "effects": [
+     "commission -= 1",
+     "media -= 1",
+     "subject.hype += 3"
+    ],
+    "result": "No charges. Lots of footage.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "(f.id == lastWinner || f.id == lastLoser) && f.traits.has('Hothead') && !f.parody"
+   }
+  },
+  "weight": 6,
+  "cooldownWeeks": 6,
+  "vars": {
+   "fee": "rand(5, 15) * 1000 * scale"
+  }
+ }
+]

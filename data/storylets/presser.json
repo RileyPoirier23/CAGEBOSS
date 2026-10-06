@@ -1,0 +1,1779 @@
+[
+ {
+  "id": "pq_pay",
+  "title": "The Pay Question",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Fighter pay. Your fighters get a fraction of what boxers get. A fraction of a fraction. When does that change?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Our fighters are paid very well, and they all have incredible opportunities.\"",
+    "effects": [
+     "media -= 1",
+     "fighters -= 1"
+    ],
+    "result": "Nobody in the room believes it, including the microphone.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"Go fight then, if you know so much about it.\"",
+    "effects": [
+     "media -= 3",
+     "fans += 1",
+     "reporter.rel -= 10",
+     "news('presser', -0.4, 4)"
+    ],
+    "result": "It plays great on social media. It plays terribly in the locker room.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"You're right. We're going to do better. It starts with minimum purses.\"",
+    "effects": [
+     "fighters += 4",
+     "media += 3",
+     "patience -= 3",
+     "addFlag('fairpay', 1)"
+    ],
+    "result": "Gasps in the room. The board's lawyer is already typing.",
+    "tone": "truth",
+    "ethics": 1
+   },
+   {
+    "label": "\"We'll see what happens.\"",
+    "effects": [
+     "media -= 0",
+     "reporter.rel -= 1"
+    ],
+    "result": "The most famous non-answer in combat sports. It works, sort of.",
+    "tone": "wwsh"
+   },
+   {
+    "label": "Get up and leave",
+    "effects": [
+     "media -= 3",
+     "fans += 1",
+     "reporter.rel -= 8",
+     "news('presser', -0.3, 4)"
+    ],
+    "result": "You walk out. The headline writes itself.",
+    "tone": "storm"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.traits.has('Pay Hawk')"
+   }
+  },
+  "weight": 14,
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_union",
+  "title": "Union Talk",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Reports say fighters are organizing. Will you recognize a union?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Our fighters can always come to me directly. My door is always open.\"",
+    "effects": [
+     "fighters -= 1"
+    ],
+    "result": "Your door has been locked since 2019.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"Unions are for people who can't fight their own battles.\"",
+    "effects": [
+     "fighters -= 4",
+     "media -= 2",
+     "addFlag('union', 1)"
+    ],
+    "result": "The fighters print that quote on a banner.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"If that's what they want, we'll sit down with them.\"",
+    "effects": [
+     "fighters += 5",
+     "patience -= 5",
+     "media += 2"
+    ],
+    "result": "Historic. The room goes quiet. Then everybody starts typing.",
+    "tone": "truth",
+    "ethics": 1
+   },
+   {
+    "label": "\"We'll see what happens.\"",
+    "effects": [
+     "media -= 0",
+     "reporter.rel -= 1"
+    ],
+    "result": "The most famous non-answer in combat sports. It works, sort of.",
+    "tone": "wwsh"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.traits.has('Pay Hawk') || f.traits.has('Activist')"
+   }
+  },
+  "conditions": "act >= 2",
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_main_event",
+  "title": "Main Event Breakdown",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Who wins the main event tonight, in your opinion?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Both guys are killers. Should be a great fight.\"",
+    "effects": [
+     "media += 1"
+    ],
+    "result": "Safe. Boring. Correct.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"Whoever's mom is louder in the crowd.\"",
+    "effects": [
+     "fans += 2",
+     "media += 1"
+    ],
+    "result": "The room laughs. Somebody's mom, somewhere, gets louder.",
+    "tone": "joke"
+   },
+   {
+    "label": "Give an honest breakdown of both fighters",
+    "effects": [
+     "media += 2",
+     "reporter.rel += 4"
+    ],
+    "result": "You actually break the fight down. People forget you used to know things.",
+    "tone": "truth",
+    "ethics": 1
+   },
+   {
+    "label": "\"We'll see what happens.\"",
+    "effects": [
+     "media -= 0",
+     "reporter.rel -= 1"
+    ],
+    "result": "The most famous non-answer in combat sports. It works, sort of.",
+    "tone": "wwsh"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   }
+  },
+  "conditions": "!postFight",
+  "weight": 12,
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_judging",
+  "title": "Judging Controversy",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Fans are outraged about the scoring tonight. One judge had it 30-27 the other way. Will anything change about judging?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"The commission appoints the judges. Take it up with them.\"",
+    "effects": [
+     "commission -= 1",
+     "media += 0"
+    ],
+    "result": "Technically correct. Spiritually cowardly.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"Judging is a joke. The commission is a joke. Next question.\"",
+    "effects": [
+     "commission -= 5",
+     "fans += 3",
+     "media += 1"
+    ],
+    "result": "The fans love it. The commission files it away for later.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"We're going to push for open scoring and better training.\"",
+    "effects": [
+     "commission += 2",
+     "media += 3"
+    ],
+    "result": "Reasonable. Nobody claps, because reasonable never gets claps.",
+    "tone": "truth",
+    "ethics": 1
+   },
+   {
+    "label": "\"We'll see what happens.\"",
+    "effects": [
+     "media -= 0",
+     "reporter.rel -= 1"
+    ],
+    "result": "The most famous non-answer in combat sports. It works, sort of.",
+    "tone": "wwsh"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   }
+  },
+  "conditions": "postFight",
+  "weight": 14,
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_arrest",
+  "title": "About The Arrest",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "One of your fighters was arrested this month. What's the promotion's position?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"We're aware of the situation and gathering information.\"",
+    "effects": [
+     "media += 0"
+    ],
+    "result": "The sentence every PR team writes on day one.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"Ask me about the fights.\"",
+    "effects": [
+     "media -= 2",
+     "reporter.rel -= 5"
+    ],
+    "result": "She asks about the fights. Then about the arrest again.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"It's serious and we're treating it seriously.\"",
+    "effects": [
+     "media += 3",
+     "commission += 1"
+    ],
+    "result": "A grown-up answer. Unusual. Effective.",
+    "tone": "truth",
+    "ethics": 1
+   },
+   {
+    "label": "\"We'll see what happens.\"",
+    "effects": [
+     "media -= 0",
+     "reporter.rel -= 1"
+    ],
+    "result": "The most famous non-answer in combat sports. It works, sort of.",
+    "tone": "wwsh"
+   },
+   {
+    "label": "Get up and leave",
+    "effects": [
+     "media -= 3",
+     "fans += 1",
+     "reporter.rel -= 8",
+     "news('presser', -0.3, 4)"
+    ],
+    "result": "You walk out. The headline writes itself.",
+    "tone": "storm"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   }
+  },
+  "conditions": "openCases > 0",
+  "weight": 14,
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_doping",
+  "title": "The Drug Testing Question",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Is your anti-doping program real, or is it a press release?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"We have the most comprehensive program in combat sports.\"",
+    "effects": [
+     "media -= 0"
+    ],
+    "result": "You've said 'comprehensive' so many times it no longer means anything.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"If you have proof, publish it.\"",
+    "effects": [
+     "media -= 2",
+     "reporter.rel -= 8",
+     "heat += 1"
+    ],
+    "result": "She might.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"It's real, it's not perfect, and we're adding more random testing.\"",
+    "effects": [
+     "commission += 2",
+     "media += 2",
+     "heat -= 1"
+    ],
+    "result": "An admission of imperfection. The room is confused.",
+    "tone": "truth",
+    "ethics": 1
+   },
+   {
+    "label": "\"We'll see what happens.\"",
+    "effects": [
+     "media -= 0",
+     "reporter.rel -= 1"
+    ],
+    "result": "The most famous non-answer in combat sports. It works, sort of.",
+    "tone": "wwsh"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   }
+  },
+  "conditions": "ruleActive('drug_program')",
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_braille",
+  "title": "Braille Asks a Question",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Braille Sonnen stands up, facing slightly the wrong direction. \"Mr. President. I watched the fight tonight. Well. I 'watched' it. Let me ask you: was that a left hook or a takedown? Because it sounded like a takedown. Smelled like a left hook.\"",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Great question, Braille.\"",
+    "effects": [
+     "fans += 1",
+     "reporter.rel += 3"
+    ],
+    "result": "\"Thank you. I don't actually know what I'm talking about. I can't see shit.\" The room loses it.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"It was both, Braille. It was a left takedown.\"",
+    "effects": [
+     "fans += 3",
+     "media += 1",
+     "reporter.rel += 5"
+    ],
+    "result": "Braille nods gravely. \"A left takedown. I knew it.\" It trends for 12 hours.",
+    "tone": "joke"
+   },
+   {
+    "label": "Patiently describe the finish to him",
+    "effects": [
+     "media += 2",
+     "reporter.rel += 10"
+    ],
+    "result": "He listens closely, then predicts the rematch result with total confidence. He is wrong about who was in the fight.",
+    "tone": "truth",
+    "ethics": 1
+   },
+   {
+    "label": "\"We'll see what happens.\"",
+    "effects": [
+     "media -= 0",
+     "reporter.rel -= 1"
+    ],
+    "result": "The most famous non-answer in combat sports. It works, sort of.",
+    "tone": "wwsh"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.id == 'braille_sonnen'"
+   }
+  },
+  "weight": 20,
+  "cooldownWeeks": 4
+ },
+ {
+  "id": "pq_braille_rankings",
+  "title": "Braille's Rankings",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Braille Sonnen: \"I've got my own pound-for-pound list. Number one is a fighter I've only ever heard breathing. Number two is my dog. Who's on yours?\"",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"I don't do pound-for-pound lists.\"",
+    "effects": [
+     "media += 0"
+    ],
+    "result": "\"Smart. Me neither. I can't see shit.\"",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"Braille, you've never seen a fight in your life.\"",
+    "effects": [
+     "fans -= 1",
+     "reporter.rel -= 10",
+     "media -= 2"
+    ],
+    "result": "The room boos you. Defending Braille is the one thing everyone agrees on.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"Your dog is a good pick.\"",
+    "effects": [
+     "fans += 2",
+     "reporter.rel += 5"
+    ],
+    "result": "The dog becomes a mascot. He has a lanyard now.",
+    "tone": "joke"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.id == 'braille_sonnen'"
+   }
+  },
+  "weight": 14,
+  "cooldownWeeks": 6
+ },
+ {
+  "id": "pq_hellwani",
+  "title": "The Insider Knows",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Ariel Hellwani: \"Sources tell me you're finalizing a deal tonight that you haven't told your own matchmakers about. Care to confirm?\"",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Your sources should get better sources.\"",
+    "effects": [
+     "reporter.rel -= 3"
+    ],
+    "result": "He smiles. He knows. You know he knows.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"How about you stop paying my employees for gossip?\"",
+    "effects": [
+     "reporter.rel -= 12",
+     "media -= 2",
+     "heat += 1"
+    ],
+    "result": "He tweets 'I've never paid a source' with a winking emoji.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"...Yeah. Fine. It's real.\"",
+    "effects": [
+     "reporter.rel += 15",
+     "media += 2"
+    ],
+    "result": "The scoop is officially his. Again.",
+    "tone": "truth",
+    "ethics": 1
+   },
+   {
+    "label": "\"We'll see what happens.\"",
+    "effects": [
+     "media -= 0",
+     "reporter.rel -= 1"
+    ],
+    "result": "The most famous non-answer in combat sports. It works, sort of.",
+    "tone": "wwsh"
+   },
+   {
+    "label": "Get up and leave",
+    "effects": [
+     "media -= 3",
+     "fans += 1",
+     "reporter.rel -= 8",
+     "news('presser', -0.3, 4)"
+    ],
+    "result": "You walk out. The headline writes itself.",
+    "tone": "storm"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.id == 'ariel_hellwani'"
+   }
+  },
+  "weight": 16,
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_brogan",
+  "title": "Brogan Goes Off-Topic",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Joe Brogan: \"Tonight was insane, man. Insane. But real quick, have you ever thought about how the pyramids were built? Like, how did they move those rocks? It's entirely possible they had help.\"",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Let's keep it to the fights, Joe.\"",
+    "effects": [
+     "media += 1"
+    ],
+    "result": "\"Totally, totally.\" He asks about elk meat next.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"It was wrestlers, Joe. Pyramid-building is just top control.\"",
+    "effects": [
+     "fans += 3",
+     "reporter.rel += 8"
+    ],
+    "result": "Joe laughs so hard he has to leave the room. The clip goes viral.",
+    "tone": "joke"
+   },
+   {
+    "label": "\"I genuinely have no idea, Joe.\"",
+    "effects": [
+     "fans += 1",
+     "reporter.rel += 3"
+    ],
+    "result": "\"Nobody does, man. NOBODY does.\" He's thrilled.",
+    "tone": "truth",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.id == 'joe_brogan'"
+   }
+  },
+  "weight": 14,
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_tabloid",
+  "title": "Tabloid Question",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "\"Is it true one of your fighters is dating a reality TV star who used to date another one of your fighters?\"",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"I don't follow my fighters' love lives.\"",
+    "effects": [
+     "media += 0"
+    ],
+    "result": "You follow them closely. Everyone does.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"I can't confirm or deny the love triangle. But I can confirm it would sell.\"",
+    "effects": [
+     "fans += 2",
+     "media += 1"
+    ],
+    "result": "The tabloid runs: 'PREZ CONFIRMS LOVE TRIANGLE SELLS'.",
+    "tone": "joke"
+   },
+   {
+    "label": "Get up and leave",
+    "effects": [
+     "media -= 3",
+     "fans += 1",
+     "reporter.rel -= 8",
+     "news('presser', -0.3, 4)"
+    ],
+    "result": "You walk out. The headline writes itself.",
+    "tone": "storm"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.traits.has('Tabloid')"
+   }
+  },
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_conspiracy",
+  "title": "The Conspiracy Question",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "\"Is it true that the last knockout was paid for by the government to distract from the moon landing hearings?\"",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Next question.\"",
+    "effects": [
+     "media += 1"
+    ],
+    "result": "Next question.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"Get this guy out of here.\"",
+    "effects": [
+     "media -= 1",
+     "reporter.rel -= 15"
+    ],
+    "result": "He is escorted out livestreaming the whole thing.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"Yes. And the referee is a lizard.\"",
+    "effects": [
+     "fans += 2",
+     "media -= 1",
+     "chaos += 1"
+    ],
+    "result": "TruthBomb Live posts the clip with the caption 'HE ADMITTED IT'.",
+    "tone": "joke"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.traits.has('Conspiracy')"
+   }
+  },
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_rival",
+  "title": "The Rival League",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "The other league says they pay better and have better fighters. Your response?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Competition is good for the sport.\"",
+    "effects": [
+     "media += 1"
+    ],
+    "result": "Mature, boring, effective.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"They're a minor league. Their best fighter is our worst fighter's sparring partner.\"",
+    "effects": [
+     "fans += 2",
+     "media -= 1"
+    ],
+    "result": "The rival posts a 9-slide response. It has a pie chart.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"They pay better? Great. Send me their number.\"",
+    "effects": [
+     "fans += 2",
+     "media += 1"
+    ],
+    "result": "Their president calls you the next day. You don't answer.",
+    "tone": "joke"
+   },
+   {
+    "label": "\"We'll see what happens.\"",
+    "effects": [
+     "media -= 0",
+     "reporter.rel -= 1"
+    ],
+    "result": "The most famous non-answer in combat sports. It works, sort of.",
+    "tone": "wwsh"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   }
+  },
+  "conditions": "rivalsAlive > 0",
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_slap",
+  "title": "About The Slap League",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Doctors call your slap league 'barbaric'. Is it?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"It's a sport with medical oversight.\"",
+    "effects": [
+     "media -= 1"
+    ],
+    "result": "The medical oversight is one guy named Gary with a flashlight.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"Barbaric? Have you seen a Wednesday at Applebee's?\"",
+    "effects": [
+     "fans += 2",
+     "media -= 2"
+    ],
+    "result": "The comparison makes no sense. It trends anyway.",
+    "tone": "joke"
+   },
+   {
+    "label": "\"It's a spectacle. We're adding more safety rules.\"",
+    "effects": [
+     "commission += 2",
+     "media += 2"
+    ],
+    "result": "Reasonable. The slap fighters are disappointed.",
+    "tone": "truth",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   }
+  },
+  "conditions": "venture == 'slap'",
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_brain",
+  "title": "Brain Injuries",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Studies show repeated head trauma causes long-term damage. What is the promotion doing to protect fighters' brains?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Safety is our number one priority.\"",
+    "effects": [
+     "media -= 1"
+    ],
+    "result": "The phrase every promoter says while standing next to a cage.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"Everybody knows the risks.\"",
+    "effects": [
+     "media -= 3",
+     "fighters -= 2"
+    ],
+    "result": "True and cold. It plays badly.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"Not enough. We're funding neurological care for retired fighters.\"",
+    "effects": [
+     "spend('fighter health fund', 100000 * scale)",
+     "media += 4",
+     "fighters += 3"
+    ],
+    "result": "A real answer with real money. The room is genuinely surprised.",
+    "tone": "truth",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.outletType == 'serious' || f.traits.has('Investigator')"
+   }
+  }
+ },
+ {
+  "id": "pq_women",
+  "title": "Women's Divisions",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Will women headline your biggest events?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"The fans will decide.\"",
+    "effects": [
+     "media -= 1"
+    ],
+    "result": "Weak. Everybody notices.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"They're scarier than the men. I'm scared of most of them.\"",
+    "effects": [
+     "fans += 2",
+     "media += 1"
+    ],
+    "result": "It lands. Mostly because it's true.",
+    "tone": "joke"
+   },
+   {
+    "label": "\"They already sell better than half my men's cards. Yes.\"",
+    "effects": [
+     "fans += 2",
+     "media += 3"
+    ],
+    "result": "A compliment that is also a business plan.",
+    "tone": "truth",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   }
+  },
+  "conditions": "womenOpen",
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_ppv_price",
+  "title": "PPV Prices",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Your pay-per-view costs $89.99. Fans call it a robbery. Why so expensive?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Production costs are very high.\"",
+    "effects": [
+     "fans -= 1"
+    ],
+    "result": "So is your boat.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"It's cheaper than therapy and you get to see more crying.\"",
+    "effects": [
+     "fans += 2",
+     "media += 1"
+    ],
+    "result": "Fans still complain. They still buy.",
+    "tone": "joke"
+   },
+   {
+    "label": "\"You're right. We're dropping the price.\"",
+    "effects": [
+     "fans += 4",
+     "network -= 2",
+     "earn('ppv', -30000 * scale)"
+    ],
+    "result": "The network calls you during the presser.",
+    "tone": "truth",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   }
+  },
+  "conditions": "ppv",
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_retirement",
+  "title": "Is He Retiring?",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "{subject.first} {subject.last} looked old tonight. Should {he} retire?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"That's between {him} and {his} family.\"",
+    "effects": [
+     "media += 1"
+    ],
+    "result": "Graceful. Correct.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"{He}'s got plenty left. Next question.\"",
+    "effects": [
+     "media -= 1",
+     "subject.loyalty += 4"
+    ],
+    "result": "{He} appreciates the loyalty. {His} knees do not.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"I think it's time. I'll talk to {him}.\"",
+    "effects": [
+     "media += 2",
+     "subject.morale -= 6"
+    ],
+    "result": "{subject.last} hears about it on Twitter. Awkward.",
+    "tone": "truth",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   },
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.age >= 36"
+   }
+  },
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_goat",
+  "title": "The GOAT Debate",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Who's the greatest of all time?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Every era has its kings.\"",
+    "effects": [
+     "media += 1"
+    ],
+    "result": "Diplomatic. Nobody is satisfied.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"Anybody who says it's not someone on my roster is an idiot.\"",
+    "effects": [
+     "fans += 1",
+     "fighters += 1",
+     "media -= 1"
+    ],
+    "result": "Your roster loves it. Every other roster screenshots it.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"Me. I'm undefeated in this chair.\"",
+    "effects": [
+     "fans += 2",
+     "media += 1"
+    ],
+    "result": "The chair creaks in agreement.",
+    "tone": "joke"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   }
+  },
+  "weight": 8,
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_sponsor",
+  "title": "The Sponsor Question",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "One of your sponsors was just accused of being a Ponzi scheme. Thoughts?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"We're reviewing all partnerships.\"",
+    "effects": [
+     "sponsors -= 1"
+    ],
+    "result": "You are not reviewing anything. You're googling 'Ponzi scheme'.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"I thought Ponzi was a fighter.\"",
+    "effects": [
+     "fans += 1",
+     "media -= 2"
+    ],
+    "result": "It isn't the time. The clip is everywhere.",
+    "tone": "joke"
+   },
+   {
+    "label": "\"We're ending that partnership today.\"",
+    "effects": [
+     "dropSponsors(1)",
+     "media += 3",
+     "sponsors -= 2"
+    ],
+    "result": "The right call and an expensive one.",
+    "tone": "truth",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   }
+  },
+  "conditions": "meters.sponsors > 20 && act >= 2",
+  "cooldownWeeks": 40
+ },
+ {
+  "id": "pq_streamer",
+  "title": "Streamer Chaos",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "One of your fighters streamed for 9 hours yesterday attacking another fighter's family. Is that acceptable?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"We'll be speaking to them privately.\"",
+    "effects": [
+     "media += 1"
+    ],
+    "result": "Privately means 'never'.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"Nine hours? That's better cardio than half my roster.\"",
+    "effects": [
+     "fans += 2",
+     "media -= 2"
+    ],
+    "result": "The joke lands with fans. Less so with everyone else.",
+    "tone": "joke"
+   },
+   {
+    "label": "\"It's not. There will be consequences.\"",
+    "effects": [
+     "media += 2",
+     "fans -= 1"
+    ],
+    "result": "The streamer reacts live. On stream.",
+    "tone": "truth",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   }
+  },
+  "conditions": "countTrait('Streamer') > 0",
+  "weight": 8,
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_owner",
+  "title": "Corporate Masters",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Your new corporate owners reportedly want more events and fewer expenses. Are you still in charge?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"We're aligned on our vision for the company.\"",
+    "effects": [
+     "patience += 2",
+     "fans -= 1"
+    ],
+    "result": "Corporate speak. The fans can smell it.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"I'm in charge. The suits sign the checks, I sign the fights.\"",
+    "effects": [
+     "fans += 2",
+     "patience -= 4",
+     "media += 1"
+    ],
+    "result": "The suits watch the clip in a conference room. Silently.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"We'll see what happens.\"",
+    "effects": [
+     "media -= 0",
+     "reporter.rel -= 1"
+    ],
+    "result": "The most famous non-answer in combat sports. It works, sort of.",
+    "tone": "wwsh"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   }
+  },
+  "conditions": "sold",
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_short_notice",
+  "title": "Short Notice",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "A fighter on the card stepped in on two days' notice. Is that safe?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"He passed every medical. He wanted the fight.\"",
+    "effects": [
+     "media += 0"
+    ],
+    "result": "He also ate a gas station burrito at the weigh-ins.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"Two days is plenty. I prepared for this press conference in two minutes.\"",
+    "effects": [
+     "fans += 1"
+    ],
+    "result": "It shows.",
+    "tone": "joke"
+   },
+   {
+    "label": "\"It's risky. We're paying him a premium for taking it.\"",
+    "effects": [
+     "fighters += 2",
+     "spend('bonuses', 5000 * scale)"
+    ],
+    "result": "The fighter gets a raise. The room nods.",
+    "tone": "truth",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   }
+  },
+  "conditions": "eventThisWeek || postFight",
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_belt",
+  "title": "Too Many Belts",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Interim belts, symbolic belts, 'BMF' belts... is your title picture a joke?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Belts sell. You buy them. Don't you?\"",
+    "effects": [
+     "fans -= 1",
+     "network += 1"
+    ],
+    "result": "Purists sigh. Merch sells.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"We're introducing a belt for the best press conference question. You won't win it.\"",
+    "effects": [
+     "fans += 2",
+     "reporter.rel -= 3"
+    ],
+    "result": "The 'best question' belt becomes a real thing. It's mostly given to Braille.",
+    "tone": "joke"
+   },
+   {
+    "label": "\"Fair. We'll clean it up.\"",
+    "effects": [
+     "fans += 2",
+     "media += 2"
+    ],
+    "result": "Purists rejoice. Merch department weeps.",
+    "tone": "truth",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   }
+  },
+  "weight": 7,
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_kid_journalist",
+  "title": "The Kid With A Ring Light",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Tyler Contentson: \"Yo, bro. Real quick. On a scale of 1 to 10, how cracked is the main event? Also can I get a picture?\"",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Next question.\"",
+    "effects": [
+     "media += 0"
+    ],
+    "result": "He takes the picture anyway.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"Who let this kid in?\"",
+    "effects": [
+     "fans -= 1",
+     "reporter.rel -= 10"
+    ],
+    "result": "His followers do not like that.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"Eleven, bro. Cracked.\"",
+    "effects": [
+     "fans += 2",
+     "reporter.rel += 10"
+    ],
+    "result": "Gen Z adores you for one news cycle.",
+    "tone": "joke"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.id == 'junkyard_kid'"
+   }
+  },
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_stephen",
+  "title": "Loud Network Guy",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Stephen A. Shouty, at maximum volume: \"WHERE ARE THE STARS? WHERE ARE THEY? I CAN'T NAME A SINGLE FIGHTER ON THIS CARD! NOT ONE!\"",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Plenty of stars, Stephen.\"",
+    "effects": [
+     "media += 0"
+    ],
+    "result": "\"NAME ONE.\" You name one. He's never heard of them.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"That's because you don't watch, Stephen.\"",
+    "effects": [
+     "fans += 3",
+     "reporter.rel -= 5"
+    ],
+    "result": "\"THAT IS... ACTUALLY A FAIR POINT.\" The room claps.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"Name your own cohost.\"",
+    "effects": [
+     "fans += 2"
+    ],
+    "result": "He can't. Nobody can.",
+    "tone": "joke"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.id == 'wspn_stephen'"
+   }
+  },
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_rights",
+  "title": "The Retirement Fund",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Former fighters say they have no pension, no health care, nothing. Is that acceptable?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Fighters are independent contractors.\"",
+    "effects": [
+     "fighters -= 3",
+     "media -= 2"
+    ],
+    "result": "The legally correct answer is also the worst possible answer.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"No. We're starting a retirement fund.\"",
+    "effects": [
+     "spend('fighter health fund', 200000 * scale)",
+     "fighters += 5",
+     "media += 3",
+     "addFlag('fairpay', 2)"
+    ],
+    "result": "Sustained applause. Your CFO faints, gently.",
+    "tone": "truth",
+    "ethics": 1
+   },
+   {
+    "label": "Get up and leave",
+    "effects": [
+     "media -= 3",
+     "fans += 1",
+     "reporter.rel -= 8",
+     "news('presser', -0.3, 4)"
+    ],
+    "result": "You walk out. The headline writes itself.",
+    "tone": "storm"
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.traits.has('Pay Hawk')"
+   }
+  },
+  "conditions": "act >= 3",
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_rogan_dmt",
+  "title": "Brogan on DMT",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Joe Brogan: \"Real talk though. Have you ever done DMT? Because I'm telling you, the machine elves have opinions about your matchmaking.\"",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"No comment, Joe.\"",
+    "effects": [
+     "media += 0"
+    ],
+    "result": "\"That's a yes. That's totally a yes.\"",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"The machine elves want a rematch.\"",
+    "effects": [
+     "fans += 3",
+     "reporter.rel += 8"
+    ],
+    "result": "He nearly falls off his chair.",
+    "tone": "joke"
+   },
+   {
+    "label": "\"Joe, I've never even had a beer at work.\"",
+    "effects": [
+     "media += 1"
+    ],
+    "result": "\"Respect, man. Respect.\"",
+    "tone": "truth",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.id == 'joe_brogan'"
+   }
+  },
+  "cooldownWeeks": 10
+ },
+ {
+  "id": "pq_card_quality",
+  "title": "Weak Card",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Fans are calling this card the worst of the year. Thoughts?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Then don't watch it.\"",
+    "effects": [
+     "fans -= 2",
+     "media -= 1"
+    ],
+    "result": "They don't. Your numbers agree.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"Every card is the worst card until somebody gets knocked into the third row.\"",
+    "effects": [
+     "fans += 2"
+    ],
+    "result": "Fair.",
+    "tone": "joke"
+   },
+   {
+    "label": "\"We lost three fights to injury. It happens. Next card is stacked.\"",
+    "effects": [
+     "media += 2"
+    ],
+    "result": "Honesty, with a promise attached. Risky.",
+    "tone": "truth",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   }
+  },
+  "conditions": "!postFight",
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_fighter_behavior",
+  "title": "The Brawl",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Two of your fighters brawled at the hotel this week. Are you rewarding bad behavior by promoting it?",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"We don't condone that behavior.\"",
+    "effects": [
+     "media += 0"
+    ],
+    "result": "You have already put the brawl in the promo.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"Rewarding? They're getting paid the same. It's the plant I feel bad for.\"",
+    "effects": [
+     "fans += 2",
+     "media -= 1"
+    ],
+    "result": "The plant's fan account thanks you.",
+    "tone": "joke"
+   },
+   {
+    "label": "\"We probably are. That's on me.\"",
+    "effects": [
+     "media += 3",
+     "commission += 1"
+    ],
+    "result": "Self-awareness. Rare. Valuable.",
+    "tone": "truth",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "true"
+   }
+  },
+  "conditions": "since('rivalry_hotel_lobby') < 6",
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_biscuit",
+  "title": "Biscuit Tells a Story",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Michael Biscuit: \"Bloody hell, what a night. Reminds me of when I fought with one eye, actually, in Manchester in 2009, against a man who-- right, sorry, the question. Who's next for the champ?\"",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Whoever the rankings say.\"",
+    "effects": [
+     "media += 1"
+    ],
+    "result": "He tells another story anyway.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"Michael, you are. One eye, one more fight.\"",
+    "effects": [
+     "fans += 3",
+     "reporter.rel += 6"
+    ],
+    "result": "\"Don't tempt me, mate. Don't. Tempt. Me.\"",
+    "tone": "joke"
+   },
+   {
+    "label": "\"The number one contender. Obviously.\"",
+    "effects": [
+     "media += 1"
+    ],
+    "result": "\"Obviously! Proper answer, that.\"",
+    "tone": "truth",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.id == 'wspn_mike'"
+   }
+  },
+  "cooldownWeeks": 8
+ },
+ {
+  "id": "pq_kenji",
+  "title": "The Polite Destroyer",
+  "category": "presser",
+  "scenes": [
+   {
+    "type": "presser",
+    "text": "Kenji Shimbun bows. \"Thank you for your time. Is it true that the promotion's medical suspensions are decided by, as one doctor says, 'vibes'?\"",
+    "speaker": "{reporter.name}, {reporter.outlet}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "\"Our doctors are the best in the business.\"",
+    "effects": [
+     "media -= 1"
+    ],
+    "result": "He bows. You somehow feel worse.",
+    "tone": "deflect",
+    "default": true
+   },
+   {
+    "label": "\"Who told you that?\"",
+    "effects": [
+     "media -= 2",
+     "heat += 1"
+    ],
+    "result": "He bows a third time. You have lost.",
+    "tone": "attack",
+    "bot": 1
+   },
+   {
+    "label": "\"We're tightening the protocols.\"",
+    "effects": [
+     "commission += 3",
+     "media += 2"
+    ],
+    "result": "He bows again. You feel like you lost a fight.",
+    "tone": "truth",
+    "ethics": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.id == 'international_kenji'"
+   }
+  },
+  "cooldownWeeks": 8
+ }
+]

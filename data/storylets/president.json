@@ -1,0 +1,830 @@
+[
+ {
+  "id": "pres_casino",
+  "title": "Whale Watching",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Bad news. Somebody filmed you at the high-roller craps table last night screaming 'DADDY NEEDS A NEW CAGE' and slapping a whale on the back so hard he dropped his chips. The video is called 'Fight Boss Loses It'. It's everywhere.",
+    "speaker": "Your PR director, Tiffani"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Laugh it off on a podcast",
+    "effects": [
+     "media -= 2",
+     "fans += 2",
+     "heat += 1"
+    ],
+    "result": "You go on The Joe Brogan Experience for four hours. You talk about the casino for 40 minutes and elk meat for 3 hours and 20.",
+    "bot": 1,
+    "default": true
+   },
+   {
+    "label": "Apologize to the whale",
+    "effects": [
+     "wealth -= 20000",
+     "media += 1"
+    ],
+    "result": "The whale accepts your apology and asks to invest in the promotion. He is now a minority owner. Of a casino.",
+    "ethics": 1
+   },
+   {
+    "label": "Double down: book a VIP craps night at the next event",
+    "effects": [
+     "earn('vip packages', 60000 * scale)",
+     "commission -= 3",
+     "heat += 3",
+     "president.vegasDebt += 50000"
+    ],
+    "result": "'Craps & Cagefights' sells out. The commission is going to need to see some paperwork.",
+    "bot": 2,
+    "ethics": -2
+   }
+  ],
+  "cooldownWeeks": 40,
+  "chain": "pres_vegas"
+ },
+ {
+  "id": "pres_vegas_markers",
+  "title": "The Markers",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Mr. President, it's the casino. Friendly call. You signed some markers last month. {$debt} worth. We'd love to discuss repayment, or 'a mutually beneficial partnership'.",
+    "speaker": "Casino host Vinnie"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay it off personally",
+    "effects": [
+     "wealth -= vars.debt",
+     "heat -= 1"
+    ],
+    "result": "You pay. Your spouse finds the bank statement. That's a separate storyline.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Make the casino the official sponsor instead",
+    "effects": [
+     "earn('sponsors', vars.debt * 0.5)",
+     "commission -= 4",
+     "heat += 3",
+     "president.vegasDebt = 0"
+    ],
+    "result": "'Lucky Buck Casino: Official Gaming Partner.' The commission is going to need to see some more paperwork.",
+    "bot": 2,
+    "ethics": -2
+   }
+  ],
+  "conditions": "president.vegasDebt > 0 || since('pres_casino') < 30",
+  "cooldownWeeks": 40,
+  "chain": "pres_vegas",
+  "vars": {
+   "debt": "rand(40, 150) * 1000 * scale"
+  }
+ },
+ {
+  "id": "pres_reporter_fight",
+  "title": "You vs. The Reporter",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "{reporter.name} from {reporter.outlet} ambushes you in the parking garage with a camera and a question about fighter pay. You respond with a word that rhymes with 'duck'. He asks a follow-up. You respond with the same word, louder.",
+    "speaker": "{reporter.name}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Apologize publicly",
+    "effects": [
+     "media += 2",
+     "reporter.rel += 10"
+    ],
+    "result": "You apologize. He accepts. He also publishes the footage.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Ban {reporter.name} from all events",
+    "effects": [
+     "ban(reporter)",
+     "media -= 4",
+     "reporter.rel -= 40",
+     "follow('pres_banned_reporter_back', 8)"
+    ],
+    "result": "Banned. The Streisand effect kicks in immediately. {reporter.name}'s next story is about you banning him. It does huge numbers.",
+    "bot": 1
+   },
+   {
+    "label": "Challenge him to a charity boxing match",
+    "effects": [
+     "media -= 1",
+     "fans += 3",
+     "reporter.rel -= 5",
+     "earn('charity event', 40000 * scale)"
+    ],
+    "result": "The charity match happens. You lose. By KO. The charity raises $2M. Worth it?",
+    "ethics": -1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.rel < 20"
+   }
+  },
+  "cooldownWeeks": 40,
+  "chain": "pres_press"
+ },
+ {
+  "id": "pres_banned_reporter_back",
+  "title": "The Return of the Banned",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "{reporter.name} is outside the venue in a fake moustache and a lanyard that says 'Bob from Catering'. Security wants to know what to do.",
+    "speaker": "Your head of security"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Let him in. It's funnier.",
+    "effects": [
+     "unban(reporter)",
+     "media += 2",
+     "reporter.rel += 10"
+    ],
+    "result": "He covers the event in the moustache. It becomes his signature look.",
+    "default": true
+   },
+   {
+    "label": "Throw him out",
+    "effects": [
+     "media -= 2",
+     "reporter.rel -= 10"
+    ],
+    "result": "Security escorts Bob from Catering out. The video gets 5 million views.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.banned"
+   }
+  },
+  "chain": "pres_press",
+  "followupOnly": true
+ },
+ {
+  "id": "pres_leaked_texts",
+  "title": "Leaked Texts",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "A screenshot of your group chat with the matchmakers has leaked. Your messages include 'these guys would fight for a sandwich', 'book the guy with the big chin, he never dies', and nine skull emojis.",
+    "title": "SCREENSHOT (LEAKED)"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Claim it's fake",
+    "effects": [
+     "media -= 3",
+     "fighters -= 4",
+     "heat += 2"
+    ],
+    "result": "'Fake.' Several fighters post screenshots of you sending them the exact same emojis.",
+    "bot": 1,
+    "default": true
+   },
+   {
+    "label": "Apologize to the roster",
+    "effects": [
+     "fighters += 2",
+     "media += 1",
+     "patience -= 2"
+    ],
+    "result": "You give a speech in the locker room. It's surprisingly heartfelt. Someone films it. It also leaks.",
+    "ethics": 1
+   },
+   {
+    "label": "Find the leaker",
+    "effects": [
+     "heat += 2",
+     "follow('media_mole_hunt', 2)"
+    ],
+    "result": "Somebody in your building is talking. You will find them."
+   }
+  ],
+  "conditions": "act >= 2",
+  "cooldownWeeks": 60,
+  "chain": "pres_press"
+ },
+ {
+  "id": "pres_politics",
+  "title": "The Senator",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A senator wants you to appear at a rally. 'Big fan, big fan. Love the fights. Would love you to say a few words. And maybe the Fight Boss endorsement?' He sounds like a man who has never watched a fight.",
+    "speaker": "Senator Dick Ballsworth"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Go to the rally",
+    "effects": [
+     "media -= 3",
+     "fans += 1",
+     "heat += 3",
+     "flag.politics += 1",
+     "follow('pres_politics_2', 10)"
+    ],
+    "result": "You speak for six minutes. You say 'I'll put them all in the cage' twice. The crowd loves it. Half your audience is now furious.",
+    "bot": 1
+   },
+   {
+    "label": "Decline politely",
+    "effects": [
+     "media += 1"
+    ],
+    "result": "You decline. He endorses a slap league instead.",
+    "default": true
+   }
+  ],
+  "conditions": "act >= 3",
+  "cooldownWeeks": 104,
+  "chain": "politics"
+ },
+ {
+  "id": "pres_politics_2",
+  "title": "The Hearing",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "The Senate Commerce Committee 'requests' your testimony regarding fighter pay, brain injuries and 'the promotion's relationship with Senator Ballsworth'.",
+    "title": "CONGRESSIONAL SUMMONS"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Testify honestly",
+    "effects": [
+     "heat -= 5",
+     "media += 4",
+     "patience -= 5",
+     "fighters += 3"
+    ],
+    "result": "You tell the truth for three hours. Nobody has ever seen a promoter do that. The board is horrified.",
+    "ethics": 3
+   },
+   {
+    "label": "Testify like it's a press conference",
+    "effects": [
+     "heat += 6",
+     "fans += 3",
+     "flag.politics += 2",
+     "follow('pres_politics_3', 26)"
+    ],
+    "result": "You call a senator 'a bum' on live TV. Your approval rating goes up. Not with the senators.",
+    "bot": 1,
+    "default": true
+   }
+  ],
+  "chain": "politics",
+  "followupOnly": true
+ },
+ {
+  "id": "pres_politics_3",
+  "title": "Run For Office?",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "A political consultant in a vest is in your office. 'Polls show you at 38% for an open Senate seat. People like a guy who yells. You yell. Let's talk.'",
+    "speaker": "Consultant Chet"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Run for office (this ends your career here)",
+    "effects": [
+     "endGame('politics')",
+     "setFlag('ending_politics', 1)"
+    ],
+    "result": "You announce your candidacy at a weigh-in. You punch a cardboard cutout of your opponent. It's over. It's just beginning."
+   },
+   {
+    "label": "Stay in the fight business",
+    "effects": [
+     "fans += 2"
+    ],
+    "result": "'I already run something more important than the country.'",
+    "default": true
+   }
+  ],
+  "conditions": "act >= 4",
+  "chain": "politics",
+  "followupOnly": true
+ },
+ {
+  "id": "pres_slap_league",
+  "title": "The Slap League",
+  "category": "venture",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "A man in a tracksuit pitches you: 'Slap fighting. Two guys, one table, no defense. You just... take it. Costs nothing to produce. Ratings are insane.' His face is visibly swollen.",
+    "speaker": "Slap promoter Dusty"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Launch the slap league",
+    "effects": [
+     "venture('slap')",
+     "fans -= 3",
+     "commission -= 5",
+     "media -= 3",
+     "network += 4",
+     "flag.slap = 1",
+     "follow('slap_first_event', 3)"
+    ],
+    "result": "'POWER SLAP SHOWDOWN presented by {promotion}.' Doctors draft a joint letter. The ratings arrive before the letter.",
+    "bot": 2,
+    "ethics": -2
+   },
+   {
+    "label": "Absolutely not",
+    "effects": [
+     "commission += 1",
+     "media += 1"
+    ],
+    "result": "You pass. Dusty slaps himself on the way out. For practice.",
+    "default": true
+   }
+  ],
+  "conditions": "act >= 2 && venture == ''",
+  "cooldownWeeks": 104,
+  "oncePerCareer": true,
+  "chain": "slap"
+ },
+ {
+  "id": "pres_reality_show",
+  "title": "The Reality Show",
+  "category": "venture",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A network wants a reality show: 16 prospects in a house, one contract. 'We'll need conflict. Like, a lot of it. We'll handle the alcohol budget.'",
+    "speaker": "Network producer Kendra"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Make the show",
+    "effects": [
+     "venture('reality')",
+     "network += 6",
+     "fans += 3",
+     "follow('reality_house_drama', 4)"
+    ],
+    "result": "'The Ultimate Fighter Who Lives In A House' is greenlit. The house has a pool. The pool will be a problem.",
+    "bot": 2
+   },
+   {
+    "label": "Pass",
+    "effects": [
+     "network -= 1"
+    ],
+    "result": "They make it with a rival. The rival's prospects become famous.",
+    "default": true
+   }
+  ],
+  "conditions": "act >= 2 && venture == ''",
+  "cooldownWeeks": 104,
+  "oncePerCareer": true,
+  "chain": "reality"
+ },
+ {
+  "id": "pres_energy_drink",
+  "title": "Your Own Energy Drink",
+  "category": "venture",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "A beverage executive with very white teeth wants to launch 'BOSS JUICE', an energy drink with your face on it. '400mg of caffeine. Legally that's fine. Ethically that's fine. Medically we're still checking.'",
+    "speaker": "BevCo executive"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Launch BOSS JUICE",
+    "effects": [
+     "venture('energy')",
+     "wealth += 200000",
+     "sponsors += 4",
+     "follow('energy_drink_recall', 20)"
+    ],
+    "result": "BOSS JUICE launches. It tastes like a battery dipped in Skittles. It sells out.",
+    "bot": 2
+   },
+   {
+    "label": "Pass",
+    "effects": [],
+    "result": "The drink launches with someone else's face on it. A slap fighter's.",
+    "default": true
+   }
+  ],
+  "conditions": "act >= 3 && venture == ''",
+  "cooldownWeeks": 104,
+  "oncePerCareer": true,
+  "chain": "energy"
+ },
+ {
+  "id": "pres_celebrity_boxer",
+  "title": "The Celebrity Feud",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "A celebrity boxing influencer has posted a video calling you 'a bald thumb who pays fighters in exposure'. It has 40 million views. He's challenging you to a fight. Or a 'debate'. Or a podcast. Whatever gets clicks."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Respond with a diss video",
+    "effects": [
+     "fans += 2",
+     "media -= 2",
+     "network += 2"
+    ],
+    "result": "Your diss video is three minutes long and mostly you yelling in a parking lot. It does huge numbers.",
+    "bot": 1,
+    "default": true
+   },
+   {
+    "label": "Ignore it",
+    "effects": [
+     "media += 1",
+     "fans -= 1"
+    ],
+    "result": "Silence. He makes four more videos about your silence."
+   }
+  ],
+  "conditions": "act >= 2",
+  "cooldownWeeks": 52
+ },
+ {
+  "id": "pres_bald_joke",
+  "title": "The Wig Rumor",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "A fan account posted an edited photo of you with a full head of hair. 2 million likes. The caption: 'the president if he paid fighters'. Your own staff are sharing it."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Post it yourself with 'lol'",
+    "effects": [
+     "fans += 2",
+     "media += 1"
+    ],
+    "result": "Self-deprecation. The internet briefly respects you.",
+    "default": true
+   },
+   {
+    "label": "Demand it be taken down",
+    "effects": [
+     "media -= 2",
+     "fans -= 1"
+    ],
+    "result": "The Streisand effect strikes again. It's now on a billboard."
+   }
+  ],
+  "cooldownWeeks": 104
+ },
+ {
+  "id": "family_anniversary",
+  "title": "Anniversary",
+  "category": "family",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "It's your spouse. 'Do you know what today is?' You do not know what today is. 'It's our anniversary. You're at a weigh-in in Tulsa. AGAIN.'",
+    "speaker": "Your spouse"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Fly home immediately (miss the event)",
+    "effects": [
+     "wealth -= 15000",
+     "fans -= 1",
+     "flag.marriage_points += 2"
+    ],
+    "result": "You fly home with flowers bought at the airport. They're from a vending machine. It's the thought that counts.",
+    "ethics": 2
+   },
+   {
+    "label": "Send something expensive",
+    "effects": [
+     "wealth -= 30000",
+     "flag.marriage_points += 1"
+    ],
+    "result": "A bracelet. It says 'sorry' in diamonds. Diamonds can't fix everything, but they can fix some things.",
+    "default": true
+   },
+   {
+    "label": "'I'm building an empire, babe'",
+    "effects": [
+     "flag.marriage_points -= 3",
+     "follow('family_separation', 8)"
+    ],
+    "result": "Silence on the line. Then a dial tone. That dial tone will cost you.",
+    "bot": 1
+   }
+  ],
+  "conditions": "president.marriage == 'married'",
+  "cooldownWeeks": 52,
+  "chain": "marriage"
+ },
+ {
+  "id": "family_separation",
+  "title": "Separation",
+  "category": "family",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "Your spouse has moved out and hired a divorce lawyer named Gloria who is known in legal circles as 'The Guillotine'. Her retainer letter is printed on black paper.",
+    "title": "LETTER FROM COUNSEL"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Couples therapy ({$fee})",
+    "effects": [
+     "wealth -= vars.fee",
+     "president.marriage = 'married'",
+     "flag.marriage_points += 2"
+    ],
+    "result": "The therapist asks you to 'leave the business at the door'. You bring the business to every session.",
+    "ethics": 1
+   },
+   {
+    "label": "Lawyer up",
+    "effects": [
+     "president.marriage = 'separated'",
+     "follow('family_divorce_final', 20)"
+    ],
+    "result": "Your lawyer is good. Hers is The Guillotine.",
+    "default": true
+   }
+  ],
+  "chain": "marriage",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(5, 15) * 1000 * scale"
+  }
+ },
+ {
+  "id": "family_divorce_final",
+  "title": "The Divorce",
+  "category": "family",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "Final settlement: your ex gets the house, the boat, half your personal wealth, and the dog, whose name was 'Main Event'.",
+    "title": "DIVORCE DECREE"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Sign",
+    "effects": [
+     "wealth *= 0.5",
+     "president.marriage = 'divorced'",
+     "president.lifestyle = 1"
+    ],
+    "result": "Divorced. You buy a condo with a view of an arena. You eat cereal for dinner.",
+    "default": true
+   }
+  ],
+  "chain": "marriage",
+  "followupOnly": true
+ },
+ {
+  "id": "family_kid_school",
+  "title": "Private School Fees",
+  "category": "family",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "Tuition notice from Westbrook Academy: {$fee} for the semester, plus a 'voluntary' contribution to the new lacrosse pavilion. Your kid has been suspended twice for 'demonstrating rear-naked chokes'.",
+    "title": "TUITION NOTICE"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pay it",
+    "effects": [
+     "wealth -= vars.fee"
+    ],
+    "result": "Paid. The lacrosse pavilion will have your name on a brick.",
+    "default": true
+   },
+   {
+    "label": "Move the kid to public school",
+    "effects": [
+     "president.kidsSchool = false",
+     "flag.marriage_points -= 1"
+    ],
+    "result": "Your kid is thrilled. Public school has a wrestling team."
+   }
+  ],
+  "conditions": "president.kidsSchool",
+  "cooldownWeeks": 52,
+  "vars": {
+   "fee": "rand(20, 45) * 1000 * scale"
+  }
+ },
+ {
+  "id": "family_kid_fights",
+  "title": "Your Kid Wants to Fight",
+  "category": "family",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "Your teenager walks into your office with a mouthguard. 'I want to be a fighter. I've been training at {fighter.gym} with {fighter.first} for three months.' {fighter.first} is standing behind them, looking guilty.",
+    "speaker": "Your kid"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Support it",
+    "effects": [
+     "fighter.loyalty += 10",
+     "flag.kid_fighter = 1"
+    ],
+    "result": "Your kid wins their first amateur bout. You cry harder than you have at any event you've promoted.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Absolutely not",
+    "effects": [
+     "fighter.loyalty -= 5",
+     "flag.marriage_points += 1"
+    ],
+    "result": "'I've seen what this does to people.' You've also profited from what this does to people. Your kid points this out."
+   }
+  ],
+  "roles": {
+   "fighter": {
+    "type": "fighter",
+    "where": "f.ours && f.traits.has('Mentor') || f.ours && f.traits.has('Wholesome')"
+   }
+  },
+  "conditions": "act >= 3",
+  "oncePerCareer": true
+ },
+ {
+  "id": "pres_lifestyle",
+  "title": "Upgrade?",
+  "category": "president",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "Your business manager is here with brochures: a yacht, a jet share, and a watch that 'tells time in four dimensions'. 'You've earned it. Also people will respect you more. Probably.'",
+    "speaker": "Your business manager"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Go full whale (yacht, jet, watch)",
+    "effects": [
+     "lifestyle(2)",
+     "wealth -= 500000",
+     "media -= 1"
+    ],
+    "result": "You are now a man with a yacht. You get seasick. You keep the yacht.",
+    "bot": 1
+   },
+   {
+    "label": "A modest upgrade",
+    "effects": [
+     "lifestyle(1)",
+     "wealth -= 50000"
+    ],
+    "result": "A nicer car. A nicer watch. Same bald head.",
+    "default": true
+   },
+   {
+    "label": "Stay humble",
+    "effects": [
+     "fighters += 1"
+    ],
+    "result": "You keep driving the 2009 truck. The fighters respect it. Your spouse does not.",
+    "ethics": 1
+   }
+  ],
+  "conditions": "wealth > 1000000 && president.lifestyle < 2",
+  "cooldownWeeks": 104
+ },
+ {
+  "id": "pres_ref_course",
+  "title": "The Online Course",
+  "category": "misc",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "An email arrives: 'BECOME A LICENSED MMA REFEREE IN 6 WEEKS! 100% ONLINE! Endorsed by Nerm Bean.' You hover over the link for an unusually long time.",
+    "title": "EMAIL"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Enroll (secretly)",
+    "effects": [
+     "setFlag('ref_license', 1)",
+     "wealth -= 499"
+    ],
+    "result": "You pass the final exam. The final exam was a single question: 'Is he OK?' The correct answer was 'let him fight'."
+   },
+   {
+    "label": "Delete the email",
+    "effects": [],
+    "result": "Deleted. But you'll think about it.",
+    "default": true
+   }
+  ],
+  "conditions": "act >= 4",
+  "weight": 4,
+  "oncePerCareer": true
+ },
+ {
+  "id": "pres_desert_offer",
+  "title": "The Desert Kingdom",
+  "category": "business",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "A delegation from the Kingdom of Qasr sits in your office. They do not blink. 'His Excellency would like to buy your promotion. All of it. And you. Name a number. Then add a zero. Then we add another.'",
+    "speaker": "Royal envoy"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Sell everything (this ends your career here)",
+    "effects": [
+     "endGame('desert')",
+     "setFlag('ending_desert', 1)",
+     "wealth += 500000000"
+    ],
+    "result": "You sign. A golden pen. A golden cage. A passport you are not allowed to use.",
+    "bot": 1,
+    "ethics": -3
+   },
+   {
+    "label": "Host one mega-event there instead",
+    "effects": [
+     "unlockVenue('desert_kingdom')",
+     "earn('site fees', 30000000 * scale)",
+     "media -= 6",
+     "heat += 4"
+    ],
+    "result": "One event. The site fee alone is more than your first five years combined. Human rights groups send you a very long email.",
+    "bot": 2,
+    "ethics": -2,
+    "default": true
+   },
+   {
+    "label": "Decline",
+    "effects": [
+     "media += 3",
+     "fighters += 1"
+    ],
+    "result": "You decline. The envoy smiles in a way that suggests 'for now'.",
+    "ethics": 2
+   }
+  ],
+  "conditions": "act >= 4",
+  "oncePerCareer": true,
+  "chain": "desert"
+ }
+]

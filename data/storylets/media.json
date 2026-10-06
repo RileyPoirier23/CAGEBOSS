@@ -1,0 +1,794 @@
+[
+ {
+  "id": "insider_scoop",
+  "title": "Scooped Again",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "{reporter.name}: 'Sources tell me {promotion} is finalizing {subject.first} {subject.last} vs. a top contender for next month.' You haven't even called {subject.first}'s manager yet. You were going to do that after lunch.",
+    "speaker": "{reporter.name}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Confirm it to save face",
+    "effects": [
+     "media += 1",
+     "reporter.rel += 5",
+     "subject.hype += 4"
+    ],
+    "result": "You confirm. He thanks you for confirming. He already knew.",
+    "default": true
+   },
+   {
+    "label": "Change the fight just to make him wrong",
+    "effects": [
+     "reporter.rel -= 10",
+     "fans -= 1",
+     "subject.morale -= 3"
+    ],
+    "result": "You book something else entirely. He tweets 'Plans changed. Sources tell me it's because I reported it.' He's right.",
+    "bot": 1
+   },
+   {
+    "label": "Ban him",
+    "effects": [
+     "ban(reporter)",
+     "media -= 5",
+     "reporter.rel -= 30",
+     "follow('insider_ban_backfire', 3)"
+    ],
+    "result": "Banned. You feel great for about four minutes."
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.id == 'ariel_hellwani' && !f.banned"
+   },
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.star > 30"
+   }
+  },
+  "weight": 14,
+  "cooldownWeeks": 12,
+  "chain": "insider"
+ },
+ {
+  "id": "insider_ban_backfire",
+  "title": "The Ban Backfires",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "THE PRESIDENT BANNED A REPORTER FOR REPORTING. Every outlet, including the ones that hate {reporter.name}, runs it. Three fighters post 'Free {reporter.last}' T-shirts. Somebody is selling the T-shirts."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Unban him and pretend it never happened",
+    "effects": [
+     "unban(reporter)",
+     "media += 2",
+     "reporter.rel += 5"
+    ],
+    "result": "Unbanned. He tweets a single word: 'Sources.'",
+    "default": true
+   },
+   {
+    "label": "Keep the ban",
+    "effects": [
+     "media -= 6",
+     "heat += 2",
+     "follow('media_mole_hunt', 2)"
+    ],
+    "result": "You keep the ban. His scoops get MORE accurate. Someone inside is feeding him.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.id == 'ariel_hellwani'"
+   }
+  },
+  "chain": "insider",
+  "followupOnly": true
+ },
+ {
+  "id": "insider_feed_leak",
+  "title": "Feed Him a Leak",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "{reporter.name} on the line, unusually polite. 'Hey, I'd love to get something before anyone else this week. Off the record, anything you can give me?'",
+    "speaker": "{reporter.name}",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Feed him a real exclusive",
+    "effects": [
+     "reporter.rel += 15",
+     "media += 3",
+     "fans += 1"
+    ],
+    "result": "He breaks it with 'I'm told by a source with direct knowledge'. You are the direct knowledge. It feels weirdly great.",
+    "default": true
+   },
+   {
+    "label": "Feed him a fake story to burn him",
+    "effects": [
+     "reporter.rel -= 20",
+     "media -= 2",
+     "chaos += 2"
+    ],
+    "result": "He reports a fight that doesn't exist. He finds out within hours. He will never forget.",
+    "bot": 1,
+    "ethics": -1
+   },
+   {
+    "label": "Nothing today",
+    "effects": [
+     "reporter.rel -= 3"
+    ],
+    "result": "'Understood.' He'll get it from someone else."
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.id == 'ariel_hellwani'"
+   }
+  },
+  "cooldownWeeks": 20,
+  "chain": "insider"
+ },
+ {
+  "id": "media_mole_hunt",
+  "title": "The Mole Hunt",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "memo",
+    "text": "Every confidential decision this month has leaked within an hour. Legal recommends an internal investigation. Suspects: the matchmaker, your assistant, the cutman coordinator, and a guy named Rick nobody remembers hiring.",
+    "speaker": "The Board",
+    "title": "MEMO: CONFIDENTIAL (LOL)"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Plant different fake info with each suspect",
+    "effects": [
+     "follow('media_mole_reveal', 3)",
+     "heat += 1"
+    ],
+    "result": "The canary trap is set. Four suspects, four different fake stories about a fight with a bear.",
+    "bot": 1,
+    "default": true
+   },
+   {
+    "label": "Drop it",
+    "effects": [
+     "media -= 1"
+    ],
+    "result": "The leaks continue. Rick gets a promotion."
+   }
+  ],
+  "chain": "insider",
+  "followupOnly": true
+ },
+ {
+  "id": "media_mole_reveal",
+  "title": "The Mole Revealed",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "{reporter.name} has reported that 'the promotion is negotiating a fight with a bear'. Only one person was told the bear story: Rick. Nobody remembers hiring Rick. Rick, it turns out, is {reporter.name}'s cousin.",
+    "title": "INTERNAL INVESTIGATION REPORT"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Fire Rick",
+    "effects": [
+     "media += 1",
+     "reporter.rel -= 10",
+     "flag.mole_caught = 1"
+    ],
+    "result": "Rick is escorted out. He takes a stapler and a framed photo of you that he apparently kept on his desk.",
+    "default": true
+   },
+   {
+    "label": "Keep Rick and use him to feed stories",
+    "effects": [
+     "reporter.rel += 5",
+     "media += 3",
+     "chaos += 1",
+     "flag.mole_turned = 1"
+    ],
+    "result": "Rick becomes a double agent. He's surprisingly good at it. He asks for a raise.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.id == 'ariel_hellwani'"
+   }
+  },
+  "chain": "insider",
+  "followupOnly": true
+ },
+ {
+  "id": "expose_inquiry",
+  "title": "A Polite Email",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "Dear {president}: I'm {reporter.name} from {reporter.outlet}. I'm working on a story about {promotion}'s treatment of fighters, its finances, and several 'buried' documents. I'd welcome your comment. I have 48 hours of questions. Kind regards.",
+    "title": "EMAIL"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Sit down for a full interview",
+    "effects": [
+     "reporter.rel += 15",
+     "follow('expose_part1', 6)",
+     "flag.expose_cooperated = 1"
+    ],
+    "result": "You talk for two hours. You say 'off the record' nine times. It is not off the record.",
+    "ethics": 1
+   },
+   {
+    "label": "'No comment'",
+    "effects": [
+     "follow('expose_part1', 6)"
+    ],
+    "result": "'{promotion} declined to comment.' The classic.",
+    "default": true
+   },
+   {
+    "label": "Threaten to sue",
+    "effects": [
+     "spend('legal', 50000 * scale)",
+     "reporter.rel -= 25",
+     "heat += 2",
+     "follow('expose_part1', 4)"
+    ],
+    "result": "The legal threat becomes paragraph one of the story.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.outletType == 'serious'"
+   }
+  },
+  "conditions": "act >= 3 && (heat > 25 || flag('buried') > 2 || flag('underpay') > 4)",
+  "oncePerCareer": true,
+  "chain": "expose"
+ },
+ {
+  "id": "expose_part1",
+  "title": "Part One: The Desk",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "INVESTIGATION, PART 1 OF 4: Inside {promotion}, where paperwork goes to die. Former staff describe a filing system of 'shredder, drawer, or the President's car'. Twelve sources. Photographs. A diagram."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Release a rebuttal",
+    "effects": [
+     "media -= 2",
+     "heat += 2",
+     "follow('expose_part2', 3)"
+    ],
+    "result": "Your rebuttal has eleven typos. They screenshot every one.",
+    "default": true
+   },
+   {
+    "label": "Announce an independent compliance review",
+    "effects": [
+     "spend('consulting', 100000 * scale)",
+     "media += 2",
+     "heat -= 3",
+     "commission += 2",
+     "follow('expose_part2', 3)"
+    ],
+    "result": "A compliance firm arrives. They wear identical blue suits. They find more than you hoped.",
+    "ethics": 2
+   }
+  ],
+  "chain": "expose",
+  "followupOnly": true
+ },
+ {
+  "id": "expose_part2",
+  "title": "Part Two: The Money",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "INVESTIGATION, PART 2 OF 4: The Money. How {promotion} pays fighters 15% of revenue while the President's lifestyle includes, per receipts, 'a jet ski, a second jet ski, and a jet ski for the jet ski'."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Raise minimum purses immediately",
+    "effects": [
+     "allFighters('morale', 6)",
+     "fighters += 6",
+     "patience -= 5",
+     "flag.fairpay += 3",
+     "follow('expose_part3', 3)"
+    ],
+    "result": "You raise minimum purses before Part 3. The reporter notes this in Part 3, generously.",
+    "ethics": 2
+   },
+   {
+    "label": "Ride it out",
+    "effects": [
+     "fighters -= 4",
+     "media -= 3",
+     "follow('expose_part3', 3)"
+    ],
+    "result": "Two more parts. Deep breaths.",
+    "default": true
+   }
+  ],
+  "chain": "expose",
+  "followupOnly": true
+ },
+ {
+  "id": "expose_part3",
+  "title": "Part Three: The Bodies",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "INVESTIGATION, PART 3 OF 4: The Damage. Former fighters describe memory loss, unpaid medical bills, and a promotion that 'treated brain scans like optional paperwork'. This part is not funny. It isn't meant to be."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Fund a retired fighters' health program",
+    "effects": [
+     "spend('fighter health fund', 500000 * scale)",
+     "media += 6",
+     "fighters += 8",
+     "heat -= 6",
+     "follow('expose_part4', 3)"
+    ],
+    "result": "You fund it. Fully. Some things are just right.",
+    "ethics": 3
+   },
+   {
+    "label": "Issue a statement about 'risk being inherent'",
+    "effects": [
+     "media -= 6",
+     "fighters -= 5",
+     "heat += 4",
+     "follow('expose_part4', 3)"
+    ],
+    "result": "The statement is accurate and terrible.",
+    "bot": 1,
+    "default": true
+   }
+  ],
+  "chain": "expose",
+  "followupOnly": true
+ },
+ {
+  "id": "expose_part4",
+  "title": "Part Four: The Boss",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "INVESTIGATION, PART 4 OF 4: The Boss. A portrait of {president}. Loud, chaotic, occasionally generous, frequently reckless. 'He's not evil,' one source says. 'He's just never once read a document.'"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Frame it and hang it in the office",
+    "effects": [
+     "fans += 2",
+     "media += 1"
+    ],
+    "result": "'Never once read a document' is now printed on a T-shirt you wear to weigh-ins.",
+    "default": true
+   },
+   {
+    "label": "Sue for defamation",
+    "effects": [
+     "spend('legal', 300000 * scale)",
+     "heat += 5",
+     "media -= 4"
+    ],
+    "result": "It goes nowhere. Truth is a defense. Many things in the article are true.",
+    "bot": 1
+   }
+  ],
+  "chain": "expose",
+  "followupOnly": true
+ },
+ {
+  "id": "brogan_invite",
+  "title": "The Joe Brogan Experience",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Joe Brogan wants you on the podcast. 'Four hours, man, totally relaxed. We'll talk fights, elk meat, the pyramids, it's entirely possible we talk about DMT.'",
+    "speaker": "Joe Brogan's producer"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Do the podcast",
+    "effects": [
+     "fans += 3",
+     "media += 2",
+     "heat += 1"
+    ],
+    "result": "You say something you shouldn't around hour three. Nobody notices because Joe is showing a picture of a chimpanzee ripping a guy's face off.",
+    "default": true
+   },
+   {
+    "label": "Send your best fighter instead",
+    "effects": [
+     "fans += 2",
+     "subject.hype += 10",
+     "subject.followers *= 1.15"
+    ],
+    "result": "{subject.first} goes on for three hours and becomes a mainstream celebrity overnight.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.star > 30"
+   }
+  }
+ },
+ {
+  "id": "braille_breakdown",
+  "title": "Braille's Breakdown",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "Braille Sonnen posted a 40-minute video breaking down {subject.first} {subject.last}'s last fight. He describes '{subject.last}'s beautiful southpaw stance' ({subject.last} is orthodox) and the 'gorgeous blue shorts' (they were red). At the end, he leans into the camera and says: 'I don't actually know what I'm talking about. I can't see shit.' 3 million views.",
+    "speaker": "Braille Sonnen",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Share it on the official account",
+    "effects": [
+     "fans += 2",
+     "subject.hype += 4",
+     "reporter.rel += 10"
+    ],
+    "result": "The official account shares it with the caption 'he's not wrong (he is wrong)'. Engagement goes through the roof.",
+    "default": true
+   },
+   {
+    "label": "Hire Braille for the broadcast team",
+    "effects": [
+     "network += 2",
+     "fans += 3",
+     "media -= 1",
+     "reporter.rel += 25",
+     "setFlag('braille_on_broadcast', 1)"
+    ],
+    "result": "Braille joins the booth. His first call: 'And THAT is a beautiful left hook' during a takedown. He's an instant cult hero.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.id == 'braille_sonnen'"
+   },
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.weeksSinceFight < 3"
+   }
+  },
+  "weight": 12,
+  "cooldownWeeks": 16,
+  "chain": "braille"
+ },
+ {
+  "id": "braille_prediction",
+  "title": "Braille's Big Prediction",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Braille Sonnen is live on air predicting your next main event. 'I've studied the tape. Well, I've listened to the tape. {subject.last} wins by flying knee in round one, then retires to raise llamas. Mark it down.' Betting lines are moving because of this.",
+    "speaker": "Braille Sonnen",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Call in live and play along",
+    "effects": [
+     "fans += 2",
+     "reporter.rel += 5"
+    ],
+    "result": "You call in. Braille says 'Who's this? Sounds bald.' Iconic.",
+    "default": true
+   },
+   {
+    "label": "Ask the betting sites to ignore him",
+    "effects": [
+     "media -= 1",
+     "reporter.rel -= 5"
+    ],
+    "result": "They don't. Braille is now the most influential handicapper in the sport.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.id == 'braille_sonnen'"
+   },
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.booked && f.star > 25"
+   }
+  },
+  "cooldownWeeks": 16,
+  "chain": "braille"
+ },
+ {
+  "id": "braille_interview_fail",
+  "title": "Braille Interviews The Wrong Guy",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "Braille Sonnen did a 12-minute backstage interview with {subject.first} {subject.last}. It was a janitor. The janitor answered every question and announced he wants a title shot. The clip is the most-viewed thing your promotion posted all year.",
+    "speaker": "Braille Sonnen",
+    "portrait": "reporter"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Give the janitor a prelim fight",
+    "effects": [
+     "fans += 4",
+     "commission -= 2",
+     "media += 1"
+    ],
+    "result": "The janitor loses in 40 seconds and gets a fight-night bonus anyway, from the fans, via GoFundMe.",
+    "bot": 1
+   },
+   {
+    "label": "Just enjoy it",
+    "effects": [
+     "fans += 2"
+    ],
+    "result": "Pure content.",
+    "default": true
+   }
+  ],
+  "roles": {
+   "reporter": {
+    "type": "reporter",
+    "where": "f.id == 'braille_sonnen'"
+   },
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours"
+   }
+  },
+  "weight": 8,
+  "chain": "braille"
+ },
+ {
+  "id": "tmz_ambush",
+  "title": "Camera Guy Dave",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "Camera Guy Dave from TMZee is outside the steakhouse as you leave. 'YO PREZ! Quick question! Is it true {subject.first} {subject.last} cried during weigh-ins? Do YOU cry? When did you last cry? Can you cry now?'",
+    "speaker": "Camera Guy Dave"
+   }
+  ],
+  "choices": [
+   {
+    "label": "'Everybody cries, Dave.'",
+    "effects": [
+     "media += 2",
+     "fans += 1"
+    ],
+    "result": "'Everybody cries, Dave' becomes a meme and a T-shirt.",
+    "default": true
+   },
+   {
+    "label": "Push past him",
+    "effects": [
+     "media -= 1"
+    ],
+    "result": "The push is captioned 'PREZ GETS PHYSICAL'. It was a shoulder brush.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.star > 30"
+   }
+  },
+  "cooldownWeeks": 20
+ },
+ {
+  "id": "conspiracy_stream",
+  "title": "TruthBomb Live Says It Was Rigged",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "Rex Bunkerman of TruthBomb Live is streaming a frame-by-frame 'investigation' proving your last main event was scripted. His evidence: 'Why would a guy fall down if he wasn't paid to?' 400,000 people are watching."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Ignore him",
+    "effects": [],
+    "result": "He streams for 9 hours. Ad revenue: impressive.",
+    "default": true
+   },
+   {
+    "label": "Invite him to the next event",
+    "effects": [
+     "media -= 1",
+     "fans += 1",
+     "chaos += 1"
+    ],
+    "result": "He attends wearing a tinfoil lanyard. He watches a KO from cageside, goes pale, and admits 'that one seemed real'.",
+    "bot": 1
+   }
+  ],
+  "cooldownWeeks": 40
+ },
+ {
+  "id": "forum_rumor",
+  "title": "The Forum Rumor",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "An anonymous Undergrowth forum post claims {subject.first} {subject.last} is 'secretly retiring to become a professional bowler'. It has 900 replies. {subject.last}'s mother called {his} coach to ask about bowling."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Deny it",
+    "effects": [
+     "media += 1"
+    ],
+    "result": "You deny it. The forum now believes it more.",
+    "default": true
+   },
+   {
+    "label": "Book {him} a bowling sponsorship",
+    "effects": [
+     "earn('sponsors', 10000 * scale)",
+     "subject.followers *= 1.05"
+    ],
+    "result": "{He} bowls a 74 on a sponsored stream. The rumor is now partially true.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && f.star > 20"
+   }
+  },
+  "cooldownWeeks": 30
+ },
+ {
+  "id": "reporter_fighter_beef",
+  "title": "Reporter vs. Fighter",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "social",
+    "text": "{subject.first} {subject.last} called {reporter.name} 'a fat nerd with a lanyard' after a mildly critical article. {reporter.name} responded with {subject.last}'s full record against southpaws. It's brutal. {subject.last} has gone very quiet."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Make {subject.first} apologize",
+    "effects": [
+     "subject.morale -= 3",
+     "reporter.rel += 8",
+     "media += 2"
+    ],
+    "result": "The apology is three words long. Two of them are 'my bad'.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Book {subject.first} on a podcast to respond",
+    "effects": [
+     "subject.hype += 5",
+     "reporter.rel -= 10",
+     "media -= 2"
+    ],
+    "result": "The response podcast is two hours of {subject.first} reading the article aloud and saying 'nah'.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && (f.traits.has('Hothead') || f.traits.has('Trash Talker'))"
+   },
+   "reporter": {
+    "type": "reporter",
+    "where": "!f.banned"
+   }
+  },
+  "cooldownWeeks": 20
+ },
+ {
+  "id": "purse_report_leak",
+  "title": "The Purse Report Strikes",
+  "category": "media",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "The Purse Report has published your entire roster's salaries in a sortable spreadsheet. Column H is labelled 'what they should be paid'. Column I is labelled 'what the President's boat cost'."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Commission an independent pay study",
+    "effects": [
+     "spend('consulting', 50000 * scale)",
+     "fighters += 3",
+     "media += 1"
+    ],
+    "result": "The study concludes you should pay fighters more. You knew. You paid for the knowing.",
+    "ethics": 1
+   },
+   {
+    "label": "Call it fake news",
+    "effects": [
+     "fighters -= 4",
+     "media -= 2",
+     "news('pay', -0.5, 6)"
+    ],
+    "result": "It isn't fake. Column I is especially not fake.",
+    "bot": 1,
+    "default": true
+   }
+  ],
+  "conditions": "act >= 2 && flag('underpay') > 1",
+  "cooldownWeeks": 40
+ }
+]

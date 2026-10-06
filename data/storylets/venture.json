@@ -1,0 +1,317 @@
+[
+ {
+  "id": "slap_first_event",
+  "title": "Slap Night One",
+  "category": "venture",
+  "scenes": [
+   {
+    "type": "headline",
+    "text": "POWER SLAP SHOWDOWN debuts. A man named 'Big Hands' Doug was slapped unconscious in round one and woke up speaking fluent Portuguese. Ratings: enormous. Doctors: furious."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Expand it to weekly shows",
+    "effects": [
+     "earn('side venture', 150000 * scale)",
+     "network += 4",
+     "fans -= 3",
+     "commission -= 4",
+     "follow('slap_scandal', 10)"
+    ],
+    "result": "Weekly slaps. Your MMA fans write long, angry essays. Then they watch.",
+    "bot": 2
+   },
+   {
+    "label": "Keep it to a quarterly special",
+    "effects": [
+     "earn('side venture', 60000 * scale)",
+     "fans -= 1"
+    ],
+    "result": "Quarterly. A controlled amount of slapping.",
+    "default": true
+   }
+  ],
+  "chain": "slap",
+  "followupOnly": true
+ },
+ {
+  "id": "slap_scandal",
+  "title": "The Slap Heard Round the World",
+  "category": "venture",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "A slap fighter has been hospitalized after taking 'the slap of the century'. He's going to be okay. The video has 200 million views. A senator is calling slap fighting 'the end of civilization'. The slap league just outrated your last MMA PPV.",
+    "speaker": "Slap promoter Dusty"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Go all in on slapping",
+    "effects": [
+     "earn('side venture', 400000 * scale)",
+     "fans -= 6",
+     "fighters -= 3",
+     "media -= 5",
+     "follow('slap_forever', 26)",
+     "addFlag('slap', 2)"
+    ],
+    "result": "You announce a 'Slap World Championship'. Your MMA roster feels quietly betrayed.",
+    "bot": 2,
+    "ethics": -2
+   },
+   {
+    "label": "Add medical rules and slow down",
+    "effects": [
+     "commission += 3",
+     "media += 2",
+     "earn('side venture', 50000 * scale)"
+    ],
+    "result": "Mandatory neurologists. Fewer KOs. Fewer views. More sleep.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Shut it down",
+    "effects": [
+     "venture('')",
+     "fans += 3",
+     "commission += 4",
+     "fighters += 2"
+    ],
+    "result": "Slap league over. Dusty slaps himself goodbye."
+   }
+  ],
+  "chain": "slap",
+  "followupOnly": true
+ },
+ {
+  "id": "slap_forever",
+  "title": "Slap League Forever?",
+  "category": "venture",
+  "scenes": [
+   {
+    "type": "memo",
+    "text": "The board notes that the slap league now generates more profit than MMA with 4% of the cost. They propose 'transitioning the brand'. They have prepared a PowerPoint. Slide 1 is a hand.",
+    "speaker": "The Board",
+    "title": "MEMO: STRATEGIC PIVOT"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Pivot to slapping full time (this ends your career here)",
+    "effects": [
+     "endGame('slap_forever')",
+     "setFlag('ending_slap_forever', 1)"
+    ],
+    "result": "You become the King of Slaps. History will judge you. History is also watching.",
+    "bot": 1,
+    "ethics": -3
+   },
+   {
+    "label": "Refuse. MMA is the business.",
+    "effects": [
+     "patience -= 8",
+     "fans += 4",
+     "fighters += 3"
+    ],
+    "result": "You give a speech about 'real fighting'. The board writes 'sentimental' in your file.",
+    "ethics": 2,
+    "default": true
+   }
+  ],
+  "chain": "slap",
+  "followupOnly": true
+ },
+ {
+  "id": "reality_house_drama",
+  "title": "The House",
+  "category": "venture",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "Episode 3 of the reality show: a contestant threw a couch into the pool, two others got into a fight over a yogurt, and one guy has been hiding in a closet for two days 'visualizing'. The producers are thrilled."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Let the cameras roll",
+    "effects": [
+     "earn('side venture', 120000 * scale)",
+     "network += 3",
+     "fans += 2",
+     "follow('reality_finale', 8)"
+    ],
+    "result": "Ratings up 40%. The yogurt has its own fan page.",
+    "bot": 1,
+    "default": true
+   },
+   {
+    "label": "Bring in a coach to restore order",
+    "effects": [
+     "network -= 1",
+     "media += 1",
+     "follow('reality_finale', 8)"
+    ],
+    "result": "Order is restored. Ratings dip. The coach gets thrown in the pool anyway."
+   }
+  ],
+  "chain": "reality",
+  "followupOnly": true
+ },
+ {
+  "id": "reality_finale",
+  "title": "The Finale",
+  "category": "venture",
+  "scenes": [
+   {
+    "type": "narration",
+    "text": "The reality-show finale: the two finalists are the guy who threw the couch and the guy from the closet. The winner gets a contract with {promotion}."
+   }
+  ],
+  "choices": [
+   {
+    "label": "Sign both finalists",
+    "effects": [
+     "earn('side venture', 200000 * scale)",
+     "fans += 3",
+     "follow('reality_season2', 26)"
+    ],
+    "result": "Two new prospects. One throws furniture. The other hides. Both have 500,000 followers.",
+    "default": true
+   },
+   {
+    "label": "Sign only the winner",
+    "effects": [
+     "earn('side venture', 150000 * scale)",
+     "follow('reality_season2', 26)"
+    ],
+    "result": "One contract, one runner-up who now has a YouTube channel about 'being robbed'."
+   }
+  ],
+  "chain": "reality",
+  "followupOnly": true
+ },
+ {
+  "id": "reality_season2",
+  "title": "Season Two",
+  "category": "venture",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "Season two is greenlit if you agree to 'more drama'. Their notes: 'more alcohol, more exes, one contestant who is secretly a spy'.",
+    "speaker": "Network producer Kendra"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Agree to everything",
+    "effects": [
+     "earn('side venture', 250000 * scale)",
+     "network += 4",
+     "media -= 2",
+     "chaos += 2"
+    ],
+    "result": "The spy contestant is real. Nobody knows for whom.",
+    "bot": 2
+   },
+   {
+    "label": "Make it about the fighting",
+    "effects": [
+     "earn('side venture', 100000 * scale)",
+     "fans += 3",
+     "media += 2"
+    ],
+    "result": "A show about fighting. Novel. Critics love it. Fewer people watch.",
+    "ethics": 1,
+    "default": true
+   }
+  ],
+  "chain": "reality",
+  "followupOnly": true
+ },
+ {
+  "id": "energy_drink_recall",
+  "title": "BOSS JUICE Recall",
+  "category": "venture",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "RECALL NOTICE: BOSS JUICE 'Knockout Grape' has been found to contain 'significantly more caffeine than legally possible'. Reported side effects: tremors, visions, and in one case 'seeing through time'.",
+    "title": "FOOD SAFETY AGENCY"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Issue a full recall and refunds ({$fee})",
+    "effects": [
+     "spend('recall costs', vars.fee)",
+     "media += 2",
+     "sponsors += 1"
+    ],
+    "result": "Recalled. The cans become collectors' items. A full can sells for $400 online.",
+    "ethics": 2,
+    "default": true
+   },
+   {
+    "label": "Rebrand it as 'BOSS JUICE EXTREME'",
+    "effects": [
+     "earn('side venture', 200000 * scale)",
+     "heat += 4",
+     "commission -= 3"
+    ],
+    "result": "The rebrand is a hit until a fan runs through a wall. The wall is fine. The fan sues.",
+    "bot": 2,
+    "ethics": -2
+   }
+  ],
+  "chain": "energy",
+  "followupOnly": true,
+  "vars": {
+   "fee": "rand(100, 300) * 1000 * scale"
+  }
+ },
+ {
+  "id": "energy_drink_sponsor_clash",
+  "title": "Sponsor Clash",
+  "category": "venture",
+  "scenes": [
+   {
+    "type": "phone",
+    "text": "{sponsor.name} is furious that your own energy drink is being promoted in the same cage as their energy drink. They want exclusivity or they walk.",
+    "speaker": "{sponsor.name} rep"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Drop your own drink from the cage",
+    "effects": [
+     "earn('sponsors', 40000 * scale)",
+     "wealth -= 50000"
+    ],
+    "result": "Their logo stays. Your face comes off the cans in the arena. A small personal loss.",
+    "default": true
+   },
+   {
+    "label": "Drop them",
+    "effects": [
+     "dropSponsor(sponsor)",
+     "sponsors -= 3",
+     "wealth += 80000"
+    ],
+    "result": "BOSS JUICE: the only energy drink in the cage.",
+    "bot": 1
+   }
+  ],
+  "roles": {
+   "sponsor": {
+    "type": "sponsor",
+    "where": "f.category == 'energy'"
+   }
+  },
+  "conditions": "venture == 'energy'",
+  "cooldownWeeks": 52,
+  "chain": "energy"
+ }
+]
