@@ -3,6 +3,7 @@
  * become the Morning Paper (headline generator with slot filling + outlet
  * bias) plus a social-media feed sidebar.
  */
+import { weeklyBanter } from './feuds';
 import { expandPop } from './popculture';
 import type { GameState, NewsItem, Newspaper, SocialPost, Story } from '../core/types';
 import { content, type HeadlineDef, type OutletDef } from '../core/content';
@@ -98,7 +99,8 @@ export function handleOf(f: { first: string; last: string; nick: string }): stri
 }
 
 export function buildFeed(s: GameState, items: NewsItem[], rng: Rng): SocialPost[] {
-  const posts: SocialPost[] = [];
+  // the beef goes at the top of the feed: that's what everyone's reading
+  const posts: SocialPost[] = weeklyBanter(s, rng);
   const bank = content().templates.social ?? {};
   const fighters = Object.values(s.fighters).filter((f) => f.promotion === 'us' && f.status === 'active');
   const loud = fighters.filter((f) => f.social.followers > 20000 || f.traits.includes('Trash Talker') || f.streaming);

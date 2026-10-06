@@ -99,7 +99,7 @@ export class TitleScene extends Scene {
     menu.x = Math.floor((W - 96) / 2);
     menu.y = desktop ? 146 : 150;
     r.addChild(menu);
-    r.addChild(text('v0.1  •  M = MUTE  •  ALL CHARACTERS ARE FICTIONAL. ANY RESEMBLANCE IS A LAWSUIT WAITING TO HAPPEN.', 0, H - 9, { small: true, width: W, align: 'center', color: PAL.grey }));
+    r.addChild(text(`V${__APP_VERSION__}  •  M = MUTE  •  ALL CHARACTERS ARE FICTIONAL. ANY RESEMBLANCE IS A LAWSUIT WAITING TO HAPPEN.`, 0, H - 9, { small: true, width: W, align: 'center', color: PAL.grey }));
   }
 
   private drawFacade(): Container {

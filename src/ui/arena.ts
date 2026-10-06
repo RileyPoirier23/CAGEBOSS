@@ -40,9 +40,22 @@ interface FState {
   lunge: number;
   recoil: number;
   facing: 1 | -1;
+  /** footwork: velocity, distance travelled (drives the stepping), preferred range offset */
+  v?: number;
+  dist?: number;
+  foot?: number;
+  footT?: number;
+  /** head snap after taking a shot (decays) */
+  snap?: number;
 }
 
+/** Blood on the canvas lasts the whole event; a new event gets a fresh mat. */
+const MAT = { key: '', stains: [] as { x: number; y: number; r: number; c: number }[] };
+
 export type CamMode = 'side' | 'tv' | 'top';
+
+/** Poses where the fighter is on his back, so his face points at the lights. */
+const SUPINE = new Set(['gBot', 'mBot', 'sBot', 'abVic', 'atriVic', 'kimVic', 'legVic', 'guilAtk', 'triAtk', 'abAtk', 'legAtk', 'bottom', 'bottomSub', 'ko', 'down']);
 
 type GroundSpot = 'guard' | 'mount' | 'side' | 'back';
 type SubKind = 'rnc' | 'guil' | 'tri' | 'ab' | 'atri' | 'kim' | 'leg';
@@ -94,11 +107,15 @@ interface Actor {
 
 const REF_LOOK: Look2 = {
   skin: 0x8d5a3b, hairStyle: 0, hairColor: 0x1a1412, beard: 2, build: 1, trunks: 0x111111, trim: 0x111111, glove: 0x2a5aa8,
-  stance: 'upright', female: false, tattoo: 0, outfit: { top: 0x1a1a1e, bottom: 0x22222a, bulk: 0 },
+  stance: 'upright', female: false, tattoo: 0,
+  // referee kit: black short-sleeve collared shirt, black slacks, blue exam gloves, plain badge
+  outfit: { top: 0x141418, bottom: 0x1c1c22, bulk: 0, shortSleeves: true, hands: 0x4a7ad8, patch: 0xd8d8d8 },
 };
 const BUTLER_LOOK: Look2 = {
-  skin: 0xe0b48c, hairStyle: 0, hairColor: 0x2a2020, beard: 0, build: 2, trunks: 0x111111, trim: 0x111111, glove: 0xe0b48c,
-  stance: 'upright', female: false, tattoo: 0, outfit: { top: 0x15151a, bottom: 0x15151a, shirt: 0xf2efe6, tie: 0x8e2f2f, bulk: 4, mic: true },
+  // the legend: deep tan, silver hair slicked back, black tux, black bow tie, built like a fridge
+  skin: 0xc98d5e, hairStyle: 2, hairColor: 0xc8c4bc, beard: 0, build: 3, trunks: 0x111111, trim: 0x111111, glove: 0xc98d5e,
+  stance: 'upright', female: false, tattoo: 0, brows: 1,
+  outfit: { top: 0x101014, bottom: 0x101014, shirt: 0xf6f3ea, tie: 0x0a0a0c, bulk: 4, mic: true },
 };
 
 // top-down octagon geometry
@@ -117,6 +134,10 @@ export class ArenaView extends Container {
   private front = new Graphics();
   private top = new Graphics();
   private topFx = new Graphics();
+  private topLogo = new Sprite();
+  private topStain = new Graphics();
+  private topLight = new Graphics();
+  private topStainsDrawn = -1;
   private topWorld = new Container();
   private hud = new Container();
   private hudG = new Graphics();
@@ -153,6 +174,13 @@ export class ArenaView extends Container {
   round = 1;
   sec = 0;
   private lowerTop = false;
+  private tdT = 0;
+  private tdAtk: 0 | 1 = 0;
+  private stainG = new Graphics();
+  private stainsDrawn = -1;
+  private matLogo = new Sprite();
+  private walkInT = 0;
+  private drawPose: [string, string] = ['guard', 'guard'];
   // grappling: which position we're in, and which submission is being cranked (attacker side)
   private groundPos: GroundSpot = 'guard';
   private subAnim: { kind: SubKind; atk: 0 | 1; t: number; tapped: boolean } | null = null;
@@ -167,9 +195,14 @@ export class ArenaView extends Container {
     public A: Fighter,
     public B: Fighter,
     public rounds: number,
-    private info: { network?: string; event?: string; promo?: string; champs?: [boolean, boolean] } = {},
+    private info: { network?: string; event?: string; promo?: string; champs?: [boolean, boolean]; eventKey?: string } = {},
   ) {
     super();
+    const key = info.eventKey ?? info.event ?? '';
+    if (MAT.key !== key) {
+      MAT.key = key;
+      MAT.stains = [];
+    }
     this.L = [lookFor(A, 0, info.champs?.[0]), lookFor(B, 1, info.champs?.[1])];
     this.F = [
       { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: AW / 2 - 24, lunge: 0, recoil: 0, facing: 1 },
@@ -177,9 +210,26 @@ export class ArenaView extends Container {
     ];
     this.ref = { rig: { ...POSES.stand }, pose: 'stand', x: AW / 2 + 70, tx: AW / 2 + 70, facing: -1, look: REF_LOOK, visible: true, spin: 0 };
     this.butler = { rig: { ...POSES.mic }, pose: 'mic', x: AW / 2, tx: AW / 2, facing: 1, look: BUTLER_LOOK, visible: false, spin: 0 };
-    this.worldInner.addChild(this.bg, this.crowd, this.lights, this.fighters, this.fx, this.front);
+    this.worldInner.addChild(this.bg, this.matLogo, this.stainG, this.crowd, this.lights, this.fighters, this.fx, this.front);
+    // the promotion's logo painted on the canvas, squashed into the floor's perspective
+    Assets.load(`${import.meta.env.BASE_URL}mat-logo.png`).then((tex: Texture) => {
+      if (this.destroyed) return;
+      this.matLogo.texture = tex;
+      this.matLogo.anchor.set(0.5);
+      this.matLogo.scale.set(0.42, 0.075);
+      this.matLogo.position.set(AW / 2, FLOOR + 1);
+      this.matLogo.alpha = 0.8;
+    }).catch(() => {});
     this.world.addChild(this.worldInner);
-    this.topWorld.addChild(this.top, this.topFx);
+    this.topWorld.addChild(this.top, this.topLogo, this.topStain, this.topFx, this.topLight);
+    Assets.load(`${import.meta.env.BASE_URL}mat-logo.png`).then((tex: Texture) => {
+      if (this.destroyed) return;
+      this.topLogo.texture = tex;
+      this.topLogo.anchor.set(0.5);
+      this.topLogo.scale.set(0.2);
+      this.topLogo.position.set(TCX, TCY);
+      this.topLogo.alpha = 0.55;
+    }).catch(() => {});
     this.addChild(this.world, this.topWorld, this.topLabels, this.hudG, this.hud, this.tv);
     // pixel-art look: the arena renders into a low-res buffer (no anti-aliasing)
     const res = pixelArtResolution();
@@ -228,28 +278,56 @@ export class ArenaView extends Container {
     }
     // big screens
     g.rect(150, 1, 60, 8).fill(0x0e1420).rect(270, 1, 60, 8).fill(0x0e1420);
-    // the canvas (mat) in perspective
-    g.poly([CAGE_L - 20, FLOOR + 14, CAGE_R + 20, FLOOR + 14, CAGE_R - 4, FLOOR - 10, CAGE_L + 4, FLOOR - 10]).fill(0xc9c3b6);
-    g.poly([CAGE_L - 20, FLOOR + 14, CAGE_R + 20, FLOOR + 14, AW, AH, 0, AH]).fill(0x1a1416);
-    // mat logo & centre circle
-    g.ellipse(AW / 2, FLOOR + 2, 70, 9).stroke({ color: 0xa83232, width: 2, alpha: 0.6 });
-    g.ellipse(AW / 2, FLOOR + 2, 40, 5).fill({ color: 0xa83232, alpha: 0.25 });
-    // sponsor decals on the mat
-    g.rect(80, FLOOR + 6, 40, 4).fill({ color: 0x2a4a86, alpha: 0.35 });
-    g.rect(360, FLOOR + 6, 40, 4).fill({ color: 0x2a4a86, alpha: 0.35 });
-    // back fence: posts + chain-link mesh
-    const top = 46;
-    g.rect(CAGE_L, top, CAGE_R - CAGE_L, 3).fill(0x2a2a30);
-    g.rect(CAGE_L, FLOOR - 12, CAGE_R - CAGE_L, 3).fill(0x1d1d22);
-    for (let x = CAGE_L; x <= CAGE_R; x += 82) {
-      g.rect(x - 2, top - 2, 5, FLOOR - top - 8).fill(0x111114);
-      g.rect(x - 3, top - 4, 7, 4).fill(0x3a3a42);
+    // ---- the octagon in perspective: canvas, apron, eight fence panels
+    const cx = AW / 2;
+    const cy = FLOOR + 1;
+    const oct = (R: number, r: number, lift = 0): [number, number][] =>
+      Array.from({ length: 8 }, (_, k) => {
+        const a = ((22.5 + k * 45) * Math.PI) / 180;
+        return [cx + Math.cos(a) * R, cy + Math.sin(a) * r - lift] as [number, number];
+      });
+    const floor = oct(232, 17);
+    const apron = oct(246, 22);
+    g.poly(apron.flat()).fill(0x141015);
+    g.poly(floor.flat()).fill(0xcfc8b9);
+    g.poly(floor.flat()).stroke({ color: 0x8a8274, width: 1 }); // canvas edge
+    // canvas wear and the centre logo
+    g.poly(oct(150, 10).flat()).fill({ color: 0xbdb5a5, alpha: 0.35 });
+    g.ellipse(cx, cy + 1, 70, 8).stroke({ color: 0xa83232, width: 2, alpha: 0.6 });
+    g.ellipse(cx, cy + 1, 40, 4.5).fill({ color: 0xa83232, alpha: 0.25 });
+    g.rect(cx - 150, cy + 6, 40, 3).fill({ color: 0x2a4a86, alpha: 0.35 });
+    g.rect(cx + 110, cy + 6, 40, 3).fill({ color: 0x2a4a86, alpha: 0.35 });
+    // fence: the back five panels, each rising from the floor edge
+    const H = 86;
+    const back = [3, 4, 5, 6, 7, 0].map((k) => floor[k]); // left-front .. back .. right-front, round the far side
+    for (let k = 0; k < back.length - 1; k++) {
+      const [x0, y0] = back[k];
+      const [x1, y1] = back[k + 1];
+      if (y0 > cy + 6 && y1 > cy + 6) continue; // front panels are drawn over the fighters
+      const far = 1 - Math.min(1, Math.max(0, (Math.min(y0, y1) - (cy - 17)) / 34)); // further panels are darker
+      const panel: number[] = [x0, y0 - 10, x1, y1 - 10, x1, y1 - H, x0, y0 - H];
+      // alternate the facets' tone so the eight sides read as an octagon
+      const facet = k % 2 === 0 ? 0x221f2a : 0x15131a;
+      g.poly(panel).fill({ color: lerpColor(facet, 0x0d0b10, far * 0.5), alpha: 0.96 });
+      // chain-link diamonds
+      const steps = Math.max(2, Math.round(Math.abs(x1 - x0) / 4));
+      for (let yy = 0; yy < H - 12; yy += 4) {
+        for (let i = 0; i < steps; i++) {
+          const t = (i + (yy % 8 ? 0.5 : 0)) / steps;
+          const px = x0 + (x1 - x0) * t;
+          const py = y0 + (y1 - y0) * t - 12 - yy;
+          g.rect(Math.round(px), Math.round(py), 1, 1).fill(far > 0.5 ? 0x34343c : 0x4a4a54);
+        }
+      }
+      g.moveTo(x0, y0 - H).lineTo(x1, y1 - H).stroke({ color: 0x8a1e1e, width: 3 }); // padded top rail
+      g.moveTo(x0, y0 - 10).lineTo(x1, y1 - 10).stroke({ color: 0x1d1d22, width: 3 }); // bottom pad
     }
-    for (let y = top + 3; y < FLOOR - 12; y += 4) {
-      for (let x = CAGE_L + ((y >> 2) % 2) * 2; x < CAGE_R; x += 4) g.rect(x, y, 1, 1).fill(0x44444e);
+    // posts at the corners of the back panels
+    for (const [x, y] of back) {
+      if (y > cy + 6) continue;
+      g.rect(x - 2, y - H - 3, 5, H - 6).fill(0x0e0e11);
+      g.rect(x - 3, y - H - 5, 7, 4).fill(0x3a3a42);
     }
-    // padding on top rail
-    g.rect(CAGE_L, top - 1, CAGE_R - CAGE_L, 2).fill(0x8a1e1e);
   }
 
   private drawCrowd(): void {
@@ -279,6 +357,26 @@ export class ArenaView extends Container {
     const l = this.lights;
     l.clear();
     l.poly([AW / 2 - 30, 16, AW / 2 + 30, 16, AW / 2 + 150, FLOOR, AW / 2 - 150, FLOOR]).fill({ color: 0xfff2d0, alpha: 0.05 + this.intensity * 0.01 });
+    // moving heads: four coloured beams sweeping the cage, wilder for walkouts and big moments
+    const hype = this.scene === 'intro' ? 1 : this.intensity >= 3 ? 0.8 : this.scene === 'ceremony' ? 0.7 : 0.25;
+    const beamCols = [0x3a7aff, 0xff3a4a, 0xffffff, 0xb04aff];
+    for (let b = 0; b < 4; b++) {
+      const ox = 60 + b * 120;
+      const sweep = Math.sin(this.t * (0.7 + b * 0.23) + b * 1.7) * (90 + hype * 60);
+      const tx = ox + sweep;
+      const col = this.scene === 'intro' ? beamCols[(b + Math.floor(this.t * 1.5)) % 4] : beamCols[b];
+      l.poly([ox - 2, 14, ox + 2, 14, tx + 22, FLOOR + 6, tx - 22, FLOOR + 6]).fill({ color: col, alpha: 0.035 + hype * 0.05 });
+      l.ellipse(tx, FLOOR + 4, 22, 3).fill({ color: col, alpha: 0.05 + hype * 0.07 });
+    }
+    // LED strip along the top of the back fence: a chase that speeds up with the crowd
+    const rail = 236;
+    for (let i = 0; i < 46; i++) {
+      const x = AW / 2 - rail + 22 + i * 9.8;
+      const on = (i + Math.floor(this.t * (4 + this.intensity * 3))) % 6 < 2;
+      l.rect(Math.round(x), FLOOR - 88 + Math.round(Math.abs(x - AW / 2) / 30), 3, 1).fill({ color: on ? (this.intensity >= 3 ? 0xff4040 : 0xffd27a) : 0x3a2a20, alpha: on ? 0.9 : 0.5 });
+    }
+    // strobe on knockdowns and finishes
+    if (this.flash > 0.05) l.rect(0, 0, AW, AH).fill({ color: 0xffffff, alpha: Math.min(0.18, this.flash * 0.6) });
     l.ellipse(AW / 2 + this.drift, FLOOR + 1, 110, 10).fill({ color: 0xfff2d0, alpha: 0.08 });
     if (this.scene === 'intro') {
       const fx = this.introFocus < 0 ? this.butler.x : this.F[this.introFocus as 0 | 1].x;
@@ -487,6 +585,7 @@ export class ArenaView extends Container {
     const def = (1 - attacker) as 0 | 1;
     this.F[attacker].lunge = 7;
     this.F[def].recoil = big ? 9 : 5;
+    if (joint !== 'ftB' && joint !== 'knB') this.F[def].snap = big ? 1 : 0.55;
     const [x, y] = this.handPos(attacker, joint);
     this.burst(x, y, big ? 16 : 7, big ? PAL.gold : 0xffffff, big ? 110 : 60, 0.3, big ? 2 : 1);
     this.burst(x, y, 4, 0xbfe0ff, 40, 0.5, 1, 120); // sweat
@@ -632,6 +731,9 @@ export class ArenaView extends Container {
         sfx('punch');
         break;
       case 'td':
+        // shoot, lift, dump: the poses play out before the ground position takes over
+        this.tdT = 0.95;
+        this.tdAtk = A;
         this.setPose(A, 'shoot', 0.3);
         this.setPose(D, 'lifted', 0.25);
         this.burst(this.center, FLOOR, 10, 0xd8d0c0, 50, 0.4, 2, 60); // mat dust
@@ -700,6 +802,93 @@ export class ArenaView extends Container {
       this.showCallout(name.replace(/([A-Z])/g, ' $1').toUpperCase() + '!');
     }
     if (line.act === 'bell' || /round_start/.test(line.key ?? '')) this.ref.tx = this.center + 60;
+    if (line.key === 'opening' || line.key === 'round_start') this.walkOut();
+  }
+
+  /** The winner's party piece, based on who they are. */
+  private celebration(i: 0 | 1, base: Rig): Rig {
+    const who = i === 0 ? this.A : this.B;
+    const style = who.anim?.celebration ?? ['jump', 'flex', 'point', 'jump', 'strut'][(who.id.length + who.last.length) % 5];
+    const t = this.t;
+    const shift = (r: Rig, dx: number, dy: number): Rig => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, [v[0] + dx, v[1] + dy]])) as Rig;
+    switch (style) {
+      case 'gunShow':
+      case 'flex':
+        return Math.floor(t * 1.2) % 2 ? POSES.flex : POSES.celebrate;
+      case 'prays':
+        return { ...POSES.stool, hip: [0, -18], knF: [10, -2], ftF: [-2, 0], knB: [4, -2], ftB: [-8, 0], haF: [6, -52], haB: [4, -52], elF: [10, -42], elB: [6, -42], head: [4, -54], neck: [2, -46] };
+      case 'point':
+        return Math.floor(t * 0.8) % 2 ? POSES.point : POSES.celebrate;
+      case 'strut':
+      case 'billyWalk':
+        return Math.floor(t * 5) % 2 ? POSES.walk1 : POSES.walk2;
+      case 'dances':
+        return shift(Math.floor(t * 4) % 2 ? POSES.taunt : POSES.celebrate, Math.sin(t * 8) * 3, 0);
+      case 'backflip':
+      case 'jump':
+      default: {
+        const up = Math.abs(Math.sin(t * 5)) * 9;
+        return shift({ ...base, knF: [base.knF[0] + 4, base.knF[1] + up * 0.3], knB: [base.knB[0] - 4, base.knB[1] + up * 0.3] }, 0, -up);
+      }
+    }
+  }
+
+  /** Feet actually step while a fighter moves: alternating lifts, a little hip bob. */
+  private stepped(f: FState): Rig {
+    const speed = Math.abs(f.v ?? 0);
+    const snap = f.snap ?? 0;
+    if (this.ground !== 'stand' && this.ground !== 'clinch') {
+      // on the mat: nobody is ever still, legs and hands keep working
+      const w = Math.sin(this.t * 2.4 + f.x * 0.1);
+      return { ...f.rig, ftF: [f.rig.ftF[0] + w * 1.2, f.rig.ftF[1]], ftB: [f.rig.ftB[0] - w, f.rig.ftB[1]], haB: [f.rig.haB[0], f.rig.haB[1] + w * 0.8] };
+    }
+    if (speed < 6) {
+      // bouncing on the balls of the feet, weight shifting, head snapping back when tagged
+      const r: Rig = { ...f.rig };
+      const b = Math.sin(this.t * 6.2 + f.x * 0.05);
+      const shiftW = Math.sin(this.t * 1.7 + f.x * 0.03) * 1.5;
+      r.ftF = [r.ftF[0] + shiftW, r.ftF[1] - Math.max(0, b) * 1.2];
+      r.ftB = [r.ftB[0] + shiftW * 0.6, r.ftB[1] - Math.max(0, -b) * 1.2];
+      r.knF = [r.knF[0] + shiftW * 0.6, r.knF[1] - Math.max(0, b) * 0.8];
+      r.knB = [r.knB[0] + shiftW * 0.4, r.knB[1] - Math.max(0, -b) * 0.8];
+      if (snap > 0.02) {
+        r.head = [r.head[0] - snap * 6, r.head[1] + snap * 1.5];
+        r.neck = [r.neck[0] - snap * 2.5, r.neck[1]];
+      }
+      return r;
+    }
+    const amp = Math.min(1, speed / 55);
+    const ph = (f.dist ?? 0) * 0.2;
+    const sF = Math.sin(ph);
+    const back = Math.sign(f.v ?? 0) * f.facing < 0; // retreating: the back foot leads
+    const r: Rig = { ...f.rig };
+    const mv = (j: keyof Rig, dx: number, dy: number) => (r[j] = [r[j][0] + dx, r[j][1] + dy]);
+    mv('ftF', sF * 4 * amp * (back ? -1 : 1), -Math.max(0, sF) * 3 * amp);
+    mv('knF', sF * 2 * amp * (back ? -1 : 1), -Math.max(0, sF) * 2 * amp);
+    mv('ftB', -sF * 4 * amp * (back ? -1 : 1), -Math.max(0, -sF) * 3 * amp);
+    mv('knB', -sF * 2 * amp * (back ? -1 : 1), -Math.max(0, -sF) * 2 * amp);
+    const bob = -Math.abs(sF) * 1.4 * amp;
+    for (const j of ['hip', 'neck', 'head', 'shF', 'shB', 'elF', 'elB', 'haF', 'haB'] as const) mv(j, 0, bob);
+    return r;
+  }
+
+  /** New round: both fighters start in their corners and walk out to meet in the middle. */
+  walkOut(): void {
+    this.ground = 'stand';
+    this.subAnim = null;
+    this.center = AW / 2;
+    this.walkInT = 1.4;
+    const corners = [CAGE_L + 26, CAGE_R - 26];
+    this.F.forEach((f, i) => {
+      f.x = corners[i];
+      f.v = 0;
+      f.pose = 'guard';
+      f.poseT = 0;
+      f.rig = { ...POSES.guard };
+      f.foot = 0;
+      f.footT = 1.6;
+    });
+    this.ref.x = this.ref.tx = AW / 2 + 70;
   }
 
   /** Which pose pair the ground fighters use right now, and who plays the attacker/top role. */
@@ -792,6 +981,8 @@ export class ArenaView extends Container {
     this.drift = this.center - AW / 2;
     const gap = this.ground === 'clinch' ? 12 : ground ? 0 : 23 + Math.sin(this.t * 1.3) * 3;
     this.gnpT -= dt;
+    this.walkInT -= dt;
+    this.tdT -= dt;
     if (this.subAnim && !this.subAnim.tapped) {
       this.subAnim.t -= dt;
       if (this.subAnim.t <= 0) this.subAnim = null;
@@ -809,8 +1000,37 @@ export class ArenaView extends Container {
         tx = this.center;
       }
       if (!ground || this.scene !== 'fight') f.facing = i === 0 ? 1 : -1;
+      // footwork on the feet: step in, step out to make space, circle; feint now and then
+      const standing = this.scene === 'fight' && this.ground === 'stand' && !this.finished;
+      if (standing && this.walkInT <= 0) {
+        f.footT = (f.footT ?? 0) - dt;
+        if (f.footT <= 0) {
+          const r = Math.random();
+          f.foot = r < 0.3 ? 9 + Math.random() * 8 : r < 0.55 ? -6 : r < 0.75 ? 3 : 0;
+          f.footT = 0.5 + Math.random() * 1.2;
+        }
+        tx += side * (f.foot ?? 0);
+        if (f.poseT <= 0 && f.pose === 'guard' && Math.random() < dt * 0.55) {
+          // feint, slip or a pawing jab that never arrives
+          const fk = Math.random();
+          this.setPose(i, fk < 0.45 ? 'jab' : fk < 0.75 ? 'slip' : 'block', fk < 0.45 ? 0.09 : 0.22);
+          if (fk < 0.45) f.lunge = 3;
+        }
+      }
       if (this.scene === 'fight' && this.F[1 - i].pose === 'ko' && f.pose === 'celebrate') tx = this.center + side * 40;
-      f.x += (tx - f.x) * Math.min(1, dt * (this.scene === 'fight' ? 8 : 3));
+      if (ground || this.scene !== 'fight') {
+        f.x += (tx - f.x) * Math.min(1, dt * (this.scene === 'fight' ? 8 : 3));
+        f.v = 0;
+      } else {
+        // a spring with damping: fighters accelerate, step and settle instead of gliding
+        const v0 = f.v ?? 0;
+        let v = v0 + ((tx - f.x) * 70 - v0 * 15) * dt;
+        const max = this.walkInT > 0 ? 75 : 150;
+        v = Math.max(-max, Math.min(max, v));
+        f.v = v;
+        f.x += v * dt;
+        f.dist = (f.dist ?? 0) + Math.abs(v * dt);
+      }
       f.lunge *= Math.pow(0.001, dt);
       f.recoil *= Math.pow(0.003, dt);
       if (f.poseT > 0) {
@@ -821,11 +1041,20 @@ export class ArenaView extends Container {
       if (this.scene === 'fight') {
         if (ground && pose !== 'ko' && pose !== 'celebrate') pose = i === lay.aIdx ? lay.a : lay.d;
         if (this.ground === 'clinch' && pose === 'guard') pose = 'clinch';
+        if (this.tdT > 0.3 && ground && pose !== 'ko') {
+          const ph = 1 - this.tdT / 0.95;
+          pose = i === this.tdAtk ? (ph < 0.45 ? 'shoot' : 'sprawl') : ph < 0.4 ? 'lifted' : 'down';
+        }
         if (this.winnerSide === i && this.finished && f.poseT <= 0) pose = 'celebrate';
       }
       const walking = Math.abs(tx - f.x) > 3 && this.scene !== 'fight';
+      this.drawPose[i] = pose;
       const target = walking ? (Math.floor(this.t * 6) % 2 ? POSES.walk1 : POSES.walk2) : pose === 'guard' ? stanceGuard(this.L[i], this.t + i * 1.3) : POSES[pose as Pose] ?? POSES.guard;
-      f.rig = lerpRig(f.rig, target, Math.min(1, dt * (f.poseT > 0 ? 22 : 12)));
+      const rate = ground && this.scene === 'fight' ? (this.tdT > 0 ? 9 : 5.5) : f.poseT > 0 ? 22 : 12;
+      f.rig = lerpRig(f.rig, pose === 'celebrate' && this.finished ? this.celebration(i, target) : target, Math.min(1, dt * rate));
+      f.snap = (f.snap ?? 0) * Math.exp(-dt * 7);
+      // long hair swings with movement and with shots to the head
+      this.L[i].sway = Math.max(-4, Math.min(4, -(f.v ?? 0) / 30 + (f.snap ?? 0) * 4 + Math.sin(this.t * 3 + i) * 0.5));
     }
     // referee & announcer
     for (const a of [this.ref, this.butler]) {
@@ -877,7 +1106,8 @@ export class ArenaView extends Container {
       // the tapping man's free hand slaps the mat
       const x = f.x + (f.lunge - f.recoil) * f.facing + shake;
       if (ground && this.subAnim?.tapped && i !== this.subAnim.atk && Math.floor(this.t * 8) % 2 === 0) f.rig = { ...f.rig, haB: [f.rig.haB[0], Math.min(0, f.rig.haB[1] + 4)] };
-      drawRig(g, f.rig, Math.round(x), FLOOR, f.facing, this.L[i]);
+      this.L[i].faceUp = SUPINE.has(this.drawPose[i]);
+      drawRig(g, this.stepped(f), Math.round(x), FLOOR, f.facing, this.L[i]);
     }
     // particles
     const p = this.fx;
@@ -887,18 +1117,41 @@ export class ArenaView extends Container {
       s.x += s.vx * dt;
       s.y += s.vy * dt;
       s.vy += s.grav * dt;
-      if (s.y > FLOOR + 6 && s.c === 0xa01818) {
+      if (s.y > FLOOR + 2 && s.c === 0xa01818 && s.grav !== 0) {
         s.vy = 0;
         s.vx = 0;
         s.grav = 0;
+        if (MAT.stains.length < 400) MAT.stains.push({ x: Math.round(s.x), y: Math.round(Math.min(FLOOR + 14, s.y)), r: s.s + (Math.random() < 0.3 ? 1 : 0), c: Math.random() < 0.5 ? 0x7a1010 : 0x5a0c0c });
       }
       p.rect(Math.round(s.x), Math.round(s.y), s.s, s.s).fill(s.c);
+    }
+    // dried blood on the canvas
+    if (this.stainsDrawn !== MAT.stains.length) {
+      this.stainsDrawn = MAT.stains.length;
+      const sg = this.stainG;
+      sg.clear();
+      for (const st of MAT.stains) sg.rect(st.x, st.y, st.r + 1, Math.max(1, st.r - 1)).fill({ color: st.c, alpha: 0.75 });
     }
     // front fence posts
     const fr = this.front;
     fr.clear();
-    fr.rect(CAGE_L - 6, 40, 6, FLOOR - 26).fill({ color: 0x0c0c0e, alpha: 0.9 });
-    fr.rect(CAGE_R, 40, 6, FLOOR - 26).fill({ color: 0x0c0c0e, alpha: 0.9 });
+    // the near side of the octagon: corner posts, a faint mesh and the bottom pad, in front of everyone
+    const ox = AW / 2;
+    const fl = (k: number): [number, number] => {
+      const a = ((22.5 + k * 45) * Math.PI) / 180;
+      return [ox + Math.cos(a) * 232, FLOOR + 1 + Math.sin(a) * 17];
+    };
+    const near = [fl(0), fl(1), fl(2), fl(3)];
+    for (let k = 0; k < 3; k++) {
+      const [x0, y0] = near[k];
+      const [x1, y1] = near[k + 1];
+      fr.poly([x0, y0, x1, y1, x1, y1 - 70, x0, y0 - 70]).fill({ color: 0x0a0a0e, alpha: 0.06 });
+      fr.moveTo(x0, y0 - 2).lineTo(x1, y1 - 2).stroke({ color: 0x141418, width: 4, alpha: 0.85 });
+    }
+    for (const [x, y] of [near[0], near[3]]) {
+      fr.rect(x - 3, y - 92, 6, 92).fill({ color: 0x0c0c0e, alpha: 0.92 });
+      fr.rect(x - 4, y - 95, 8, 4).fill(0x3a3a42);
+    }
   }
 
   // ------------------------------------------------------------ top-down
@@ -922,7 +1175,31 @@ export class ArenaView extends Container {
     return { x, y, ang };
   }
 
+  /** Overhead extras: blood on the canvas (same stains as the side view), roaming spots, vignette. */
+  private drawTopExtras(): void {
+    if (this.topStainsDrawn !== MAT.stains.length) {
+      this.topStainsDrawn = MAT.stains.length;
+      const sg = this.topStain;
+      sg.clear();
+      for (const st of MAT.stains) {
+        const x = TCX + ((st.x - AW / 2) / 232) * TR;
+        const y = TCY + ((st.y - FLOOR) / 17) * TR * 0.9;
+        sg.circle(x, y, 0.8 + st.r * 0.5).fill({ color: st.c, alpha: 0.7 });
+      }
+    }
+    const l = this.topLight;
+    l.clear();
+    const hype = this.intensity >= 3 ? 0.08 : 0.04;
+    for (let b = 0; b < 3; b++) {
+      const a = this.t * (0.4 + b * 0.17) + b * 2.1;
+      l.circle(TCX + Math.cos(a) * TR * 0.6, TCY + Math.sin(a * 1.3) * TR * 0.5, 22).fill({ color: [0x3a7aff, 0xff3a4a, 0xffffff][b], alpha: hype });
+    }
+    // darker edges so the octagon is the stage
+    for (let k = 0; k < 6; k++) l.rect(k * 6, 0, 6, AH).fill({ color: 0x000000, alpha: 0.25 - k * 0.04 }).rect(AW - (k + 1) * 6, 0, 6, AH).fill({ color: 0x000000, alpha: 0.25 - k * 0.04 });
+  }
+
   private drawTop(dt: number): void {
+    this.drawTopExtras();
     // action centre wanders; clinches drift to the fence
     const c = this.tc;
     const ground = this.ground === 'atop' || this.ground === 'btop';
@@ -1145,7 +1422,12 @@ export function cornerView(A: Fighter, B: Fighter, reports: CornerReport[], roun
     st.rect(ox + 140, 92, 26, 4).fill(0x3a3030);
     st.rect(ox + 144, 96, 3, 10).fill(0x2a2020).rect(ox + 159, 96, 3, 10).fill(0x2a2020);
     drawRig(st, POSES.stool, ox + 152, 108, i === 0 ? 1 : -1, L, 0.85);
-    const cut: Look2 = { ...L, trunks: 0x2a2a2a, trim: 0x444444, glove: 0xe0e0e0, hairStyle: 0, beard: 3, build: 2, skin: 0xc08e64 };
+    // cutman in the team tee, black latex gloves, Vaseline on standby; head coach behind him in a team polo
+    const cut: Look2 = { ...L, trunks: 0x2a2a2a, trim: 0x444444, glove: 0x1a1a1a, hairStyle: 0, beard: 3, build: 2, skin: 0xc08e64, tattoo: 0,
+      outfit: { top: 0x16161a, bottom: 0x2a2a30, shortSleeves: true, hands: 0x1a1a1a, patch: L.trunks, bulk: 1 } };
+    const coach: Look2 = { ...L, hairStyle: 1, hairColor: 0x2a2018, beard: 2, build: 1, skin: 0xb07a52, tattoo: 0,
+      outfit: { top: L.trunks, bottom: 0x22222a, shortSleeves: true, patch: L.trim, bulk: 1 } };
+    drawRig(st, POSES.stand, ox + (i === 0 ? 112 : 192), 108, i === 0 ? 1 : -1, coach, 0.62);
     drawRig(st, POSES.clinch, ox + (i === 0 ? 186 : 118), 108, i === 0 ? -1 : 1, cut, 0.7);
     c.addChild(st);
     st.cacheAsTexture({ resolution: pixelArtResolution(), antialias: false });

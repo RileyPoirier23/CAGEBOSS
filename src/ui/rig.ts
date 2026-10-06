@@ -162,8 +162,19 @@ export interface Look2 {
   /** fight-kit chevron print colour (the "Venim" fourth-gen pattern) */
   pattern?: number;
   champ?: boolean;
+  /** lying on the back: the face turns to the ceiling */
+  faceUp?: boolean;
+  /** how far long hair is swinging (+ = trailing behind the head) */
+  sway?: number;
+  /** which tattoo set (0..5): sleeve, chest piece, back piece, script, neck, stars */
+  ink?: number;
+  nose?: number;
+  ears?: number;
+  brows?: number;
+  scar?: number;
+  glasses?: number;
   /** clothing for non-fighters (referee, ring announcer, cutmen) */
-  outfit?: { top: number; bottom: number; shirt?: number; tie?: number; bulk?: number; mic?: boolean };
+  outfit?: { top: number; bottom: number; shirt?: number; tie?: number; bulk?: number; mic?: boolean; shortSleeves?: boolean; hands?: number; patch?: number };
 }
 
 // --------------------------------------------------------------- fight kits
@@ -229,6 +240,11 @@ export function lookFor(f: Fighter, corner: 0 | 1, champ = false): Look2 {
               : f.styles.includes('Counter Striker') ? 'sway' : 'bouncy'),
     female: f.gender === 'W',
     tattoo: f.look.tattoo,
+    ink: [...f.id].reduce((a, ch) => (a * 33 + ch.charCodeAt(0)) >>> 0, 7) % 6,
+    nose: f.look.nose,
+    ears: Math.min(3, f.look.ears + (f.styles.includes('Wrestler') || f.styles.includes('Sub Hunter') ? 1 : 0)),
+    brows: f.look.brows,
+    scar: f.look.scar,
   };
 }
 
@@ -367,6 +383,9 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
   const CA = { a: 6 + bw * 0.4, m: 7 + bw * 0.6, b: 3.8 }; // calf
   const armC = o ? o.top : skin;
   const armFarC = o ? shade(o.top, -0.25) : skinFar;
+  // short-sleeved shirts (referees) show the forearms
+  const foreC = o?.shortSleeves ? skin : armC;
+  const foreFarC = o?.shortSleeves ? skinFar : armFarC;
   const legC = o ? o.bottom : skin;
   const legFarC = o ? shade(o.bottom, -0.25) : skinFar;
   const shoe = 0x0c0c0e;
@@ -395,7 +414,7 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
     if (o) {
       // bare hand (referee / announcer)
       g.circle(H[0], H[1], 3 * s).fill(OUT);
-      g.circle(H[0], H[1], 2.2 * s).fill(near ? skin : skinFar);
+      g.circle(H[0], H[1], 2.2 * s).fill(o.hands ?? (near ? skin : skinFar)); // blue exam gloves on the ref
       if (o.mic && !near) {
         g.rect(H[0] - 1 * s, H[1] - 6 * s, 2 * s, 5 * s).fill(0x1a1a1a);
         g.circle(H[0], H[1] - 7 * s, 2 * s).fill(0x3a3a44);
@@ -432,7 +451,7 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
   group(
     [
       { a: rig.shB, b: rig.elB, wa: UA.a, wm: UA.m, wb: UA.b, color: armFarC, shadow: shade(armFarC, -0.18) },
-      { a: rig.elB, b: rig.haB, wa: FA.a, wm: FA.m, wb: FA.b, color: armFarC, shadow: shade(armFarC, -0.18) },
+      { a: rig.elB, b: rig.haB, wa: FA.a, wm: FA.m, wb: FA.b, color: foreFarC, shadow: shade(foreFarC, -0.18) },
     ],
     [{ p: rig.elB, r: UA.b / 2, color: armFarC }, { p: rig.shB, r: UA.a / 2, color: armFarC }],
   );
@@ -487,6 +506,27 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
       for (let i = 0; i < 2; i++) line(P(0.6 + i * 0.12, tw * 0.22), P(0.6 + i * 0.12, tw * 0.38), dk, 0.8);
     }
     g.circle(...T(P(0.86, tw * 0.3)), 0.7 * s).fill(dk); // navel
+    const ink = shade(skin, -0.5);
+    if (L.tattoo >= 1 && L.ink !== undefined) {
+      switch (L.ink % 6) {
+        case 1: // chest piece: wings across the pecs
+          line(P(0.2, tw * 0.05), P(0.3, tw * 0.5), ink, 0.9);
+          line(P(0.24, tw * 0.05), P(0.36, tw * 0.42), ink, 0.7);
+          line(P(0.22, -tw * 0.05), P(0.32, -tw * 0.3), ink, 0.8);
+          break;
+        case 2: // back piece showing past the lats
+          line(P(0.15, -tw * 0.42), P(0.6, -tw * 0.36), ink, 1.1);
+          line(P(0.3, -tw * 0.5), P(0.45, -tw * 0.2), ink, 0.8);
+          break;
+        case 4: // neck ink
+          line(P(-0.03, tw * 0.05), P(0.08, tw * 0.3), ink, 1);
+          break;
+        case 5: // stars on the collarbones
+          g.circle(...T(P(0.1, tw * 0.3)), 0.9 * s).fill(ink);
+          g.circle(...T(P(0.12, -tw * 0.1)), 0.9 * s).fill(ink);
+          break;
+      }
+    }
     if (L.tattoo >= 2) {
       // rib piece: a little script + star
       line(P(0.3, -tw * 0.18), P(0.62, -tw * 0.26), shade(skin, -0.45), 0.8);
@@ -501,7 +541,10 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
       }
       for (let i = 0; i < 3; i++) g.circle(...T(P(0.62 + i * 0.12, tw * 0.3)), 0.6 * s).fill(0x2a2a30); // jacket buttons
     } else {
-      line(P(0.02, tw * 0.1), P(0.95, tw * 0.1), shade(o.top, 0.2), 0.8); // ref shirt placket
+      // referee: collared black shirt, button placket, a plain white badge on the chest
+      line(P(0.02, tw * 0.1), P(0.95, tw * 0.1), shade(o.top, 0.2), 0.8);
+      line(P(-0.02, tw * 0.15), P(0.06, tw * 0.45), shade(o.top, 0.28), 1.2);
+      if (o.patch !== undefined) g.rect(...T(P(0.26, tw * 0.42)), 2.6 * s, 1.8 * s).fill(o.patch);
     }
   }
 
@@ -548,80 +591,124 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
   group([{ a: lerp(nk, hd, -0.1), b: lerp(nk, hd, 0.75), wa: 6 + build, wm: 5.6 + build, wb: 5.2 + build * 0.5, color: skin, shadow: shade(skin, -0.16) }]);
   const H = T(hd);
   const hr = 7 * s;
-  const fx = facing * s; // forward x unit on screen
-  // jaw & chin, nose
-  const jaw = [H[0] - 3 * fx, H[1] + 4 * s, H[0] + 3 * fx, H[1] + 7 * s, H[0] + 6.6 * fx, H[1] + 5 * s, H[0] + 7.4 * fx, H[1] + 1 * s, H[0] + 2 * fx, H[1] - 2 * s];
+  // The head is drawn in its own frame so it can lie down with the body: "fwd" is where the
+  // face points, "dn" is towards the chin. Upright fighters get the old side-on head; on the
+  // mat the head follows the neck, face to the ceiling (on the back) or to the floor (on top).
+  const ax = hd[0] - nk[0];
+  const ay = hd[1] - nk[1];
+  const tilt = Math.abs(ax) > Math.abs(ay) * 0.7 ? Math.atan2(ay, ax * facing) + Math.PI / 2 : 0;
+  const mir = L.faceUp && tilt !== 0 ? -1 : 1;
+  const cs = Math.cos(tilt);
+  const sn = Math.sin(tilt);
+  const hpt = (fw: number, dn: number): [number, number] => {
+    const lx = fw * mir * facing;
+    const ly = dn;
+    const rx = lx * cs - ly * sn * facing;
+    const ry = lx * sn * facing + ly * cs;
+    return [H[0] + rx * s, H[1] + ry * s];
+  };
+  const poly = (pts: [number, number][]) => pts.flatMap((p) => hpt(p[0], p[1]));
+  const hl = (a: [number, number], b: [number, number], c: number, w = 1) => {
+    const A = hpt(a[0], a[1]);
+    const B = hpt(b[0], b[1]);
+    g.moveTo(A[0], A[1]).lineTo(B[0], B[1]).stroke({ color: c, width: w * s, cap: 'round' });
+  };
+  const jaw: [number, number][] = [[-3, 4], [3, 7], [6.6, 5], [7.4, 1], [2, -2]];
   g.circle(H[0], H[1], hr + 1 * s).fill(OUT);
-  g.poly(jaw).fill(OUT).stroke({ color: OUT, width: 2 * s, join: 'round' });
+  g.poly(poly(jaw)).fill(OUT).stroke({ color: OUT, width: 2 * s, join: 'round' });
   g.circle(H[0], H[1], hr).fill(skin);
-  g.poly(jaw).fill(skin);
-  // back-of-skull shadow
-  g.circle(H[0] - 3.4 * fx, H[1] + 1.4 * s, hr * 0.5).fill(shade(skin, -0.12));
-  const nose = [H[0] + 6.8 * fx, H[1] - 1.5 * s, H[0] + 9 * fx, H[1] + 1.6 * s, H[0] + 6.6 * fx, H[1] + 2.2 * s];
-  g.poly(nose).fill(skin).stroke({ color: OUT, width: 1 * s, join: 'round' });
-  g.poly(nose).fill(skin);
-  // ear
-  g.ellipse(H[0] - 1.6 * fx, H[1] + 1 * s, 1.2 * s, 1.9 * s).fill(shade(skin, -0.2));
-  g.rect(H[0] - 1.6 * fx - 0.4 * s, H[1] + 0.4 * s, 0.8 * s, 1.2 * s).fill(shade(skin, -0.4));
-  // eye: white, pupil, lid; brow
-  g.rect(H[0] + (facing > 0 ? 3.8 : -5.4) * s, H[1] - 1.8 * s, 1.6 * s, 1.2 * s).fill(0xd6cec2);
-  g.rect(H[0] + (facing > 0 ? 4.6 : -5.4) * s, H[1] - 1.8 * s, 0.9 * s, 1.2 * s).fill(0x14100e);
-  line([hd[0] + 3.6, hd[1] - 2.1], [hd[0] + 5.6, hd[1] - 2.1], shade(skin, -0.4), 0.7);
-  line([hd[0] + 2.6, hd[1] - 3.6], [hd[0] + 6.4, hd[1] - 3.2], shade(L.hairColor, -0.1), 1.3);
+  g.poly(poly(jaw)).fill(skin);
+  g.circle(...hpt(-3.4, 1.4), hr * 0.5).fill(shade(skin, -0.12)); // back-of-skull shadow
+  g.circle(...hpt(3.2, 2.2), 1.6 * s).fill(shade(skin, 0.08)); // cheekbone light
+  // nose: straight, wide or broken
+  const noseShape: [number, number][] = L.nose === 1 ? [[6.6, -1.2], [9.4, 1.8], [6.4, 2.6]] : L.nose === 2 ? [[6.8, -1.5], [8.4, 0], [9.2, 2], [6.6, 2.4]] : [[6.8, -1.5], [9, 1.6], [6.6, 2.2]];
+  g.poly(poly(noseShape)).fill(skin).stroke({ color: OUT, width: 1 * s, join: 'round' });
+  g.poly(poly(noseShape)).fill(skin);
+  // ear (cauliflower if he's rolled long enough)
+  const earR = 1.2 + (L.ears ?? 0) * 0.35;
+  g.circle(...hpt(-1.6, 1), earR * s).fill(shade(skin, -0.2));
+  g.circle(...hpt(-1.6, 1), Math.max(0.4, earR - 0.8) * s).fill(shade(skin, -0.38));
+  // eye: white, pupil, lid; brow (heavier brows for some)
+  g.circle(...hpt(4.6, -1.2), 0.95 * s).fill(0xd6cec2);
+  g.circle(...hpt(5.1, -1.2), 0.55 * s).fill(0x14100e);
+  hl([3.6, -2.1], [5.8, -2.1], shade(skin, -0.4), 0.7);
+  hl([2.6, -3.6], [6.4, -3.2], shade(L.hairColor, -0.1), 1.2 + (L.brows ?? 0) * 0.35);
+  // scar across the brow
+  if ((L.scar ?? 0) > 0) hl([3, -5], [6, -1.6], shade(skin, 0.22), 0.6);
   // mouth (+ mouthguard flash for fighters)
-  line([hd[0] + 4.6, hd[1] + 3.6], [hd[0] + 6.6, hd[1] + 3.2], shade(skin, -0.5), 0.9);
-  if (!o) line([hd[0] + 5.2, hd[1] + 3.4], [hd[0] + 6.4, hd[1] + 3.2], L.glove === 0x8e1e1e ? 0xd04040 : 0x3a6ad0, 0.7);
+  hl([4.6, 3.6], [6.6, 3.2], shade(skin, -0.5), 0.9);
+  if (!o) hl([5.2, 3.4], [6.4, 3.2], L.glove === 0x8e1e1e ? 0xd04040 : 0x3a6ad0, 0.7);
   // hair
   const hc = L.hairColor;
   const hcD = shade(hc, -0.25);
-  const arcCap = (r: number, a0: number, a1: number, color: number, width: number) => {
-    const start = facing > 0 ? a0 : Math.PI - a1;
-    const end = facing > 0 ? a1 : Math.PI - a0;
-    g.moveTo(H[0] + Math.cos(start) * r, H[1] + Math.sin(start) * r);
-    g.arc(H[0], H[1], r, start, end).stroke({ color, width });
+  const cap = (r: number, from: number, to: number, color: number, width: number) => {
+    // a thick arc over the crown, in head space: angle 0 = face, -90 = top of the head
+    const steps = 8;
+    for (let i = 0; i < steps; i++) {
+      const a0 = from + ((to - from) * i) / steps;
+      const a1 = from + ((to - from) * (i + 1)) / steps;
+      hl([Math.cos(a0) * r / s, Math.sin(a0) * r / s], [Math.cos(a1) * r / s, Math.sin(a1) * r / s], color, width / s);
+    }
   };
+  const D = Math.PI / 180;
   switch (L.hairStyle) {
     case 0:
-      g.circle(H[0] - 1 * fx, H[1] - 4.4 * s, 1.4 * s).fill(shade(skin, 0.28)); // bald shine
+      g.circle(...hpt(-1, -4.4), 1.4 * s).fill(shade(skin, 0.28)); // bald shine
       break;
     case 1:
-      arcCap(hr - 1 * s, Math.PI * 1.05, Math.PI * 1.98, hcD, 2.2 * s);
+      cap(hr - 1 * s, -170 * D, -5 * D, hcD, 2.2 * s); // buzz
       break;
     case 4:
-      g.poly([H[0] - 3 * fx, H[1] - hr + 1 * s, H[0] + 1 * fx, H[1] - hr - 5 * s, H[0] + 4 * fx, H[1] - hr + 1 * s]).fill(hc).stroke({ color: OUT, width: 1 * s });
+      g.poly(poly([[-3, -hr / s + 1], [1 - (L.sway ?? 0) * 0.4, -hr / s - 5], [4, -hr / s + 1]])).fill(hc).stroke({ color: OUT, width: 1 * s }); // mohawk
+      break;
+    case 3:
+      // dreads: a crown plus ropes that swing
+      cap(hr - 0.5 * s, -175 * D, 0, hc, 3.4 * s);
+      for (let k = 0; k < 4; k++) hl([-4 - k * 0.8, -3 + k * 1.2], [-6.5 - k - (L.sway ?? 0) * (0.6 + k * 0.2), 4 + k * 1.6], k % 2 ? hc : hcD, 1.3);
       break;
     case 5:
     case 6:
-      arcCap(hr - 0.5 * s, Math.PI * 0.95, Math.PI * 2.02, hc, 3.6 * s);
-      g.poly([H[0] - 4 * fx, H[1] - 2 * s, H[0] - 7.5 * fx, H[1] - 1 * s, H[0] - 8.5 * fx, H[1] + (fem ? 12 : 8) * s, H[0] - 4.5 * fx, H[1] + (fem ? 11 : 7) * s]).fill(hc).stroke({ color: OUT, width: 1 * s });
-      if (L.hairStyle === 6) for (let i = 0; i < 4; i++) line([hd[0] - 6 + i * 2.6, hd[1] - 6.4 + Math.abs(i - 1.5)], [hd[0] - 6.4 + i * 2.6, hd[1] - 3], hcD, 0.7);
+      cap(hr - 0.5 * s, -175 * D, 2 * D, hc, 3.6 * s);
+      {
+        const sw = L.sway ?? 0;
+        g.poly(poly([[-4, -2], [-7.5, -1], [-8.5 - sw, fem ? 12 : 8], [-4.5 - sw * 0.7, fem ? 11 : 7]])).fill(hc).stroke({ color: OUT, width: 1 * s });
+      }
+      if (L.hairStyle === 6) for (let i = 0; i < 4; i++) hl([-6 + i * 2.6, -6.4 + Math.abs(i - 1.5)], [-6.4 + i * 2.6, -3], hcD, 0.7);
       break;
     case 7:
-      arcCap(hr - 0.8 * s, Math.PI * 1.0, Math.PI * 2.0, hc, 3 * s);
-      g.circle(H[0] - 6 * fx, H[1] - 5.5 * s, 3 * s).fill(OUT);
-      g.circle(H[0] - 6 * fx, H[1] - 5.5 * s, 2.3 * s).fill(hc);
+      cap(hr - 0.8 * s, -180 * D, 0, hc, 3 * s);
+      g.circle(...hpt(-6 - (L.sway ?? 0) * 0.3, -5.5), 3 * s).fill(OUT);
+      g.circle(...hpt(-6 - (L.sway ?? 0) * 0.3, -5.5), 2.3 * s).fill(hc); // man bun
       break;
     default:
-      arcCap(hr - 0.6 * s, Math.PI * 1.0, Math.PI * 2.02, hc, 3.2 * s);
-      g.poly([H[0] - 6.5 * fx, H[1] - 3 * s, H[0] - 7.2 * fx, H[1] + 1.5 * s, H[0] - 4.5 * fx, H[1] - 1 * s]).fill(hc); // sideburn / back
+      cap(hr - 0.6 * s, -180 * D, 2 * D, hc, 3.2 * s);
+      g.poly(poly([[-6.5, -3], [-7.2, 1.5], [-4.5, -1]])).fill(hc); // sideburn / back
   }
   if (L.beard === 3) {
-    g.poly([H[0] - 2.4 * fx, H[1] + 3 * s, H[0] + 3 * fx, H[1] + 7.6 * s, H[0] + 7 * fx, H[1] + 5.4 * s, H[0] + 7.3 * fx, H[1] + 3.6 * s, H[0] + 4.6 * fx, H[1] + 4.4 * s, H[0] + 0.5 * fx, H[1] + 1.4 * s]).fill(hc);
+    g.poly(poly([[-2.4, 3], [3, 7.6], [7, 5.4], [7.3, 3.6], [4.6, 4.4], [0.5, 1.4]])).fill(hc); // full beard
+    hl([1, 5], [5, 6.6], hcD, 0.6);
   } else if (L.beard === 2 || L.beard === 4) {
-    line([hd[0] + 4.4, hd[1] + 2.6], [hd[0] + 6.8, hd[1] + 2.4], hc, 1.3); // moustache
-    if (L.beard === 2) g.circle(H[0] + 5.6 * fx, H[1] + 5.8 * s, 1.4 * s).fill(hc); // goatee
+    hl([4.4, 2.6], [6.8, 2.4], hc, 1.3); // moustache
+    if (L.beard === 2) g.circle(...hpt(5.6, 5.8), 1.4 * s).fill(hc); // goatee
   } else if (L.beard === 1) {
-    for (let i = 0; i < 4; i++) g.circle(H[0] + (1 + i * 1.6) * fx, H[1] + (4.4 + (i % 2)) * s, 0.5 * s).fill(shade(skin, -0.32)); // stubble
+    for (let i = 0; i < 5; i++) g.circle(...hpt(0.6 + i * 1.5, 4.2 + (i % 2)), 0.5 * s).fill(shade(skin, -0.32)); // stubble
   }
+  if (L.glasses === 1) hl([3.2, -1.4], [7.2, -1.4], 0x101014, 1.6); // shades (announcers, not fighters)
 
   // ------------------------------------------------------------ near arm (+ glove)
   group(
     [
       { a: rig.shF, b: rig.elF, wa: UA.a, wm: UA.m, wb: UA.b, color: armC, shadow: shade(armC, -0.15) },
-      { a: rig.elF, b: rig.haF, wa: FA.a, wm: FA.m, wb: FA.b, color: armC, shadow: shade(armC, -0.15) },
+      { a: rig.elF, b: rig.haF, wa: FA.a, wm: FA.m, wb: FA.b, color: foreC, shadow: shade(foreC, -0.15) },
     ],
     [{ p: rig.elF, r: UA.b / 2, color: armC }, { p: rig.shF, r: UA.a / 2, color: armC }],
   );
+  if (!o && L.tattoo >= 1 && L.ink !== undefined && (L.ink % 6 === 0 || L.ink % 6 === 3)) {
+    // full sleeve: bands of ink down the arm
+    const inkC = shade(skin, -0.48);
+    for (const t of [0.2, 0.45, 0.7]) line(lerp(rig.shF, rig.elF, t), lerp(rig.shF, rig.elF, t + 0.12), inkC, 2.4);
+    if (L.ink % 6 === 0) for (const t of [0.15, 0.45]) line(lerp(rig.elF, rig.haF, t), lerp(rig.elF, rig.haF, t + 0.18), inkC, 2);
+  }
   if (!o) {
     line(lerp(rig.shF, rig.elF, 0.25), lerp(rig.shF, rig.elF, 0.6), shade(skin, 0.12), 1.2); // bicep highlight
     if (L.tattoo >= 1) {

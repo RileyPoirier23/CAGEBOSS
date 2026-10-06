@@ -3,6 +3,7 @@
  * fighter dossier with tabs: BIO, SKILLS, RECORD, CONTRACT, LEGAL, RELATIONS, TIMELINE.
  * Actions: scout, sign/offer, release, hire a better cutman, comeback.
  */
+import { getFeud } from '../../sim/feuds';
 import { Container } from 'pixi.js';
 import type { Game } from '../app';
 import type { Fighter, Skills } from '../../core/types';
@@ -184,7 +185,7 @@ export function openRoster(g: Game, onClose: () => void, focus?: string): void {
         break;
       case 'relations': {
         const names = (ids: string[]) => ids.map((id) => s.fighters[id] ? fullName(s.fighters[id]) : '?').join(', ') || 'none';
-        add(`Rivals: ${names(f.rivals)}`);
+        add(`Rivals: ${f.rivals.length ? f.rivals.map((id) => { const r = s.fighters[id]; const h = getFeud(s, f.id, id)?.heat; return r ? `${fullName(r)}${h !== undefined ? ` (beef ${Math.round(h)})` : ''}` : '?'; }).join(', ') : 'none'}`, f.rivals.length ? PAL.blood : PAL.ink);
         add(`Friends: ${names(f.friends)}`);
         add(`Teammates at ${f.gym}: ${names(Object.values(s.fighters).filter((x) => x.gym === f.gym && x.id !== f.id && x.status === 'active').map((x) => x.id).slice(0, 8))}`);
         add(`Beef with you: ${Math.round(f.beefWithYou)}/100   Loyalty: ${Math.round(f.loyalty)}   Morale: ${Math.round(f.morale)}`);

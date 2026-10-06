@@ -2,6 +2,7 @@
  * Fight events: scheduling, automatic matchmaking, running bouts, applying
  * results (records, belts, damage, wounds, suspensions) and event money.
  */
+import { feudResult, getFeud } from './feuds';
 import type { Bout, FightEvent, GameState, Fighter, EventFinancials } from '../core/types';
 import { content } from '../core/content';
 import { Rng } from '../core/rng';
@@ -348,6 +349,7 @@ const methodLabel = (m: string) => ({ KO: 'KO', TKO: 'TKO', SUB: 'submission', D
 /** Apply a finished bout's consequences to both fighters, belts and news. */
 export function applyBout(s: GameState, ev: FightEvent, bout: Bout, rng: Rng): void {
   const r = bout.result!;
+  if (r.winner && r.loser) feudResult(s, r.winner, r.loser);
   const A = s.fighters[bout.a];
   const B = s.fighters[bout.b];
   const sides: [Fighter, Fighter] = [A, B];
@@ -459,7 +461,11 @@ export function cardDraw(s: GameState, ev: FightEvent): number {
   const top = live.slice(0, 2).reduce((t, b) => t + Math.max(sp(b.a), sp(b.b)) * 0.7 + Math.min(sp(b.a), sp(b.b)) * 0.3, 0) / 2;
   const depth = live.slice(2).reduce((t, b) => t + (sp(b.a) + sp(b.b)) / 2, 0) / Math.max(1, live.length - 2);
   const titles = live.filter((b) => b.title).length * 8;
-  const rivalry = live.slice(0, 2).some((b) => s.fighters[b.a]?.rivals.includes(b.b)) ? 10 : 0;
+  // real beef sells: a rivalry is worth more the hotter the feud is
+  const rivalry = Math.max(0, ...live.slice(0, 2).map((b) => {
+    const heat = getFeud(s, b.a, b.b)?.heat ?? 0;
+    return s.fighters[b.a]?.rivals.includes(b.b) ? 6 + heat / 10 : heat / 12;
+  }));
   return top * 0.75 + depth * 0.25 + titles + rivalry;
 }
 

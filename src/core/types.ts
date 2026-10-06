@@ -403,6 +403,14 @@ export interface StoryletState {
 
 // ---------------------------------------------------------------- media
 
+export interface Feud {
+  a: string;
+  b: string;
+  heat: number; // 0..100
+  lastPost: number; // week
+  result?: { winner: string; loser: string; week: number };
+}
+
 export interface SocialPost {
   handle: string;
   name: string;
@@ -603,6 +611,8 @@ export interface GameState {
   };
   legal: { cases: LegalCase[] };
   rivals: Record<string, RivalState>;
+  /** fighter feuds: online beef between pairs, keyed 'idA|idB' (sorted) */
+  feuds?: Record<string, Feud>;
   owner: {
     name: string;
     target: number;
