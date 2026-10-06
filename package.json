@@ -16,7 +16,8 @@
     "desktop": "vite build && electron .",
     "desktop:windowed": "vite build && electron . --windowed",
     "dist:win": "tsc --noEmit && vite build && electron-builder --win portable nsis --x64",
-    "dist:linux": "tsc --noEmit && vite build && electron-builder --linux AppImage --x64"
+    "dist:linux": "tsc --noEmit && vite build && electron-builder --linux AppImage --x64",
+    "dist:win:nowine": "tsc --noEmit && vite build && electron-builder --win dir --x64 -c.win.signAndEditExecutable=false && node tools/stamp-exe.mjs \"release/win-unpacked/CAGE BOSS.exe\" build/icon.ico && electron-builder --win portable --x64 --prepackaged release/win-unpacked -c.win.signAndEditExecutable=false"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
@@ -24,6 +25,7 @@
     "electron-builder": "^26.15.3",
     "lz-string": "^1.5.0",
     "pixi.js": "^8.22.0",
+    "resedit": "^2.0.3",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.2",
@@ -47,7 +49,7 @@
     ],
     "asar": true,
     "win": {
-      "icon": "build/icon.png",
+      "icon": "build/icon.ico",
       "artifactName": "CAGE-BOSS-${version}-${arch}-${target}.${ext}"
     },
     "portable": {
