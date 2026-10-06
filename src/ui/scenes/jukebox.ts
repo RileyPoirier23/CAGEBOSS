@@ -9,7 +9,8 @@ import { openWindow } from '../widgets';
 import { TRACKS, playTrack, nowPlaying, skipTrack } from '../../audio/music';
 
 export function openJukebox(g: Game): void {
-  const win = openWindow(g, 'Jukebox', 300, 40 + TRACKS.length * 22);
+  const ROW = 15;
+  const win = openWindow(g, 'Jukebox', 300, 44 + TRACKS.length * ROW);
   const draw = () => {
     win.body.removeChildren().forEach((c) => c.destroy({ children: true }));
     const now = nowPlaying();
@@ -24,13 +25,14 @@ export function openJukebox(g: Game): void {
         playTrack(t);
         draw();
       });
-      row.addChild(box(288, 20, playing ? 0x3a3020 : i % 2 ? 0x2a2630 : 0x24212a, playing ? PAL.gold : undefined));
-      row.addChild(text(`${playing ? '▶ ' : ''}${t.title}`, 5, 2, { color: playing ? PAL.gold : PAL.bone }));
-      row.addChild(text(t.artist, 5, 12, { small: true, color: PAL.ash, width: 278, maxLines: 1 }));
-      row.position.set(0, 12 + i * 22);
+      row.addChild(box(288, ROW - 1, playing ? 0x3a3020 : i % 2 ? 0x2a2630 : 0x24212a, playing ? PAL.gold : undefined));
+      const title = text(`${playing ? '▶ ' : ''}${t.title}`, 5, 3, { color: playing ? PAL.gold : PAL.bone, width: 150, maxLines: 1 });
+      row.addChild(title);
+      row.addChild(text(t.artist, 160, 5, { small: true, color: PAL.ash, width: 124, maxLines: 1 }));
+      row.position.set(0, 12 + i * ROW);
       win.body.addChild(row);
     });
-    win.body.addChild(button('NEXT TRACK (N)', 6, 14 + TRACKS.length * 22, 90, 12, () => {
+    win.body.addChild(button('NEXT TRACK (N)', 6, 14 + TRACKS.length * ROW, 90, 12, () => {
       skipTrack();
       draw();
     }, { small: true, fill: PAL.steel }));
