@@ -139,7 +139,8 @@ export class Button extends Container {
     this.disabled = !!opts.disabled;
     this.bg = new Graphics();
     this.addChild(this.bg);
-    const small = !!opts.small;
+    // labels that don't fit drop to the small face rather than spilling past the button edge
+    const small = !!opts.small || measure(labelText, false) > w - 4;
     this.labelNode = new PixelText(labelText, {
       small,
       color: this.disabled ? PAL.grey : (opts.textColor ?? PAL.bone),
@@ -275,6 +276,15 @@ export class ScrollBox extends Container {
     });
     this.on('pointerup', () => (this.dragging = null));
     this.on('pointerupoutside', () => (this.dragging = null));
+  }
+
+  /** Change the viewport size (e.g. when a button row below needs room). */
+  setSize(w: number, h: number): void {
+    this.w = w;
+    this.h = h;
+    this.maskG.clear().rect(0, 0, w, h).fill(0xffffff);
+    this.hitArea = { contains: (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h };
+    this.refresh();
   }
 
   get contentHeight(): number {

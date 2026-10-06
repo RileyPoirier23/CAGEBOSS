@@ -8,7 +8,7 @@ import type { Game } from './app';
 import type { Bout, EventFinancials, FightEvent, Fighter } from '../core/types';
 import { PAL, shade } from '../art/palette';
 import { W, H, text, box, button, clickable } from './kit';
-import type { PixelText } from './text';
+import { measure, type PixelText } from './text';
 import { fighterPortrait, reporterPortrait, npcPortrait } from './sprites';
 import { content } from '../core/content';
 import { Rng } from '../core/rng';
@@ -58,8 +58,10 @@ export class PostFightPresser extends Container {
     const bg = new Graphics();
     bg.rect(0, 0, W, 172).fill(0x101a2e);
     // step-and-repeat logo wall
-    const sponsors = content().sponsors.map((x) => x.name);
-    const promo = s.promotion.name.toUpperCase();
+    // only logos that fit their panel; a step-and-repeat never says "IMPROPER ..."
+    const fits = (n: string) => measure(n.toUpperCase(), true) <= 72;
+    const sponsors = content().sponsors.map((x) => x.name).filter(fits);
+    const promo = fits(s.promotion.name) ? s.promotion.name.toUpperCase() : s.promotion.name.split(/\s+/).map((w) => w[0]).join('').toUpperCase();
     this.addChild(bg);
     const wall = new Container();
     for (let row = 0; row < 7; row++) {

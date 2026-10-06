@@ -98,8 +98,9 @@ export function openCorkboard(g: Game, onClose: () => void): void {
     }
     // string pins
     const g = new Graphics();
-    g.circle(76, 3, 2).fill(PAL.blood).circle(350, 3, 2).fill(PAL.blood);
-    g.moveTo(76, 3).lineTo(350, 3).stroke({ color: PAL.blood, width: 1, alpha: 0.6 });
+    // string runs along the top edge of the card, clear of the names
+    g.moveTo(76, 0).lineTo(350, 0).stroke({ color: PAL.blood, width: 1, alpha: 0.5 });
+    g.circle(76, 0, 2).fill(PAL.blood).circle(350, 0, 2).fill(PAL.blood);
     c.addChild(g);
     if (probs.length) c.addChild(text('PROBLEM: ' + probs.join('; '), 76, 20, { small: true, color: PAL.blood, width: 280 }));
     // controls

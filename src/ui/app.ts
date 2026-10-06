@@ -115,7 +115,7 @@ export class Game {
     window.addEventListener('pointerdown', unlock);
     window.addEventListener('keydown', unlock);
     onTrackChange((t) => {
-      if (this.settings.music && !this.settings.mute) this.toast(`♪ ${t.title} - ${t.artist}`, PAL.gold);
+      if (this.settings.music && !this.settings.mute) this.toast(`NOW PLAYING: ${t.title.toUpperCase()} - ${t.artist.toUpperCase()}`, PAL.gold, { top: true, small: true });
     });
   }
 
@@ -212,15 +212,15 @@ export class Game {
     this.shakeT = Math.max(this.shakeT, dur);
   }
 
-  toast(msg: string, color: number = PAL.bone): void {
-    const t = text(msg, 4, 3, { color, width: 200 });
+  toast(msg: string, color: number = PAL.bone, opts: { top?: boolean; small?: boolean } = {}): void {
+    const t = text(msg, 4, 3, { color, width: 200, small: opts.small });
     const w = t.textWidth + 8;
     const h = t.textHeight + 7;
     const c = new Container();
     c.addChild(box(w, h, PAL.night, PAL.ash, { shadow: true }));
     c.addChild(t);
-    c.x = W - w - 4;
-    c.y = H - 4 - h - this.toasts.length * (h + 2);
+    c.x = opts.top ? Math.floor((W - w) / 2) : W - w - 4;
+    c.y = opts.top ? 2 : H - 4 - h - this.toasts.length * (h + 2);
     this.toastLayer.addChild(c);
     this.toasts.push({ node: c, t: 2.6 });
   }

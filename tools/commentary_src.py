@@ -581,6 +581,12 @@ add('dc', 'robbery', "I'm gonna text the commission. I have their number. They h
 add('blow', 'decision', "Look, judging in this sport is like {pop_show}. You never know what's going to happen and somebody's always crying.")
 
 # situations without dedicated banks fall back through this chain
+# R-rated material lives in its own file
+import sys as _sys
+_sys.path.insert(0, os.path.dirname(__file__))
+from commentary_rrated import install as _install_rrated
+_install_rrated(add)
+
 FALLBACK = {
     "flashy": ["hurt"], "legkick": ["lull"], "body": ["hurt"], "sub_attempt": ["bjj"],
     "knockdown": ["hurt"], "finish_doc": ["finish_tko"], "finish_dq": ["foul"],
