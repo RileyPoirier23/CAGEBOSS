@@ -1,0 +1,1400 @@
+[
+ {
+  "id": "title_change_0",
+  "tags": [
+   "title_change"
+  ],
+  "text": "NEW CHAMP! {winner} DETHRONES {loser} BY {method}",
+  "tone": 0.5,
+  "body": "{winner} is the new {belt} holder after a {method} win at {event}. {loser} was last seen asking a ringside doctor what day it was."
+ },
+ {
+  "id": "title_change_1",
+  "tags": [
+   "title_change"
+  ],
+  "text": "{winner} SNATCHES THE {belt} FROM {loser}",
+  "tone": 0.5
+ },
+ {
+  "id": "title_change_2",
+  "tags": [
+   "title_change"
+  ],
+  "text": "THE KING IS DEAD: {loser} LOSES BELT TO {winner}",
+  "tone": 0.5
+ },
+ {
+  "id": "title_change_3",
+  "tags": [
+   "title_change"
+  ],
+  "text": "{winner} WINS GOLD; {loser}'S REIGN ENDS IN {method}",
+  "tone": 0.5
+ },
+ {
+  "id": "title_change_4",
+  "tags": [
+   "title_change"
+  ],
+  "text": "BELT CHANGES HANDS AT {event}: {winner} IS YOUR CHAMP",
+  "tone": 0.5,
+  "body": "Bars across the country report a surge in people saying 'I always said that guy was good'."
+ },
+ {
+  "id": "title_change_5",
+  "tags": [
+   "title_change"
+  ],
+  "text": "{loser} DETHRONED. {winner} CALLS IT 'THE EASIEST MONEY I EVER MADE'",
+  "tone": 0.5
+ },
+ {
+  "id": "title_defense_0",
+  "tags": [
+   "title_defense"
+  ],
+  "text": "{winner} RETAINS! {loser} TURNED AWAY BY {method}",
+  "tone": 0.3
+ },
+ {
+  "id": "title_defense_1",
+  "tags": [
+   "title_defense"
+  ],
+  "text": "STILL CHAMP: {winner} DEFENDS {belt} AGAINST {loser}",
+  "tone": 0.3
+ },
+ {
+  "id": "title_defense_2",
+  "tags": [
+   "title_defense"
+  ],
+  "text": "{winner} MAKES IT LOOK EASY, RETAINS THE {belt}",
+  "tone": 0.3,
+  "body": "{loser} trained for eight weeks for this. It lasted considerably less than eight weeks."
+ },
+ {
+  "id": "title_defense_3",
+  "tags": [
+   "title_defense"
+  ],
+  "text": "{winner} DEFENDS GOLD; DIVISION RUNNING OUT OF CHALLENGERS",
+  "tone": 0.3
+ },
+ {
+  "id": "title_defense_4",
+  "tags": [
+   "title_defense"
+  ],
+  "text": "'WHO'S NEXT?' {winner} ASKS AFTER BEATING {loser}",
+  "tone": 0.3
+ },
+ {
+  "id": "robbery_0",
+  "tags": [
+   "robbery"
+  ],
+  "text": "ROBBERY! JUDGES HAND {winner} DECISION OVER {loser}; FANS RIOT ONLINE",
+  "tone": -0.5,
+  "body": "Judge {judge} has deactivated all social media accounts. Again."
+ },
+ {
+  "id": "robbery_1",
+  "tags": [
+   "robbery"
+  ],
+  "text": "'DAYLIGHT ROBBERY': {loser} FURIOUS AFTER CONTROVERSIAL LOSS TO {winner}",
+  "tone": -0.5
+ },
+ {
+  "id": "robbery_2",
+  "tags": [
+   "robbery"
+  ],
+  "text": "JUDGING CONTROVERSY OVERSHADOWS {event}",
+  "tone": -0.5
+ },
+ {
+  "id": "robbery_3",
+  "tags": [
+   "robbery"
+  ],
+  "text": "{judge} SCORECARD CALLED 'A HATE CRIME AGAINST MATH'",
+  "tone": -0.5
+ },
+ {
+  "id": "robbery_4",
+  "tags": [
+   "robbery"
+  ],
+  "text": "THE SCORECARD THAT BROKE THE INTERNET: {winner} OVER {loser}?!",
+  "tone": -0.5
+ },
+ {
+  "id": "robbery_5",
+  "tags": [
+   "robbery"
+  ],
+  "text": "COMMISSION 'REVIEWING' {event} JUDGING, WHICH MEANS NOTHING WILL HAPPEN",
+  "tone": -0.5
+ },
+ {
+  "id": "ko_0",
+  "tags": [
+   "ko"
+  ],
+  "text": "{winner} SENDS {loser} TO THE SHADOW REALM WITH {detail}",
+  "tone": 0.3
+ },
+ {
+  "id": "ko_1",
+  "tags": [
+   "ko"
+  ],
+  "text": "LIGHTS OUT: {winner} SPARKS {loser} AT {event}",
+  "tone": 0.3
+ },
+ {
+  "id": "ko_2",
+  "tags": [
+   "ko"
+  ],
+  "text": "{detail} KO! {winner}'S HIGHLIGHT GOES VIRAL",
+  "tone": 0.3
+ },
+ {
+  "id": "ko_3",
+  "tags": [
+   "ko"
+  ],
+  "text": "{loser} WAKES UP, ASKS WHO WON; NOBODY HAS THE HEART TO TELL HIM",
+  "tone": 0.3
+ },
+ {
+  "id": "ko_4",
+  "tags": [
+   "ko"
+  ],
+  "text": "KNOCKOUT OF THE YEAR? {winner} FLATTENS {loser}",
+  "tone": 0.3
+ },
+ {
+  "id": "ko_5",
+  "tags": [
+   "ko"
+  ],
+  "text": "{winner}'S {detail} HAS 40 MILLION VIEWS AND ONE VERY SORE JAW",
+  "tone": 0.3
+ },
+ {
+  "id": "fiasco_0",
+  "tags": [
+   "fiasco"
+  ],
+  "text": "{a} VS {b} ENDS IN {detail}; NOBODY GETS THEIR MONEY'S WORTH",
+  "tone": -0.4
+ },
+ {
+  "id": "fiasco_1",
+  "tags": [
+   "fiasco"
+  ],
+  "text": "FIASCO AT {event}: {detail}",
+  "tone": -0.4
+ },
+ {
+  "id": "fiasco_2",
+  "tags": [
+   "fiasco"
+  ],
+  "text": "'WHAT JUST HAPPENED?' FANS BAFFLED BY {a}-{b} FINISH",
+  "tone": -0.4
+ },
+ {
+  "id": "fiasco_3",
+  "tags": [
+   "fiasco"
+  ],
+  "text": "{event} MAIN CARD DERAILED BY {detail}",
+  "tone": -0.4
+ },
+ {
+  "id": "injury_0",
+  "tags": [
+   "injury"
+  ],
+  "text": "GRUESOME: {fighter} SUFFERS {injury} AT {event}",
+  "tone": -0.2
+ },
+ {
+  "id": "injury_1",
+  "tags": [
+   "injury"
+  ],
+  "text": "{fighter} OUT INDEFINITELY WITH {injury}",
+  "tone": -0.2
+ },
+ {
+  "id": "injury_2",
+  "tags": [
+   "injury"
+  ],
+  "text": "'I HEARD IT POP': {fighter}'S {injury} HAS FANS LOOKING AWAY",
+  "tone": -0.2
+ },
+ {
+  "id": "injury_3",
+  "tags": [
+   "injury"
+  ],
+  "text": "{fighter} UNDERGOES SURGERY FOR {injury}; VOWS TO RETURN",
+  "tone": -0.2
+ },
+ {
+  "id": "event_0",
+  "tags": [
+   "event"
+  ],
+  "text": "{event} DRAWS {attendance} TO {venue}",
+  "tone": 0.1
+ },
+ {
+  "id": "event_1",
+  "tags": [
+   "event"
+  ],
+  "text": "{attendance} FANS PACK {venue} FOR {event}",
+  "tone": 0.1
+ },
+ {
+  "id": "event_2",
+  "tags": [
+   "event"
+  ],
+  "text": "{event} IN THE BOOKS: {attendance} IN ATTENDANCE, {buys} BUYS",
+  "tone": 0.1
+ },
+ {
+  "id": "event_3",
+  "tags": [
+   "event"
+  ],
+  "text": "{promotion} ROLLS INTO {venue}; LOCAL BARS REPORT RECORD SALES",
+  "tone": 0.1
+ },
+ {
+  "id": "event_4",
+  "tags": [
+   "event"
+  ],
+  "text": "REVIEW: {event} WAS 'FINE', SAYS MAN WHO REVIEWS EVERYTHING AS 'FINE'",
+  "tone": 0.1
+ },
+ {
+  "id": "event_5",
+  "tags": [
+   "event"
+  ],
+  "text": "{event} RECAP: BLOOD, BEER AND AT LEAST ONE PROPOSAL IN THE CROWD",
+  "tone": 0.1
+ },
+ {
+  "id": "arrest_0",
+  "tags": [
+   "arrest"
+  ],
+  "text": "{fighter} ARRESTED: {charge}",
+  "tone": -0.6,
+  "body": "Police say {last} was cooperative 'after the first 20 minutes'. {promotion} declined to comment, then commented."
+ },
+ {
+  "id": "arrest_1",
+  "tags": [
+   "arrest"
+  ],
+  "text": "COPS CUFF {last}: CHARGED WITH {charge}",
+  "tone": -0.6
+ },
+ {
+  "id": "arrest_2",
+  "tags": [
+   "arrest"
+  ],
+  "text": "{last} BOOKED ON {charge}; MUGSHOT ALREADY A MEME",
+  "tone": -0.6
+ },
+ {
+  "id": "arrest_3",
+  "tags": [
+   "arrest"
+  ],
+  "text": "ANOTHER ONE: {promotion} FIGHTER {fighter} ARRESTED",
+  "tone": -0.6
+ },
+ {
+  "id": "arrest_4",
+  "tags": [
+   "arrest"
+  ],
+  "text": "{fighter}'S BAD NIGHT: ARREST, MUGSHOT, AND A $9 VENDING MACHINE BURRITO",
+  "tone": -0.6
+ },
+ {
+  "id": "arrest_5",
+  "tags": [
+   "arrest"
+  ],
+  "text": "{last} IN CUSTODY. LAWYER SAYS CLIENT IS 'A GENTLE SOUL WITH A VIOLENT JOB'",
+  "tone": -0.6
+ },
+ {
+  "id": "verdict_0",
+  "tags": [
+   "verdict"
+  ],
+  "text": "{fighter} CASE ENDS: {outcome}",
+  "tone": 0.0
+ },
+ {
+  "id": "verdict_1",
+  "tags": [
+   "verdict"
+  ],
+  "text": "COURT DECIDES {last}'S FATE: {outcome}",
+  "tone": 0.0
+ },
+ {
+  "id": "verdict_2",
+  "tags": [
+   "verdict"
+  ],
+  "text": "{last} WALKS OUT OF COURT; VERDICT: {outcome}",
+  "tone": 0.0
+ },
+ {
+  "id": "verdict_3",
+  "tags": [
+   "verdict"
+  ],
+  "text": "JUDGE TO {last}: {outcome}. FANS TO JUDGE: 'BOOO'",
+  "tone": 0.0
+ },
+ {
+  "id": "doping_0",
+  "tags": [
+   "doping"
+  ],
+  "text": "{fighter} POPS FOR PEDS; SUSPENDED {weeks} WEEKS",
+  "tone": -0.4
+ },
+ {
+  "id": "doping_1",
+  "tags": [
+   "doping"
+  ],
+  "text": "TAINTED SUPPLEMENT? {last} BLAMES 'CONTAMINATED BEEF' FOR FAILED TEST",
+  "tone": -0.4
+ },
+ {
+  "id": "doping_2",
+  "tags": [
+   "doping"
+  ],
+  "text": "{last} FAILS DRUG TEST, CLAIMS IT WAS 'MY GIRLFRIEND'S STUFF'",
+  "tone": -0.4
+ },
+ {
+  "id": "doping_3",
+  "tags": [
+   "doping"
+  ],
+  "text": "BANNED SUBSTANCE FOUND IN {last}'S SAMPLE; HIS ABS FOUND IN EVERYONE'S NIGHTMARES",
+  "tone": -0.4
+ },
+ {
+  "id": "doping_4",
+  "tags": [
+   "doping"
+  ],
+  "text": "{fighter} SUSPENDED; SPORT SHOCKED (NOBODY IS SHOCKED)",
+  "tone": -0.4
+ },
+ {
+  "id": "weight_miss_0",
+  "tags": [
+   "weight_miss"
+  ],
+  "text": "{last} MISSES WEIGHT; {event} BOUT IN JEOPARDY",
+  "tone": -0.2
+ },
+ {
+  "id": "weight_miss_1",
+  "tags": [
+   "weight_miss"
+  ],
+  "text": "SCALE FAIL: {fighter} COMES IN HEAVY",
+  "tone": -0.2
+ },
+ {
+  "id": "weight_miss_2",
+  "tags": [
+   "weight_miss"
+  ],
+  "text": "{last} MISSES WEIGHT AGAIN; NUTRITIONIST QUITS ON THE SPOT",
+  "tone": -0.2
+ },
+ {
+  "id": "weight_miss_3",
+  "tags": [
+   "weight_miss"
+  ],
+  "text": "{fighter} BLAMES WEIGHT MISS ON 'HOTEL SCALE' AND 'A SINGLE CHURRO'",
+  "tone": -0.2
+ },
+ {
+  "id": "defection_0",
+  "tags": [
+   "defection"
+  ],
+  "text": "{fighter} JUMPS SHIP TO {rival}",
+  "tone": -0.4
+ },
+ {
+  "id": "defection_1",
+  "tags": [
+   "defection"
+  ],
+  "text": "BIG LOSS FOR {promotion}: {fighter} SIGNS WITH {rival}",
+  "tone": -0.4
+ },
+ {
+  "id": "defection_2",
+  "tags": [
+   "defection"
+  ],
+  "text": "'THEY PAY BETTER': {fighter} LEAVES FOR {rival}",
+  "tone": -0.4
+ },
+ {
+  "id": "defection_3",
+  "tags": [
+   "defection"
+  ],
+  "text": "{fighter} DEFECTS; {promotion} PRESIDENT CALLS IT 'NO BIG DEAL' THROUGH CLENCHED TEETH",
+  "tone": -0.4
+ },
+ {
+  "id": "rival_enters_0",
+  "tags": [
+   "rival_enters"
+  ],
+  "text": "NEW CHALLENGER: {rival} ENTERS THE FIGHT GAME",
+  "tone": -0.3
+ },
+ {
+  "id": "rival_enters_1",
+  "tags": [
+   "rival_enters"
+  ],
+  "text": "{owner}'S {rival} LAUNCHES WITH BIG MONEY AND BIGGER PROMISES",
+  "tone": -0.3
+ },
+ {
+  "id": "rival_enters_2",
+  "tags": [
+   "rival_enters"
+  ],
+  "text": "{rival} VOWS TO 'CRUSH' {promotion}; {promotion} SHRUGS",
+  "tone": -0.3
+ },
+ {
+  "id": "rival_merger_0",
+  "tags": [
+   "rival_merger"
+  ],
+  "text": "{rival} SWALLOWED BY {into} IN MERGER",
+  "tone": 0.0
+ },
+ {
+  "id": "rival_merger_1",
+  "tags": [
+   "rival_merger"
+  ],
+  "text": "CONSOLIDATION: {rival} AND {into} BECOME ONE BIG MONEY PIT",
+  "tone": 0.0
+ },
+ {
+  "id": "rival_collapse_0",
+  "tags": [
+   "rival_collapse"
+  ],
+  "text": "{rival} COLLAPSES; FIGHTERS FLOOD FREE AGENCY",
+  "tone": 0.5
+ },
+ {
+  "id": "rival_collapse_1",
+  "tags": [
+   "rival_collapse"
+  ],
+  "text": "IT'S OVER FOR {rival}: PROMOTION FOLDS AMID UNPAID PURSES",
+  "tone": 0.5
+ },
+ {
+  "id": "rival_collapse_2",
+  "tags": [
+   "rival_collapse"
+  ],
+  "text": "{rival} SHUTS DOWN; {promotion} PRESIDENT SPOTTED SMILING",
+  "tone": 0.5
+ },
+ {
+  "id": "tv_offer_0",
+  "tags": [
+   "tv_offer"
+  ],
+  "text": "{network} EYEING {promotion} FOR TV DEAL",
+  "tone": 0.3
+ },
+ {
+  "id": "tv_offer_1",
+  "tags": [
+   "tv_offer"
+  ],
+  "text": "SOURCES: {network} IN TALKS WITH {promotion}",
+  "tone": 0.3
+ },
+ {
+  "id": "tv_deal_0",
+  "tags": [
+   "tv_deal"
+  ],
+  "text": "{promotion} INKS TV DEAL WITH {network}",
+  "tone": 0.8
+ },
+ {
+  "id": "tv_deal_1",
+  "tags": [
+   "tv_deal"
+  ],
+  "text": "BIG MONEY: {network} BUYS {promotion} RIGHTS",
+  "tone": 0.8
+ },
+ {
+  "id": "tv_deal_2",
+  "tags": [
+   "tv_deal"
+  ],
+  "text": "{promotion} IS GOING PRIMETIME ON {network}",
+  "tone": 0.8
+ },
+ {
+  "id": "tv_deal_3",
+  "tags": [
+   "tv_deal"
+  ],
+  "text": "{network} DEAL MEANS {promotion} FIGHTERS MIGHT GET PAID (THEY WON'T)",
+  "tone": 0.8
+ },
+ {
+  "id": "tv_expired_0",
+  "tags": [
+   "tv_expired"
+  ],
+  "text": "{network} DEAL EXPIRES; {promotion} SEARCHING FOR A HOME",
+  "tone": -0.4
+ },
+ {
+  "id": "tv_expired_1",
+  "tags": [
+   "tv_expired"
+  ],
+  "text": "{promotion} OFF THE AIR? {network} WALKS AWAY",
+  "tone": -0.4
+ },
+ {
+  "id": "retirement_0",
+  "tags": [
+   "retirement"
+  ],
+  "text": "{fighter} HANGS UP THE GLOVES AT {age}",
+  "tone": 0.0
+ },
+ {
+  "id": "retirement_1",
+  "tags": [
+   "retirement"
+  ],
+  "text": "END OF AN ERA: {fighter} RETIRES WITH {record} RECORD",
+  "tone": 0.0
+ },
+ {
+  "id": "retirement_2",
+  "tags": [
+   "retirement"
+  ],
+  "text": "{last} RETIRES; ALREADY TEASING A COMEBACK",
+  "tone": 0.0
+ },
+ {
+  "id": "retirement_3",
+  "tags": [
+   "retirement"
+  ],
+  "text": "{fighter} CALLS IT A CAREER; WILL 'FOCUS ON PODCAST AND HEALING'",
+  "tone": 0.0
+ },
+ {
+  "id": "hall_of_fame_0",
+  "tags": [
+   "hall_of_fame"
+  ],
+  "text": "{fighter} INDUCTED INTO {promotion} HALL OF FAME",
+  "tone": 0.5
+ },
+ {
+  "id": "hall_of_fame_1",
+  "tags": [
+   "hall_of_fame"
+  ],
+  "text": "{fighter} ENTERS THE HALL; SPEECH RUNS 45 MINUTES OVER",
+  "tone": 0.5
+ },
+ {
+  "id": "president_arrest_0",
+  "tags": [
+   "president_arrest"
+  ],
+  "text": "{promotion} BOSS {president} ARRESTED: {charge}",
+  "tone": -1
+ },
+ {
+  "id": "president_arrest_1",
+  "tags": [
+   "president_arrest"
+  ],
+  "text": "THE BOSS IN CUFFS: {president} BOOKED ON {charge}",
+  "tone": -1
+ },
+ {
+  "id": "president_arrest_2",
+  "tags": [
+   "president_arrest"
+  ],
+  "text": "{president} ARRESTED; IMMEDIATELY ANNOUNCES PPV OF HIS OWN TRIAL",
+  "tone": -1
+ },
+ {
+  "id": "president_verdict_0",
+  "tags": [
+   "president_verdict"
+  ],
+  "text": "{president} CASE CLOSES: {outcome}",
+  "tone": 0.0
+ },
+ {
+  "id": "president_verdict_1",
+  "tags": [
+   "president_verdict"
+  ],
+  "text": "JUDGE RULES ON {president}: {outcome}",
+  "tone": 0.0
+ },
+ {
+  "id": "customs_0",
+  "tags": [
+   "customs"
+  ],
+  "text": "{fighter} STUCK AT CUSTOMS",
+  "tone": -0.2
+ },
+ {
+  "id": "title_vacant_0",
+  "tags": [
+   "title_vacant"
+  ],
+  "text": "{belt} VACANT AS {fighter} MOVES ON",
+  "tone": 0.0
+ },
+ {
+  "id": "scandal_0",
+  "tags": [
+   "scandal"
+  ],
+  "text": "{subject} SCANDAL ROCKS {promotion}",
+  "tone": -0.5
+ },
+ {
+  "id": "scandal_1",
+  "tags": [
+   "scandal"
+  ],
+  "text": "{subjectLast} IN HOT WATER, AGAIN",
+  "tone": -0.5
+ },
+ {
+  "id": "scandal_2",
+  "tags": [
+   "scandal"
+  ],
+  "text": "WHAT DID {subjectLast} DO NOW?",
+  "tone": -0.5
+ },
+ {
+  "id": "scandal_3",
+  "tags": [
+   "scandal"
+  ],
+  "text": "{promotion} 'AWARE OF THE SITUATION' INVOLVING {subject}",
+  "tone": -0.5
+ },
+ {
+  "id": "scandal_4",
+  "tags": [
+   "scandal"
+  ],
+  "text": "{subject} TRENDING FOR ALL THE WRONG REASONS",
+  "tone": -0.5
+ },
+ {
+  "id": "scandal_5",
+  "tags": [
+   "scandal"
+  ],
+  "text": "THE {subjectLast} SITUATION IS A SITUATION",
+  "tone": -0.5
+ },
+ {
+  "id": "speech_0",
+  "tags": [
+   "speech"
+  ],
+  "text": "{subject}'S POST SPARKS OUTRAGE; SPONSORS HEAD FOR THE EXITS",
+  "tone": -0.5
+ },
+ {
+  "id": "speech_1",
+  "tags": [
+   "speech"
+  ],
+  "text": "{subjectLast} SAYS THE QUIET PART LOUD, ON A LIVESTREAM, TO 200,000 PEOPLE",
+  "tone": -0.5
+ },
+ {
+  "id": "speech_2",
+  "tags": [
+   "speech"
+  ],
+  "text": "'I WAS HACKED': {subject} BLAMES HACKER FOR POST HE ALSO DEFENDED FOR 3 HOURS",
+  "tone": -0.5
+ },
+ {
+  "id": "speech_3",
+  "tags": [
+   "speech"
+  ],
+  "text": "{subjectLast}'S APOLOGY VIDEO FILMED IN A CAR, PANNED FOR 'CAR'",
+  "tone": -0.5
+ },
+ {
+  "id": "speech_4",
+  "tags": [
+   "speech"
+  ],
+  "text": "FREE SPEECH OR FIRED? {promotion} WEIGHS {subjectLast} FALLOUT",
+  "tone": -0.5
+ },
+ {
+  "id": "streamer_0",
+  "tags": [
+   "streamer"
+  ],
+  "text": "{subject}'S LIVESTREAM GOES OFF THE RAILS",
+  "tone": -0.1
+ },
+ {
+  "id": "streamer_1",
+  "tags": [
+   "streamer"
+  ],
+  "text": "{subjectLast} STREAMS 14 HOURS STRAIGHT, FIGHTS CHAT, LOSES",
+  "tone": -0.1
+ },
+ {
+  "id": "streamer_2",
+  "tags": [
+   "streamer"
+  ],
+  "text": "{subject} BANNED FROM STREAMING PLATFORM; JOINS WORSE PLATFORM",
+  "tone": -0.1
+ },
+ {
+  "id": "streamer_3",
+  "tags": [
+   "streamer"
+  ],
+  "text": "{subjectLast} V. ENTIRE INTERNET: STREAM BEEF ESCALATES",
+  "tone": -0.1
+ },
+ {
+  "id": "crypto_0",
+  "tags": [
+   "crypto"
+  ],
+  "text": "{subject}'S MEME COIN RUGPULLS FANS",
+  "tone": -0.4
+ },
+ {
+  "id": "crypto_1",
+  "tags": [
+   "crypto"
+  ],
+  "text": "$KOCOIN DOWN 98%; {subjectLast} 'STILL BULLISH'",
+  "tone": -0.4
+ },
+ {
+  "id": "crypto_2",
+  "tags": [
+   "crypto"
+  ],
+  "text": "{subject} PROMOTES CRYPTO EXCHANGE; EXCHANGE PROMPTLY VANISHES",
+  "tone": -0.4
+ },
+ {
+  "id": "addiction_0",
+  "tags": [
+   "addiction"
+  ],
+  "text": "{subject} ENTERS REHAB; {promotion} 'SUPPORTS HIM 100%'",
+  "tone": -0.3
+ },
+ {
+  "id": "addiction_1",
+  "tags": [
+   "addiction"
+  ],
+  "text": "CONCERN GROWS OVER {subjectLast}'S PARTYING",
+  "tone": -0.3
+ },
+ {
+  "id": "addiction_2",
+  "tags": [
+   "addiction"
+  ],
+  "text": "{subjectLast} SPOTTED AT 4AM CLUB DAY BEFORE WEIGH-INS",
+  "tone": -0.3
+ },
+ {
+  "id": "addiction_3",
+  "tags": [
+   "addiction"
+  ],
+  "text": "{subject} OPENS UP ABOUT ADDICTION IN EMOTIONAL INTERVIEW",
+  "tone": -0.3
+ },
+ {
+  "id": "pay_0",
+  "tags": [
+   "pay"
+  ],
+  "text": "PURSE LEAK: {subject} PAID LESS THAN A DENTAL HYGIENIST",
+  "tone": -0.5
+ },
+ {
+  "id": "pay_1",
+  "tags": [
+   "pay"
+  ],
+  "text": "{subjectLast} SLAMS {promotion} OVER PAY: 'I MAKE MORE ON ONLYFANS'",
+  "tone": -0.5
+ },
+ {
+  "id": "pay_2",
+  "tags": [
+   "pay"
+  ],
+  "text": "FIGHTER PAY FIGHT HEATS UP AS {subject} GOES PUBLIC",
+  "tone": -0.5
+ },
+ {
+  "id": "pay_3",
+  "tags": [
+   "pay"
+  ],
+  "text": "{promotion} PAYS FIGHTERS 'FAIRLY', SAYS {promotion}",
+  "tone": -0.5
+ },
+ {
+  "id": "union_0",
+  "tags": [
+   "union"
+  ],
+  "text": "FIGHTERS ORGANIZE: UNION DRIVE REACHES {promotion} LOCKER ROOM",
+  "tone": -0.5
+ },
+ {
+  "id": "union_1",
+  "tags": [
+   "union"
+  ],
+  "text": "{promotion} FIGHTERS VOTE ON UNIONIZING; {president} CALLS IT 'COMMUNISM WITH ABS'",
+  "tone": -0.5
+ },
+ {
+  "id": "union_2",
+  "tags": [
+   "union"
+  ],
+  "text": "UNION STRIKE THREAT LOOMS OVER {promotion}",
+  "tone": -0.5
+ },
+ {
+  "id": "feud_0",
+  "tags": [
+   "feud"
+  ],
+  "text": "{subjectLast} AND {otherLast} BRAWL AT PRESS EVENT",
+  "tone": 0.2
+ },
+ {
+  "id": "feud_1",
+  "tags": [
+   "feud"
+  ],
+  "text": "BAD BLOOD: {subject} VS {other} BEEF BOILS OVER",
+  "tone": 0.2
+ },
+ {
+  "id": "feud_2",
+  "tags": [
+   "feud"
+  ],
+  "text": "{subjectLast} CALLS {otherLast} 'A DISCOUNT VERSION OF ME'",
+  "tone": 0.2
+ },
+ {
+  "id": "feud_3",
+  "tags": [
+   "feud"
+  ],
+  "text": "THE FEUD SELLS: {subject}-{other} TALK DRIVES TICKET SALES",
+  "tone": 0.2
+ },
+ {
+  "id": "weird_0",
+  "tags": [
+   "weird"
+  ],
+  "text": "{subject} BUYS A TIGER; NEIGHBORS 'CONCERNED'",
+  "tone": 0.0
+ },
+ {
+  "id": "weird_1",
+  "tags": [
+   "weird"
+  ],
+  "text": "{subjectLast} ANNOUNCES RUN FOR MAYOR; PLATFORM IS 'MORE FIGHTS'",
+  "tone": 0.0
+ },
+ {
+  "id": "weird_2",
+  "tags": [
+   "weird"
+  ],
+  "text": "{subject} CLAIMS EARTH IS FLAT, OFFERS TO FIGHT THE CURVE",
+  "tone": 0.0
+ },
+ {
+  "id": "weird_3",
+  "tags": [
+   "weird"
+  ],
+  "text": "{subjectLast}'S MOM IS A BETTER TRASH TALKER THAN HIM, SAYS EVERYONE",
+  "tone": 0.0
+ },
+ {
+  "id": "weird_4",
+  "tags": [
+   "weird"
+  ],
+  "text": "{subject} LAUNCHES HOT SAUCE CALLED 'THE KNOCKOUT'; DOCTORS ISSUE WARNING",
+  "tone": 0.0
+ },
+ {
+  "id": "weird_5",
+  "tags": [
+   "weird"
+  ],
+  "text": "{subjectLast} FILMS RAP VIDEO; RAP COMMUNITY DECLINES",
+  "tone": 0.0
+ },
+ {
+  "id": "president_scandal_0",
+  "tags": [
+   "president_scandal"
+  ],
+  "text": "{president} CAUGHT ON VIDEO AT CASINO; NOBODY SURPRISED",
+  "tone": -0.7
+ },
+ {
+  "id": "president_scandal_1",
+  "tags": [
+   "president_scandal"
+  ],
+  "text": "{president} SCREAMS AT REPORTER; REPORTER SCREAMS BACK; RATINGS UP",
+  "tone": -0.7
+ },
+ {
+  "id": "president_scandal_2",
+  "tags": [
+   "president_scandal"
+  ],
+  "text": "LEAKED TEXTS SHOW {president} CALLED FIGHTERS 'EXPENSIVE MEAT'",
+  "tone": -0.7
+ },
+ {
+  "id": "president_scandal_3",
+  "tags": [
+   "president_scandal"
+  ],
+  "text": "{president}'S SLAP LEAGUE SIDE HUSTLE PANNED BY LITERALLY EVERY DOCTOR",
+  "tone": -0.7
+ },
+ {
+  "id": "president_scandal_4",
+  "tags": [
+   "president_scandal"
+  ],
+  "text": "{president} SPOTTED GOLFING WITH A SENATOR; ETHICS EXPERTS SIGH",
+  "tone": -0.7
+ },
+ {
+  "id": "lawsuit_0",
+  "tags": [
+   "lawsuit"
+  ],
+  "text": "ANTITRUST SUIT AGAINST {promotion} GAINS STEAM",
+  "tone": -0.5
+ },
+ {
+  "id": "lawsuit_1",
+  "tags": [
+   "lawsuit"
+  ],
+  "text": "FORMER FIGHTERS SUE {promotion}; ALLEGE 'MONOPSONY', WHICH NOBODY CAN SPELL",
+  "tone": -0.5
+ },
+ {
+  "id": "lawsuit_2",
+  "tags": [
+   "lawsuit"
+  ],
+  "text": "{promotion} LAWYERS BILL MORE HOURS THAN THE FIGHTERS TRAIN",
+  "tone": -0.5
+ },
+ {
+  "id": "investigation_0",
+  "tags": [
+   "investigation"
+  ],
+  "text": "INVESTIGATION: INSIDE {promotion}'S CULTURE OF CHAOS",
+  "tone": -0.8,
+  "body": "Part one of an investigative series. Sources describe documents being buried in a desk drawer labeled 'later'."
+ },
+ {
+  "id": "investigation_1",
+  "tags": [
+   "investigation"
+  ],
+  "text": "{promotion} UNDER SCRUTINY AFTER EXPOSE",
+  "tone": -0.8
+ },
+ {
+  "id": "investigation_2",
+  "tags": [
+   "investigation"
+  ],
+  "text": "THE BOSS: HOW {president} RUNS {promotion} (PART 3 OF 7)",
+  "tone": -0.8
+ },
+ {
+  "id": "venture_0",
+  "tags": [
+   "venture"
+  ],
+  "text": "{promotion} LAUNCHES SLAP LEAGUE; DOCTORS FILE GROUP COMPLAINT",
+  "tone": 0.1
+ },
+ {
+  "id": "venture_1",
+  "tags": [
+   "venture"
+  ],
+  "text": "{promotion} REALITY SHOW RENEWED; CONTESTANTS FIGHT OVER LAST YOGURT",
+  "tone": 0.1
+ },
+ {
+  "id": "venture_2",
+  "tags": [
+   "venture"
+  ],
+  "text": "{promotion} ENERGY DRINK RECALLED FOR 'TOO MUCH ENERGY'",
+  "tone": 0.1
+ },
+ {
+  "id": "comeback_0",
+  "tags": [
+   "comeback"
+  ],
+  "text": "{subject} ANNOUNCES COMEBACK; DOCTORS REACH FOR THE CHART",
+  "tone": 0.4
+ },
+ {
+  "id": "comeback_1",
+  "tags": [
+   "comeback"
+  ],
+  "text": "ONE MORE FIGHT: {subjectLast} RETURNS",
+  "tone": 0.4
+ },
+ {
+  "id": "comeback_2",
+  "tags": [
+   "comeback"
+  ],
+  "text": "{subject}, 44, SAYS HE 'FEELS 25'; HIS KNEES DISAGREE",
+  "tone": 0.4
+ },
+ {
+  "id": "callout_0",
+  "tags": [
+   "callout"
+  ],
+  "text": "{subjectLast} CALLS OUT {president} ON THE MIC",
+  "tone": 0.3
+ },
+ {
+  "id": "callout_1",
+  "tags": [
+   "callout"
+  ],
+  "text": "'PAY ME!': {subject} BLASTS BOSS IN POST-FIGHT SPEECH",
+  "tone": 0.3
+ },
+ {
+  "id": "callout_2",
+  "tags": [
+   "callout"
+  ],
+  "text": "{subjectLast}'S CALLOUT SETS UP THE NEXT BIG FIGHT",
+  "tone": 0.3
+ },
+ {
+  "id": "presser_0",
+  "tags": [
+   "presser"
+  ],
+  "text": "{president} PRESS CONFERENCE GOES OFF THE RAILS",
+  "tone": 0.0
+ },
+ {
+  "id": "presser_1",
+  "tags": [
+   "presser"
+  ],
+  "text": "'WE'LL SEE WHAT HAPPENS': {president} DODGES QUESTIONS AT PRESSER",
+  "tone": 0.0
+ },
+ {
+  "id": "presser_2",
+  "tags": [
+   "presser"
+  ],
+  "text": "{president} STORMS OUT OF PRESSER AFTER QUESTION FROM {reporter}",
+  "tone": 0.0
+ },
+ {
+  "id": "presser_3",
+  "tags": [
+   "presser"
+  ],
+  "text": "PRESSER HIGHLIGHT: {president} CALLS {reporter} 'A CLOWN WITH A LANYARD'",
+  "tone": 0.0
+ },
+ {
+  "id": "sponsor_flee_0",
+  "tags": [
+   "sponsor_flee"
+  ],
+  "text": "SPONSORS FLEE {promotion} AFTER {subjectLast} DRAMA",
+  "tone": -0.5
+ },
+ {
+  "id": "sponsor_flee_1",
+  "tags": [
+   "sponsor_flee"
+  ],
+  "text": "{sponsor} PULLS OUT OF {promotion} DEAL",
+  "tone": -0.5
+ },
+ {
+  "id": "sponsor_deal_0",
+  "tags": [
+   "sponsor_deal"
+  ],
+  "text": "{promotion} SIGNS SPONSOR DEAL WITH {sponsor}",
+  "tone": 0.4
+ },
+ {
+  "id": "sponsor_deal_1",
+  "tags": [
+   "sponsor_deal"
+  ],
+  "text": "{sponsor} NOW THE 'OFFICIAL {sponsorCat} OF {promotion}'",
+  "tone": 0.4
+ },
+ {
+  "id": "rehab_0",
+  "tags": [
+   "rehab"
+  ],
+  "text": "{subject} COMPLETES REHAB, 'READY TO GO'",
+  "tone": 0.2
+ },
+ {
+  "id": "hype_0",
+  "tags": [
+   "hype"
+  ],
+  "text": "{subject} IS THE NEXT BIG THING, SAYS EVERYONE AT ONCE",
+  "tone": 0.4
+ },
+ {
+  "id": "hype_1",
+  "tags": [
+   "hype"
+  ],
+  "text": "{subjectLast} MANIA: TICKETS SELL OUT IN HOURS",
+  "tone": 0.4
+ },
+ {
+  "id": "hype_2",
+  "tags": [
+   "hype"
+  ],
+  "text": "WHO IS {subject}? THE INTERNET WANTS TO KNOW",
+  "tone": 0.4
+ },
+ {
+  "id": "owner_0",
+  "tags": [
+   "owner"
+  ],
+  "text": "{promotion} OWNERS 'MONITORING' PRESIDENT'S PERFORMANCE",
+  "tone": -0.2
+ },
+ {
+  "id": "owner_1",
+  "tags": [
+   "owner"
+  ],
+  "text": "BOARD MEMO LEAKS: {promotion} BRASS UNHAPPY",
+  "tone": -0.2
+ },
+ {
+  "id": "commission_0",
+  "tags": [
+   "commission"
+  ],
+  "text": "ATHLETIC COMMISSION FINES {promotion}",
+  "tone": -0.2
+ },
+ {
+  "id": "commission_1",
+  "tags": [
+   "commission"
+  ],
+  "text": "COMMISSION PUTS {promotion} 'ON NOTICE'",
+  "tone": -0.2
+ },
+ {
+  "id": "rival_poach_0",
+  "tags": [
+   "rival_poach"
+  ],
+  "text": "{rival} RAIDS {promotion} ROSTER",
+  "tone": -0.3
+ },
+ {
+  "id": "reality_0",
+  "tags": [
+   "reality"
+  ],
+  "text": "REALITY SHOW HOUSE DRAMA: CONTESTANT THROWS COUCH INTO POOL",
+  "tone": 0.2
+ },
+ {
+  "id": "reality_1",
+  "tags": [
+   "reality"
+  ],
+  "text": "REALITY SHOW FINALE DRAWS RECORD RATINGS FOR SOMETHING THAT HAPPENED IN A KITCHEN",
+  "tone": 0.2
+ },
+ {
+  "id": "slap_0",
+  "tags": [
+   "slap"
+  ],
+  "text": "SLAP LEAGUE CHAMPION STILL CAN'T REMEMBER HIS OWN NAME",
+  "tone": 0.0
+ },
+ {
+  "id": "slap_1",
+  "tags": [
+   "slap"
+  ],
+  "text": "SLAPPING: SPORT OR CRY FOR HELP? A DEBATE",
+  "tone": 0.0
+ },
+ {
+  "id": "desert_0",
+  "tags": [
+   "desert"
+  ],
+  "text": "{promotion} HEADS TO THE KINGDOM OF QASR; ETHICISTS PACK SUNSCREEN",
+  "tone": 0.2
+ },
+ {
+  "id": "desert_1",
+  "tags": [
+   "desert"
+  ],
+  "text": "DESERT MEGA-EVENT: GOLD CAGE, HUMAN RIGHTS QUESTIONS",
+  "tone": 0.2
+ },
+ {
+  "id": "politics_0",
+  "tags": [
+   "politics"
+  ],
+  "text": "{president} SPOTTED AT POLITICAL RALLY, TALKING ABOUT 'PUTTING THEM IN THE CAGE'",
+  "tone": 0.0
+ },
+ {
+  "id": "politics_1",
+  "tags": [
+   "politics"
+  ],
+  "text": "SENATOR WANTS {president} AT HEARING; {president} WANTS SENATOR AT RINGSIDE",
+  "tone": 0.0
+ },
+ {
+  "id": "storylet_0",
+  "tags": [
+   "storylet"
+  ],
+  "text": "{promotion} STORY OF THE WEEK",
+  "tone": 0.0
+ }
+]

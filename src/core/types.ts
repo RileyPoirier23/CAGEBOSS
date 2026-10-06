@@ -41,6 +41,7 @@ export interface Look {
   scar: number; // 0..3
   tattoo: number; // 0..3
   build: number; // 0 lean, 1 average, 2 heavy
+  glasses?: number; // 0 none, 1 dark shades, 2 nerd frames
 }
 
 export interface Contract {

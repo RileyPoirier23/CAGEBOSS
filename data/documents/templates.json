@@ -1,71 +1,71 @@
 {
  "ticker": {
   "opening": [
-   "{ref} brings them together. Gloves touch... sort of. HERE WE GO!",
-   "Round 1! {a} and {b} meet in the center of the cage.",
-   "{ref} waves them in. The crowd is already drunk and screaming.",
-   "And we're underway! {a} takes the center, {b} circles."
+   "{ref} gives the final instructions. Gloves touch. Here we go!",
+   "Round 1. {a} and {b} meet in the center, and the crowd is already three beers deep.",
+   "{ref} waves them in. Let's get it on!",
+   "And we're underway. {a} takes the center, {b} starts circling."
   ],
   "round_start": [
-   "Round {r}! Both fighters off the stools.",
-   "Round {r} begins. {ref} gets them going again.",
+   "Round {r}. Both fighters off the stools.",
+   "Round {r} is underway.",
    "Here's round {r}. Somebody needs to make something happen.",
-   "Round {r}. The crowd wants blood and nachos, in that order."
+   "Round {r}. The crowd wants violence and they want it before last call."
   ],
   "counter": [
-   "{a} times the counter perfectly!",
-   "{a} makes {b} pay for that miss!",
-   "Beautiful counter from {a}!",
-   "{b} whiffs and {a} cracks him right on the button!"
+   "{b} overextends and {a} makes him pay with a counter!",
+   "{a} slips it and fires back. Beautiful counter.",
+   "{b} lunges in, eats a counter right hand for the trouble.",
+   "{a} reads it from a mile away. Counter lands clean!"
   ],
   "miss_kick": [
-   "{a} throws a high kick... nowhere near.",
-   "{a} slips on the follow-through of a kick. Embarrassing.",
-   "{a} with a kick that hits mostly air and pride.",
-   "Spinning kick from {a}! Lands on absolutely nothing."
+   "{a} throws a high kick. {b} leans back and watches it go by.",
+   "{a} kicks at nothing and nearly falls over. The crowd laughs.",
+   "Spinning kick from {a}. Lands on absolutely nothing.",
+   "{a} throws a body kick and {b} just steps out of range."
   ],
   "miss_punch": [
    "{a} swings and misses.",
-   "{a} loads up on a haymaker. {b} sees it coming from the parking lot.",
-   "{a} throws a wild right, misses by a zip code.",
+   "{a} loads up a haymaker. {b} saw it coming from the parking lot.",
+   "{a} throws a wild right that misses by a full foot.",
    "{a} pumps the jab, {b} slips it.",
-   "{a} lunges in with a big right hand. Air."
+   "{a} lunges in with a right hand. Air."
   ],
   "land_jab": [
    "{a} lands a stiff jab.",
    "{a} snaps {b}'s head back with the jab.",
    "Double jab from {a}.",
-   "{a} pecks away with the jab. Death by a thousand paper cuts.",
+   "{a} pops the jab. Simple, effective, boring, and it's working.",
    "{a} finds a home for the jab."
   ],
   "land_cross": [
    "{a} lands a hard right hand!",
-   "Straight cross from {a} right down the pipe!",
+   "Straight right from {a}, right down the middle!",
    "{a} cracks {b} with the cross.",
    "{a} plants a right hand on {b}'s chin."
   ],
   "land_hook": [
    "Left hook from {a} lands flush!",
    "{a} hooks {b} to the jaw!",
-   "{a} with a looping hook that lands!",
-   "{a} digs a hook around the guard."
+   "{a} comes around the guard with a hook.",
+   "{a} digs a left hook into the side of {b}'s head."
   ],
   "land_uppercut": [
    "Uppercut from {a} splits the guard!",
    "{a} comes up the middle with an uppercut!",
-   "{a} with a nasty uppercut in the pocket!"
+   "{a} with a nasty uppercut in the pocket. {b}'s head snaps up."
   ],
   "land_body": [
    "{a} rips a shot to the body!",
    "{a} goes downstairs. {b} felt that one in his lunch.",
-   "Liver shot from {a}! {b} winces.",
+   "Liver shot from {a}! {b}'s face says it all.",
    "{a} digs a hook to the ribs."
   ],
   "land_combo": [
    "{a} puts together a beautiful combination!",
-   "1-2-3 from {a}, all landing!",
+   "1-2-3 from {a}, and all of it lands!",
    "{a} unloads a combo, {b} eats most of it!",
-   "Flurry from {a}! {b} covers up!"
+   "Flurry from {a}! {b} covers up and hopes."
   ],
   "land_overhand": [
    "Big overhand right from {a} lands!",
@@ -74,22 +74,22 @@
   ],
   "land_legkick": [
    "{a} chops the lead leg.",
-   "Nasty leg kick from {a}! That's gonna bruise like a Nissan Altima.",
+   "Nasty leg kick from {a}. That thigh is going to be purple tomorrow.",
    "{a} slams a low kick into {b}'s thigh.",
    "{a} kicks the leg again. {b} is starting to limp."
   ],
   "land_calfkick": [
-   "Calf kick from {a}! {b}'s foot is flapping like a wet sock.",
+   "Calf kick from {a}! {b}'s foot is flopping like a wet sock.",
    "{a} goes back to the calf kick. {b} hates it.",
-   "{a} with the calf kick. That's how you ruin a man's week."
+   "{a} with the calf kick. {b} will be taking the elevator for a month."
   ],
   "land_bodykick": [
    "Thudding body kick from {a}!",
-   "{a} whips a kick into the ribs. That sounded like a car door.",
-   "{a} lands a body kick that echoes through the arena."
+   "{a} whips a kick into the ribs. That sounded like a car door slamming.",
+   "{a} lands a body kick that echoes through the whole arena."
   ],
   "land_headkick": [
-   "HEAD KICK from {a}! It lands but {b} eats it!",
+   "HEAD KICK from {a}! {b} somehow eats it and stays up!",
    "{a} goes upstairs with the kick and catches {b} on the ear!"
   ],
   "land_knee": [
@@ -100,7 +100,7 @@
   "land_elbow": [
    "{a} slices {b} with an elbow!",
    "Sharp elbow from {a} in close!",
-   "{a} lands a short elbow. Those things cut like a deli slicer."
+   "{a} lands a short elbow. Those cut like a deli slicer."
   ],
   "land_dirty": [
    "Dirty boxing from {a} against the fence.",
@@ -118,55 +118,55 @@
   ],
   "land_superman": [
    "Superman punch from {a} lands!",
-   "{a} with the superman punch. Cape not included."
+   "{a} hops in with the superman punch. Cape not included."
   ],
   "rocked": [
    "{b} is ROCKED!",
    "{b}'s legs are doing the cha-cha slide!",
    "{b} is hurt! {b} is hurt!",
-   "{b} looks like he just found out what his ex said about him. HURT!",
-   "{b} wobbles! Somebody check on that man's soul!"
+   "{b} wobbles like a folding table at a family reunion. HURT!",
+   "{b} is out on his feet and doesn't know it yet!"
   ],
   "knockdown": [
    "{a} DROPS {b}!",
-   "DOWN GOES {b}! DOWN GOES {b}!",
+   "DOWN GOES {b}!",
    "{a} puts {b} on the canvas!",
    "KNOCKDOWN! {a} sends {b} crashing to the mat!"
   ],
   "ko_punch": [
    "GOOD NIGHT! {a} KNOCKS {b} OUT COLD!",
    "IT'S OVER! {b} is asleep before he hits the floor!",
-   "{a} turns {b}'s lights OFF! Somebody call his mom!",
-   "OH MY GOD! {a} FLATLINES {b}! He's doing the faceplant!",
-   "{b} is out. Like, out out. Like 'what year is it' out. {a} WINS!"
+   "{a} turns {b}'s lights OFF!",
+   "{a} FLATLINES {b}! Face-first into the canvas!",
+   "{b} is out. Not 'hurt' out. 'What year is it' out. {a} WINS!"
   ],
   "ko_kick": [
-   "HEAD KICK KNOCKOUT! {a} DECAPITATES {b}! (Not literally. Legal says to clarify.)",
-   "{a} lands the head kick and {b} goes stiff as a board! IT'S OVER!"
+   "HEAD KICK KNOCKOUT! {a} sends {b} into next week!",
+   "{a} lands the head kick and {b} goes stiff as a plank! IT'S OVER!"
   ],
   "ko_knee": [
-   "KNEE! KNEE! {b} IS OUT! {a} with a knee for the highlight reels!",
+   "KNEE! {b} IS OUT! {a} with a knee for the highlight reels!",
    "{a} lands a knee that sends {b} to another dimension!"
   ],
   "ko_elbow": [
-   "ELBOW KO! {a} switches off {b}'s brain like a breaker box!",
+   "ELBOW KO! {a} flips {b}'s breaker switch!",
    "{a} lands a short elbow and {b} crumples! WOW!"
   ],
   "tko_punches": [
    "{ref} jumps in! It's all over! {a} wins by TKO!",
    "{ref} has seen enough! {a} gets the stoppage!",
-   "Stoppage! {b} was taking unanswered shots and {ref} waves it off!"
+   "Stoppage! {b} was eating unanswered shots and {ref} waves it off!"
   ],
   "tko_gnp": [
    "{a} rains down punches and {ref} stops it! TKO!",
    "Ground and pound finish! {ref} pulls {a} off of {b}!",
-   "{a} turns {b}'s face into a crime scene. {ref} stops it!"
+   "{a} turns {b}'s face into a crime scene. {ref} finally stops it!"
   ],
   "late_ref": [
    "{ref} is letting this go WAY too long...",
    "{b} is eating shots and {ref} is just... watching. Like it's Netflix.",
    "Somebody tell {ref} he's allowed to stop this.",
-   "{ref} leans in, looks at {b}'s eyes, decides 'nah, he's good'. He is NOT good."
+   "{ref} leans in, looks at {b}'s eyes, and decides he's fine. He is NOT fine."
   ],
   "takedown": [
    "{a} shoots in and gets the takedown!",
@@ -177,9 +177,9 @@
   ],
   "sprawl": [
    "{a} sprawls and stuffs the takedown.",
-   "{a} defends the shot beautifully.",
-   "{a} stuffs the takedown and pushes the head down.",
-   "Great takedown defense from {a}."
+   "{a} stuffs the shot and pushes the head down.",
+   "Great takedown defense from {a}.",
+   "{a} defends the shot beautifully."
   ],
   "sub_attempt": [
    "{a} is hunting a {hold}!",
@@ -191,7 +191,7 @@
    "{b} TAPS! {a} wins by {hold}!",
    "TAP TAP TAP! {a} gets the {hold}!",
    "{b} taps out to the {hold}! What a finish!",
-   "{b} taps like he's sending a text to his ex. {a} wins by {hold}!"
+   "{b} taps faster than a guy who just saw his ex at the bar. {a} wins by {hold}!"
   ],
   "escape": [
    "{a} escapes the {hold}!",
@@ -204,11 +204,11 @@
   ],
   "limb_snap": [
    "{ref} jumps in! Technical submission! {b} is screaming. {a} wins by {hold}.",
-   "It's over, and so is {b}'s limb. {a} with the {hold}."
+   "It's over, and so is that limb. {a} with the {hold}."
   ],
   "standup": [
    "{ref} stands them up for inactivity.",
-   "Not much happening on the ground. {ref} brings them back to their feet.",
+   "Nothing happening on the ground. {ref} brings them back to their feet.",
    "{ref} has seen enough cuddling. Stand-up!"
   ],
   "getup": [
@@ -257,44 +257,44 @@
   ],
   "showboat": [
    "{a} drops his hands and taunts {b}! Disrespectful!",
-   "{a} does a little dance in the middle of the cage. The crowd eats it up.",
+   "{a} does a little shoulder shimmy in the middle of the cage. The crowd eats it up.",
    "{a} points at {b} and laughs. This man has no fear and possibly no brain."
   ],
   "cut": [
    "{b} is cut! Blood everywhere!",
-   "{a} opens a cut over {b}'s eye! The cage looks like a crime scene!",
-   "{b} is bleeding badly! The cutman is going to earn his money tonight."
+   "{a} opens a cut over {b}'s eye! It's pouring!",
+   "{b} is bleeding badly. The cutman is going to earn his money tonight."
   ],
   "injury_shin": [
    "OH NO! {a}'s shin SNAPS on the check! That is horrific! It's over!",
    "{a} throws a leg kick and his leg... folds. Oh my god. It's over."
   ],
   "injury_hand": [
-   "{a} is shaking that right hand. Something's wrong.",
+   "{a} is shaking out that right hand. Something's wrong.",
    "{a} winces after that punch. Broken hand?"
   ],
   "injury_orbital": [
    "{b}'s eye is swelling shut. That orbital might be broken.",
-   "{b} is blinking hard. He can't see out of that eye."
+   "{b} keeps blinking. He can't see out of that eye."
   ],
   "injury_knee": [
    "{a}'s knee buckles in the scramble! He's grabbing it! It's over!",
-   "Ugh! {a}'s knee gives out on the takedown. That's an injury stoppage."
+   "{a}'s knee gives out on the takedown. That's an injury stoppage."
   ],
   "injury_shoulder": [
    "{a}'s shoulder pops on that takedown! He's in real pain!",
    "{a} lands awkwardly. That shoulder looks wrong."
   ],
   "injury_elbow": [
-   "{a} got out but that elbow is hyperextended. Ouch."
+   "{a} got out, but that elbow is hyperextended. Ouch."
   ],
   "foul_eyepoke": [
    "Eye poke! {ref} calls time. {b} is blinking furiously.",
    "{a} pokes {b} in the eye. {ref} warns him."
   ],
   "foul_groin": [
-   "LOW BLOW! {b} drops to his knees. {ref} calls time. The entire crowd crosses their legs.",
-   "{a} lands one right in the jewels. {ref} gives {b} time to recover his dignity."
+   "LOW BLOW! {b} drops to his knees. {ref} calls time. Twenty thousand men wince at once.",
+   "{a} lands one right in the cup. {ref} gives {b} five minutes to recover."
   ],
   "foul_fence": [
    "{a} grabs the fence! {ref} warns him.",
@@ -321,7 +321,7 @@
    "{a} kicks {b} square in the cup and {ref} says 'keep fighting'. Unreal."
   ],
   "foul_missed_fence": [
-   "{a} is grabbing the fence to stop the takedown. {ref} is looking at his shoelaces."
+   "{a} is grabbing the fence to stop the takedown. {ref} is looking the other way."
   ],
   "foul_missed_backhead": [
    "{a} is hammering the back of {b}'s head. {ref}? Nothing. Classic.",
@@ -334,7 +334,7 @@
    "Was that a headbutt? {ref} didn't see anything. {b} is bleeding now."
   ],
   "foul_missed_glove": [
-   "{a} is holding {b}'s glove and punching. {ref} is busy existing."
+   "{a} is holding {b}'s glove and punching with the other hand. {ref} sees nothing."
   ],
   "deduction": [
    "{ref} takes a point from {a} for {foul}!",
@@ -342,7 +342,7 @@
   ],
   "cannot_continue": [
    "{a} can't continue! The doctor is waving it off!",
-   "{a} is unable to continue. This is a mess."
+   "{a} is unable to continue. What a mess."
   ],
   "dq": [
    "{ref} has seen enough! {a} is DISQUALIFIED!",
@@ -350,11 +350,11 @@
   ],
   "crowd": [
    "The crowd starts a 'USA' chant even though neither fighter is American.",
-   "Somebody in row 9 is throwing up. Great energy.",
+   "Somebody in row 9 is throwing up. Great energy in the building.",
    "The crowd boos. They want violence.",
    "A fan runs past security and is immediately tackled.",
-   "The crowd is chanting something unrepeatable.",
-   "Someone throws a full beer. It lands on a commentator."
+   "Someone throws a full beer. It lands on a commentator.",
+   "The 'boring' chants are starting."
   ],
   "round_end": [
    "That's the end of round {r}!",
@@ -376,21 +376,21 @@
   ],
   "decision_robbery": [
    "The judges have spoken... {detail}. THE CROWD IS LIVID! ROBBERY!",
-   "{detail}?! Are they watching the same fight?! The arena is raining boos!"
+   "{detail}?! Were they watching the same fight?! The arena is raining boos!"
   ],
   "coach_winning": [
    "You're up! Keep doing what you're doing, stay off the fence!",
-   "Three more minutes, baby! He's breaking! Stay on him!",
+   "Three more minutes! He's breaking! Stay on him!",
    "Same thing, same thing! Jab and move! He's got nothing!",
-   "He's gassing! Make him carry your weight!",
-   "Beautiful round! Don't get cute! No spinning shit!"
+   "He's gassing! Lean on him and make him carry your weight!",
+   "Beautiful round! Don't get cute. No spinning stuff!"
   ],
   "coach_losing": [
    "You're down! You need this round! Stop waiting!",
    "He's beating you to the punch! Throw first, goddammit!",
    "I didn't drive eight hours to watch you get outpointed! WAKE UP!",
    "You gotta take him down! Shoot! SHOOT!",
-   "Your wife's watching! Your KIDS are watching! GO GET HIM!"
+   "Your kids are watching! GO GET HIM!"
   ],
   "coach_hurt": [
    "Breathe. Breathe. You're OK. Look at me. How many fingers?",
@@ -405,30 +405,217 @@
    "It's broken? Who cares! Adrenaline, baby!"
   ],
   "coach_quit": [
-   "That's it. I'm not letting you go out there. You've got kids.",
-   "I'm stopping it. You'll thank me in 20 years.",
+   "That's it. I'm not letting you go back out there. You've got kids.",
+   "I'm stopping it. You'll thank me in twenty years.",
    "We're done. No shame. I'm calling it."
   ],
   "cutman_fine": [
-   "Cutman slaps on some Vaseline and calls it a day.",
+   "Vaseline on the brows, ice on the neck. Nothing to fix.",
    "Cutman: 'Nothing to work on. Enjoy your water.'",
    "Cutman presses the enswell to the cheekbone. Just maintenance."
   ],
   "cutman_cut": [
-   "Cutman jams a Q-tip of adrenaline into the cut. Bleeding slows.",
+   "Cutman jams a Q-tip of adrenaline into the cut. The bleeding slows.",
    "Cutman works the cut with gauze and pressure. Looking OK.",
    "Cutman: 'Hold still, I'm doing God's work here.'",
    "Cutman packs the cut with something that's almost definitely legal."
   ],
   "cutman_bad": [
    "Cutman is working FRANTICALLY on that cut. It's ugly.",
-   "Cutman: 'I need more time!' Doctor is coming over...",
+   "Cutman: 'I need more time!' The doctor is coming over...",
    "The cut is pouring. The cutman looks worried. That's never good.",
    "Cutman whispers 'oh no' and that's all you need to hear."
   ]
  },
- "social": {},
- "presser": {},
- "ledgerQuips": [],
- "misc": {}
+ "social": {
+  "all_caps_rants": [
+   "WHY IS NOBODY TALKING ABOUT HOW {opp} CAN'T WRESTLE",
+   "I'M THE CHAMP IN EVERYTHING BUT NAME. AND BELT. AND RECORD.",
+   "{president} CALL ME. I KNOW YOU HAVE MY NUMBER. I SEE YOU READING THIS.",
+   "WOKE UP. CHOSE VIOLENCE. AGAIN."
+  ],
+  "gym_selfies": [
+   "Day 47 of camp. Sore in places I didn't know I had places.",
+   "Mirror says champ. Scale says 9 lbs to go.",
+   "2am cardio because sleep is for people without a fight coming.",
+   "Leg day. Can't feel my soul."
+  ],
+  "cryptic_quotes": [
+   "The lion does not explain itself to the sheep.",
+   "Some of y'all are gonna understand this tweet in about 6 weeks.",
+   "Silence is also an answer.",
+   "The storm doesn't apologize."
+  ],
+  "conspiracy_threads": [
+   "Thread: why the judges are controlled by Big Cardio (1/47)",
+   "Did you know the octagon has 8 sides? Coincidence? Look it up.",
+   "They put something in the post-fight Gatorade. I'm just asking questions.",
+   "Birds aren't real and neither is {opp}'s chin."
+  ],
+  "dad_jokes": [
+   "Why did the BJJ guy bring a ladder? Because he heard about the high guard.",
+   "My opponent said he'd kick my butt. I said that's illegal, it's a groin strike. Nobody laughed. Except me.",
+   "I told my wife I'm a great fighter. She said 'prove it, take out the trash'. Lost by decision."
+  ],
+  "thirst_traps": [
+   "New shorts just dropped. So did my body fat percentage.",
+   "Cut week glow up. Link in bio (it's a protein shake)."
+  ],
+  "beefing_with_randoms": [
+   "@{opp} I'd beat you, your coach and your coach's dad. Back to back.",
+   "Some guy at the gas station said I looked 'smaller in person'. He's not at the gas station anymore. (He left. Normally. I'm not crazy.)",
+   "Accountant from Ohio thinks he could take me. Sir, I respect the confidence."
+  ],
+  "motivational_slop": [
+   "Your only competition is who you were yesterday. And also {opp}.",
+   "Grind don't stop. (It stops on Sundays. Brunch.)",
+   "Discipline > motivation. Also caffeine > everything."
+  ],
+  "food_reviews": [
+   "Rating gas station sushi out of 10: 4. Ate it anyway. Fighting Saturday.",
+   "Cheat meal: 3 burgers, 2 milkshakes, 1 regret.",
+   "Chicken and rice for 8 weeks. I dream in broccoli."
+  ],
+  "silent_lurker": [
+   "..."
+  ],
+  "prayer_emojis": [
+   "Blessed to be in the main event. God is good. {opp} is not.",
+   "Thank you Lord for this opportunity to punch a man in the face for money."
+  ],
+  "crypto_shilling": [
+   "$KOCOIN to the moon. Not financial advice. It's absolutely financial advice.",
+   "Just bought the dip. The dip keeps dipping. Holding.",
+   "If you're not in on {nick}COIN you're NGMI."
+  ],
+  "live_streams": [
+   "LIVE NOW: reacting to my own fight for the 400th time",
+   "Stream tonight: me and the boys rate my opponent's haircut",
+   "Banned from streaming platform for 'excessive yelling'. Back tomorrow on a worse one."
+  ],
+  "meme_reposts": [
+   "Me after cutting 30 lbs: [picture of a raisin]",
+   "When the ref stands you up after 4 seconds on top: (crying cat)",
+   "{opp}'s chin vs my left hook (it's a picture of a glass vase)."
+  ],
+  "gaming_clips": [
+   "Just hit Diamond rank. Training can wait.",
+   "Lost my main event in the video game version of the promotion. Throwing my controller in camp."
+  ],
+  "generic": [
+   "Training hard. Fight soon. Pray for {opp}.",
+   "Back in {city}, back to basics.",
+   "Big things coming. Can't say what. Something big. Probably."
+  ],
+  "fans": [
+   "{promotion} cards lately are mid. Prove me wrong.",
+   "Watching the PPV at a sports bar and the guy next to me is crying. Respect.",
+   "If {president} doesn't pay these fighters I'm cancelling my subscription (I don't have a subscription).",
+   "That last event was cinema. Absolute cinema.",
+   "Robbery. Every decision is robbery. I don't even know who won.",
+   "Just bought a {promotion} hoodie for $90. It is 40% polyester and 60% regret.",
+   "Braille Sonnen said the main event 'looked' close. Brother you are blind.",
+   "Hot take: the bantamweights are carrying the whole sport.",
+   "Who even is {promotion}'s marketing team? A raccoon with a phone?"
+  ]
+ },
+ "presser": {
+  "win_ko": [
+   "I told everybody! I TOLD everybody! Lights out!",
+   "I felt it land and I knew he was going to sleep. Goodnight, sweet prince.",
+   "I want to thank God, my coach, and the guy who sold me that pre-workout. It's probably legal.",
+   "That right hand has been sitting in my back pocket for six weeks. Felt good to use it.",
+   "He talked all week. Now he's quiet. Funny how that works."
+  ],
+  "win_sub": [
+   "I caught that neck and I wasn't letting go. Not today.",
+   "Jiu-jitsu is a beautiful art. Strangling people is also a beautiful art.",
+   "He tapped. He knows he tapped. Everybody saw him tap.",
+   "I told him in the clinch, 'I'm gonna choke you.' He didn't believe me. He believes me now."
+  ],
+  "win_dec": [
+   "I wanted the finish, but a W is a W. My accountant doesn't care how.",
+   "He was tough, man. Tougher than I thought. My face agrees.",
+   "Fifteen minutes of hell. I need a cheeseburger and a CAT scan, in that order.",
+   "Not my best performance. Still beat him, though."
+  ],
+  "win_other": [
+   "A win is a win. We'll take it and go home.",
+   "Not how I wanted it to end, but I'll take the money."
+  ],
+  "loss": [
+   "I'll be back. I gotta go see a doctor first. Several doctors.",
+   "No excuses. ...Okay, one excuse: food poisoning. Don't fact check that.",
+   "I'm gonna watch the tape, learn, and come back. Then probably watch it again and cry."
+  ],
+  "robbed": [
+   "I won that fight. Everyone in the building knows I won that fight. Those judges need glasses and a new career.",
+   "Three judges, zero eyes. Unbelievable."
+  ],
+  "callout": [
+   "And {opp}? Yeah, YOU. You've been running your mouth. Next card.",
+   "Hey {president}! Give me {opp}! I'll do it for free! (Don't actually make me do it for free.)",
+   "I want the belt. I want the money. I want {opp}. In that order."
+  ]
+ },
+ "ledgerQuips": [
+  "The accountant has started drinking at work. Not your problem. Yet.",
+  "Somewhere, a fighter is reading their bank statement and saying your name. Not nicely.",
+  "The board would like you to know they 'noticed' this week.",
+  "Your energy drink budget exceeds the medical budget. Again.",
+  "Reminder: purses are a cost. Lawsuits are also a cost. Choose your costs.",
+  "The bank called. Twice. You let it go to voicemail. Twice.",
+  "Line item 47: 'Misc. (do not ask)'.",
+  "Your spouse wants to know why the credit card has a charge from a tiger sanctuary.",
+  "Ticket sales are up. Morale is down. Same as last week, but louder.",
+  "If you squint, this ledger is a work of art. Please don't squint at it in court."
+ ],
+ "misc": {
+  "newsBodies": [
+   "{promotion} did not respond to a request for comment, then responded to it with a meme.",
+   "Asked about the situation, {president} said 'we'll see what happens' and drove off in a golf cart.",
+   "Sources close to the matter describe the mood inside {promotion} as 'loud'.",
+   "The story is developing. Like most {promotion} stories, it is developing badly.",
+   "Fans online have reacted in a measured, thoughtful way (they have not).",
+   "One anonymous fighter told this outlet: 'Honestly? Business as usual.'"
+  ],
+  "slowNews": [
+   "SLOW NEWS WEEK: LOCAL MAN STILL BELIEVES HE COULD BEAT A PRO FIGHTER",
+   "NOTHING HAPPENED THIS WEEK. EXPERTS 'DEEPLY SUSPICIOUS'",
+   "QUIET WEEK AT {promotion}; STAFF REPORTEDLY 'TERRIFIED'"
+  ],
+  "traitLines": [
+   "Trash Talker|{He} has never had an unspoken thought and never will.",
+   "Devout|{He} prays before every fight, after every fight, and occasionally during.",
+   "Party Animal|{He} treats every win like New Year's Eve and every loss like a different New Year's Eve.",
+   "Hothead|{His} temper has been banned from three Applebee's.",
+   "Conspiracy Poster|{His} social feed is 40% training clips and 60% 'do your own research'.",
+   "Business Savvy|{He} reads {his} own contracts, which already puts {him} ahead of most of the roster.",
+   "Loyal|{He} has turned down bigger offers out of loyalty, which {his} manager hates.",
+   "Mercenary|Loyalty is a word {he} has seen in a dictionary and found unconvincing.",
+   "Shy|{He} gives one-word interviews and fights like a ten-paragraph essay.",
+   "Showman|{His} walkouts have choreography. {His} press conferences have costume changes.",
+   "Family First|{His} kids' recital comes before any fight camp, a fact {his} coach has learned the hard way.",
+   "Reckless Driver|{He} owns three cars and four speeding tickets per car.",
+   "Gambler|{He} bet on {himself} once and has not stopped betting on anything since.",
+   "Crypto Bro|{He} will explain the blockchain to you whether you asked or not.",
+   "Political|{He} posts opinions about elections in countries {he} cannot find on a map.",
+   "Prankster|{He} once filled a teammate's car with packing peanuts the day before a title fight.",
+   "Perfectionist|{He} rewatches {his} wins to find mistakes, and finds them.",
+   "Injury Prone|{His} medical file needs its own filing cabinet.",
+   "Paranoid|{He} thinks {his} sparring partners are spies. Some of them are.",
+   "Wholesome|{He} volunteers at an animal shelter and apologizes to opponents after knocking them out.",
+   "Streamer|{He} streams training, meals, and the occasional mental breakdown.",
+   "Clout Chaser|{He} has never met a camera {he} didn't want to fight in front of.",
+   "Gym Rat|{He} sleeps at the gym. Not as a metaphor. There's a cot.",
+   "Diva|{He} has a rider for weigh-ins. It includes a specific brand of coconut water.",
+   "Lazy|{His} cardio is a rumor and {his} fight camps are a suggestion.",
+   "Addictive Personality|Anything {he} likes, {he} likes too much.",
+   "Mentor|{He} coaches the kids' class for free and the kids adore {him}.",
+   "Weight Misser|{He} has missed weight so often the scale has a restraining order.",
+   "Reformed|{He} has turned {his} life around, and won't stop telling you about it.",
+   "Martyr Complex|Everyone is out to get {him}. Sometimes they really are.",
+   "Sober|{He} is sober now and drinks an alarming amount of sparkling water."
+  ]
+ }
 }

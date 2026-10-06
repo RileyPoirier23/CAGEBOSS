@@ -1,0 +1,4970 @@
+{
+ "note": "Marquee characters. Parodies carry 'parody'. Edit freely.",
+ "fighters": [
+  {
+   "id": "bro_bones",
+   "first": "Jonny",
+   "last": "Jonez",
+   "nick": "Bro Bones",
+   "gender": "M",
+   "age": 29,
+   "division": "lightheavy",
+   "country": "USA",
+   "hometown": "Rochester, NY",
+   "look": {
+    "head": 3,
+    "skin": 4,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 90,
+    "power": 82,
+    "wrestling": 86,
+    "grappling": 84,
+    "cardio": 85,
+    "chin": 88,
+    "fightIQ": 97,
+    "durability": 86,
+    "heart": 90,
+    "weightCut": 40
+   },
+   "styles": [
+    "Wrestler",
+    "Kickboxer"
+   ],
+   "traits": [
+    "Showman",
+    "Perfectionist",
+    "Trash Talker"
+   ],
+   "marquee": {
+    "archetype": "The GOAT",
+    "arc": "The GOAT"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "spinningElbow",
+     "obliqueKick"
+    ],
+    "celebration": "strut"
+   },
+   "record": {
+    "w": 18,
+    "l": 0,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 98,
+   "primeAge": 31,
+   "moneyIQ": 40,
+   "social": {
+    "followers": 3000000,
+    "style": "all caps rants"
+   },
+   "bio": "{first} has never truly lost a fight, unless you count the one he lost to a disqualification for elbows so nasty they were declared illegal. Spinning elbows, oblique kicks, and a reach that starts in one zip code and ends in another. Outside the cage, his schedule is 'chaotic' and his press availability is 'theoretical'.",
+   "hiddenTraits": [],
+   "parody": "Jon Jones",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "conan_mcgrogan",
+   "first": "Conan",
+   "last": "McGrogan",
+   "nick": "The Notorious Invoice",
+   "gender": "M",
+   "age": 27,
+   "division": "light",
+   "country": "Ireland",
+   "hometown": "Dublin",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 1,
+    "beard": 3,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 3,
+    "build": 1
+   },
+   "skills": {
+    "striking": 86,
+    "power": 92,
+    "wrestling": 58,
+    "grappling": 62,
+    "cardio": 62,
+    "chin": 80,
+    "fightIQ": 80,
+    "durability": 72,
+    "heart": 78,
+    "weightCut": 70
+   },
+   "styles": [
+    "Counter Striker",
+    "Showboat"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Showman",
+    "Business Savvy",
+    "Party Animal",
+    "Mercenary"
+   ],
+   "marquee": {
+    "archetype": "The Loudmouth Superstar",
+    "arc": "The Loudmouth Superstar"
+   },
+   "anim": {
+    "stance": "karate",
+    "signature": [
+     "leftHand",
+     "spinningWheelKick"
+    ],
+    "celebration": "billyStrut"
+   },
+   "record": {
+    "w": 19,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 92,
+   "primeAge": 28,
+   "moneyIQ": 75,
+   "social": {
+    "followers": 9000000,
+    "style": "all caps rants"
+   },
+   "bio": "Former plumber's apprentice from Dublin who discovered that talking costs nothing and sells everything. One perfect left hand, one perfect mouth, and a bottomless appetite for equity stakes. Sells more pay-per-views than the rest of the division combined and will remind you of that in every negotiation, press conference and voicemail.",
+   "hiddenTraits": [],
+   "parody": "Conor McGregor",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "khabeeb",
+   "first": "Khabeeb",
+   "last": "Nurmagomedoof",
+   "nick": "The Eagle Scout",
+   "gender": "M",
+   "age": 28,
+   "division": "light",
+   "country": "Dagestan (Russia)",
+   "hometown": "Makhachkala",
+   "look": {
+    "head": 0,
+    "skin": 1,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 3,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 3,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 70,
+    "power": 72,
+    "wrestling": 98,
+    "grappling": 92,
+    "cardio": 95,
+    "chin": 86,
+    "fightIQ": 90,
+    "durability": 88,
+    "heart": 95,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Ground & Pound"
+   ],
+   "traits": [
+    "Devout",
+    "Family First",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Pious Grappler",
+    "arc": "The Pious Grappler"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "chainWrestling",
+     "smesh"
+    ],
+    "celebration": "prays"
+   },
+   "record": {
+    "w": 24,
+    "l": 0,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 95,
+   "primeAge": 30,
+   "moneyIQ": 80,
+   "social": {
+    "followers": 4000000,
+    "style": "prayer emojis"
+   },
+   "bio": "Wrestled bears as a child (allegedly, on camera). Mauls opponents for fifteen minutes while asking them, politely, to give up. Refuses alcohol sponsors, refuses to celebrate with champagne, and refuses to lose. His father's word is law. His mother's word is law with interest. May retire at the absolute peak because he promised someone.",
+   "hiddenTraits": [],
+   "parody": "Khabib Nurmagomedov",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "izzy_adesanyuh",
+   "first": "Izzy",
+   "last": "Adesanyuh",
+   "nick": "The Last Style-Bender (Patent Pending)",
+   "gender": "M",
+   "age": 28,
+   "division": "middle",
+   "country": "New Zealand",
+   "hometown": "Auckland",
+   "look": {
+    "head": 3,
+    "skin": 5,
+    "hair": 6,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 2,
+    "build": 0
+   },
+   "skills": {
+    "striking": 94,
+    "power": 80,
+    "wrestling": 52,
+    "grappling": 60,
+    "cardio": 82,
+    "chin": 78,
+    "fightIQ": 90,
+    "durability": 74,
+    "heart": 80,
+    "weightCut": 45
+   },
+   "styles": [
+    "Counter Striker",
+    "Kickboxer"
+   ],
+   "traits": [
+    "Showman",
+    "Trash Talker",
+    "Diva"
+   ],
+   "marquee": {
+    "archetype": "The Anime Protagonist",
+    "arc": "The Anime Protagonist"
+   },
+   "anim": {
+    "stance": "sway",
+    "signature": [
+     "matrixSlip",
+     "calfKick"
+    ],
+    "celebration": "animePose"
+   },
+   "record": {
+    "w": 20,
+    "l": 1,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 93,
+   "primeAge": 29,
+   "moneyIQ": 65,
+   "social": {
+    "followers": 2500000,
+    "style": "all caps rants"
+   },
+   "bio": "Kickboxing prodigy, anime enthusiast, and the most flexible trash talker in the sport. Walks out doing choreographed dances, fights like a ghost with a grudge, and treats every press conference like a rap battle he already won.",
+   "hiddenTraits": [],
+   "parody": "Israel Adesanya",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "alex_pereirrah",
+   "first": "Alex",
+   "last": "Pereirrah",
+   "nick": "Stone Hands (Literal)",
+   "gender": "M",
+   "age": 33,
+   "division": "middle",
+   "country": "Brazil",
+   "hometown": "Sao Paulo",
+   "look": {
+    "head": 0,
+    "skin": 3,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 3,
+    "build": 1
+   },
+   "skills": {
+    "striking": 92,
+    "power": 97,
+    "wrestling": 52,
+    "grappling": 55,
+    "cardio": 72,
+    "chin": 82,
+    "fightIQ": 82,
+    "durability": 85,
+    "heart": 90,
+    "weightCut": 70
+   },
+   "styles": [
+    "Kickboxer"
+   ],
+   "traits": [
+    "Shy",
+    "Loyal",
+    "Devout"
+   ],
+   "marquee": {
+    "archetype": "The Silent Executioner",
+    "arc": "The Silent Executioner"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "leftHook",
+     "calfKick"
+    ],
+    "celebration": "bowAndArrow"
+   },
+   "record": {
+    "w": 9,
+    "l": 2,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 93,
+   "primeAge": 32,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 1500000,
+    "style": "prayer emojis"
+   },
+   "bio": "Former tire-shop worker who beat his demons and then beat everybody else. Says about four words per press conference and lets the left hook handle the rest. His hands have been described by doctors as 'geological'.",
+   "hiddenTraits": [],
+   "parody": "Alex Pereira",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "francis_ngonnagetpaid",
+   "first": "Francis",
+   "last": "N'Gonnagetpaid",
+   "nick": "The Predatory Lender",
+   "gender": "M",
+   "age": 33,
+   "division": "heavy",
+   "country": "Cameroon",
+   "hometown": "Douala",
+   "look": {
+    "head": 3,
+    "skin": 5,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 78,
+    "power": 99,
+    "wrestling": 62,
+    "grappling": 58,
+    "cardio": 60,
+    "chin": 90,
+    "fightIQ": 72,
+    "durability": 85,
+    "heart": 92,
+    "weightCut": 60
+   },
+   "styles": [
+    "Brawler"
+   ],
+   "traits": [
+    "Business Savvy",
+    "Mercenary",
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Pay Protester",
+    "arc": "The Pay Protester"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "uppercutOfGod",
+     "overhandRight"
+    ],
+    "celebration": "roar"
+   },
+   "record": {
+    "w": 16,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 88,
+   "primeAge": 32,
+   "moneyIQ": 85,
+   "social": {
+    "followers": 2000000,
+    "style": "gym selfies"
+   },
+   "bio": "Worked in a sand mine, crossed a desert and a sea, slept in a parking garage, and now punches harder than a car accident. Very polite. Very calm. Will publicly and patiently explain, with charts, exactly how much you are underpaying him.",
+   "hiddenTraits": [],
+   "parody": "Francis Ngannou",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "mack_hollowday",
+   "first": "Mack",
+   "last": "Hollowday",
+   "nick": "Blessed (Not Stressed)",
+   "gender": "M",
+   "age": 27,
+   "division": "feather",
+   "country": "USA",
+   "hometown": "Waianae, HI",
+   "look": {
+    "head": 1,
+    "skin": 2,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 2,
+    "build": 0
+   },
+   "skills": {
+    "striking": 92,
+    "power": 72,
+    "wrestling": 62,
+    "grappling": 70,
+    "cardio": 97,
+    "chin": 92,
+    "fightIQ": 88,
+    "durability": 90,
+    "heart": 96,
+    "weightCut": 55
+   },
+   "styles": [
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Wholesome",
+    "Showman",
+    "Trash Talker"
+   ],
+   "marquee": {
+    "archetype": "The Wholesome Fan Favorite",
+    "arc": "The Wholesome Fan Favorite"
+   },
+   "anim": {
+    "stance": "bouncy",
+    "signature": [
+     "pointToTheGround",
+     "volumePunching"
+    ],
+    "celebration": "shaka"
+   },
+   "record": {
+    "w": 21,
+    "l": 6,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 91,
+   "primeAge": 29,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 1800000,
+    "style": "all caps rants"
+   },
+   "bio": "Throws 300 strikes a fight and talks to his opponent during most of them. Points at the floor in the last ten seconds and dares you to swing. Everyone loves him, which is a problem for marketing because nobody wants to watch him get punched.",
+   "hiddenTraits": [],
+   "parody": "Max Holloway",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "dustin_poorrear",
+   "first": "Dustin",
+   "last": "Poor-Rear",
+   "nick": "The Diamond (Cubic Zirconia)",
+   "gender": "M",
+   "age": 29,
+   "division": "light",
+   "country": "USA",
+   "hometown": "Lafayette, LA",
+   "look": {
+    "head": 1,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 1,
+    "beard": 3,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 2,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 86,
+    "power": 82,
+    "wrestling": 62,
+    "grappling": 74,
+    "cardio": 80,
+    "chin": 84,
+    "fightIQ": 84,
+    "durability": 82,
+    "heart": 92,
+    "weightCut": 50
+   },
+   "styles": [
+    "Pressure Striker",
+    "Brawler"
+   ],
+   "traits": [
+    "Family First",
+    "Wholesome",
+    "Business Savvy"
+   ],
+   "marquee": {
+    "archetype": "The Hot Sauce Gentleman",
+    "arc": "The Hot Sauce Gentleman"
+   },
+   "anim": {
+    "stance": "bouncy",
+    "signature": [
+     "leftHook",
+     "guillotine"
+    ],
+    "celebration": "hugsOpponent"
+   },
+   "record": {
+    "w": 26,
+    "l": 7,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 88,
+   "primeAge": 30,
+   "moneyIQ": 72,
+   "social": {
+    "followers": 1500000,
+    "style": "gym selfies"
+   },
+   "bio": "Louisiana's finest export after crawfish. Runs a hot sauce empire, a charity, and a never-ending series of wars against people who talked too much. Will fight anyone, anywhere, as long as there's a bottle of sauce on the table afterwards.",
+   "hiddenTraits": [],
+   "parody": "Dustin Poirier",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "nate_diazz",
+   "first": "Nate",
+   "last": "Diazz",
+   "nick": "The Stockton Slapper",
+   "gender": "M",
+   "age": 30,
+   "division": "welter",
+   "country": "USA",
+   "hometown": "Stockton, CA",
+   "look": {
+    "head": 3,
+    "skin": 1,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 2,
+    "build": 0
+   },
+   "skills": {
+    "striking": 80,
+    "power": 66,
+    "wrestling": 50,
+    "grappling": 86,
+    "cardio": 96,
+    "chin": 86,
+    "fightIQ": 78,
+    "durability": 80,
+    "heart": 95,
+    "weightCut": 40
+   },
+   "styles": [
+    "Brawler",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Hothead",
+    "Party Animal"
+   ],
+   "marquee": {
+    "archetype": "The Stockton Stoner",
+    "arc": "The Stockton Stoner"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "stocktonSlap",
+     "doubleMiddleFinger"
+    ],
+    "celebration": "shrug"
+   },
+   "record": {
+    "w": 21,
+    "l": 13,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 80,
+   "primeAge": 30,
+   "moneyIQ": 55,
+   "social": {
+    "followers": 3500000,
+    "style": "all caps rants"
+   },
+   "bio": "Seventeen hours of cardio, zero filter. Slaps opponents mid-combination to remind them they're being disrespected. Shows up to press conferences late, leaves early, and somehow always wins the press conference.",
+   "hiddenTraits": [],
+   "parody": "Nate Diaz",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "jorge_massvidal",
+   "first": "Jorge",
+   "last": "Mass-Vidal",
+   "nick": "Gamebred (Store-Bought)",
+   "gender": "M",
+   "age": 32,
+   "division": "welter",
+   "country": "USA",
+   "hometown": "Miami, FL",
+   "look": {
+    "head": 2,
+    "skin": 2,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 3,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 2,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 84,
+    "wrestling": 70,
+    "grappling": 66,
+    "cardio": 72,
+    "chin": 82,
+    "fightIQ": 80,
+    "durability": 78,
+    "heart": 85,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler",
+    "Counter Striker"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Showman",
+    "Political"
+   ],
+   "marquee": {
+    "archetype": "The Backyard Legend",
+    "arc": "The Backyard Legend"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "flyingKnee",
+     "threePieceAndASoda"
+    ],
+    "celebration": "strut"
+   },
+   "record": {
+    "w": 35,
+    "l": 15,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 78,
+   "primeAge": 31,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 2000000,
+    "style": "all caps rants"
+   },
+   "bio": "Learned to fight in Miami backyards and never left the backyard emotionally. Famous for a five-second flying knee and a post-fight description involving a soda. Delivers trash talk like a mob boss reading a grocery list.",
+   "hiddenTraits": [],
+   "parody": "Jorge Masvidal",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "colby_covingtonne",
+   "first": "Colby",
+   "last": "Covingtonne",
+   "nick": "Chaos Theory",
+   "gender": "M",
+   "age": 30,
+   "division": "welter",
+   "country": "USA",
+   "hometown": "Clovis, CA",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 3,
+    "scar": 1,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 72,
+    "power": 64,
+    "wrestling": 90,
+    "grappling": 74,
+    "cardio": 97,
+    "chin": 82,
+    "fightIQ": 80,
+    "durability": 82,
+    "heart": 86,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Political",
+    "Showman"
+   ],
+   "marquee": {
+    "archetype": "The Professional Heel",
+    "arc": "The Professional Heel"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "cardioMachine",
+     "doubleLeg"
+    ],
+    "celebration": "mockery"
+   },
+   "record": {
+    "w": 17,
+    "l": 4,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 86,
+   "primeAge": 30,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 1600000,
+    "style": "all caps rants"
+   },
+   "bio": "Says the most offensive thing in any room he walks into, then wrestles you for 25 minutes without breathing hard. Fans pay to see him lose. He is fine with that, as long as they pay.",
+   "hiddenTraits": [],
+   "parody": "Colby Covington",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "kamaru_usmansplain",
+   "first": "Kamaru",
+   "last": "Usmansplain",
+   "nick": "The Nigerian Nightmare (Mild)",
+   "gender": "M",
+   "age": 31,
+   "division": "welter",
+   "country": "Nigeria",
+   "hometown": "Auchi",
+   "look": {
+    "head": 3,
+    "skin": 5,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 82,
+    "power": 84,
+    "wrestling": 94,
+    "grappling": 72,
+    "cardio": 92,
+    "chin": 86,
+    "fightIQ": 88,
+    "durability": 88,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Boring But Effective"
+   ],
+   "traits": [
+    "Business Savvy",
+    "Devout",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Inevitable Champion",
+    "arc": "The Inevitable Champion"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "jabOfDeath",
+     "cageGrind"
+    ],
+    "celebration": "gunShow"
+   },
+   "record": {
+    "w": 19,
+    "l": 1,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 90,
+   "primeAge": 31,
+   "moneyIQ": 85,
+   "social": {
+    "followers": 1200000,
+    "style": "prayer emojis"
+   },
+   "bio": "Former NCAA wrestler who went from 'boring' to 'terrifying' in the space of one jab. Grinds you against the fence until you question your career choices. Big on business, bigger on the gospel, biggest on reminding you he's undefeated in the division.",
+   "hiddenTraits": [],
+   "parody": "Kamaru Usman",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "shawn_omallard",
+   "first": "Shawn",
+   "last": "O'Mallard",
+   "nick": "Sugar-Free",
+   "gender": "M",
+   "age": 25,
+   "division": "bantam",
+   "country": "USA",
+   "hometown": "Helena, MT",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 4,
+    "hairColor": 5,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 3,
+    "build": 0
+   },
+   "skills": {
+    "striking": 88,
+    "power": 82,
+    "wrestling": 52,
+    "grappling": 62,
+    "cardio": 76,
+    "chin": 70,
+    "fightIQ": 84,
+    "durability": 70,
+    "heart": 78,
+    "weightCut": 55
+   },
+   "styles": [
+    "Counter Striker",
+    "Showboat"
+   ],
+   "traits": [
+    "Streamer",
+    "Showman",
+    "Party Animal",
+    "Clout Chaser"
+   ],
+   "marquee": {
+    "archetype": "The Meme Kid Made Good",
+    "arc": "The Meme Kid Made Good"
+   },
+   "anim": {
+    "stance": "handsLow",
+    "signature": [
+     "pullCounter",
+     "switchKick"
+    ],
+    "celebration": "middleFingerPose"
+   },
+   "record": {
+    "w": 14,
+    "l": 1,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 92,
+   "primeAge": 27,
+   "moneyIQ": 65,
+   "social": {
+    "followers": 4000000,
+    "style": "live streams"
+   },
+   "bio": "Rainbow hair, rainbow tattoos, rainbow knockouts. Streams everything, wears everything, and treats striking like an art project. Got famous on a reality show and stayed famous by putting people to sleep on the way down.",
+   "hiddenTraits": [],
+   "parody": "Sean O'Malley",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "charles_olivegarden",
+   "first": "Charles",
+   "last": "Olive-Garden",
+   "nick": "Do Bronx (Do Buffet)",
+   "gender": "M",
+   "age": 29,
+   "division": "light",
+   "country": "Brazil",
+   "hometown": "Guaruja",
+   "look": {
+    "head": 3,
+    "skin": 2,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 3,
+    "build": 1
+   },
+   "skills": {
+    "striking": 80,
+    "power": 78,
+    "wrestling": 66,
+    "grappling": 98,
+    "cardio": 82,
+    "chin": 74,
+    "fightIQ": 84,
+    "durability": 74,
+    "heart": 94,
+    "weightCut": 60
+   },
+   "styles": [
+    "Sub Hunter",
+    "Muay Thai"
+   ],
+   "traits": [
+    "Devout",
+    "Family First",
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Submission Machine",
+    "arc": "The Submission Machine"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "kneeToTheBody",
+     "backTake"
+    ],
+    "celebration": "prays"
+   },
+   "record": {
+    "w": 30,
+    "l": 8,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 90,
+   "primeAge": 30,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 1300000,
+    "style": "prayer emojis"
+   },
+   "bio": "Has more submission wins than most fighters have fights. Grew up in a favela, survived a childhood illness doctors said he wouldn't, and now strangles people with a smile on his face and Jesus on his shorts.",
+   "hiddenTraits": [],
+   "parody": "Charles Oliveira",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "islam_makeacheck",
+   "first": "Islam",
+   "last": "Make-A-Check",
+   "nick": "The Chosen One (To Do Paperwork)",
+   "gender": "M",
+   "age": 30,
+   "division": "light",
+   "country": "Dagestan (Russia)",
+   "hometown": "Makhachkala",
+   "look": {
+    "head": 3,
+    "skin": 1,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 3,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 3,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 76,
+    "wrestling": 96,
+    "grappling": 94,
+    "cardio": 92,
+    "chin": 84,
+    "fightIQ": 90,
+    "durability": 86,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Devout",
+    "Loyal",
+    "Shy"
+   ],
+   "marquee": {
+    "archetype": "The Heir",
+    "arc": "The Heir"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "armTriangle",
+     "headKick"
+    ],
+    "celebration": "prays"
+   },
+   "record": {
+    "w": 23,
+    "l": 1,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 95,
+   "primeAge": 30,
+   "moneyIQ": 75,
+   "social": {
+    "followers": 1400000,
+    "style": "prayer emojis"
+   },
+   "bio": "Trained under the Eagle Scout since childhood and talks about him like a holy text. Quiet, devout, and capable of folding you in half like a lawn chair.",
+   "hiddenTraits": [],
+   "parody": "Islam Makhachev",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "alex_volkannoski",
+   "first": "Alexander",
+   "last": "Volkan-NoSki",
+   "nick": "The Great (Average Height)",
+   "gender": "M",
+   "age": 30,
+   "division": "feather",
+   "country": "Australia",
+   "hometown": "Wollongong",
+   "look": {
+    "head": 3,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 1,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 90,
+    "power": 80,
+    "wrestling": 78,
+    "grappling": 74,
+    "cardio": 94,
+    "chin": 84,
+    "fightIQ": 94,
+    "durability": 84,
+    "heart": 94,
+    "weightCut": 55
+   },
+   "styles": [
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Wholesome",
+    "Family First",
+    "Perfectionist"
+   ],
+   "marquee": {
+    "archetype": "The Rugby Dad Champion",
+    "arc": "The Rugby Dad Champion"
+   },
+   "anim": {
+    "stance": "bouncy",
+    "signature": [
+     "legKicks",
+     "volume"
+    ],
+    "celebration": "wavesToKids"
+   },
+   "record": {
+    "w": 22,
+    "l": 1,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 93,
+   "primeAge": 30,
+   "moneyIQ": 80,
+   "social": {
+    "followers": 900000,
+    "style": "gym selfies"
+   },
+   "bio": "Former rugby player who was 214 pounds and decided to be 145. Fights with a clipboard brain and a family-man heart. Responds to trash talk with a slightly confused smile and then a seven-round beating in five rounds.",
+   "hiddenTraits": [],
+   "parody": "Alexander Volkanovski",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "ilia_topuria",
+   "first": "Ilia",
+   "last": "Top-Uria",
+   "nick": "El Matador (Of Egos)",
+   "gender": "M",
+   "age": 26,
+   "division": "feather",
+   "country": "Georgia",
+   "hometown": "Tbilisi",
+   "look": {
+    "head": 0,
+    "skin": 1,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 90,
+    "power": 92,
+    "wrestling": 82,
+    "grappling": 84,
+    "cardio": 84,
+    "chin": 86,
+    "fightIQ": 88,
+    "durability": 84,
+    "heart": 90,
+    "weightCut": 60
+   },
+   "styles": [
+    "Pressure Striker",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Showman",
+    "Perfectionist"
+   ],
+   "marquee": {
+    "archetype": "The Predictor",
+    "arc": "The Predictor"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "predictsTheRound",
+     "leftHook"
+    ],
+    "celebration": "pointsAtWatch"
+   },
+   "record": {
+    "w": 13,
+    "l": 0,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 95,
+   "primeAge": 28,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 1200000,
+    "style": "all caps rants"
+   },
+   "bio": "Predicts the round, predicts the punch, predicts the facial expression of the person he's about to knock out. Has so far been right so often it's becoming a legal issue for bookmakers.",
+   "hiddenTraits": [],
+   "parody": "Ilia Topuria",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "tom_aspinall",
+   "first": "Tom",
+   "last": "Aspin-All",
+   "nick": "The Bargain Bin Brit",
+   "gender": "M",
+   "age": 29,
+   "division": "heavy",
+   "country": "England",
+   "hometown": "Wigan",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 1,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 88,
+    "power": 88,
+    "wrestling": 80,
+    "grappling": 86,
+    "cardio": 82,
+    "chin": 82,
+    "fightIQ": 88,
+    "durability": 84,
+    "heart": 86,
+    "weightCut": 55
+   },
+   "styles": [
+    "Pressure Striker",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Wholesome",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Quick Finisher",
+    "arc": "The Quick Finisher"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "fastHands",
+     "pivotHook"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 13,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 93,
+   "primeAge": 30,
+   "moneyIQ": 75,
+   "social": {
+    "followers": 800000,
+    "style": "gym selfies"
+   },
+   "bio": "A heavyweight who moves like a welterweight and talks like the nicest bloke at your local pub. Finishes fights before the crowd has found their seats.",
+   "hiddenTraits": [],
+   "parody": "Tom Aspinall",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "leon_edwardz",
+   "first": "Leon",
+   "last": "Edwardz",
+   "nick": "Rocky (Balboa's Accountant)",
+   "gender": "M",
+   "age": 30,
+   "division": "welter",
+   "country": "England",
+   "hometown": "Birmingham",
+   "look": {
+    "head": 0,
+    "skin": 4,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 86,
+    "power": 80,
+    "wrestling": 74,
+    "grappling": 74,
+    "cardio": 86,
+    "chin": 82,
+    "fightIQ": 88,
+    "durability": 80,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Counter Striker"
+   ],
+   "traits": [
+    "Shy",
+    "Family First"
+   ],
+   "marquee": {
+    "archetype": "The Patient Counter-Puncher",
+    "arc": "The Patient Counter-Puncher"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "headKick",
+     "counterJab"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 20,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 88,
+   "primeAge": 30,
+   "moneyIQ": 75,
+   "social": {
+    "followers": 700000,
+    "style": "gym selfies"
+   },
+   "bio": "Born in Jamaica, raised in Birmingham, famous for one head kick that sent half the sport into hysterics. Quiet, measured, and deeply unbothered by everyone who calls him boring.",
+   "hiddenTraits": [],
+   "parody": "Leon Edwards",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "belal_muhammadad",
+   "first": "Belal",
+   "last": "Muhammadad",
+   "nick": "Remember the Name (Please)",
+   "gender": "M",
+   "age": 34,
+   "division": "welter",
+   "country": "USA",
+   "hometown": "Chicago, IL",
+   "look": {
+    "head": 2,
+    "skin": 2,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 3,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 80,
+    "power": 64,
+    "wrestling": 84,
+    "grappling": 74,
+    "cardio": 92,
+    "chin": 82,
+    "fightIQ": 88,
+    "durability": 84,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Point Fighter",
+    "Wrestler"
+   ],
+   "traits": [
+    "Devout",
+    "Trash Talker",
+    "Family First"
+   ],
+   "marquee": {
+    "archetype": "The Grinder",
+    "arc": "The Grinder"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "chainWrestling",
+     "volume"
+    ],
+    "celebration": "prays"
+   },
+   "record": {
+    "w": 23,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 33,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 500000,
+    "style": "all caps rants"
+   },
+   "bio": "Spent years being told he was boring, then won the belt boringly, then held it boringly. Argues with strangers online for sport and has never lost an argument according to himself.",
+   "hiddenTraits": [],
+   "parody": "Belal Muhammad",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "drickus_dupleasey",
+   "first": "Drickus",
+   "last": "Du Pleasey",
+   "nick": "Stillknocks (Still Awkward)",
+   "gender": "M",
+   "age": 29,
+   "division": "middle",
+   "country": "South Africa",
+   "hometown": "Pretoria",
+   "look": {
+    "head": 3,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 3,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 2
+   },
+   "skills": {
+    "striking": 78,
+    "power": 88,
+    "wrestling": 82,
+    "grappling": 78,
+    "cardio": 88,
+    "chin": 86,
+    "fightIQ": 74,
+    "durability": 90,
+    "heart": 95,
+    "weightCut": 60
+   },
+   "styles": [
+    "Brawler",
+    "Wrestler"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Showman",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Awkward Destroyer",
+    "arc": "The Awkward Destroyer"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "awkwardFlurry",
+     "backTake"
+    ],
+    "celebration": "flexes"
+   },
+   "record": {
+    "w": 20,
+    "l": 2,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 89,
+   "primeAge": 30,
+   "moneyIQ": 65,
+   "social": {
+    "followers": 600000,
+    "style": "all caps rants"
+   },
+   "bio": "Fights like a man falling down a staircase on purpose and somehow lands on top every time. Nobody can explain his style, including his coaches.",
+   "hiddenTraits": [],
+   "parody": "Dricus du Plessis",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "sean_strictlyland",
+   "first": "Sean",
+   "last": "Strictlyland",
+   "nick": "Tarzan (Unfiltered)",
+   "gender": "M",
+   "age": 31,
+   "division": "middle",
+   "country": "USA",
+   "hometown": "Anaheim, CA",
+   "look": {
+    "head": 3,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 66,
+    "wrestling": 72,
+    "grappling": 70,
+    "cardio": 92,
+    "chin": 84,
+    "fightIQ": 80,
+    "durability": 84,
+    "heart": 86,
+    "weightCut": 55
+   },
+   "styles": [
+    "Point Fighter",
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Streamer",
+    "Political"
+   ],
+   "marquee": {
+    "archetype": "The Unfiltered Jabber",
+    "arc": "The Unfiltered Jabber"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "philly shell",
+     "jabJabJab"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 28,
+    "l": 6,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 31,
+   "moneyIQ": 55,
+   "social": {
+    "followers": 900000,
+    "style": "live streams"
+   },
+   "bio": "Jabs you for 25 minutes and talks for 25 hours. Every press conference is a live hostage situation for the PR team. Streams his sparring, his opinions and his opinions about your opinions.",
+   "hiddenTraits": [],
+   "parody": "Sean Strickland",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "justin_gatchy",
+   "first": "Justin",
+   "last": "Gatchy",
+   "nick": "The Highlight Reel (Unedited)",
+   "gender": "M",
+   "age": 31,
+   "division": "light",
+   "country": "USA",
+   "hometown": "Safford, AZ",
+   "look": {
+    "head": 3,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 2,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 2,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 90,
+    "wrestling": 84,
+    "grappling": 50,
+    "cardio": 82,
+    "chin": 80,
+    "fightIQ": 74,
+    "durability": 86,
+    "heart": 96,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler",
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Wholesome",
+    "Hothead"
+   ],
+   "marquee": {
+    "archetype": "The War Machine",
+    "arc": "The War Machine"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "legKicks",
+     "overhandRight"
+    ],
+    "celebration": "backflip"
+   },
+   "record": {
+    "w": 24,
+    "l": 4,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 30,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 800000,
+    "style": "gym selfies"
+   },
+   "bio": "D1 wrestler who refuses to wrestle. Fights exclusively in the pocket, chops legs like firewood, and treats every fight like a car crash he paid tickets for.",
+   "hiddenTraits": [],
+   "parody": "Justin Gaethje",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "paddy_pimpblett",
+   "first": "Paddy",
+   "last": "Pimpblett",
+   "nick": "The Baddy (Snack-Weight)",
+   "gender": "M",
+   "age": 27,
+   "division": "light",
+   "country": "England",
+   "hometown": "Liverpool",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 3,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 2
+   },
+   "skills": {
+    "striking": 72,
+    "power": 72,
+    "wrestling": 62,
+    "grappling": 88,
+    "cardio": 74,
+    "chin": 76,
+    "fightIQ": 72,
+    "durability": 78,
+    "heart": 86,
+    "weightCut": 90
+   },
+   "styles": [
+    "Sub Hunter",
+    "Brawler"
+   ],
+   "traits": [
+    "Showman",
+    "Party Animal",
+    "Clout Chaser"
+   ],
+   "marquee": {
+    "archetype": "The Scouse Sensation",
+    "arc": "The Scouse Sensation"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "rearNakedChoke",
+     "bigOverhand"
+    ],
+    "celebration": "shushesCrowd"
+   },
+   "record": {
+    "w": 20,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 28,
+   "moneyIQ": 55,
+   "social": {
+    "followers": 2000000,
+    "style": "gym selfies"
+   },
+   "bio": "Liverpool's loudest export since the Beatles. Balloons fifty pounds between fights and posts every cheeseburger. Fans adore him, critics doubt him, and he is perfectly happy to sell both of them tickets.",
+   "hiddenTraits": [],
+   "parody": "Paddy Pimblett",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "michael_chandelier",
+   "first": "Michael",
+   "last": "Chandelier",
+   "nick": "Iron (Supplement)",
+   "gender": "M",
+   "age": 34,
+   "division": "light",
+   "country": "USA",
+   "hometown": "High Ridge, MO",
+   "look": {
+    "head": 1,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 80,
+    "power": 90,
+    "wrestling": 86,
+    "grappling": 62,
+    "cardio": 74,
+    "chin": 76,
+    "fightIQ": 72,
+    "durability": 80,
+    "heart": 94,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler",
+    "Wrestler"
+   ],
+   "traits": [
+    "Devout",
+    "Wholesome",
+    "Showman"
+   ],
+   "marquee": {
+    "archetype": "The Motivational Speaker",
+    "arc": "The Motivational Speaker"
+   },
+   "anim": {
+    "stance": "bouncy",
+    "signature": [
+     "overhandRight",
+     "frontKick"
+    ],
+    "celebration": "crossesHimself"
+   },
+   "record": {
+    "w": 23,
+    "l": 8,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 78,
+   "primeAge": 31,
+   "moneyIQ": 72,
+   "social": {
+    "followers": 700000,
+    "style": "prayer emojis"
+   },
+   "bio": "Gives speeches after wins, speeches after losses, and speeches to the cashier at the grocery store. Comes out of the corner like a golden retriever on espresso.",
+   "hiddenTraits": [],
+   "parody": "Michael Chandler",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "derrick_loose",
+   "first": "Derrick",
+   "last": "Loose",
+   "nick": "The Sweaty Beast",
+   "gender": "M",
+   "age": 34,
+   "division": "heavy",
+   "country": "USA",
+   "hometown": "Houston, TX",
+   "look": {
+    "head": 2,
+    "skin": 5,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 3,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 2
+   },
+   "skills": {
+    "striking": 70,
+    "power": 97,
+    "wrestling": 58,
+    "grappling": 48,
+    "cardio": 48,
+    "chin": 90,
+    "fightIQ": 60,
+    "durability": 86,
+    "heart": 86,
+    "weightCut": 70
+   },
+   "styles": [
+    "Brawler"
+   ],
+   "traits": [
+    "Prankster",
+    "Wholesome",
+    "Lazy"
+   ],
+   "marquee": {
+    "archetype": "The Funniest Man in the Building",
+    "arc": "The Funniest Man in the Building"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "uppercutBomb",
+     "sleepyDefense"
+    ],
+    "celebration": "takesShirtOff"
+   },
+   "record": {
+    "w": 26,
+    "l": 10,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 70,
+   "primeAge": 32,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 1200000,
+    "style": "gym selfies"
+   },
+   "bio": "Holds the record for most knockouts and most quotable post-fight interviews. Looks exhausted at all times, then knocks you out with one swing while appearing to fall asleep.",
+   "hiddenTraits": [],
+   "parody": "Derrick Lewis",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "tony_fergusoff",
+   "first": "Tony",
+   "last": "Fergusoff",
+   "nick": "El Cucuy (The Boogeyman, Allegedly)",
+   "gender": "M",
+   "age": 33,
+   "division": "light",
+   "country": "USA",
+   "hometown": "Oxnard, CA",
+   "look": {
+    "head": 1,
+    "skin": 2,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 4,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 2,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 0
+   },
+   "skills": {
+    "striking": 80,
+    "power": 76,
+    "wrestling": 74,
+    "grappling": 88,
+    "cardio": 94,
+    "chin": 82,
+    "fightIQ": 66,
+    "durability": 84,
+    "heart": 96,
+    "weightCut": 60
+   },
+   "styles": [
+    "Sub Hunter",
+    "Brawler"
+   ],
+   "traits": [
+    "Perfectionist",
+    "Gym Rat",
+    "Paranoid"
+   ],
+   "marquee": {
+    "archetype": "The Eccentric Mad Scientist",
+    "arc": "The Eccentric Mad Scientist"
+   },
+   "anim": {
+    "stance": "karate",
+    "signature": [
+     "darceChoke",
+     "imanariRoll"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 25,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 76,
+   "primeAge": 31,
+   "moneyIQ": 55,
+   "social": {
+    "followers": 900000,
+    "style": "gym selfies"
+   },
+   "bio": "Trains by walking on his hands, juggling medicine balls and doing things with a kettlebell that would make a physiotherapist faint. Talks in riddles. Fights like a slasher movie.",
+   "hiddenTraits": [],
+   "parody": "Tony Ferguson",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "henry_sayhoodoo",
+   "first": "Henry",
+   "last": "Say-Hoodoo",
+   "nick": "Triple C (Cringe Champion)",
+   "gender": "M",
+   "age": 31,
+   "division": "bantam",
+   "country": "USA",
+   "hometown": "Phoenix, AZ",
+   "look": {
+    "head": 3,
+    "skin": 2,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 4,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 78,
+    "power": 72,
+    "wrestling": 94,
+    "grappling": 76,
+    "cardio": 86,
+    "chin": 80,
+    "fightIQ": 86,
+    "durability": 82,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler"
+   ],
+   "traits": [
+    "Showman",
+    "Trash Talker",
+    "Clout Chaser"
+   ],
+   "marquee": {
+    "archetype": "The King of Cringe",
+    "arc": "The King of Cringe"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "doubleLeg",
+     "kneeToBody"
+    ],
+    "celebration": "crownGesture"
+   },
+   "record": {
+    "w": 16,
+    "l": 2,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 86,
+   "primeAge": 30,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 800000,
+    "style": "all caps rants"
+   },
+   "bio": "Olympic gold medallist who decided his real talent was cringe. Wears a crown to press conferences, calls himself the greatest of all time, and occasionally backs it up, which is the most annoying part.",
+   "hiddenTraits": [],
+   "parody": "Henry Cejudo",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "merab_dvalichill",
+   "first": "Merab",
+   "last": "Dvali-Chill-Vili",
+   "nick": "The Machine (Cardio Edition)",
+   "gender": "M",
+   "age": 31,
+   "division": "bantam",
+   "country": "Georgia",
+   "hometown": "Tbilisi",
+   "look": {
+    "head": 3,
+    "skin": 1,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 3,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 70,
+    "power": 62,
+    "wrestling": 98,
+    "grappling": 74,
+    "cardio": 99,
+    "chin": 86,
+    "fightIQ": 82,
+    "durability": 88,
+    "heart": 95,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Boring But Effective"
+   ],
+   "traits": [
+    "Wholesome",
+    "Gym Rat",
+    "Prankster"
+   ],
+   "marquee": {
+    "archetype": "The Unstoppable Motor",
+    "arc": "The Unstoppable Motor"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "takedown60times"
+    ],
+    "celebration": "carriesOpponent"
+   },
+   "record": {
+    "w": 15,
+    "l": 4,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 90,
+   "primeAge": 31,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 900000,
+    "style": "gym selfies"
+   },
+   "bio": "Shoots takedowns at a rate that should be studied by NASA. Doesn't get tired, doesn't stop smiling, and once tried to carry a teammate around the cage after a win.",
+   "hiddenTraits": [],
+   "parody": "Merab Dvalishvili",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "aljamain_sterlingsilver",
+   "first": "Aljamain",
+   "last": "Sterling-Silver",
+   "nick": "Funk Master (Funk Apprentice)",
+   "gender": "M",
+   "age": 28,
+   "division": "bantam",
+   "country": "USA",
+   "hometown": "Uniondale, NY",
+   "look": {
+    "head": 2,
+    "skin": 4,
+    "hair": 6,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 0
+   },
+   "skills": {
+    "striking": 76,
+    "power": 62,
+    "wrestling": 84,
+    "grappling": 92,
+    "cardio": 86,
+    "chin": 78,
+    "fightIQ": 86,
+    "durability": 78,
+    "heart": 84,
+    "weightCut": 55
+   },
+   "styles": [
+    "Sub Hunter",
+    "Wrestler"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Streamer",
+    "Showman"
+   ],
+   "marquee": {
+    "archetype": "The Backpack Specialist",
+    "arc": "The Backpack Specialist"
+   },
+   "anim": {
+    "stance": "bouncy",
+    "signature": [
+     "backTake",
+     "bodyTriangle"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 22,
+    "l": 4,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 87,
+   "primeAge": 29,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 600000,
+    "style": "live streams"
+   },
+   "bio": "Climbs onto opponents' backs like a determined hiker and refuses to get off. Hosts a podcast where he replies to every single critic personally.",
+   "hiddenTraits": [],
+   "parody": "Aljamain Sterling",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "petr_yawn",
+   "first": "Petr",
+   "last": "Yawn",
+   "nick": "No Mercy (Some Mercy)",
+   "gender": "M",
+   "age": 28,
+   "division": "bantam",
+   "country": "Russia",
+   "hometown": "Dudinka",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 92,
+    "power": 82,
+    "wrestling": 80,
+    "grappling": 72,
+    "cardio": 86,
+    "chin": 86,
+    "fightIQ": 88,
+    "durability": 84,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Shy",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Stoic Boxer",
+    "arc": "The Stoic Boxer"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "bodyShots",
+     "switchStance"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 16,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 90,
+   "primeAge": 29,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Grew up in the Russian Arctic, where the boxing gyms are colder than his stare. Doesn't trash talk, doesn't smile, doesn't stop throwing to the body.",
+   "hiddenTraits": [],
+   "parody": "Petr Yan",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "brandon_morenot",
+   "first": "Brandon",
+   "last": "Morenot",
+   "nick": "The Assassin Baby",
+   "gender": "M",
+   "age": 26,
+   "division": "fly",
+   "country": "Mexico",
+   "hometown": "Tijuana",
+   "look": {
+    "head": 0,
+    "skin": 2,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 70,
+    "wrestling": 74,
+    "grappling": 82,
+    "cardio": 88,
+    "chin": 82,
+    "fightIQ": 84,
+    "durability": 80,
+    "heart": 92,
+    "weightCut": 55
+   },
+   "styles": [
+    "Pressure Striker",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Wholesome",
+    "Showman",
+    "Family First"
+   ],
+   "marquee": {
+    "archetype": "The Underdog Hero",
+    "arc": "The Underdog Hero"
+   },
+   "anim": {
+    "stance": "bouncy",
+    "signature": [
+     "guillotine",
+     "bodyJab"
+    ],
+    "celebration": "mexicanFlag"
+   },
+   "record": {
+    "w": 18,
+    "l": 5,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 88,
+   "primeAge": 28,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 700000,
+    "style": "gym selfies"
+   },
+   "bio": "Got cut, came back, became champion, and cried on national television in the most relatable way possible. All of Mexico's flyweight hopes live in his tiny tank top.",
+   "hiddenTraits": [],
+   "parody": "Brandon Moreno",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "alexandre_panterajoe",
+   "first": "Alexandre",
+   "last": "Pantera-Joe",
+   "nick": "The Cannibal (Vegetarian)",
+   "gender": "M",
+   "age": 32,
+   "division": "fly",
+   "country": "Brazil",
+   "hometown": "Natal",
+   "look": {
+    "head": 3,
+    "skin": 2,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 2,
+    "build": 0
+   },
+   "skills": {
+    "striking": 78,
+    "power": 68,
+    "wrestling": 82,
+    "grappling": 90,
+    "cardio": 86,
+    "chin": 82,
+    "fightIQ": 84,
+    "durability": 80,
+    "heart": 92,
+    "weightCut": 55
+   },
+   "styles": [
+    "Sub Hunter",
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Wholesome",
+    "Devout"
+   ],
+   "marquee": {
+    "archetype": "The Scramble King",
+    "arc": "The Scramble King"
+   },
+   "anim": {
+    "stance": "bouncy",
+    "signature": [
+     "backTake",
+     "rearNakedChoke"
+    ],
+    "celebration": "prays"
+   },
+   "record": {
+    "w": 27,
+    "l": 5,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 32,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 300000,
+    "style": "prayer emojis"
+   },
+   "bio": "Wins every scramble, every chaotic exchange and every staring contest. Calls himself the Cannibal and then apologizes for it.",
+   "hiddenTraits": [],
+   "parody": "Alexandre Pantoja",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "robert_wittyacker",
+   "first": "Robert",
+   "last": "Wittyacker",
+   "nick": "The Reaper (Part-Time)",
+   "gender": "M",
+   "age": 30,
+   "division": "middle",
+   "country": "Australia",
+   "hometown": "Sydney",
+   "look": {
+    "head": 1,
+    "skin": 2,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 88,
+    "power": 84,
+    "wrestling": 80,
+    "grappling": 72,
+    "cardio": 88,
+    "chin": 82,
+    "fightIQ": 88,
+    "durability": 84,
+    "heart": 94,
+    "weightCut": 55
+   },
+   "styles": [
+    "Counter Striker",
+    "Kickboxer"
+   ],
+   "traits": [
+    "Wholesome",
+    "Family First"
+   ],
+   "marquee": {
+    "archetype": "The Nicest Killer",
+    "arc": "The Nicest Killer"
+   },
+   "anim": {
+    "stance": "karate",
+    "signature": [
+     "blitz",
+     "headKick"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 23,
+    "l": 6,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 88,
+   "primeAge": 30,
+   "moneyIQ": 72,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Karate-based blitzer, devoted dad, and possibly the most polite man to ever deliver a head kick. Has a laugh that sounds like an apology.",
+   "hiddenTraits": [],
+   "parody": "Robert Whittaker",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "khamzat_chimaye",
+   "first": "Khamzat",
+   "last": "Chim-Aye",
+   "nick": "Borz (Wolf, Bored)",
+   "gender": "M",
+   "age": 28,
+   "division": "welter",
+   "country": "Sweden",
+   "hometown": "Stockholm",
+   "look": {
+    "head": 3,
+    "skin": 1,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 3,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 84,
+    "power": 90,
+    "wrestling": 96,
+    "grappling": 86,
+    "cardio": 76,
+    "chin": 86,
+    "fightIQ": 80,
+    "durability": 86,
+    "heart": 90,
+    "weightCut": 75
+   },
+   "styles": [
+    "Wrestler",
+    "Ground & Pound"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Devout",
+    "Injury Prone"
+   ],
+   "marquee": {
+    "archetype": "The Smash-Everybody Machine",
+    "arc": "The Smash-Everybody Machine"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "doubleLeg",
+     "smash"
+    ],
+    "celebration": "walksAway"
+   },
+   "record": {
+    "w": 12,
+    "l": 0,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 96,
+   "primeAge": 29,
+   "moneyIQ": 65,
+   "social": {
+    "followers": 2500000,
+    "style": "all caps rants"
+   },
+   "bio": "Says he'll smash everybody, then does, then asks for three more fights the same night. Wrestles like a hurricane wearing a weighted vest. Shows up sick more often than a kindergarten teacher.",
+   "hiddenTraits": [],
+   "parody": "Khamzat Chimaev",
+   "debutAct": 2,
+   "startWith": "free"
+  },
+  {
+   "id": "valentina_shevchenkont",
+   "first": "Valentina",
+   "last": "Shev-Chenko-N't",
+   "nick": "Bullet (Train)",
+   "gender": "W",
+   "age": 30,
+   "division": "wfly",
+   "country": "Kyrgyzstan",
+   "hometown": "Bishkek",
+   "look": {
+    "head": 1,
+    "skin": 0,
+    "hair": 7,
+    "hairColor": 5,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 0
+   },
+   "skills": {
+    "striking": 92,
+    "power": 78,
+    "wrestling": 82,
+    "grappling": 86,
+    "cardio": 88,
+    "chin": 84,
+    "fightIQ": 96,
+    "durability": 84,
+    "heart": 92,
+    "weightCut": 55
+   },
+   "styles": [
+    "Muay Thai",
+    "Counter Striker"
+   ],
+   "traits": [
+    "Perfectionist",
+    "Shy",
+    "Gym Rat"
+   ],
+   "marquee": {
+    "archetype": "The Untouchable Queen",
+    "arc": "The Untouchable Queen"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "spinningBackKick",
+     "counterLeft"
+    ],
+    "celebration": "dances"
+   },
+   "record": {
+    "w": 23,
+    "l": 4,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 94,
+   "primeAge": 31,
+   "moneyIQ": 80,
+   "social": {
+    "followers": 1200000,
+    "style": "gym selfies"
+   },
+   "bio": "Muay Thai world champion before most of her opponents were born. Practices shooting, tango and spinning back kicks, all with lethal precision. Dances after wins like a ballroom champion who just hospitalized someone.",
+   "hiddenTraits": [],
+   "parody": "Valentina Shevchenko",
+   "debutAct": 3,
+   "startWith": "free"
+  },
+  {
+   "id": "zhang_weileap",
+   "first": "Zhang",
+   "last": "Wei-Leap",
+   "nick": "Magnum (Of Champagne)",
+   "gender": "W",
+   "age": 31,
+   "division": "wstraw",
+   "country": "China",
+   "hometown": "Handan",
+   "look": {
+    "head": 1,
+    "skin": 0,
+    "hair": 7,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 90,
+    "power": 84,
+    "wrestling": 82,
+    "grappling": 80,
+    "cardio": 90,
+    "chin": 86,
+    "fightIQ": 86,
+    "durability": 86,
+    "heart": 92,
+    "weightCut": 55
+   },
+   "styles": [
+    "Pressure Striker",
+    "Judoka"
+   ],
+   "traits": [
+    "Perfectionist",
+    "Loyal",
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Pressure Cooker",
+    "arc": "The Pressure Cooker"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "spinningBackfist",
+     "suplex"
+    ],
+    "celebration": "bows"
+   },
+   "record": {
+    "w": 23,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 92,
+   "primeAge": 31,
+   "moneyIQ": 75,
+   "social": {
+    "followers": 1000000,
+    "style": "gym selfies"
+   },
+   "bio": "Former receptionist who decided she'd rather throw people than answer phones. Relentless pressure, explosive throws, and a spinning backfist that has its own fan account.",
+   "hiddenTraits": [],
+   "parody": "Zhang Weili",
+   "debutAct": 3,
+   "startWith": "free"
+  },
+  {
+   "id": "rose_namastejunas",
+   "first": "Rose",
+   "last": "Namaste-Junas",
+   "nick": "Thug Daisy",
+   "gender": "W",
+   "age": 28,
+   "division": "wstraw",
+   "country": "USA",
+   "hometown": "Milwaukee, WI",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 0
+   },
+   "skills": {
+    "striking": 88,
+    "power": 72,
+    "wrestling": 72,
+    "grappling": 82,
+    "cardio": 84,
+    "chin": 80,
+    "fightIQ": 90,
+    "durability": 80,
+    "heart": 86,
+    "weightCut": 55
+   },
+   "styles": [
+    "Counter Striker"
+   ],
+   "traits": [
+    "Wholesome",
+    "Shy",
+    "Perfectionist"
+   ],
+   "marquee": {
+    "archetype": "The Zen Warrior",
+    "arc": "The Zen Warrior"
+   },
+   "anim": {
+    "stance": "sway",
+    "signature": [
+     "headKick",
+     "counterRight"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 12,
+    "l": 5,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 88,
+   "primeAge": 29,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 600000,
+    "style": "gym selfies"
+   },
+   "bio": "Shaved head, quiet voice, and a pre-fight mantra that sounds like a meditation app. Then she head-kicks someone into another tax bracket.",
+   "hiddenTraits": [],
+   "parody": "Rose Namajunas",
+   "debutAct": 3,
+   "startWith": "free"
+  },
+  {
+   "id": "julianna_painya",
+   "first": "Julianna",
+   "last": "Pain-Ya",
+   "nick": "The Venezuelan Vixen (Volume Discount)",
+   "gender": "W",
+   "age": 32,
+   "division": "wbantam",
+   "country": "USA",
+   "hometown": "Spokane, WA",
+   "look": {
+    "head": 0,
+    "skin": 2,
+    "hair": 5,
+    "hairColor": 1,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 72,
+    "power": 70,
+    "wrestling": 82,
+    "grappling": 84,
+    "cardio": 84,
+    "chin": 82,
+    "fightIQ": 72,
+    "durability": 82,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Showman"
+   ],
+   "marquee": {
+    "archetype": "The Trash-Talking Underdog",
+    "arc": "The Trash-Talking Underdog"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "takedown",
+     "rearNakedChoke"
+    ],
+    "celebration": "pointsAtCrowd"
+   },
+   "record": {
+    "w": 11,
+    "l": 5,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 78,
+   "primeAge": 31,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 500000,
+    "style": "all caps rants"
+   },
+   "bio": "Trash talks like she's already won and fights like she believes it. Pulled off one of the biggest upsets in history and has been talking about it ever since, with full justification.",
+   "hiddenTraits": [],
+   "parody": "Julianna Pena",
+   "debutAct": 3,
+   "startWith": "free"
+  },
+  {
+   "id": "kayla_harrowson",
+   "first": "Kayla",
+   "last": "Harrowson",
+   "nick": "The Judo Hammer",
+   "gender": "W",
+   "age": 32,
+   "division": "wbantam",
+   "country": "USA",
+   "hometown": "Middletown, OH",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 68,
+    "power": 80,
+    "wrestling": 92,
+    "grappling": 88,
+    "cardio": 86,
+    "chin": 84,
+    "fightIQ": 82,
+    "durability": 86,
+    "heart": 90,
+    "weightCut": 85
+   },
+   "styles": [
+    "Judoka",
+    "Ground & Pound"
+   ],
+   "traits": [
+    "Perfectionist",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Olympic Juggernaut",
+    "arc": "The Olympic Juggernaut"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "hipThrow",
+     "armTriangle"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 16,
+    "l": 1,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 88,
+   "primeAge": 31,
+   "moneyIQ": 75,
+   "social": {
+    "followers": 400000,
+    "style": "gym selfies"
+   },
+   "bio": "Two-time Olympic judo gold medallist who throws women around like laundry. Cutting weight is the only opponent who's ever given her trouble.",
+   "hiddenTraits": [],
+   "parody": "Kayla Harrison",
+   "debutAct": 3,
+   "startWith": "free"
+  },
+  {
+   "id": "gilbert_burnt",
+   "first": "Gilbert",
+   "last": "Burnt",
+   "nick": "Durinho (Durin-HO-HO)",
+   "gender": "M",
+   "age": 32,
+   "division": "welter",
+   "country": "Brazil",
+   "hometown": "Rio de Janeiro",
+   "look": {
+    "head": 2,
+    "skin": 2,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 78,
+    "power": 82,
+    "wrestling": 74,
+    "grappling": 94,
+    "cardio": 78,
+    "chin": 82,
+    "fightIQ": 80,
+    "durability": 82,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Sub Hunter",
+    "Brawler"
+   ],
+   "traits": [
+    "Wholesome",
+    "Showman"
+   ],
+   "marquee": {
+    "archetype": "The BJJ World Champ Who Wants to Bang",
+    "arc": "The BJJ World Champ Who Wants to Bang"
+   },
+   "anim": {
+    "stance": "bouncy",
+    "signature": [
+     "overhandRight",
+     "armTriangle"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 22,
+    "l": 6,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 31,
+   "moneyIQ": 65,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "World champion in jiu-jitsu who prefers to stand and swing anyway. Cheerful, loud, and permanently trying to call out someone bigger than him.",
+   "hiddenTraits": [],
+   "parody": "Gilbert Burns",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "jiri_prochazkaboom",
+   "first": "Jiri",
+   "last": "Pro-Chaz-Ka-Boom",
+   "nick": "BJP (Bushido Jiri Philosophy)",
+   "gender": "M",
+   "age": 29,
+   "division": "lightheavy",
+   "country": "Czechia",
+   "hometown": "Hostice",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 5,
+    "hairColor": 1,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 88,
+    "power": 88,
+    "wrestling": 62,
+    "grappling": 62,
+    "cardio": 76,
+    "chin": 74,
+    "fightIQ": 74,
+    "durability": 82,
+    "heart": 94,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler",
+    "Kickboxer"
+   ],
+   "traits": [
+    "Perfectionist",
+    "Shy"
+   ],
+   "marquee": {
+    "archetype": "The Samurai of Chaos",
+    "arc": "The Samurai of Chaos"
+   },
+   "anim": {
+    "stance": "handsLow",
+    "signature": [
+     "spinningBackfist",
+     "flyingKnee"
+    ],
+    "celebration": "bows"
+   },
+   "record": {
+    "w": 29,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 90,
+   "primeAge": 30,
+   "moneyIQ": 55,
+   "social": {
+    "followers": 700000,
+    "style": "gym selfies"
+   },
+   "bio": "Trains by reading samurai philosophy and fighting in forests. Keeps his hands at his waist and his chin in danger, and wins anyway in the most chaotic way possible.",
+   "hiddenTraits": [],
+   "parody": "Jiri Prochazka",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "magomed_ankleayev",
+   "first": "Magomed",
+   "last": "Ankle-Ayev",
+   "nick": "Boring But Dangerous",
+   "gender": "M",
+   "age": 30,
+   "division": "lightheavy",
+   "country": "Dagestan (Russia)",
+   "hometown": "Makhachkala",
+   "look": {
+    "head": 1,
+    "skin": 1,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 3,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 82,
+    "wrestling": 86,
+    "grappling": 72,
+    "cardio": 86,
+    "chin": 84,
+    "fightIQ": 90,
+    "durability": 86,
+    "heart": 86,
+    "weightCut": 55
+   },
+   "styles": [
+    "Boring But Effective",
+    "Kickboxer"
+   ],
+   "traits": [
+    "Shy",
+    "Devout"
+   ],
+   "marquee": {
+    "archetype": "The Fun Vacuum",
+    "arc": "The Fun Vacuum"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "counterLeft",
+     "kickCatch"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 19,
+    "l": 1,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 88,
+   "primeAge": 31,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 200000,
+    "style": "prayer emojis"
+   },
+   "bio": "So technically sound he makes main events feel like tax seminars. Nobody wants to fight him. Nobody wants to watch him. Nobody can beat him.",
+   "hiddenTraits": [],
+   "parody": "Magomed Ankalaev",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "ciryl_gain",
+   "first": "Ciryl",
+   "last": "Gain",
+   "nick": "Bon Gamin (Bon Appetit)",
+   "gender": "M",
+   "age": 31,
+   "division": "heavy",
+   "country": "France",
+   "hometown": "La Roche-sur-Yon",
+   "look": {
+    "head": 0,
+    "skin": 4,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 90,
+    "power": 74,
+    "wrestling": 62,
+    "grappling": 68,
+    "cardio": 86,
+    "chin": 80,
+    "fightIQ": 90,
+    "durability": 80,
+    "heart": 82,
+    "weightCut": 55
+   },
+   "styles": [
+    "Kickboxer",
+    "Point Fighter"
+   ],
+   "traits": [
+    "Wholesome",
+    "Shy"
+   ],
+   "marquee": {
+    "archetype": "The Ballet Heavyweight",
+    "arc": "The Ballet Heavyweight"
+   },
+   "anim": {
+    "stance": "bouncy",
+    "signature": [
+     "switchKick",
+     "footwork"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 12,
+    "l": 2,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 88,
+   "primeAge": 31,
+   "moneyIQ": 72,
+   "social": {
+    "followers": 400000,
+    "style": "gym selfies"
+   },
+   "bio": "A heavyweight who moves like a dancer and speaks French softly at press conferences. Opponents can't hit him. Fans can't tell if they're bored or mesmerized.",
+   "hiddenTraits": [],
+   "parody": "Ciryl Gane",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "curtis_blades",
+   "first": "Curtis",
+   "last": "Blades",
+   "nick": "Razor (Disposable)",
+   "gender": "M",
+   "age": 30,
+   "division": "heavy",
+   "country": "USA",
+   "hometown": "Chicago, IL",
+   "look": {
+    "head": 3,
+    "skin": 5,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 70,
+    "power": 86,
+    "wrestling": 94,
+    "grappling": 70,
+    "cardio": 80,
+    "chin": 78,
+    "fightIQ": 74,
+    "durability": 84,
+    "heart": 84,
+    "weightCut": 60
+   },
+   "styles": [
+    "Wrestler",
+    "Ground & Pound"
+   ],
+   "traits": [
+    "Prankster",
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Takedown Truck",
+    "arc": "The Takedown Truck"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "doubleLeg",
+     "elbowsFromTop"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 17,
+    "l": 4,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 31,
+   "moneyIQ": 65,
+   "social": {
+    "followers": 300000,
+    "style": "gym selfies"
+   },
+   "bio": "Shoots double legs like his life depends on them and says genuinely funny things in interviews that get him in mild trouble with nobody in particular.",
+   "hiddenTraits": [],
+   "parody": "Curtis Blaydes",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "bo_nickelanddime",
+   "first": "Bo",
+   "last": "Nickel-And-Dime",
+   "nick": "Bo-Dacious",
+   "gender": "M",
+   "age": 26,
+   "division": "middle",
+   "country": "USA",
+   "hometown": "State College, PA",
+   "look": {
+    "head": 1,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 64,
+    "power": 76,
+    "wrestling": 98,
+    "grappling": 90,
+    "cardio": 86,
+    "chin": 78,
+    "fightIQ": 80,
+    "durability": 78,
+    "heart": 84,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Devout",
+    "Trash Talker",
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Wrestling Prodigy",
+    "arc": "The Wrestling Prodigy"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "armTriangle",
+     "doubleLeg"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 6,
+    "l": 0,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 97,
+   "primeAge": 30,
+   "moneyIQ": 75,
+   "social": {
+    "followers": 600000,
+    "style": "all caps rants"
+   },
+   "bio": "Three-time NCAA champion who believes he's the best fighter alive after six pro fights. He might be right. He might be very, very wrong. Everyone wants to find out.",
+   "hiddenTraits": [],
+   "parody": "Bo Nickal",
+   "debutAct": 2,
+   "startWith": "free"
+  },
+  {
+   "id": "jake_pall",
+   "first": "Jake",
+   "last": "Pall",
+   "nick": "The Problem Child (Now A Problem Adult)",
+   "gender": "M",
+   "age": 26,
+   "division": "lightheavy",
+   "country": "USA",
+   "hometown": "Cleveland, OH",
+   "look": {
+    "head": 3,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 4,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 68,
+    "power": 74,
+    "wrestling": 30,
+    "grappling": 24,
+    "cardio": 66,
+    "chin": 70,
+    "fightIQ": 62,
+    "durability": 70,
+    "heart": 72,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler",
+    "Showboat"
+   ],
+   "traits": [
+    "Clout Chaser",
+    "Streamer",
+    "Showman",
+    "Business Savvy",
+    "Trash Talker"
+   ],
+   "marquee": {
+    "archetype": "The Influencer Crossover",
+    "arc": "The Influencer Crossover"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "overhandRight",
+     "rolexBet"
+    ],
+    "celebration": "flexes"
+   },
+   "record": {
+    "w": 8,
+    "l": 1,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 65,
+   "primeAge": 30,
+   "moneyIQ": 90,
+   "social": {
+    "followers": 30000000,
+    "style": "live streams"
+   },
+   "bio": "YouTube star turned boxer who would very much like to fight in your cage, ideally against someone forty years old with two broken legs. Brings forty million followers, his own energy drink, and a lawyer for every occasion.",
+   "hiddenTraits": [],
+   "parody": "Jake Paul",
+   "debutAct": 2,
+   "startWith": "free"
+  },
+  {
+   "id": "bryce_mitchhell",
+   "first": "Bryce",
+   "last": "Mitch-Hell",
+   "nick": "Thug Gentle",
+   "gender": "M",
+   "age": 28,
+   "division": "feather",
+   "country": "USA",
+   "hometown": "Cove, AR",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 7,
+    "hairColor": 4,
+    "beard": 3,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 0
+   },
+   "skills": {
+    "striking": 68,
+    "power": 62,
+    "wrestling": 82,
+    "grappling": 92,
+    "cardio": 86,
+    "chin": 80,
+    "fightIQ": 74,
+    "durability": 80,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Sub Hunter",
+    "Wrestler"
+   ],
+   "traits": [
+    "Conspiracy Poster",
+    "Family First",
+    "Gym Rat"
+   ],
+   "marquee": {
+    "archetype": "The Farm-Boy Philosopher",
+    "arc": "The Farm-Boy Philosopher"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "twister",
+     "backTake"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 16,
+    "l": 2,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 300000,
+    "style": "conspiracy threads"
+   },
+   "bio": "Arkansas farm boy who hunts his own food, builds his own house and does a twister submission for fun. Has opinions on the shape of the planet that keep the PR team awake at night.",
+   "hiddenTraits": [],
+   "parody": "Bryce Mitchell",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "arman_tsaryoucant",
+   "first": "Arman",
+   "last": "Tsar-You-Can't",
+   "nick": "Ahalkalakets (Spell It)",
+   "gender": "M",
+   "age": 27,
+   "division": "light",
+   "country": "Armenia",
+   "hometown": "Akhalkalaki",
+   "look": {
+    "head": 3,
+    "skin": 1,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 82,
+    "power": 78,
+    "wrestling": 92,
+    "grappling": 84,
+    "cardio": 88,
+    "chin": 82,
+    "fightIQ": 86,
+    "durability": 84,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Gym Rat",
+    "Trash Talker"
+   ],
+   "marquee": {
+    "archetype": "The Patient Contender",
+    "arc": "The Patient Contender"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "chainWrestling",
+     "flyingKnee"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 21,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 92,
+   "primeAge": 30,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 400000,
+    "style": "all caps rants"
+   },
+   "bio": "The most avoided man in the division, according to the most avoided man in the division. Wrestles at a pace that should be illegal.",
+   "hiddenTraits": [],
+   "parody": "Arman Tsarukyan",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "jack_dellamadeleine",
+   "first": "Jack",
+   "last": "Della Madeleine",
+   "nick": "JDM (Just Dropped Men)",
+   "gender": "M",
+   "age": 27,
+   "division": "welter",
+   "country": "Australia",
+   "hometown": "Perth",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 2,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 92,
+    "power": 84,
+    "wrestling": 66,
+    "grappling": 68,
+    "cardio": 86,
+    "chin": 84,
+    "fightIQ": 84,
+    "durability": 82,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Wholesome",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Boxing Surfer",
+    "arc": "The Boxing Surfer"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "bodyHook",
+     "combination"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 16,
+    "l": 2,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 92,
+   "primeAge": 30,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Perth's smoothest boxer. Talks like a surfer, punches like a jackhammer, and politely apologizes to referees for making them work.",
+   "hiddenTraits": [],
+   "parody": "Jack Della Maddalena",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "shavkat_rockmonov",
+   "first": "Shavkat",
+   "last": "Rock-Monov",
+   "nick": "Nomad (No Mad)",
+   "gender": "M",
+   "age": 29,
+   "division": "welter",
+   "country": "Kazakhstan",
+   "hometown": "Shymkent",
+   "look": {
+    "head": 0,
+    "skin": 1,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 3,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 84,
+    "wrestling": 86,
+    "grappling": 90,
+    "cardio": 84,
+    "chin": 84,
+    "fightIQ": 88,
+    "durability": 86,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Pressure Striker",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Shy",
+    "Devout"
+   ],
+   "marquee": {
+    "archetype": "The Finisher",
+    "arc": "The Finisher"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "guillotine",
+     "headKick"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 18,
+    "l": 0,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 93,
+   "primeAge": 30,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 300000,
+    "style": "prayer emojis"
+   },
+   "bio": "Every fight, every finish. Speaks softly, chokes firmly. The kind of man other contenders schedule dentist appointments to avoid.",
+   "hiddenTraits": [],
+   "parody": "Shavkat Rakhmonov",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "mvp_paige",
+   "first": "Michael",
+   "last": "Paige",
+   "nick": "Venim (Not a Sponsor)",
+   "gender": "M",
+   "age": 36,
+   "division": "welter",
+   "country": "England",
+   "hometown": "London",
+   "look": {
+    "head": 2,
+    "skin": 4,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 0
+   },
+   "skills": {
+    "striking": 86,
+    "power": 80,
+    "wrestling": 48,
+    "grappling": 56,
+    "cardio": 80,
+    "chin": 72,
+    "fightIQ": 80,
+    "durability": 72,
+    "heart": 74,
+    "weightCut": 55
+   },
+   "styles": [
+    "Showboat",
+    "Kickboxer"
+   ],
+   "traits": [
+    "Showman",
+    "Trash Talker",
+    "Mercenary"
+   ],
+   "marquee": {
+    "archetype": "The Rival-Promotion Defector",
+    "arc": "The Rival-Promotion Defector"
+   },
+   "anim": {
+    "stance": "handsLow",
+    "signature": [
+     "flyingKnee",
+     "pointsAtHead"
+    ],
+    "celebration": "pokemonPose"
+   },
+   "record": {
+    "w": 22,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 80,
+   "primeAge": 30,
+   "moneyIQ": 65,
+   "social": {
+    "followers": 900000,
+    "style": "all caps rants"
+   },
+   "bio": "Point-karate wizard who keeps his hands at his hips and his ego in orbit. Spent a decade at a rival promotion being the most entertaining thing on their cards, and wants you to pay for that history.",
+   "hiddenTraits": [],
+   "parody": "Michael 'Venom' Page",
+   "debutAct": 2,
+   "startWith": "bellatrix"
+  },
+  {
+   "id": "patricio_freirepit",
+   "first": "Patricio",
+   "last": "Freire-Pit",
+   "nick": "Pitbull (Chihuahua Mix)",
+   "gender": "M",
+   "age": 32,
+   "division": "feather",
+   "country": "Brazil",
+   "hometown": "Natal",
+   "look": {
+    "head": 0,
+    "skin": 2,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 86,
+    "power": 84,
+    "wrestling": 78,
+    "grappling": 84,
+    "cardio": 84,
+    "chin": 82,
+    "fightIQ": 88,
+    "durability": 82,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Loyal",
+    "Family First"
+   ],
+   "marquee": {
+    "archetype": "The Rival Promotion's Franchise",
+    "arc": "The Rival Promotion's Franchise"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "overhandRight",
+     "guillotine"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 34,
+    "l": 6,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 30,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 300000,
+    "style": "gym selfies"
+   },
+   "bio": "The rival league's two-division champion and franchise face. Loyal to them, which means he's the hardest man in the sport to poach and the most satisfying to sign.",
+   "hiddenTraits": [],
+   "parody": "Patricio Freire",
+   "debutAct": 1,
+   "startWith": "bellatrix"
+  },
+  {
+   "id": "cris_cyberborg",
+   "first": "Cris",
+   "last": "Cyber-Borg",
+   "nick": "Cyborg (Firmware Update)",
+   "gender": "W",
+   "age": 33,
+   "division": "wbantam",
+   "country": "Brazil",
+   "hometown": "Curitiba",
+   "look": {
+    "head": 1,
+    "skin": 2,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 2
+   },
+   "skills": {
+    "striking": 88,
+    "power": 92,
+    "wrestling": 72,
+    "grappling": 74,
+    "cardio": 82,
+    "chin": 86,
+    "fightIQ": 78,
+    "durability": 88,
+    "heart": 90,
+    "weightCut": 85
+   },
+   "styles": [
+    "Pressure Striker",
+    "Muay Thai"
+   ],
+   "traits": [
+    "Showman",
+    "Mercenary"
+   ],
+   "marquee": {
+    "archetype": "The Unstoppable Force",
+    "arc": "The Unstoppable Force"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "muayThaiClinch",
+     "knee"
+    ],
+    "celebration": "flexes"
+   },
+   "record": {
+    "w": 26,
+    "l": 2,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 80,
+   "primeAge": 33,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 1200000,
+    "style": "gym selfies"
+   },
+   "bio": "The most feared woman in the history of the sport. Has fought for every promotion that would pay her and destroyed everyone they put in front of her.",
+   "hiddenTraits": [],
+   "parody": "Cris Cyborg",
+   "debutAct": 3,
+   "startWith": "bellatrix"
+  },
+  {
+   "id": "dorian_blackwood",
+   "first": "Dorian",
+   "last": "Blackwood",
+   "nick": "Bad Decisions",
+   "gender": "M",
+   "age": 27,
+   "division": "lightheavy",
+   "country": "USA",
+   "hometown": "Albany, NY",
+   "look": {
+    "head": 1,
+    "skin": 3,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 88,
+    "power": 84,
+    "wrestling": 84,
+    "grappling": 80,
+    "cardio": 82,
+    "chin": 86,
+    "fightIQ": 90,
+    "durability": 84,
+    "heart": 86,
+    "weightCut": 45
+   },
+   "styles": [
+    "Wrestler",
+    "Kickboxer"
+   ],
+   "traits": [
+    "Party Animal",
+    "Reckless Driver",
+    "Hothead",
+    "Showman"
+   ],
+   "marquee": {
+    "archetype": "The Troubled GOAT",
+    "arc": "The Troubled GOAT"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "spinningElbow",
+     "obliqueKick"
+    ],
+    "celebration": "strut"
+   },
+   "record": {
+    "w": 17,
+    "l": 0,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 97,
+   "primeAge": 30,
+   "moneyIQ": 25,
+   "social": {
+    "followers": 1200000,
+    "style": "gym selfies"
+   },
+   "bio": "A generational talent who has never truly lost a fight and has never truly won one against himself. The cage is the only place his life makes sense. Everywhere else, he's a weekly emergency meeting.",
+   "hiddenTraits": [],
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "tanner_brix",
+   "first": "Tanner",
+   "last": "Brix",
+   "nick": "No Context",
+   "gender": "M",
+   "age": 30,
+   "division": "welter",
+   "country": "USA",
+   "hometown": "Boise, ID",
+   "look": {
+    "head": 3,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 4,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 80,
+    "power": 74,
+    "wrestling": 78,
+    "grappling": 72,
+    "cardio": 82,
+    "chin": 80,
+    "fightIQ": 76,
+    "durability": 80,
+    "heart": 82,
+    "weightCut": 55
+   },
+   "styles": [
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Streamer",
+    "Conspiracy Poster",
+    "Political",
+    "Trash Talker"
+   ],
+   "marquee": {
+    "archetype": "The Unfiltered Podcaster",
+    "arc": "The Unfiltered Podcaster"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "jabJabJab"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 19,
+    "l": 5,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 80,
+   "primeAge": 30,
+   "moneyIQ": 45,
+   "social": {
+    "followers": 700000,
+    "style": "live streams"
+   },
+   "bio": "Good fighter. Great podcast numbers. Terrible judgment. Hosts a four-hour stream called 'No Context' where every week he says something that costs you a sponsor.",
+   "hiddenTraits": [],
+   "debutAct": 1,
+   "startWith": "us"
+  },
+  {
+   "id": "gus_petrakis",
+   "first": "Gus",
+   "last": "Petrakis",
+   "nick": "The Toll Booth",
+   "gender": "M",
+   "age": 33,
+   "division": "light",
+   "country": "USA",
+   "hometown": "Tarpon Springs, FL",
+   "look": {
+    "head": 2,
+    "skin": 1,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 3,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 2,
+    "ears": 3,
+    "scar": 1,
+    "tattoo": 1,
+    "build": 2
+   },
+   "skills": {
+    "striking": 78,
+    "power": 76,
+    "wrestling": 80,
+    "grappling": 76,
+    "cardio": 84,
+    "chin": 92,
+    "fightIQ": 86,
+    "durability": 92,
+    "heart": 96,
+    "weightCut": 50
+   },
+   "styles": [
+    "Boring But Effective",
+    "Wrestler"
+   ],
+   "traits": [
+    "Loyal",
+    "Gym Rat",
+    "Family First"
+   ],
+   "marquee": {
+    "archetype": "The Moneyweight Gatekeeper",
+    "arc": "The Moneyweight Gatekeeper"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "cageGrind"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 24,
+    "l": 9,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 75,
+   "primeAge": 30,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 40000,
+    "style": "gym selfies"
+   },
+   "bio": "Every prospect has to pay the toll. Thirty-three fights, zero highlight reels, and a chin carved out of a boat anchor. Nobody wants to fight him and nobody wants to watch him, which is exactly why you need him.",
+   "hiddenTraits": [],
+   "debutAct": 1,
+   "startWith": "us"
+  },
+  {
+   "id": "rudy_okonjo",
+   "first": "Rudy",
+   "last": "Okonjo",
+   "nick": "Buffet Killer",
+   "gender": "M",
+   "age": 28,
+   "division": "feather",
+   "country": "USA",
+   "hometown": "Houston, TX",
+   "look": {
+    "head": 3,
+    "skin": 5,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 2
+   },
+   "skills": {
+    "striking": 82,
+    "power": 84,
+    "wrestling": 70,
+    "grappling": 66,
+    "cardio": 70,
+    "chin": 84,
+    "fightIQ": 72,
+    "durability": 82,
+    "heart": 84,
+    "weightCut": 96
+   },
+   "styles": [
+    "Brawler"
+   ],
+   "traits": [
+    "Party Animal",
+    "Wholesome",
+    "Lazy"
+   ],
+   "marquee": {
+    "archetype": "The Weight-Miss Repeat Offender",
+    "arc": "The Weight-Miss Repeat Offender"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "overhandRight"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 14,
+    "l": 4,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 80,
+   "primeAge": 28,
+   "moneyIQ": 40,
+   "social": {
+    "followers": 90000,
+    "style": "gym selfies"
+   },
+   "bio": "A legitimately dangerous featherweight trapped in the body of a man who has never said no to a buffet. Misses weight with the reliability of a Swiss watch.",
+   "hiddenTraits": [],
+   "debutAct": 1,
+   "startWith": "us"
+  },
+  {
+   "id": "jayden_crump",
+   "first": "Jayden",
+   "last": "Crump",
+   "nick": "Viral",
+   "gender": "M",
+   "age": 22,
+   "division": "bantam",
+   "country": "USA",
+   "hometown": "Tulsa, OK",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 4,
+    "hairColor": 4,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 0
+   },
+   "skills": {
+    "striking": 66,
+    "power": 86,
+    "wrestling": 40,
+    "grappling": 36,
+    "cardio": 62,
+    "chin": 66,
+    "fightIQ": 52,
+    "durability": 66,
+    "heart": 74,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler",
+    "Showboat"
+   ],
+   "traits": [
+    "Clout Chaser",
+    "Streamer",
+    "Party Animal"
+   ],
+   "marquee": {
+    "archetype": "The Meme Kid",
+    "arc": "The Meme Kid"
+   },
+   "anim": {
+    "stance": "handsLow",
+    "signature": [
+     "spinningBackfist"
+    ],
+    "celebration": "backflip"
+   },
+   "record": {
+    "w": 5,
+    "l": 0,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 27,
+   "moneyIQ": 30,
+   "social": {
+    "followers": 2400000,
+    "style": "live streams"
+   },
+   "bio": "Went viral for a spinning backfist knockout in a regional show that took place in a Waffle Hut parking lot. Zero fundamentals, two million followers, and a manager who is also his roommate.",
+   "hiddenTraits": [],
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "kevin_hargrove_jr",
+   "first": "Kevin",
+   "last": "Hargrove Jr.",
+   "nick": "Kev Jr.",
+   "gender": "M",
+   "age": 24,
+   "division": "middle",
+   "country": "USA",
+   "hometown": "Toledo, OH",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 3,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 72,
+    "power": 74,
+    "wrestling": 74,
+    "grappling": 70,
+    "cardio": 78,
+    "chin": 72,
+    "fightIQ": 68,
+    "durability": 74,
+    "heart": 70,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler"
+   ],
+   "traits": [
+    "Shy",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Dad Who Lives Through His Son",
+    "arc": "The Dad Who Lives Through His Son"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "doubleLeg"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 8,
+    "l": 2,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 85,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 30000,
+    "style": "gym selfies"
+   },
+   "bio": "A shy, decent kid with real talent and a father who screams at referees, judges, promoters and occasionally clouds. Kevin Sr. is his manager, coach, nutritionist and only source of stress.",
+   "hiddenTraits": [],
+   "debutAct": 1,
+   "startWith": "us"
+  },
+  {
+   "id": "bianca_ferreira",
+   "first": "Bianca",
+   "last": "Ferreira",
+   "nick": "Bulldozer",
+   "gender": "W",
+   "age": 27,
+   "division": "wbantam",
+   "country": "Brazil",
+   "hometown": "Recife",
+   "look": {
+    "head": 2,
+    "skin": 3,
+    "hair": 6,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 80,
+    "power": 84,
+    "wrestling": 72,
+    "grappling": 76,
+    "cardio": 80,
+    "chin": 82,
+    "fightIQ": 70,
+    "durability": 80,
+    "heart": 88,
+    "weightCut": 60
+   },
+   "styles": [
+    "Brawler",
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Party Animal",
+    "Hothead",
+    "Showman"
+   ],
+   "marquee": {
+    "archetype": "The Wild Card",
+    "arc": "The Wild Card"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "knee"
+    ],
+    "celebration": "flexes"
+   },
+   "record": {
+    "w": 12,
+    "l": 2,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 86,
+   "primeAge": 29,
+   "moneyIQ": 35,
+   "social": {
+    "followers": 500000,
+    "style": "gym selfies"
+   },
+   "bio": "Fights like she's late for something and parties like the something is cancelled. Equally likely to win a fight-of-the-night bonus and to start a fight at the after-party.",
+   "hiddenTraits": [],
+   "debutAct": 3,
+   "startWith": "free"
+  },
+  {
+   "id": "silas_merriweather",
+   "first": "Silas",
+   "last": "Merriweather",
+   "nick": "The Accountant",
+   "gender": "M",
+   "age": 31,
+   "division": "welter",
+   "country": "USA",
+   "hometown": "Des Moines, IA",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 2,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 76,
+    "power": 70,
+    "wrestling": 80,
+    "grappling": 82,
+    "cardio": 84,
+    "chin": 78,
+    "fightIQ": 90,
+    "durability": 78,
+    "heart": 82,
+    "weightCut": 55
+   },
+   "styles": [
+    "Boring But Effective",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Business Savvy",
+    "Wholesome",
+    "Perfectionist"
+   ],
+   "marquee": {
+    "archetype": "The Accountant",
+    "arc": "The Accountant"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "arm triangle"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 15,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 78,
+   "primeAge": 30,
+   "moneyIQ": 98,
+   "social": {
+    "followers": 20000,
+    "style": "gym selfies"
+   },
+   "bio": "Ex-CPA who still does half the roster's taxes and has started asking very specific questions about yours.",
+   "hiddenTraits": [],
+   "debutAct": 1,
+   "startWith": "us"
+  },
+  {
+   "id": "mateo_varga",
+   "first": "Mateo",
+   "last": "Varga",
+   "nick": "Mercenary",
+   "gender": "M",
+   "age": 29,
+   "division": "middle",
+   "country": "Mexico",
+   "hometown": "Tijuana",
+   "look": {
+    "head": 2,
+    "skin": 2,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 4,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 82,
+    "power": 82,
+    "wrestling": 78,
+    "grappling": 76,
+    "cardio": 80,
+    "chin": 82,
+    "fightIQ": 80,
+    "durability": 82,
+    "heart": 84,
+    "weightCut": 55
+   },
+   "styles": [
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Mercenary",
+    "Business Savvy",
+    "Trash Talker"
+   ],
+   "marquee": {
+    "archetype": "The Defector",
+    "arc": "The Defector"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "bodyHook"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 20,
+    "l": 4,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 29,
+   "moneyIQ": 80,
+   "social": {
+    "followers": 300000,
+    "style": "all caps rants"
+   },
+   "bio": "Has fought for five promotions in five years and left each one with a lawsuit and a highlight reel.",
+   "hiddenTraits": [],
+   "debutAct": 1,
+   "startWith": "golden_promotions"
+  },
+  {
+   "id": "cody_rawlings",
+   "first": "Cody",
+   "last": "Rawlings",
+   "nick": "Dip Can",
+   "gender": "M",
+   "age": 29,
+   "division": "light",
+   "country": "USA",
+   "hometown": "Odessa, TX",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 4,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 78,
+    "power": 80,
+    "wrestling": 76,
+    "grappling": 66,
+    "cardio": 72,
+    "chin": 82,
+    "fightIQ": 66,
+    "durability": 80,
+    "heart": 84,
+    "weightCut": 60
+   },
+   "styles": [
+    "Brawler"
+   ],
+   "traits": [
+    "Reckless Driver",
+    "Gambler",
+    "Party Animal",
+    "Hothead"
+   ],
+   "marquee": {
+    "archetype": "The Texas Tornado",
+    "arc": "The Texas Tornado"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "overhandRight"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 16,
+    "l": 6,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 76,
+   "primeAge": 29,
+   "moneyIQ": 20,
+   "social": {
+    "followers": 60000,
+    "style": "gym selfies"
+   },
+   "bio": "Owns four trucks, three of which are impounded. Bets his purse on himself, then on the co-main, then on the NFL. A delight in the cage and a liability everywhere else.",
+   "hiddenTraits": [],
+   "debutAct": 1,
+   "startWith": "us"
+  },
+  {
+   "id": "dmitri_volkhov",
+   "first": "Dmitri",
+   "last": "Volkhov",
+   "nick": "The Tax Audit",
+   "gender": "M",
+   "age": 30,
+   "division": "heavy",
+   "country": "Russia",
+   "hometown": "Omsk",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 6,
+    "beard": 3,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 2,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 1,
+    "build": 2
+   },
+   "skills": {
+    "striking": 76,
+    "power": 92,
+    "wrestling": 80,
+    "grappling": 70,
+    "cardio": 66,
+    "chin": 88,
+    "fightIQ": 74,
+    "durability": 90,
+    "heart": 88,
+    "weightCut": 60
+   },
+   "styles": [
+    "Brawler",
+    "Wrestler"
+   ],
+   "traits": [
+    "Gambler",
+    "Business Savvy",
+    "Paranoid"
+   ],
+   "marquee": {
+    "archetype": "The Mystery Heavyweight",
+    "arc": "The Mystery Heavyweight"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "overhandRight"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 18,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 31,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 100000,
+    "style": "gym selfies"
+   },
+   "bio": "Nobody is sure where his money comes from, including the tax authorities of three countries. Hits like a falling safe.",
+   "hiddenTraits": [],
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "brayden_pruitt",
+   "first": "Brayden",
+   "last": "Pruitt",
+   "nick": "Southern Fried",
+   "gender": "M",
+   "age": 26,
+   "division": "light",
+   "country": "USA",
+   "hometown": "Mobile, AL",
+   "look": {
+    "head": 3,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 4,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 78,
+    "power": 80,
+    "wrestling": 78,
+    "grappling": 72,
+    "cardio": 78,
+    "chin": 80,
+    "fightIQ": 70,
+    "durability": 80,
+    "heart": 86,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler",
+    "Wrestler"
+   ],
+   "traits": [
+    "Party Animal",
+    "Reckless Driver",
+    "Trash Talker"
+   ],
+   "marquee": {
+    "archetype": "The Good Ol' Boy",
+    "arc": "The Good Ol' Boy"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "overhandRight"
+    ],
+    "celebration": "backflip"
+   },
+   "record": {
+    "w": 12,
+    "l": 2,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 28,
+   "moneyIQ": 25,
+   "social": {
+    "followers": 250000,
+    "style": "all caps rants"
+   },
+   "bio": "A good ol' boy with a heart of gold, a truck with no muffler, and a criminal record that is mostly traffic court. Mostly.",
+   "hiddenTraits": [],
+   "debutAct": 1,
+   "startWith": "us"
+  }
+ ]
+}
