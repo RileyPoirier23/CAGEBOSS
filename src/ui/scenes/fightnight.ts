@@ -323,7 +323,8 @@ export class FightNightScene extends Scene {
     if (p.phase === 'intro') this.arena.startIntro();
     if (p.phase === 'ceremony') this.arena.startCeremony();
     // replay lines already shown
-    for (let i = 0; i < p.idx; i++) this.arena.cue(p.lines[i]);
+    for (let i = 0; i < p.idx; i++) this.arena.cue(p.lines[i], true);
+    this.arena.settle();
     if (p.phase === 'ceremony' && p.raised) this.arena.raiseHand(p.cerWinner);
     const sub = new Container();
     sub.position.set(0, AH - 34);
@@ -533,6 +534,7 @@ export class FightNightScene extends Scene {
     const p = this.playing;
     if (this.step !== 'watch' || !p || !this.arena || this.arena.destroyed) return;
     const speed = [1, 0.6, 1, 2, 4][this.g.settings.fightSpeed] ?? 1;
+    this.arena.pace = Math.max(1, Math.min(2, speed));
     this.arena.update(dt);
     if (!p.paused) this.tickBleets(dt * Math.min(2, speed));
     if (p.paused || this.g.modals.length) return;
@@ -601,6 +603,8 @@ export class FightNightScene extends Scene {
       return;
     }
     if (p.phase === 'end') return;
+    // the arena holds the next line while the fighters walk out or close the distance for an exchange
+    if (this.arena.busy()) return;
     p.timer -= dt * speed;
     if (p.timer > 0) return;
     if (p.idx >= p.lines.length) {

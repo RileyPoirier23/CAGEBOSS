@@ -15,7 +15,7 @@ export type Pose =
   | 'guard' | 'jab' | 'cross' | 'hook' | 'uppercut' | 'body' | 'legkick' | 'bodykick' | 'headkick' | 'knee' | 'elbow' | 'spin' | 'flyknee'
   | 'shoot' | 'sprawl' | 'clinch' | 'top' | 'topPunch' | 'bottom' | 'bottomSub' | 'hurt' | 'rocked' | 'down' | 'ko' | 'celebrate'
   | 'taunt' | 'stool' | 'walk1' | 'walk2' | 'block' | 'slip' | 'lifted'
-  | 'doubled'
+  | 'doubled' | 'touch'
   | 'stand' | 'armUp' | 'headDown' | 'refHold' | 'refRaise' | 'mic' | 'point' | 'flex'
   | GroundPose;
 
@@ -106,6 +106,8 @@ GROUND_POSES.triAtk = { ...GROUND_POSES.triAtk, knF: [-12, -34], ftF: [2, -44], 
 export const POSES: Record<Pose, Rig> = {
   ...GROUND_POSES,
   guard: GUARD,
+  // glove touch before round one: lead arm out at shoulder height, no snap in it
+  touch: P({ elF: [17, -64], haF: [27, -66], head: [6, -76], neck: [4, -67] }),
   block: P({ haF: [13, -72], haB: [8, -72], elF: [12, -60], elB: [6, -60], head: [3, -74] }),
   slip: P({ head: [0, -70], neck: [0, -63], shF: [4, -61], shB: [-5, -61] }),
   jab: P({ elF: [26, -66], haF: [40, -69], head: [7, -75], shF: [10, -64] }),
@@ -304,6 +306,13 @@ export function stanceGuard(L: Look2, t: number): Rig {
   r.haF = [r.haF[0] + Math.sin(t * 4.2) * 1.2, r.haF[1] + Math.cos(t * 3.1)];
   r.haB = [r.haB[0] + Math.cos(t * 3.7) * 1.2, r.haB[1] + Math.sin(t * 2.9)];
   return r;
+}
+
+/** The same joints seen from the other side (x mirrored): pair with a facing flip so a turn doesn't jump. */
+export function mirrorRig(r: Rig): Rig {
+  const o = {} as Rig;
+  for (const j of JOINTS) o[j] = [-r[j][0], r[j][1]];
+  return o;
 }
 
 export function lerpRig(a: Rig, b: Rig, k: number): Rig {
