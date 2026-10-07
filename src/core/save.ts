@@ -6,6 +6,7 @@
 import type { GameState } from './types';
 import { fmtDate } from './time';
 import LZString from 'lz-string';
+import { ensureCareer } from './career';
 
 export const SAVE_VERSION = 1;
 export type SlotId = '1' | '2' | '3' | 'auto';
@@ -143,6 +144,8 @@ export function exportSave(state: GameState): string {
 
 function migrate(save: SaveFile): SaveFile {
   // Version 1 is current; future migrations go here.
+  // career progression (added later): old saves get a fresh career block
+  ensureCareer(save.state);
   return save;
 }
 

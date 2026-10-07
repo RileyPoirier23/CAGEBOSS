@@ -1,0 +1,186 @@
+{
+ "beat_intro": [
+  "So you're {president}. I'm {owner}. Zenith Holdings bought this league as a tax write-off, but my therapist says I need a hobby that isn't yelling at caddies. So: you. Here's how this works. I come by every few weeks, I tell you what I want, you do it, I give you money and toys. You don't do it, I give you a look. You don't want the look.",
+  "{president}! {owner}. I own the thing you run. Don't get up. Actually, get up, that's my chair. Listen: right now {promotion} is a {tier}. I want it on television, I want it in arenas, I want it on the side of a blimp. Every few weeks I'll swing by with goals. Hit them and the budget grows. Miss them and I start 'exploring options'."
+ ],
+ "greet_pleased": [
+  "{presidentLast}! My guy! The board used the word 'momentum' in a sentence about us. Unprompted.",
+  "There he is. The man, the myth, the forehead. Things are good, {presidentLast}. Don't touch anything.",
+  "{presidentLast}, I brought cigars. Not for you, I just like holding them in your office. Good work lately.",
+  "My accountant smiled yesterday. He hasn't smiled since 2009. Whatever you're doing, keep doing it.",
+  "My wife asked me what you do. I said 'he makes money appear'. She asked if you're single. You're not. Moving on."
+ ],
+ "greet_neutral": [
+  "{presidentLast}. Sit. We need to talk about my expectations, which are high, and your results, which are... present.",
+  "Morning. I've got a tee time in forty minutes, so let's make this quick and profitable.",
+  "{presidentLast}. I read the numbers on the toilet this morning. Appropriate venue for them.",
+  "Hey, {presidentLast}. You look tired. Good. Tired means working. Let's talk.",
+  "I'm going to be honest with you, {presidentLast}, because my life coach says I should practice. It's fine. It's FINE. It could be better."
+ ],
+ "greet_furious": [
+  "{presidentLast}. Close the door. Close it harder. I want the hinges to feel what I feel.",
+  "Do you know what the board called {promotion} on Thursday? A 'distressed asset'. I had to Google it. Then I had to lie down.",
+  "I'm not mad. I'm DISAPPOINTED. No, I'm mad. Both. I'm madappointed.",
+  "{presidentLast}, my yacht has a smaller budget than you and it has never once embarrassed me on the news.",
+  "I've got a guy. A replacement guy. He's waiting in the lobby. He's eating your granola bar. Convince me not to call him in."
+ ],
+ "greet_pleased_corp": [
+  "{presidentLast}. Brynn Kessler-Vance, OmniVore. Your quarter is tracking 'above vibes'. That's our highest internal rating.",
+  "Good morning. Leadership loves the content velocity. I'm told that means the fights."
+ ],
+ "greet_neutral_corp": [
+  "{presidentLast}. I have nine minutes and a synergy deck. Let's align.",
+  "Hi. We're going to do a quick check-in. Think of me as a friend who can fire you."
+ ],
+ "greet_furious_corp": [
+  "{presidentLast}. Leadership has flagged {promotion} as 'a learning opportunity'. Nobody wants to be a learning opportunity.",
+  "I'm going to be direct, which at OmniVore is a disciplinary offense: this is bad."
+ ],
+ "met": [
+  "You did it: {obj}. Look at you. I'm wiring the bonus before I change my mind.",
+  "\"{obj}\" - done. Check your budget, there's a little something in there. Don't tell the fighters.",
+  "{obj}? Nailed it. I told the board you were a genius. I also told them I could dunk. One of those was true.",
+  "I asked you to {obj}, and you did. Do you know how rare that is? My kids can't even load a dishwasher."
+ ],
+ "failed": [
+  "I asked for one thing: {obj}. ONE. You gave me zero. That's not even a number, {presidentLast}, that's a hole.",
+  "\"{obj}.\" That was the assignment. What happened? Don't answer. I can smell the excuse from here.",
+  "{obj} - missed. I'm writing it in my little book. You don't want to be in the little book.",
+  "We said {obj}. You said 'sure thing, boss'. I say: where's my thing, {presidentLast}?"
+ ],
+ "met_corp": [
+  "{obj}: complete. Leadership will send a celebratory email with no attachments. Budget transfer incoming."
+ ],
+ "failed_corp": [
+  "{obj}: not achieved. I've scheduled a post-mortem. You are the mortem."
+ ],
+ "no_results": [
+  "Nothing came due since last time, so I'll just stand here and judge your office decor. That poster is crooked.",
+  "No report card this week. Use the time wisely. Or at least look busy when I walk by."
+ ],
+ "warning": [
+  "Between us: the board is talking about you. Not the fun kind of talking. The kind with lawyers in the room.",
+  "My patience is a fuel tank, {presidentLast}, and the little light is ON."
+ ],
+ "assign": [
+  "Here's what I want next. I wrote it on a napkin so you know it's serious.",
+  "New homework. Do it and the money keeps coming. Do it well and I'll unlock the good toys.",
+  "Next goals. My consultant charged me six figures for these, so treat them like scripture."
+ ],
+ "assign_corp": [
+  "Here are your KPIs. I've bolded the ones that decide whether you have a parking space."
+ ],
+ "signoff": [
+  "Alright. I've got a lunch with a senator and a sea bass. Make me proud.",
+  "Gotta go. My driver is double-parked on a fire hydrant. It's his third this week. Legend.",
+  "That's all. Hit your numbers and the {nexttier} life is right around the corner.",
+  "I'm off. Don't screw this up. Or do, and make it entertaining.",
+  "Love you, {presidentLast}. Platonically. Professionally. Financially, mostly."
+ ],
+ "signoff_corp": [
+  "Thanks for your time. This meeting could have been an email, and next time it will be.",
+  "Great sync. Leadership will be in touch. Leadership is always in touch."
+ ],
+ "gift_prospect": [
+  "One more thing. Kid from my cousin's gym. {fighter}. Twenty-something, hits like a car accident, scouts are drooling. He wants in. Cheap, too.",
+  "I found you a fighter. {fighter}. My guy in the amateur scene says he's the next big thing. I've never heard my guy say that. My guy usually says 'no comment'."
+ ],
+ "gift_nephew": [
+  "Now. Family business. My sister's kid, {fighter}. He's 'into MMA'. He's done a lot of 'cardio'. I need you to sign him. I'm not asking. I'm asking in a way that isn't asking.",
+  "My nephew {first} wants to be a fighter. He has a ring light, a podcast and a black belt from a strip mall. You're going to sign him. It'll make Thanksgiving bearable."
+ ],
+ "gift_vet": [
+  "My golf buddy swears by {fighter}. Says he was 'unbelievable in 2011'. It's not 2011, but he's cheap and he owns a boat. Want him?",
+  "Here's a veteran. {fighter}. Seen it all, felt most of it. Good for the locker room, they tell me. Your call."
+ ],
+ "gift_prospect_yes": [
+  "Smart. That's why I keep you around. Well, that and the forehead.",
+  "Good. If he turns into a champion I'm taking full credit at the club."
+ ],
+ "gift_prospect_no": [
+  "Your loss. Probably my loss. Definitely somebody's loss.",
+  "Fine. When he's a champion somewhere else I'm going to frame his poster and hang it in your office."
+ ],
+ "gift_nephew_yes": [
+  "Wonderful. My sister will stop calling me. You're a hero, {presidentLast}. Don't let him get hurt. Let him get a LITTLE hurt. Character.",
+  "Beautiful. He's going to be a star. He already has the merch. He made it before he signed."
+ ],
+ "gift_nephew_no": [
+  "You said no to my NEPHEW? To family? I'm going to remember this at the next budget meeting.",
+  "Okay. Okay. I'll tell my sister you said no. In person. At your house, probably."
+ ],
+ "gift_vet_yes": [
+  "Great, my buddy's thrilled. He's going to tell everyone at the club he 'made a call'.",
+  "Good man. Respect your elders. Punch them too, but respect them."
+ ],
+ "gift_vet_no": [
+  "Fair. He's old. I'm old. We're all old. Pass.",
+  "No? Fine, I'll tell my buddy you said he was 'past it'. He'll cry on the boat."
+ ],
+ "gift_prospect_corp": [
+  "OmniVore Analytics flagged a prospect: {fighter}. The model gives him a 'synergy score' of 94. I don't know what that means either. Sign him?"
+ ],
+ "gift_vet_corp": [
+  "Brand partnerships wants {fighter} on the roster. He has 'legacy equity'. He also has two bad knees. Your call."
+ ],
+ "gift_prospect_yes_corp": [
+  "Great. I'll tell the model it was right. It gets insufferable."
+ ],
+ "gift_prospect_no_corp": [
+  "Noted. I'll log it as 'human override'. Those get reviewed."
+ ],
+ "gift_vet_yes_corp": [
+  "Wonderful. Brand partnerships will send a fruit basket. To him, not you."
+ ],
+ "gift_vet_no_corp": [
+  "Fine. Brand partnerships will be sad in a very professional way."
+ ],
+ "warning_corp": [
+  "You're on a performance improvement plan now. It's a PDF. The PDF is long."
+ ],
+ "no_results_corp": [
+  "No deliverables came due. I'll use the time to look disappointed in a general sense."
+ ],
+ "beat_contender": [
+  "Big idea. MY big idea, I want that clear. A show for nobodies. Hungry kids, one night, win and you get a contract. Tuesday nights. Cheap studio. Television eats it up. You run it, I take credit."
+ ],
+ "beat_tier_1": [
+  "{promotion} is officially a {tier}. Three counties know our name. One of them thinks we're a lawn service, but still. Next stop: {nexttier}."
+ ],
+ "beat_tier_2": [
+  "We're a {tier} now. National, {presidentLast}! A guy recognized our logo at the airport. He was a TSA agent and he was confiscating it, but he RECOGNIZED it."
+ ],
+ "beat_tier_3": [
+  "{tier}. Our logo is on a bus, a billboard, and a stripper's lower back in Tampa. That's brand awareness. The board wants {nexttier} and so do I."
+ ],
+ "beat_tier_4": [
+  "{tier}. Foreign governments are calling. A prince asked if we do 'private events'. I said we'd 'circle back'. I've never circled back in my life."
+ ],
+ "beat_tier_5": [
+  "{tier}. That's the top of the mountain, {presidentLast}. Nothing left to climb. So now we defend it. From everyone. Forever. Sleep is for boxing promoters."
+ ],
+ "beat_act_2": [
+  "A fight went viral. My grandmother sent me the clip. My GRANDMOTHER. People care now, {presidentLast}. Which means people are watching. Which means you can't screw up quietly anymore."
+ ],
+ "beat_act_3": [
+  "The board wants international. Visas, foreign commissions, women's divisions, a fighter who wants to box. I want it all and I want it cheap. Welcome to the empire years."
+ ],
+ "beat_act_4": [
+  "It's done. I sold. Billions, {presidentLast}. You're still the president, you just have a new boss now, and her calendar has fifteen-minute increments. Be nice to her. Actually, be afraid of her."
+ ],
+ "beat_act_5": [
+  "This is the last chapter, {presidentLast}. Legacy time. Whatever you do from here is what they'll write on your tombstone. Make it a good one. Make it a sponsored one."
+ ],
+ "beat_sale_rumor": [
+  "Between us: there are people sniffing around. Big people. Conglomerate people. If they make the right offer, I'm out. Keep the numbers pretty. Pretty numbers make pretty offers."
+ ],
+ "beat_sold": [
+  "Hi, {presidentLast}. Brynn Kessler-Vance, Executive VP of Synergy at OmniVore Global Entertainment & Defense. Chet sends his regards from a yacht. I'll be doing the check-ins now. I don't play golf. I play to win."
+ ],
+ "beat_nephew_won": [
+  "My nephew WON a fight. In a cage! My sister cried. I cried. The other guy cried, I think, his face was hard to read. Whatever you're doing, keep the matchmaking 'gentle'."
+ ],
+ "beat_nephew_lost": [
+  "So my nephew lost. My sister isn't speaking to me, which is a gift, but she's speaking to her LAWYER, which is not. Find him a softer opponent. A much softer opponent. A pillow with arms."
+ ]
+}

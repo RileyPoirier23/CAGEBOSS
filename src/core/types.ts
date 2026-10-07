@@ -639,4 +639,77 @@ export interface GameState {
   stats: Record<string, number>;
   ending: string | null;
   endingWeek: number | null;
+  /** career progression: clout, unlocks, the owner's check-ins, contender series, rank points (see src/sim/career.ts) */
+  career?: CareerState;
+}
+
+// ---------------------------------------------------------------- career progression
+
+/** One movement on the rankings wall (0 = champion, null = unranked). */
+export interface RankMove {
+  id: string;
+  div: string;
+  from: number | null;
+  to: number | null;
+}
+
+export type ObjectiveKind =
+  | 'sellout' | 'title_fight' | 'sign' | 'med_bills' | 'fans' | 'gate' | 'finish' | 'clean_desk'
+  | 'contender_sign' | 'book_gift' | 'new_champ' | 'ppv_buys' | 'cash';
+
+export interface OwnerObjective {
+  id: string;
+  kind: ObjectiveKind;
+  text: string;
+  target: number;
+  fighter?: string;
+  issued: number; // week
+  due: number; // last week it can be met in
+  progress: number;
+  status: 'open' | 'met' | 'failed';
+  reward: { clout: number; cash: number };
+  reviewed?: boolean; // the owner has commented on the result at a check-in
+}
+
+export interface OwnerVisit {
+  week: number;
+  beat: string | null; // story beat id played at this visit
+  lines: string[]; // what the owner says (greeting + verdicts + beat)
+  results: string[]; // objective ids reviewed this visit
+  objectives: string[]; // objective ids issued this visit
+  gift: { fighter: string; kind: 'prospect' | 'nephew' | 'vet'; purse: number } | null;
+  giftDone?: 'signed' | 'passed';
+}
+
+export interface CareerState {
+  clout: number;
+  tier: number;
+  unlocks: string[];
+  unlockQueue: string[]; // unlocked, waiting for their UNLOCKED moment in the UI
+  owner: {
+    person: string;
+    nextVisit: number;
+    visits: number;
+    objectives: OwnerObjective[];
+    visit: OwnerVisit | null; // pending check-in (shown on the morning paper)
+    beats: string[];
+    gifts: string[]; // fighters the owner handed you
+    nephew: string | null;
+    seq: number;
+  };
+  contender: {
+    event: FightEvent | null; // this cycle's card (lives outside s.events)
+    done: boolean;
+    seasons: number; // cards run
+    signed: string[];
+    alumni: string[]; // everyone who has fought on it (losers can come back)
+    winners: string[]; // last card's winners awaiting offers
+  };
+  rp: Record<string, number>; // ranking points
+  wall: Record<string, string[]>; // last published wall per division: [champ, #1..#15]
+  p4p: string[];
+  moves: { week: number; event: string; list: RankMove[] };
+  headlines: string[]; // recently used front-page template ids
+  medBills: number; // doctor's bills this week (reset weekly)
+  history: { week: number; text: string }[];
 }

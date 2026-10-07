@@ -11,7 +11,8 @@ import { simulateFight, quickOdds } from './fight';
 import {
   isAvailable, isBooked, fullName, addCareerLog, computeStarPower, overall, isOurs, marketPurse,
 } from './fighters';
-import { undisputed, interim, awardBelt, rankScore, computeRankings } from './rankings';
+import { undisputed, interim, awardBelt, computeRankings, rankingsOnBout, rankPoints, rankOf, rankScore } from './rankings';
+import { careerOnEvent } from './career';
 import { earn, spend, scale, adjustMeter } from './econ';
 import { divisionName } from './divisions';
 import { addNews } from './news';
@@ -173,7 +174,8 @@ export function autoCard(s: GameState, ev: FightEvent, rng: Rng): void {
     if (!byDiv.has(f.division)) byDiv.set(f.division, []);
     byDiv.get(f.division)!.push(f);
   }
-  for (const list of byDiv.values()) list.sort((a, b) => rankScore(s, b) - rankScore(s, a));
+  // the rankings decide who's next: title shots go to the highest-ranked available contender
+  for (const list of byDiv.values()) list.sort((a, b) => rankPoints(s, b) - rankPoints(s, a));
   const pairs: { a: Fighter; b: Fighter; score: number; title: string | null }[] = [];
   // title fights on numbered events
   if (ev.number !== null) {
@@ -349,6 +351,7 @@ const methodLabel = (m: string) => ({ KO: 'KO', TKO: 'TKO', SUB: 'submission', D
 /** Apply a finished bout's consequences to both fighters, belts and news. */
 export function applyBout(s: GameState, ev: FightEvent, bout: Bout, rng: Rng): void {
   const r = bout.result!;
+  rankingsOnBout(s, bout); // before records & belts change
   if (r.winner && r.loser) feudResult(s, r.winner, r.loser);
   const A = s.fighters[bout.a];
   const B = s.fighters[bout.b];
@@ -466,7 +469,14 @@ export function cardDraw(s: GameState, ev: FightEvent): number {
     const heat = getFeud(s, b.a, b.b)?.heat ?? 0;
     return s.fighters[b.a]?.rivals.includes(b.b) ? 6 + heat / 10 : heat / 12;
   }));
-  return top * 0.75 + depth * 0.25 + titles + rivalry;
+  // ranked match-ups sell: a top-5 clash or a #1 contender fight at the top of the card
+  const ranked = Math.max(0, ...live.slice(0, 2).map((b) => {
+    const ra = rankOf(s, b.a);
+    const rb = rankOf(s, b.b);
+    if (ra === null || rb === null) return 0;
+    return Math.max(ra, rb) <= 5 ? 4 : Math.max(ra, rb) <= 10 ? 2 : 0;
+  }));
+  return top * 0.75 + depth * 0.25 + titles + rivalry + ranked;
 }
 
 export function estimateFinancials(s: GameState, ev: FightEvent): EventFinancials {
@@ -572,7 +582,7 @@ export function finalizeEvent(s: GameState, ev: FightEvent, bonusIds: string[]):
     weight: 3,
     tone: avgFotn > 55 ? 0.3 : 0,
   });
-  computeRankings(s);
+  careerOnEvent(s, ev, computeRankings(s));
   return fin;
 }
 
