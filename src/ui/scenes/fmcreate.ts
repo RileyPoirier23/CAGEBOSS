@@ -41,7 +41,7 @@ export class FMCreateScene extends Scene {
   private arch: Archetype = 'striker';
   private look: Look;
   private inputs: { remove: () => void }[] = [];
-  private preview = new Container();
+  private preview: Container = new Container();
 
   constructor(g: ConstructorParameters<typeof Scene>[0]) {
     super(g);
@@ -100,13 +100,14 @@ export class FMCreateScene extends Scene {
     y += 16;
     p.addChild(text(ARCHES.find((a) => a.value === this.arch)!.blurb, 84, y, { small: true, width: 190, color: PAL.bone, maxLines: 2 }));
     y += 22;
-    p.addChild(text('You start 3-0 from the regional scene, unranked, with $2,500 and a cousin who says he can corner.', 8, y, { small: true, width: 266, color: PAL.ash, maxLines: 3 }));
+    p.addChild(text('You start 0-0 on the amateur circuit with $2,500 and a cousin who says he can corner. Climb the ladder, turn pro, make the CBFC.', 8, y, { small: true, width: 266, color: PAL.ash, maxLines: 3 }));
 
     // right: look
     const q = new Container();
     q.position.set(300, 40);
     r.addChild(q);
     q.addChild(box(170, 206, PAL.night, PAL.slate, { bevel: true }));
+    this.preview = new Container(); // the old one was destroyed with the last build
     this.preview.position.set(53, 8);
     q.addChild(this.preview);
     this.drawPreview();
@@ -132,6 +133,7 @@ export class FMCreateScene extends Scene {
   }
 
   private drawPreview(): void {
+    if (this.preview.destroyed) return;
     this.preview.removeChildren().forEach((c) => c.destroy({ children: true }));
     this.preview.addChild(portrait({ id: 'player-preview', look: this.look, gender: this.gender, age: 23, variant: 'plain', attire: 'shirtless' }, 64));
   }

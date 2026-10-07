@@ -18,13 +18,19 @@ import { fullName, overall } from '../../sim/fighters';
 import { divisionName } from '../../sim/divisions';
 import { rankLabel, rankOf, undisputed } from '../../sim/rankings';
 import {
-  fm, me, BODY_PARTS, STAFF_ROLES, PLANS, doAction, treat, clinicCost, setStaff, weeklyStaffCost, calloutTargets, callOut, humblePost,
+  fm, me, BODY_PARTS, STAFF_ROLES, PLANS, doAction, treat, clinicCost, weeklyStaffCost, calloutTargets, callOut, humblePost,
   startPeds, stopPeds, bareknuckle, gamble, acceptOffer, resolveEvent, endWeek, fightThisWeek, weighInInfo, doWeighIn, fightEvent,
   afterFight, postFightCallout, weightLimit, fightReadySkills, type ActionId, type StaffId, type BodyPart,
+  ensureFM, condition, trainSkill, cutWeight, hire, fire, resolveDoc, fightWeekPaperwork, cagesideReact, bkNext, bkPurse, bkSpot,
+  ladderSpot, TIER_NAME, BKB_NAME, BRADIE, bradieOnYou, askOnlyFighters, postContent, cardSlot, SLOT_NAME, type CutMethod, type FMDoc,
 } from '../../sim/fighter';
 import { FightNightScene } from './fightnight';
 import { openCorner } from '../cutman';
 import type { GamePlan } from '../../sim/fight';
+import { openLiveFight } from '../livefight';
+import { openJumpRope, openTyreChop } from '../minigames';
+import { officialsFor } from '../../sim/events';
+import { portrait, namedPortrait } from '../sprites';
 
 const bar = (w: number, v: number, color: number): Graphics => {
   const g = new Graphics();
@@ -36,6 +42,7 @@ const bar = (w: number, v: number, color: number): Graphics => {
 export class FMHubScene extends Scene {
   music = 'office' as const;
   private msg = '';
+  private paperworkWarned = false;
   private rng(): Rng {
     return new Rng(this.g.state!.rng);
   }
@@ -44,6 +51,7 @@ export class FMHubScene extends Scene {
   }
 
   enter(): void {
+    if (this.g.state) ensureFM(this.g.state);
     super.enter();
     setTimeout(() => this.popups(), 300);
   }
@@ -64,13 +72,21 @@ export class FMHubScene extends Scene {
     const frame = new Container();
     const wrap = this.g.modal(frame, { dim: 0.7 });
     const bw = 320;
-    const bh = 120;
+    const many = ev.choices.length > 3;
+    const bh = many ? 74 + ev.choices.length * 17 : 120;
     const bx = (W - bw) / 2;
     const by = (H - bh) / 2;
     frame.addChild(box(bw, bh, PAL.night, PAL.blood, { bevel: true })).position.set(bx, by);
-    frame.addChild(text(ev.title, bx + 8, by + 6, { color: PAL.blood }));
-    frame.addChild(text(ev.text, bx + 8, by + 20, { small: true, width: bw - 16, color: PAL.bone, maxLines: 6 }));
-    ev.choices.forEach((c, i) => frame.addChild(button(c.label, bx + 8 + i * ((bw - 16) / ev.choices.length), by + bh - 22, (bw - 16) / ev.choices.length - 4, 15, () => {
+    const face = ev.portrait?.startsWith('npc:') ? namedPortrait(ev.portrait.slice(4), 32) : null;
+    const tx = face ? bx + 46 : bx + 8;
+    if (face) {
+      face.position.set(bx + 8, by + 8);
+      frame.addChild(face);
+    }
+    frame.addChild(text(ev.title, tx, by + 6, { color: PAL.blood }));
+    frame.addChild(text(ev.text, tx, by + 20, { small: true, width: bw - (tx - bx) - 8, color: PAL.bone, maxLines: many ? 5 : 6 }));
+    const cw = many ? bw - 16 : (bw - 16) / ev.choices.length - 4;
+    ev.choices.forEach((c, i) => frame.addChild(button(c.label, many ? bx + 8 : bx + 8 + i * ((bw - 16) / ev.choices.length), many ? by + 66 + i * 17 : by + bh - 22, cw, 15, () => {
       const r = this.rng();
       const out = resolveEvent(s, c.id, r);
       this.save(r);
@@ -107,9 +123,13 @@ export class FMHubScene extends Scene {
     L.addChild(text(`"${f.nick}"`, 72, 24, { small: true, width: 72, color: PAL.gold, maxLines: 2 }));
     L.addChild(text(record(f.record), 72, 42, { color: PAL.bone }));
     const rk = rankOf(s, f.id);
-    L.addChild(text(rk === 0 ? 'CHAMPION' : rk ? `RANKED #${rk}` : 'UNRANKED', 72, 54, { small: true, color: rk === 0 ? PAL.gold : rk ? PAL.sky : PAL.ash }));
-    L.addChild(text(divisionName(f.division), 4, 72, { small: true, color: PAL.ash }));
-    L.addChild(text(`OVR ${Math.round(overall(f.skills))}  •  AGE ${f.age}`, 4, 82, { small: true, color: PAL.ash }));
+    const spot = ladderSpot(s);
+    if (st.tier === 'of') L.addChild(text(rk === 0 ? 'CHAMPION' : rk ? `RANKED #${rk}` : 'UNRANKED', 72, 54, { small: true, color: rk === 0 ? PAL.gold : rk ? PAL.sky : PAL.ash }));
+    else L.addChild(text(`${st.tier === 'amateur' ? 'AMATEUR' : 'FURY FC'} ${spot === 0 ? 'CHAMP' : '#' + ((spot ?? 0) + 1)}`, 72, 54, { small: true, color: spot === 0 ? PAL.gold : PAL.sky }));
+    L.addChild(text(`${divisionName(f.division)}  •  ${st.tier === 'of' ? 'CBFC' : st.tier === 'amateur' ? 'Amateur' : 'Regional pro'}`, 4, 72, { small: true, color: PAL.ash, width: 140, maxLines: 1 }));
+    const cond = condition(s);
+    L.addChild(text(`OVR ${Math.round(overall(f.skills))}  •  AGE ${f.age}  •`, 4, 82, { small: true, color: PAL.ash }));
+    L.addChild(text(cond.label === 'PEAK CONDITION' ? 'PEAK' : cond.label, 98, 82, { small: true, color: PAL[cond.color] }));
     let y = 96;
     const vit = (label: string, v: number, c: number, right = '') => {
       L.addChild(text(label, 4, y, { small: true, color: PAL.ash }));
@@ -139,7 +159,7 @@ export class FMHubScene extends Scene {
     for (let i = 0; i < 3; i++) M.addChild(new Graphics().rect(110 + i * 14, 5, 10, 8).fill(i < st.ap ? PAL.gold : 0x2a2630));
     const act = (label: string, yy: number, fn: () => void, opts: { disabled?: boolean; fill?: number; tip?: string } = {}) =>
       M.addChild(button(label, 6, yy, 148, 15, fn, { small: true, fill: opts.fill ?? PAL.steel, disabled: opts.disabled || st.ap <= 0, tooltip: opts.tip }));
-    const run = (a: ActionId, focus: keyof Skills | 'cheap' | 'pro' | null = null) => {
+    const run = (a: ActionId, focus: keyof Skills | 'cheap' | 'pro' | 'partner' | null = null) => {
       const r2 = this.rng();
       this.msg = doAction(s, a, focus, r2);
       this.save(r2);
@@ -147,19 +167,21 @@ export class FMHubScene extends Scene {
       this.refresh();
       setTimeout(() => this.popups(), 100);
     };
-    act('TRAIN…', 18, () => this.trainMenu(run), { tip: 'Pick a skill to drill' });
-    act('SPAR…', 35, () => this.sparMenu(run), { tip: 'Big gains, real risk' });
-    act('WORK A SHIFT', 52, () => run('work'), { tip: 'Money, but it drains you' });
-    act('REST & RECOVER', 69, () => run('rest'));
-    act('GO OUT TONIGHT', 86, () => run('party'), { fill: PAL.plum, tip: 'Morale up. What could go wrong?' });
-    act('BLEETER / CALLOUTS', 103, () => this.mediaMenu(), { fill: PAL.sky });
+    act('TRAIN…', 17, () => this.trainMenu(), { tip: 'Pick a skill to drill. Peak condition = bigger gains' });
+    act('SPAR…', 32, () => this.sparMenu(run), { tip: 'Big gains, real risk' });
+    act('CUT WEIGHT…', 47, () => this.cutMenu(), { fill: PAL.ember, tip: 'Roadwork, sauna or a strict diet' });
+    act('WORK A SHIFT', 62, () => run('work'), { tip: 'Money, but it drains you' });
+    act('REST & RECOVER', 77, () => run('rest'));
+    act('GO OUT TONIGHT', 92, () => run('party'), { fill: PAL.plum, tip: 'Morale up. What could go wrong?' });
+    act('BLEETER / CALLOUTS', 107, () => this.mediaMenu(), { fill: PAL.sky });
     // free actions
-    const free = (label: string, yy: number, fn: () => void, fill: number = PAL.shadow) => M.addChild(button(label, 6, yy, 148, 15, fn, { small: true, fill }));
-    free('CONDITION & CLINIC', 126, () => this.conditionMenu());
-    free('STAFF', 143, () => this.staffMenu());
-    free('RANKINGS', 160, () => this.rankingsMenu());
-    if (st.undergroundOpen) free('THE UNDERGROUND', 177, () => this.undergroundMenu(), 0x1d3a22);
-    if (this.msg) M.addChild(text(this.msg, 6, 196, { small: true, width: 148, color: PAL.bone, maxLines: 3 }));
+    const free = (label: string, yy: number, fn: () => void, fill: number = PAL.shadow) => M.addChild(button(label, 6, yy, 148, 14, fn, { small: true, fill }));
+    free(`PAPERWORK${st.inbox.length ? ` (${st.inbox.length})` : ''}`, 126, () => this.paperwork(), st.inbox.length ? PAL.ember : PAL.shadow);
+    free('CONDITION & CLINIC', 141, () => this.conditionMenu());
+    free('STAFF', 156, () => this.staffMenu());
+    free(st.tier === 'of' ? 'RANKINGS' : 'THE LADDER', 171, () => this.rankingsMenu());
+    if (st.undergroundOpen) free('THE UNDERGROUND', 186, () => this.undergroundMenu(), 0x1d3a22);
+    if (this.msg) M.addChild(text(this.msg, 6, 202, { small: true, width: 148, color: PAL.bone, maxLines: 3 }));
 
     // ------------------------------------------------ right: fights & feed
     const R = new Container();
@@ -169,14 +191,14 @@ export class FMHubScene extends Scene {
     if (st.fight) {
       const o = st.fight;
       const opp = s.fighters[o.opp];
-      R.addChild(text(o.title ? 'TITLE FIGHT' : 'NEXT FIGHT', 6, 4, { color: o.title ? PAL.gold : PAL.blood }));
+      R.addChild(text(o.title || o.tierTitle ? 'TITLE FIGHT' : 'NEXT FIGHT', 6, 4, { color: o.title || o.tierTitle ? PAL.gold : PAL.blood }));
       const op = fighterPortrait(opp, 32);
       op.position.set(6, 18);
       R.addChild(op);
       R.addChild(text(fullName(opp), 42, 18, { small: true, width: 104, color: PAL.bone, maxLines: 2 }));
-      R.addChild(text(`${record(opp.record)}  ${rankLabel(s, opp.id)}`, 42, 36, { small: true, color: PAL.ash }));
+      R.addChild(text(`${record(opp.record)}  ${st.tier === 'of' ? rankLabel(s, opp.id) : '#' + (st.ladder.indexOf(opp.id) + 1)}`, 42, 36, { small: true, color: PAL.ash }));
       const wk = o.week - s.week;
-      R.addChild(text(wk <= 0 ? 'FIGHT WEEK!' : `In ${wk} week${wk > 1 ? 's' : ''}`, 6, 56, { small: true, color: wk <= 0 ? PAL.gold : PAL.bone }));
+      R.addChild(text(`${wk <= 0 ? 'FIGHT WEEK!' : `In ${wk} week${wk > 1 ? 's' : ''}`}  •  ${SLOT_NAME(cardSlot(s), st.tier === 'of')}`, 6, 56, { small: true, color: wk <= 0 ? PAL.gold : PAL.bone }));
       R.addChild(text(`${money(o.purse)} + ${money(o.win)} win  •  ${o.rounds} rds`, 6, 66, { small: true, color: PAL.ash }));
       const odds = Math.round(100 / (1 + Math.exp(-(overall(fightReadySkills(s)) - overall(opp.skills)) / 6)));
       R.addChild(text(`Your odds: about ${odds}%`, 6, 76, { small: true, color: odds >= 50 ? PAL.moss : PAL.ember }));
@@ -185,7 +207,7 @@ export class FMHubScene extends Scene {
       st.offers.slice(0, 3).forEach((o, i) => {
         const opp = s.fighters[o.opp];
         const yy = 16 + i * 30;
-        R.addChild(text(`${o.title ? 'TITLE: ' : ''}${opp.last} ${record(opp.record)} ${rankLabel(s, opp.id)}`, 6, yy, { small: true, width: 102, color: o.title ? PAL.gold : PAL.bone, maxLines: 1 }));
+        R.addChild(text(`${o.title || o.tierTitle ? 'TITLE: ' : ''}${opp.last} ${record(opp.record)} ${st.tier === 'of' ? rankLabel(s, opp.id) : '#' + (st.ladder.indexOf(opp.id) + 1)}`, 6, yy, { small: true, width: 102, color: o.title || o.tierTitle ? PAL.gold : PAL.bone, maxLines: 1 }));
         R.addChild(text(`${money(o.purse)}+${money(o.win)} • wk ${o.week + 1}`, 6, yy + 9, { small: true, color: PAL.ash }));
         R.addChild(text(o.why, 6, yy + 18, { small: true, color: PAL.ash, width: 102, maxLines: 1 }));
         R.addChild(button('SIGN', 110, yy + 2, 34, 14, () => { acceptOffer(s, i); sfx('cash'); this.refresh(); this.g.autosave(); }, { small: true, fill: PAL.moss }));
@@ -218,19 +240,57 @@ export class FMHubScene extends Scene {
 
   // ---------------------------------------------------------------- menus
 
-  private trainMenu(run: (a: ActionId, f: keyof Skills) => void): void {
-    const win = openWindow(this.g, 'Train', 220, 120);
-    const f = me(this.g.state!);
+  private trainMenu(): void {
+    const s = this.g.state!;
+    const win = openWindow(this.g, 'Train', 240, 150);
+    const f = me(s);
+    const cond = condition(s);
+    const after = (k: keyof Skills, score: number | null) => {
+      const r = this.rng();
+      this.msg = trainSkill(s, k, r, score);
+      this.save(r);
+      sfx('click');
+      this.refresh();
+      setTimeout(() => this.popups(), 100);
+    };
     const keys: [keyof Skills, string][] = [['striking', 'Striking'], ['power', 'Power'], ['wrestling', 'Wrestling'], ['grappling', 'Jiu-jitsu'], ['cardio', 'Cardio'], ['fightIQ', 'Fight IQ'], ['chin', 'Neck & chin'], ['durability', 'Conditioning']];
-    keys.forEach(([k, label], i) => win.body.addChild(button(`${label} (${Math.round(f.skills[k])})`, 6 + (i % 2) * 106, 6 + Math.floor(i / 2) * 18, 102, 15, () => { win.close(); run('train', k); }, { small: true, fill: PAL.steel })));
-    win.body.addChild(text('Gains depend on your coach, energy and how close you are to your ceiling.', 6, 82, { small: true, width: 206, color: PAL.ash }));
+    keys.forEach(([k, label], i) => win.body.addChild(button(`${label} (${Math.round(f.skills[k])})`, 6 + (i % 2) * 116, 6 + Math.floor(i / 2) * 17, 112, 14, () => { win.close(); after(k, null); }, { small: true, fill: PAL.steel })));
+    win.body.addChild(text('MINI GAMES (score boosts the gains):', 6, 76, { small: true, color: PAL.gold }));
+    win.body.addChild(button('JUMP ROPE: cardio', 6, 86, 112, 14, () => { win.close(); openJumpRope(this.g, (sc) => after('cardio', sc)); }, { small: true, fill: PAL.moss }));
+    win.body.addChild(button('TYRE CHOP: power', 122, 86, 112, 14, () => { win.close(); openTyreChop(this.g, (sc) => after('power', sc)); }, { small: true, fill: PAL.moss }));
+    win.body.addChild(text(`Condition: ${cond.label} (x${cond.mult} gains). Training burns weight. Coach, energy, morale and health all count.`, 6, 106, { small: true, width: 226, color: cond.label === 'PEAK CONDITION' ? PAL.gold : PAL.ash, maxLines: 3 }));
   }
 
-  private sparMenu(run: (a: ActionId, f: 'cheap' | 'pro') => void): void {
-    const win = openWindow(this.g, 'Spar', 230, 92);
+  private cutMenu(): void {
+    const s = this.g.state!;
+    const st = fm(s);
+    const win = openWindow(this.g, 'Cut weight', 250, 128);
+    const lim = weightLimit(s);
+    win.body.addChild(text(`You walk around ${st.walkWeight.toFixed(1)} lbs. Limit ${lim}. ${st.water > 0 ? `(${st.water.toFixed(1)} lbs is sauna water.)` : ''}`, 6, 4, { small: true, width: 238, color: PAL.bone }));
+    const go = (m: CutMethod) => {
+      win.close();
+      this.msg = cutWeight(s, m);
+      sfx('click');
+      this.refresh();
+    };
+    const opts: [CutMethod, string, string][] = [
+      ['roadwork', 'ROADWORK', '-2 lbs and some cardio. Tiring.'],
+      ['diet', 'STRICT DIET', '-1.5 lbs. Morale takes a hit. Nutritionist helps.'],
+      ['sauna', 'SAUNA', '-4 lbs fast, but water comes back unless you weigh in this week. Hurts the body.'],
+    ];
+    opts.forEach(([m, label, blurb], i) => {
+      win.body.addChild(button(label, 6, 22 + i * 30, 70, 14, () => go(m), { small: true, fill: m === 'sauna' ? PAL.ember : PAL.steel, disabled: st.ap <= 0 }));
+      win.body.addChild(text(blurb, 82, 22 + i * 30, { small: true, width: 160, color: PAL.ash, maxLines: 2 }));
+    });
+  }
+
+  private sparMenu(run: (a: ActionId, f: 'cheap' | 'pro' | 'partner') => void): void {
+    const st = fm(this.g.state!);
+    const win = openWindow(this.g, 'Spar', 230, st.partner ? 112 : 92);
     win.body.addChild(button('PAID PROS ($150)', 6, 8, 104, 16, () => { win.close(); run('spar', 'pro'); }, { small: true, fill: PAL.steel }));
     win.body.addChild(button('WHOEVER SHOWS UP', 116, 8, 104, 16, () => { win.close(); run('spar', 'cheap'); }, { small: true, fill: PAL.ember }));
     win.body.addChild(text('Pros are controlled and safe-ish. Gym randoms go 100%, hurt you, and sometimes film it.', 6, 30, { small: true, width: 214, color: PAL.ash }));
+    if (st.partner) win.body.addChild(button(`YOUR PARTNER: ${st.partner.name.toUpperCase()} (FREE)`, 6, 58, 214, 16, () => { win.close(); run('spar', 'partner'); }, { small: true, fill: PAL.plum }));
   }
 
   private conditionMenu(): void {
@@ -268,17 +328,25 @@ export class FMHubScene extends Scene {
   private staffMenu(): void {
     const s = this.g.state!;
     const st = fm(s);
-    const win = openWindow(this.g, 'Your team', 330, 160);
+    const win = openWindow(this.g, 'Your team', 360, 236);
     const draw = () => {
       win.body.removeChildren().forEach((c) => c.destroy({ children: true }));
+      win.body.addChild(text('YOUR TEAM', 6, 2, { small: true, color: PAL.gold }));
       STAFF_ROLES.forEach((role, i) => {
-        const yy = 4 + i * 34;
+        const yy = 12 + i * 13;
         const t = st.staff[role.id as StaffId];
-        win.body.addChild(text(`${role.name.toUpperCase()}: ${role.tiers[t]}`, 6, yy, { small: true, color: PAL.gold }));
-        win.body.addChild(text(role.blurb, 6, yy + 9, { small: true, width: 220, color: PAL.ash }));
-        win.body.addChild(text(role.id === 'manager' ? `${[0, 10, 15, 20][t]}% cut` : `${money(role.cost[t])}/wk`, 6, yy + 19, { small: true, color: PAL.bone }));
-        win.body.addChild(button('-', 250, yy + 2, 16, 14, () => { setStaff(s, role.id as StaffId, t - 1); draw(); this.refresh(); }, { small: true, disabled: t <= 0 }));
-        win.body.addChild(button('+', 270, yy + 2, 16, 14, () => { setStaff(s, role.id as StaffId, t + 1); draw(); this.refresh(); }, { small: true, disabled: t >= 3, fill: PAL.moss }));
+        win.body.addChild(text(`${role.name}: ${st.staffNames[role.id as StaffId]}`, 6, yy, { small: true, color: PAL.bone, width: 200, maxLines: 1 }));
+        win.body.addChild(text(role.id === 'manager' ? `${[0, 10, 15, 20][t]}% cut` : `${money(role.cost[t])}/wk`, 210, yy, { small: true, color: PAL.ash }));
+        if (t > 0) win.body.addChild(button('FIRE', 300, yy - 1, 40, 11, () => { this.msg = fire(s, role.id as StaffId); draw(); this.refresh(); }, { small: true, fill: PAL.blood }));
+      });
+      win.body.addChild(text('FOR HIRE (new names every 4 weeks)', 6, 68, { small: true, color: PAL.gold }));
+      st.market.forEach((c, i) => {
+        const yy = 78 + i * 15;
+        const role = STAFF_ROLES.find((r) => r.id === c.role)!;
+        win.body.addChild(text(`${c.name}  •  ${role.name.toLowerCase()}, ${'★'.repeat(c.tier)}`, 6, yy, { small: true, color: PAL.bone, width: 210, maxLines: 1 }));
+        win.body.addChild(text(c.quirk, 6, yy + 7, { small: true, color: PAL.ash, width: 220, maxLines: 1 }));
+        win.body.addChild(text(c.role === 'manager' ? `${[0, 10, 15, 20][c.tier]}%` : `${money(role.cost[c.tier])}/wk`, 230, yy + 2, { small: true, color: PAL.ash }));
+        win.body.addChild(button('HIRE', 300, yy + 1, 40, 12, () => { this.msg = hire(s, i); sfx('cash'); draw(); this.refresh(); }, { small: true, fill: PAL.moss }));
       });
     };
     draw();
@@ -298,6 +366,13 @@ export class FMHubScene extends Scene {
       this.refresh();
     }, { small: true, fill: PAL.sky, disabled: st.ap <= 0 })));
     if (!targets.length) win.body.addChild(text('Nobody worth calling out yet. Get ranked.', 6, 24, { small: true, color: PAL.ash }));
+    // Only Fighters: Bradie's subscription site
+    win.body.addChild(text('ONLY FIGHTERS', 6, 96, { small: true, color: 0x6ad0ff }));
+    if (st.ofa.joined) {
+      win.body.addChild(text(`${st.ofa.subs} subscribers`, 80, 96, { small: true, color: PAL.bone }));
+      win.body.addChild(button('POST CONTENT', 6, 106, 100, 15, () => { const r = this.rng(); this.msg = postContent(s, r); this.save(r); win.close(); this.refresh(); }, { small: true, fill: 0x1f6a90, disabled: st.ap <= 0 }));
+    } else if (st.ofa.asked) win.body.addChild(text("Bradie's contract is in your PAPERWORK.", 80, 96, { small: true, color: PAL.ash }));
+    else win.body.addChild(button('DM BRADIE FOR AN ACCOUNT', 6, 106, 150, 15, () => { const r = this.rng(); this.msg = askOnlyFighters(s, r); this.save(r); win.close(); this.refresh(); }, { small: true, fill: 0x1f6a90 }));
     win.body.addChild(button('POST SOMETHING WHOLESOME', 6, 132, 160, 15, () => {
       const r = this.rng();
       this.msg = humblePost(s, r);
@@ -310,22 +385,111 @@ export class FMHubScene extends Scene {
   private undergroundMenu(): void {
     const s = this.g.state!;
     const st = fm(s);
-    const win = openWindow(this.g, 'darknet.biz/blackshop', 300, 170);
-    const g = new Graphics().rect(0, 0, 300, 158).fill(0x041a08);
+    const win = openWindow(this.g, 'darknet.biz/blackshop', 300, 190);
+    const g = new Graphics().rect(0, 0, 300, 178).fill(0x041a08);
     win.body.addChild(g);
     const draw = () => {
       win.body.removeChildren().forEach((c) => c.destroy({ children: true }));
-      win.body.addChild(new Graphics().rect(0, 0, 300, 158).fill(0x041a08));
+      win.body.addChild(new Graphics().rect(0, 0, 300, 178).fill(0x041a08));
       const G = 0x3cff6a;
       win.body.addChild(text('> CONNECTED. DO NOT SCREENSHOT.', 6, 4, { small: true, color: G }));
-      win.body.addChild(text(`PEDs: ${st.ped.on ? 'ON CYCLE' : 'clean'}  •  failed tests: ${st.ped.caught}`, 6, 18, { small: true, color: G }));
-      win.body.addChild(button(st.ped.on ? 'COME OFF THE CYCLE' : 'START A CYCLE ($1,500)', 6, 30, 140, 15, () => { this.msg = st.ped.on ? stopPeds(s) : startPeds(s); draw(); this.refresh(); }, { small: true, fill: 0x1d5a2a }));
+      const jq = namedPortrait('jimmy_quavo', 24);
+      if (jq) {
+        jq.position.set(268, 2);
+        win.body.addChild(jq);
+      }
+      win.body.addChild(text(`JIMMY QUAVO (Abibas, beanie, no last name)  •  PEDs: ${st.ped.on ? 'ON CYCLE' : 'clean'}  •  failed tests: ${st.ped.caught}`, 6, 14, { small: true, width: 258, color: G, maxLines: 2 }));
+      win.body.addChild(button(st.ped.on ? 'COME OFF THE CYCLE' : 'TEXT JIMMY: A CYCLE ($1,500)', 6, 30, 140, 15, () => { this.msg = st.ped.on ? stopPeds(s) : startPeds(s); draw(); this.refresh(); }, { small: true, fill: 0x1d5a2a }));
       win.body.addChild(text('Way faster gains. Random tests. Long suspensions. Your liver files a complaint.', 152, 30, { small: true, width: 142, color: 0x8fe0a0 }));
-      win.body.addChild(text('BAREKNUCKLE: cash fight tonight, no gloves, no rules (uses an action)', 6, 64, { small: true, width: 288, color: G }));
-      win.body.addChild(button('FIGHT FOR CASH', 6, 76, 100, 15, () => { const r = this.rng(); this.msg = bareknuckle(s, r); this.save(r); draw(); this.refresh(); }, { small: true, fill: 0x5a1d1d, disabled: st.ap <= 0 }));
-      win.body.addChild(text('BACK-ROOM CARDS', 6, 100, { small: true, color: G }));
-      [100, 500, 2000].forEach((stake, i) => win.body.addChild(button(`BET ${money(stake)}`, 6 + i * 80, 112, 76, 15, () => { const r = this.rng(); this.msg = gamble(s, stake, r); this.save(r); draw(); this.refresh(); }, { small: true, fill: 0x1d5a2a, disabled: st.money < stake })));
-      if (this.msg) win.body.addChild(text(this.msg, 6, 134, { small: true, width: 288, color: 0x8fe0a0, maxLines: 2 }));
+      const r0 = this.rng();
+      const nxt = bkNext(s, r0);
+      this.save(r0);
+      const spot = bkSpot(s);
+      win.body.addChild(text(`${BKB_NAME.toUpperCase()} (Bradie owns this too, "for the culture")${st.bk.signed ? '' : ': contract needed'}`, 6, 52, { small: true, width: 288, color: G }));
+      win.body.addChild(text(`You: ${spot === 0 ? 'CHAMPION' : '#' + (spot + 1)} (${st.bk.w}-${st.bk.l})  •  Next: ${nxt.first} "${nxt.nick}" ${nxt.last}  •  Purse ${money(bkPurse(s))}`, 6, 70, { small: true, width: 288, color: 0x8fe0a0, maxLines: 2 }));
+      win.body.addChild(button(spot === 0 ? 'DEFEND THE BELT' : 'FIGHT HIM', 6, 90, 100, 15, () => { const r = this.rng(); this.msg = bareknuckle(s, r); this.save(r); draw(); this.refresh(); }, { small: true, fill: 0x5a1d1d, disabled: st.ap <= 0 }));
+      win.body.addChild(text('BACK-ROOM CARDS', 6, 112, { small: true, color: G }));
+      [100, 500, 2000].forEach((stake, i) => win.body.addChild(button(`BET ${money(stake)}`, 6 + i * 80, 124, 76, 15, () => { const r = this.rng(); this.msg = gamble(s, stake, r); this.save(r); draw(); this.refresh(); }, { small: true, fill: 0x1d5a2a, disabled: st.money < stake })));
+      if (this.msg) win.body.addChild(text(this.msg, 6, 146, { small: true, width: 288, color: 0x8fe0a0, maxLines: 3 }));
+    };
+    draw();
+  }
+
+  // ---------------------------------------------------------------- paperwork
+
+  private paperwork(): void {
+    const s = this.g.state!;
+    const st = fm(s);
+    const win = openWindow(this.g, 'Paperwork', 280, 150);
+    if (!st.inbox.length) {
+      win.body.addChild(text('Nothing to sign. Enjoy it while it lasts.', 6, 6, { small: true, color: PAL.ash }));
+      return;
+    }
+    win.body.addChild(text('Read before you sign. Unread paperwork gets signed as-is after two weeks (or at the weigh-in).', 6, 2, { small: true, width: 268, color: PAL.ash }));
+    st.inbox.slice(0, 7).forEach((d, i) => {
+      win.body.addChild(button(`${d.title}  •  ${d.from}`, 6, 22 + i * 17, 268, 14, () => { win.close(); this.openDoc(d); }, { small: true, fill: d.kind === 'medical' ? PAL.blood : PAL.steel }));
+    });
+  }
+
+  /** Papers-please style: compare the document to the reference card, flag what's wrong, then sign or dispute. */
+  private openDoc(d: FMDoc): void {
+    const s = this.g.state!;
+    const frame = new Container();
+    const wrap = this.g.modal(frame, { dim: 0.8 });
+    const flagged = new Set<string>();
+    const draw = () => {
+      frame.removeChildren().forEach((c) => c.destroy({ children: true }));
+      // the document (paper)
+      const dx = 20;
+      const dy = 16;
+      const dw = 250;
+      const dh = 230;
+      frame.addChild(new Graphics().rect(dx + 3, dy + 3, dw, dh).fill({ color: 0x000000, alpha: 0.4 }).rect(dx, dy, dw, dh).fill(0xe8e0cc).rect(dx, dy, dw, 18).fill(0xd4c8ac));
+      frame.addChild(text(d.title, dx + 6, dy + 5, { color: 0x2a2018 }));
+      frame.addChild(text(`From: ${d.from}`, dx + 6, dy + 22, { small: true, color: 0x5a4a38, width: dw - 12 }));
+      d.fields.forEach((fl, i) => {
+        const y = dy + 36 + i * 22;
+        const on = flagged.has(fl.label);
+        const row = new Container();
+        row.addChild(new Graphics().rect(0, 0, dw - 12, 19).fill(on ? 0xf0b0a0 : 0xf4eedf).stroke({ color: on ? 0xa01818 : 0xc8bca0, width: 1 }));
+        row.addChild(text(fl.label.toUpperCase(), 4, 2, { small: true, color: 0x7a6a50 }));
+        row.addChild(text(fl.value, 4, 10, { small: true, color: 0x1a1410, width: dw - 20, maxLines: 1 }));
+        row.position.set(dx + 6, y);
+        row.eventMode = 'static';
+        row.cursor = 'pointer';
+        row.on('pointertap', () => {
+          if (on) flagged.delete(fl.label);
+          else flagged.add(fl.label);
+          sfx('click');
+          draw();
+        });
+        frame.addChild(row);
+      });
+      frame.addChild(text('Click a line to flag it.', dx + 6, dy + dh - 12, { small: true, color: 0x7a6a50 }));
+      // the reference card
+      const rx = 284;
+      const rw = 182;
+      frame.addChild(box(rw, 150, PAL.night, PAL.gold, { bevel: true })).position.set(rx, dy);
+      frame.addChild(text(d.ref.title, rx + 6, dy + 6, { small: true, color: PAL.gold, width: rw - 12 }));
+      d.ref.lines.forEach((l, i) => {
+        frame.addChild(text(l.label.toUpperCase(), rx + 6, dy + 20 + i * 22, { small: true, color: PAL.ash }));
+        frame.addChild(text(l.value, rx + 6, dy + 28 + i * 22, { small: true, color: PAL.bone, width: rw - 12, maxLines: 2 }));
+      });
+      const done = (action: 'sign' | 'dispute') => {
+        const r = this.rng();
+        const res = resolveDoc(s, d.id, action, [...flagged], r);
+        this.save(r);
+        this.g.closeModal(wrap);
+        sfx(res.good ? 'stamp' : 'bad');
+        this.msg = res.text;
+        this.refresh();
+        this.g.autosave();
+        alertBox(this.g, res.good ? 'FILED' : 'HMM', res.text);
+      };
+      frame.addChild(button('SIGN IT', rx, dy + 160, 86, 18, () => done('sign'), { fill: PAL.moss }));
+      frame.addChild(button(d.kind === 'sponsor' ? 'TURN IT DOWN' : 'DISPUTE', rx + 96, dy + 160, 86, 18, () => done('dispute'), { fill: PAL.blood, disabled: d.kind !== 'sponsor' && !flagged.size }));
+      frame.addChild(button('LATER', rx, dy + 184, 182, 14, () => this.g.closeModal(wrap), { small: true }));
+      frame.addChild(text(d.kind === 'sponsor' ? 'Turning a deal down needs a flagged line to count as a catch.' : 'Dispute = send back the flagged lines.', rx, dy + 204, { small: true, width: 182, color: PAL.ash }));
     };
     draw();
   }
@@ -333,6 +497,16 @@ export class FMHubScene extends Scene {
   private rankingsMenu(): void {
     const s = this.g.state!;
     const f = me(s);
+    const st = fm(s);
+    if (st.tier !== 'of') {
+      const win = openWindow(this.g, `${TIER_NAME[st.tier]}: ${divisionName(f.division)}`, 240, 150);
+      st.ladder.forEach((id, i) => {
+        const x = s.fighters[id];
+        win.body.addChild(text(`${i === 0 ? 'C ' : '#' + (i + 1)}  ${fullName(x)}  ${record(x.record)}`, 6, 4 + i * 11, { small: true, color: id === f.id ? PAL.gold : PAL.bone }));
+      });
+      win.body.addChild(text(st.tier === 'amateur' ? 'Beat the champ to turn pro.' : "Win the Fury FC belt and Bradie's people call.", 6, 4 + st.ladder.length * 11 + 4, { small: true, color: PAL.ash }));
+      return;
+    }
     const win = openWindow(this.g, `${divisionName(f.division)} rankings`, 240, 220);
     const sb = new ScrollBox(228, 196);
     sb.position.set(6, 4);
@@ -384,6 +558,19 @@ export class FMHubScene extends Scene {
 
   private weighIn(): void {
     const s = this.g.state!;
+    const st0 = fm(s);
+    if (st0.inbox.length && !this.paperworkWarned) {
+      this.paperworkWarned = true;
+      confirm(this.g, `You have ${st0.inbox.length} unread document${st0.inbox.length > 1 ? 's' : ''}${st0.inbox.some((d) => d.kind === 'medical') ? " (including your opponent's medicals)" : ''}. Weigh in anyway? Unread paperwork gets signed as-is (PAPERWORK to read it first).`, () => this.weighIn(), 'WEIGH IN', 'NOT YET');
+      return;
+    }
+    this.paperworkWarned = false;
+    {
+      const r = this.rng();
+      const lines = fightWeekPaperwork(s, r);
+      this.save(r);
+      if (lines.length) this.msg = lines.join(' ');
+    }
     const { need, risk } = weighInInfo(s);
     const frame = new Container();
     const wrap = this.g.modal(frame, { dim: 0.7 });
@@ -439,11 +626,29 @@ export class FMHubScene extends Scene {
     const r = this.rng();
     const ev = fightEvent(s, r);
     this.save(r);
-    // tonight you fight with tonight's body
+    const mine = ev.card.find((b) => b.a === f.id || b.b === f.id)!;
+    const opp = s.fighters[st.fight!.opp];
+    // tonight you fight with tonight's body; your opponent with whatever the paperwork and your sparring partner did to him
     const backup = { ...f.skills };
+    const oppBackup = { ...opp.skills };
     f.skills = fightReadySkills(s);
+    const mod = (k: keyof Skills, d: number) => (opp.skills[k] = Math.max(10, Math.min(99, opp.skills[k] + d)));
+    if (st.oppFlagged) {
+      mod('chin', -10);
+      mod('cardio', -8);
+    }
+    if (st.fight!.heavyOpp) {
+      mod('power', 5);
+      mod('wrestling', 4);
+    }
+    if (st.partner?.leaking) mod('fightIQ', 8);
+    if (st.partner?.fake) mod('fightIQ', -6);
+    const restore = () => {
+      f.skills = backup;
+      opp.skills = oppBackup;
+    };
     const oppPlan = (round: number): GamePlan => {
-      const o = s.fighters[st.fight!.opp].skills;
+      const o = opp.skills;
       return round === 1 ? 'balanced' : o.wrestling > o.striking ? 'wrestle' : 'pressure';
     };
     const side = (b: { a: string }) => (b.a === f.id ? 0 : 1);
@@ -452,8 +657,8 @@ export class FMHubScene extends Scene {
       fm: {
         player: f.id,
         extra: () => ({
-          plan: (sd, round) => (sd === side(ev.card[0]) ? st.roundPlans[round] ?? st.plan : oppPlan(round)),
-          cornerAid: (sd, round) => (sd === side(ev.card[0]) ? st.cornerAid[round] : undefined),
+          plan: (sd, round) => (sd === side(mine) ? st.roundPlans[round] ?? st.plan : oppPlan(round)),
+          cornerAid: (sd, round) => (sd === side(mine) ? st.cornerAid[round] : undefined),
         }),
         corner: (round, bout, done) => {
           const rep = (bout.result?.corners ?? []).find((c) => c.round === round && c.side === side(bout));
@@ -463,23 +668,88 @@ export class FMHubScene extends Scene {
             done();
           });
         },
+        live: (bout, done) => {
+          const r2 = this.rng();
+          const off = officialsFor(s, ev, r2);
+          const seed = r2.int(1, 1e9);
+          this.save(r2);
+          const A = s.fighters[bout.a];
+          const B = s.fighters[bout.b];
+          openLiveFight(this.g, {
+            bout, A, B, skills: [A.skills, B.skills], player: side(bout) as 0 | 1, plan: st.plan, oppPlan: oppPlan(2), cutTier: st.staff.cutman, seed,
+            event: ev.name, judges: off.judges.map((j) => j.name), referee: off.referee.name,
+            done: (res) => {
+              bout.result = res;
+              done();
+            },
+          });
+        },
+        after: (bout) => this.cageside(bout),
       },
       onWrap: () => {
-        f.skills = backup;
+        restore();
         const r2 = this.rng();
-        const won = ev.card[0].result?.winner === f.id;
+        const won = mine.result?.winner === f.id;
         const lines = afterFight(s, ev, r2);
+        const quote = bradieOnYou(s, won, r2);
         this.save(r2);
         this.g.autosave();
         this.g.goto(new FMHubScene(this.g));
         setTimeout(() => {
           alertBox(this.g, won ? 'VICTORY' : 'FIGHT OVER', lines.join('\n'), () => {
-            if (won) this.micMoment();
+            this.bradieSays(quote, () => {
+              if (won) this.micMoment();
+            });
           });
         }, 400);
       },
     });
     this.g.goto(scene);
+  }
+
+  /** Bradie pops up on his stream / podcast with an opinion. */
+  private bradieSays(line: string, then?: () => void): void {
+    const frame = new Container();
+    const wrap = this.g.modal(frame, { dim: 0.7 });
+    const bw = 320;
+    const bh = 96;
+    const bx = (W - bw) / 2;
+    const by = (H - bh) / 2;
+    frame.addChild(box(bw, bh, PAL.night, 0x2aa0d8, { bevel: true })).position.set(bx, by);
+    const por = portrait({ id: 'npc_bradie_taylor', look: BRADIE.look, gender: 'M', age: 41, variant: 'reporter', attire: 'hoodie', accent: 0x2aa0d8 }, 64);
+    por.position.set(bx + 8, by + 8);
+    frame.addChild(por);
+    frame.addChild(text(`${BRADIE.name.toUpperCase()}`, bx + 78, by + 8, { small: true, color: 0x6ad0ff }));
+    frame.addChild(text(BRADIE.title + '  •  LIVE', bx + 78, by + 16, { small: true, color: PAL.ash }));
+    frame.addChild(text(line, bx + 78, by + 27, { small: true, width: bw - 86, color: PAL.bone, maxLines: 6 }));
+    frame.addChild(button('LOL OK', bx + bw - 64, by + bh - 20, 56, 14, () => { this.g.closeModal(wrap); then?.(); }, { small: true, fill: PAL.steel }));
+  }
+
+  /** Cageside: you watched somebody else's fight on your card. Start something? */
+  private cageside(bout: { result?: { winner: string | null; loser: string | null; method: string } }): void {
+    const s = this.g.state!;
+    const res = bout.result;
+    if (!res?.winner || !res.loser) return;
+    const w = s.fighters[res.winner];
+    const l = s.fighters[res.loser];
+    const frame = new Container();
+    const wrap = this.g.modal(frame, { dim: 0.6 });
+    const bw = 300;
+    const bh = 120;
+    const bx = (W - bw) / 2;
+    const by = (H - bh) / 2;
+    frame.addChild(box(bw, bh, PAL.night, PAL.gold, { bevel: true })).position.set(bx, by);
+    frame.addChild(text('CAGESIDE', bx + 8, by + 6, { color: PAL.gold }));
+    frame.addChild(text(`${fullName(w)} just beat ${fullName(l)} by ${res.method}. The camera finds you in the crowd.`, bx + 8, by + 20, { small: true, width: bw - 16, color: PAL.bone }));
+    const pick = (c: 'stare' | 'clap' | 'mock' | 'ignore') => {
+      const r = this.rng();
+      const out = cagesideReact(s, w.id, l.id, c, r);
+      this.save(r);
+      this.g.closeModal(wrap);
+      if (out) this.g.toast(out, PAL.gold, { small: true });
+    };
+    const opts: [typeof pick extends (c: infer C) => void ? C : never, string, number][] = [['stare', `STARE DOWN ${w.last.toUpperCase()}`, PAL.blood], ['mock', `LAUGH AT ${l.last.toUpperCase()}`, PAL.ember], ['clap', 'SLOW CLAP', PAL.steel], ['ignore', 'CHECK YOUR PHONE', PAL.shadow]];
+    opts.forEach(([c, label, fill], i) => frame.addChild(button(label, bx + 8 + (i % 2) * 144, by + 50 + Math.floor(i / 2) * 20, 140, 15, () => pick(c), { small: true, fill })));
   }
 
   private micMoment(): void {

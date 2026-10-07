@@ -43,6 +43,8 @@ export interface Look {
   build: number; // 0 lean, 1 average, 2 heavy
   glasses?: number; // 0 none, 1 dark shades, 2 nerd frames
   widow?: number; // 1 = widow's peak hairline
+  stoned?: number; // 1 = bloodshot, half-shut eyes
+  beanie?: number; // 1 = knit beanie (Jimmy Quavo)
 }
 
 export interface Contract {

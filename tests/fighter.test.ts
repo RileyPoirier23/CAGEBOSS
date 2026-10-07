@@ -6,6 +6,7 @@ import { content } from '../src/core/content';
 import { generateFighter } from '../src/sim/generate';
 import {
   createFighterGame, fm, me, doAction, endWeek, acceptOffer, fightThisWeek, doWeighIn, fightEvent, afterFight, resolveEvent, fightReadySkills,
+  resolveDoc, trainSkill, bareknuckle,
 } from '../src/sim/fighter';
 import { runBout, applyBout } from '../src/sim/events';
 import { simulateFight } from '../src/sim/fight';
@@ -19,7 +20,7 @@ describe('fighter mode', () => {
     const rng = new Rng(99);
     let fights = 0;
     for (let w = 0; w < 40; w++) {
-      while (fm(s).pending.length) resolveEvent(s, fm(s).pending[0].choices[0].id, rng);
+      while (fm(s).pending.length) resolveEvent(s, fm(s).pending[0].id === 'jimmy' ? 'no' : fm(s).pending[0].choices[0].id, rng);
       if (!fm(s).fight && fm(s).offers.length) acceptOffer(s, 0);
       if (fightThisWeek(s)) {
         doWeighIn(s, 'easy', rng);
@@ -42,7 +43,40 @@ describe('fighter mode', () => {
     expect(fights).toBeGreaterThan(2);
     expect(fm(s).history.length).toBe(fights);
     const f = me(s);
-    expect(f.record.w + f.record.l + f.record.d).toBeGreaterThan(3);
+    expect(f.record.w + f.record.l + f.record.d).toBe(fights);
+  });
+
+  it('climbs amateur -> regional -> Only Fighters, does paperwork and bareknuckle', () => {
+    const look = generateFighter(new Rng(2), content().names, { division: 'welter', tier: 'prospect' }).look;
+    const s = createFighterGame({ seed: 21, first: 'Lad', last: 'Climber', nick: '', gender: 'M', culture: 'uk', division: 'welter', archetype: 'striker', look });
+    expect(fm(s).tier).toBe('amateur');
+    expect(fm(s).ladder.length).toBe(7);
+    const rng = new Rng(7);
+    const tiers = new Set<string>();
+    for (let w = 0; w < 150 && fm(s).tier !== 'of'; w++) {
+      while (fm(s).pending.length) resolveEvent(s, fm(s).pending[0].id === 'jimmy' ? 'no' : fm(s).pending[0].choices[0].id, rng);
+      for (const d of fm(s).inbox.slice()) resolveDoc(s, d.id, d.fault ? 'dispute' : 'sign', d.fault ? [d.fault] : [], rng);
+      if (!fm(s).fight && fm(s).offers.length) acceptOffer(s, 0);
+      if (fightThisWeek(s)) {
+        doWeighIn(s, 'easy', rng);
+        const ev = fightEvent(s, rng);
+        for (const b of ev.card) {
+          runBout(s, ev, b, rng, false, {});
+          applyBout(s, ev, b, rng);
+        }
+        afterFight(s, ev, rng);
+      }
+      tiers.add(fm(s).tier);
+      trainSkill(s, 'striking', rng, 1);
+      if (w % 5 === 0) bareknuckle(s, rng);
+      doAction(s, 'rest', null, rng);
+      doAction(s, 'rest', null, rng);
+      endWeek(s, rng);
+    }
+    expect(tiers.has('regional')).toBe(true);
+    expect(fm(s).tier).toBe('of');
+    expect(me(s).promotion).toBe('us');
+    expect(fm(s).bk.w + fm(s).bk.l).toBeGreaterThan(0);
   });
 
   it('gameplans change how the fight goes', () => {

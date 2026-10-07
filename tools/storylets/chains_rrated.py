@@ -159,3 +159,19 @@ ONE('rr_pee_test', 'Somebody Else\'s Piss', 'doping',
     [C("Back {his} story. Somehow.", "commission -= 4", "heat += 3", "subject.loyalty += 4", result="The cousin is subpoenaed. The cousin is very pregnant and very angry.", bot=2, ethics=-2),
      C("Cooperate fully", "commission += 2", "subject.morale -= 6", result="{subject.first} is suspended. {His} cousin sends you a baby shower invitation. You go. It's awkward.", default=True, ethics=2)],
     roles=SUBJ, cd=312, tags=SER)
+
+
+# ------------------------------------------------------------------ Jimmy Quavo, the steroid guy (serious: never parodies)
+JQ = 'npc:jimmy_quavo'
+CH('rr_quavo', [
+    ('rr_quavo_lot', 'Jimmy Quavo', [visit("A man in a black Abibas tracksuit and a beanie (indoors, in July) is leaning on {subject.first}'s car in the gym lot. \"Jimmy Quavo. Everybody knows me. Your boy looks flat, boss. I got vitamins. Special vitamins. The kind with a needle.\"", "Jimmy Quavo", JQ)],
+     [C("Run him off the property", "subject.morale -= 2", "commission += 1", result="Jimmy shrugs, says \"I'll be around,\" and leaves in a Hyundai with three different hubcaps.", default=True, ethics=1),
+      C("Look the other way", "subject.skills.power += 3", "subject.skills.cardio += 3", "subject.skills.durability += 2", "heat += 2", "follow('rr_quavo_test', 6)", result="{subject.first} starts showing up to practice looking like a different, larger person. Nobody asks. Everybody knows.", bot=2, ethics=-3),
+      C("Call the commission on him", "commission += 3", "subject.loyalty -= 4", "follow('rr_quavo_back', 8)", result="The commission takes a report. Jimmy finds out who made it. Jimmy always finds out.", ethics=2)]),
+    ('rr_quavo_test', 'Six A.M. Knock', [doc("Random test, 6 a.m. {subject.first}'s sample comes back lit up like a Christmas tree: three steroids, a horse dewormer and something the lab calls 'honestly impressive'. {He} says it was a bad batch of 'vitamins' from 'some guy named Jimmy'.", "COMMISSION: ADVERSE FINDING")],
+     [C("Accept the suspension", "suspend(subject, 26)", "commission += 1", "media -= 2", "news('doping', -0.4, 5)", result="Six months. {subject.first} posts a sunset and the words 'God's plan'.", default=True),
+      C("Blame contaminated beef jerky", "suspend(subject, 13)", "heat += 3", "media -= 4", "news('doping', -0.6, 6)", result="The jerky company releases a statement. It is extremely angry. The suspension is shorter. The memes are eternal.", bot=1, ethics=-2)]),
+    ('rr_quavo_back', 'He Was Around', [visit("Jimmy Quavo is in your office. You did not let him in. Nobody let him in. \"No hard feelings, boss. Business is business. I got a new product, totally undetectable, the commission can't even spell it.\" He puts a cooler bag on your desk.", "Jimmy Quavo", JQ)],
+     [C("Throw the cooler bag out the window", "commission += 1", result="It lands on a commissioner's car. Somehow this helps you.", default=True, ethics=1),
+      C("Keep the bag. For research.", "heat += 4", "chaos += 2", result="The bag hums. You put it in the break-room fridge and label it 'DO NOT'.", bot=1, ethics=-3)])],
+    cat='doping', roles={"subject": F(OURS + " && !f.parody")}, cd=208, tags=SER)

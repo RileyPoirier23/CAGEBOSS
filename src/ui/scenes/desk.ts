@@ -26,7 +26,7 @@ import { money } from '../../core/format';
 import { rulebookPages, rulesNewThisWeek } from '../../sim/rules';
 import { def } from '../../storylets/engine';
 import { playStorylet } from '../dialog';
-import { fighterPortrait, reporterPortrait, npcPortrait } from '../sprites';
+import { namedPortrait, fighterPortrait, reporterPortrait, npcPortrait } from '../sprites';
 import { content } from '../../core/content';
 import { sfx } from '../../audio/sfx';
 import { eventThisWeek, upcomingEvents } from '../../sim/events';
@@ -310,7 +310,9 @@ export class DeskScene extends Scene {
       if (sc && sc.type === 'visit') {
         const role = sc.portrait ?? Object.keys(d!.roles ?? {})[0];
         const id = role ? item.inst.roles[role] : undefined;
-        if (id && s.fighters[id]) por = fighterPortrait(s.fighters[id], 64);
+        const named = sc.portrait?.startsWith('npc:') ? namedPortrait(sc.portrait.slice(4), 64) : null;
+        if (named) por = named;
+        else if (id && s.fighters[id]) por = fighterPortrait(s.fighters[id], 64);
         else if (id) {
           const rep = content().reporters.find((x) => x.id === id);
           if (rep) por = reporterPortrait(rep, 64);

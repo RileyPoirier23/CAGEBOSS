@@ -33,6 +33,7 @@ export interface Settings {
   fullscreen?: boolean; // desktop build only
   bleets?: boolean; // live Bleeter feed while watching fights
   tutorial?: boolean; // offer the tutorial on new careers
+  handsOn?: boolean; // Fighter Mode: control your fighter in real time (default on)
   tvSafe?: number; // TV-safe margin in % of each edge (consoles / TVs)
 }
 
@@ -77,7 +78,8 @@ export class Game {
   stage = new Container(); // shaken
   sceneLayer = new Container();
   modalLayer = new Container();
-  toastLayer = new Container();
+  toastLayer = new Container(); // background notices: under any open window
+  feedbackLayer = new Container(); // toasts raised while a window is open (its own feedback)
   tipLayer = new Container();
   loadLayer = new Container();
   private loader: LoadingScreen | null = null;
@@ -104,7 +106,7 @@ export class Game {
     });
     parent.appendChild(this.app.canvas);
     this.app.stage.addChild(this.stage);
-    this.stage.addChild(this.sceneLayer, this.modalLayer, this.toastLayer);
+    this.stage.addChild(this.sceneLayer, this.toastLayer, this.modalLayer, this.feedbackLayer);
     this.app.stage.addChild(this.tipLayer, this.loadLayer);
     tooltip.attach(this.tipLayer);
     this.app.stage.eventMode = 'static';
@@ -242,7 +244,7 @@ export class Game {
     this.shakeT = Math.max(this.shakeT, dur);
   }
 
-  toast(msg: string, color: number = PAL.bone, opts: { top?: boolean; small?: boolean } = {}): void {
+  toast(msg: string, color: number = PAL.bone, opts: { top?: boolean; small?: boolean; background?: boolean } = {}): void {
     const t = text(msg, 4, 3, { color, width: 200, small: opts.small });
     const w = t.textWidth + 8;
     const h = t.textHeight + 7;
@@ -251,7 +253,7 @@ export class Game {
     c.addChild(t);
     c.x = opts.top ? Math.floor((W - w) / 2) : W - w - 4;
     c.y = opts.top ? 2 : H - 4 - h - this.toasts.length * (h + 2);
-    this.toastLayer.addChild(c);
+    (this.modals.length && !opts.background ? this.feedbackLayer : this.toastLayer).addChild(c);
     this.toasts.push({ node: c, t: 2.6 });
   }
 

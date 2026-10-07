@@ -73,6 +73,10 @@ export interface FightNightFM {
   player: string;
   extra: () => Partial<FightOpts>;
   corner: (round: number, bout: Bout, done: () => void) => void;
+  /** hands-on: play the player's bout yourself; call done once bout.result is set */
+  live?: (bout: Bout, done: () => void) => void;
+  /** another bout on the card finished (cageside reactions) */
+  after?: (bout: Bout) => void;
 }
 
 export class FightNightScene extends Scene {
@@ -271,6 +275,8 @@ export class FightNightScene extends Scene {
         const w = res.winner ? s.fighters[res.winner] : null;
         row.addChild(text(w ? `${w.last} by ${res.method} (${res.detail}) R${res.round} ${res.time}` : `${res.detail}`, 300, 7, { small: true, color: PAL.moss, width: W - 330 }));
       } else {
+        const fmb = this.fmFor(b);
+        if (fmb?.live && this.g.settings.handsOn !== false) row.addChild(button('FIGHT!', W - 130, 4, 36, 14, () => this.liveFight(b), { small: true, fill: PAL.gold }));
         row.addChild(button('WATCH', W - 92, 4, 34, 14, () => this.watch(b), { small: true, fill: PAL.blood }));
         row.addChild(button('SIM', W - 56, 4, 30, 14, () => this.simBout(b), { small: true, fill: PAL.slate }));
       }
@@ -296,12 +302,37 @@ export class FightNightScene extends Scene {
   private simBout(b: Bout, quiet = false): void {
     const s = this.g.state!;
     const rng = new Rng(s.rng);
-    runBout(s, this.ev, b, rng, false);
+    runBout(s, this.ev, b, rng, false, this.fmFor(b)?.extra() ?? {});
     applyBout(s, this.ev, b, rng);
     s.rng = rng.state;
     if (!quiet) {
       this.postBout(b, false);
+      this.afterOther(b);
     }
+  }
+
+  /** Hands-on: the player fights this one. */
+  private liveFight(b: Bout): void {
+    const fm = this.fmFor(b);
+    if (!fm?.live) return;
+    fm.live(b, () => {
+      const s = this.g.state!;
+      const rng = new Rng(s.rng);
+      b.status = 'done';
+      applyBout(s, this.ev, b, rng);
+      s.rng = rng.state;
+      this.step = 'card';
+      this.refresh();
+      this.postBout(b, true);
+    });
+  }
+
+  /** Fighter Mode: you were cageside for somebody else's fight. */
+  private afterOther(b: Bout): void {
+    const fm = this.opts.fm;
+    if (!fm?.after || b.a === fm.player || b.b === fm.player || !b.result) return;
+    const go = () => (this.g.modals.length ? setTimeout(go, 300) : fm.after!(b));
+    setTimeout(go, 300);
   }
 
   // ------------------------------------------------------------ watch
@@ -708,6 +739,7 @@ export class FightNightScene extends Scene {
     this.step = 'card';
     this.refresh();
     this.postBout(p.bout, true);
+    this.afterOther(p.bout);
   }
 
   /** Result card + post-fight interview, then maybe fight-night chaos. */

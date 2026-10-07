@@ -1017,5 +1017,162 @@
   "tags": [
    "serious"
   ]
+ },
+ {
+  "id": "rr_quavo_lot",
+  "title": "Jimmy Quavo",
+  "category": "doping",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "A man in a black Abibas tracksuit and a beanie (indoors, in July) is leaning on {subject.first}'s car in the gym lot. \"Jimmy Quavo. Everybody knows me. Your boy looks flat, boss. I got vitamins. Special vitamins. The kind with a needle.\"",
+    "speaker": "Jimmy Quavo",
+    "portrait": "npc:jimmy_quavo"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Run him off the property",
+    "effects": [
+     "subject.morale -= 2",
+     "commission += 1"
+    ],
+    "result": "Jimmy shrugs, says \"I'll be around,\" and leaves in a Hyundai with three different hubcaps.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Look the other way",
+    "effects": [
+     "subject.skills.power += 3",
+     "subject.skills.cardio += 3",
+     "subject.skills.durability += 2",
+     "heat += 2",
+     "follow('rr_quavo_test', 6)"
+    ],
+    "result": "{subject.first} starts showing up to practice looking like a different, larger person. Nobody asks. Everybody knows.",
+    "bot": 2,
+    "ethics": -3
+   },
+   {
+    "label": "Call the commission on him",
+    "effects": [
+     "commission += 3",
+     "subject.loyalty -= 4",
+     "follow('rr_quavo_back', 8)"
+    ],
+    "result": "The commission takes a report. Jimmy finds out who made it. Jimmy always finds out.",
+    "ethics": 2
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && !f.parody"
+   }
+  },
+  "weight": 6,
+  "cooldownWeeks": 208,
+  "chain": "rr_quavo",
+  "tags": [
+   "serious"
+  ]
+ },
+ {
+  "id": "rr_quavo_test",
+  "title": "Six A.M. Knock",
+  "category": "doping",
+  "scenes": [
+   {
+    "type": "doc",
+    "text": "Random test, 6 a.m. {subject.first}'s sample comes back lit up like a Christmas tree: three steroids, a horse dewormer and something the lab calls 'honestly impressive'. {He} says it was a bad batch of 'vitamins' from 'some guy named Jimmy'.",
+    "title": "COMMISSION: ADVERSE FINDING"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Accept the suspension",
+    "effects": [
+     "suspend(subject, 26)",
+     "commission += 1",
+     "media -= 2",
+     "news('doping', -0.4, 5)"
+    ],
+    "result": "Six months. {subject.first} posts a sunset and the words 'God's plan'.",
+    "default": true
+   },
+   {
+    "label": "Blame contaminated beef jerky",
+    "effects": [
+     "suspend(subject, 13)",
+     "heat += 3",
+     "media -= 4",
+     "news('doping', -0.6, 6)"
+    ],
+    "result": "The jerky company releases a statement. It is extremely angry. The suspension is shorter. The memes are eternal.",
+    "bot": 1,
+    "ethics": -2
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && !f.parody"
+   }
+  },
+  "weight": 6,
+  "cooldownWeeks": 208,
+  "chain": "rr_quavo",
+  "followupOnly": true,
+  "tags": [
+   "serious"
+  ]
+ },
+ {
+  "id": "rr_quavo_back",
+  "title": "He Was Around",
+  "category": "doping",
+  "scenes": [
+   {
+    "type": "visit",
+    "text": "Jimmy Quavo is in your office. You did not let him in. Nobody let him in. \"No hard feelings, boss. Business is business. I got a new product, totally undetectable, the commission can't even spell it.\" He puts a cooler bag on your desk.",
+    "speaker": "Jimmy Quavo",
+    "portrait": "npc:jimmy_quavo"
+   }
+  ],
+  "choices": [
+   {
+    "label": "Throw the cooler bag out the window",
+    "effects": [
+     "commission += 1"
+    ],
+    "result": "It lands on a commissioner's car. Somehow this helps you.",
+    "ethics": 1,
+    "default": true
+   },
+   {
+    "label": "Keep the bag. For research.",
+    "effects": [
+     "heat += 4",
+     "chaos += 2"
+    ],
+    "result": "The bag hums. You put it in the break-room fridge and label it 'DO NOT'.",
+    "bot": 1,
+    "ethics": -3
+   }
+  ],
+  "roles": {
+   "subject": {
+    "type": "fighter",
+    "where": "f.ours && !f.parody"
+   }
+  },
+  "weight": 6,
+  "cooldownWeeks": 208,
+  "chain": "rr_quavo",
+  "followupOnly": true,
+  "tags": [
+   "serious"
+  ]
  }
 ]
