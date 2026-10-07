@@ -121,10 +121,10 @@ describe('fight input', () => {
     expect(run(fi, sample(), DT, ctx)).toMatchObject([{ punch: 'overhand', weight: 'light' }]);
   });
 
-  it('block tap = parry only; hold = block start / end', () => {
+  it('block: the guard comes up on press (a press also parries); release drops it', () => {
     const fi = new FightInput();
     const tap = [...run(fi, sample(['block']), 0.06, ctx), ...run(fi, sample(), DT, ctx)];
-    expect(tap.map((i) => i.type)).toEqual(['parry']);
+    expect(tap).toEqual([{ type: 'parry' }, { type: 'block', phase: 'start' }, { type: 'block', phase: 'end' }]);
     const hold = [...run(fi, sample(['block']), 0.4, ctx), ...run(fi, sample(), DT, ctx)];
     expect(hold).toEqual([{ type: 'parry' }, { type: 'block', phase: 'start' }, { type: 'block', phase: 'end' }]);
   });

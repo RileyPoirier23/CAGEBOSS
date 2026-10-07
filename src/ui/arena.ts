@@ -191,6 +191,11 @@ export class ArenaView extends Container {
   private stainG = new Graphics();
   private stainsDrawn = -1;
   private matLogo = new Sprite();
+  /** sponsor ribbon board (scrolls), canvas decals and the jumbotron ads: they change every event */
+  private ads = new Container();
+  private ribbon = new Container();
+  private ribbonX = 0;
+  private screenAd: PixelText[] = [];
   /** walking out of the corners to meet in the middle: no exchanges until they get there */
   private walkIn = false;
   private walkT = 0;
@@ -227,7 +232,7 @@ export class ArenaView extends Container {
     public A: Fighter,
     public B: Fighter,
     public rounds: number,
-    private info: { network?: string; event?: string; promo?: string; champs?: [boolean, boolean]; eventKey?: string } = {},
+    private info: { network?: string; event?: string; promo?: string; champs?: [boolean, boolean]; eventKey?: string; sponsors?: { name: string; color: number }[] } = {},
   ) {
     super();
     const key = info.eventKey ?? info.event ?? '';
@@ -242,7 +247,8 @@ export class ArenaView extends Container {
     ];
     this.ref = { rig: { ...POSES.stand }, pose: 'stand', x: AW / 2 + 70, tx: AW / 2 + 70, facing: -1, look: REF_LOOK, visible: true, spin: 0 };
     this.butler = { rig: { ...POSES.mic }, pose: 'mic', x: AW / 2, tx: AW / 2, facing: 1, look: BUTLER_LOOK, visible: false, spin: 0 };
-    this.worldInner.addChild(this.bg, this.matLogo, this.stainG, this.crowd, this.lights, this.fighters, this.fx, this.front);
+    this.worldInner.addChild(this.bg, this.matLogo, this.stainG, this.crowd, this.ads, this.lights, this.fighters, this.fx, this.front);
+    this.buildAds();
     // the promotion's logo painted on the canvas, squashed into the floor's perspective
     Assets.load(`${import.meta.env.BASE_URL}mat-logo.png`).then((tex: Texture) => {
       if (this.destroyed) return;
@@ -363,6 +369,65 @@ export class ArenaView extends Container {
       g.rect(x - 2, y - H - 3, 5, H - 6).fill(0x0e0e11);
       g.rect(x - 3, y - H - 5, 7, 4).fill(0x3a3a42);
     }
+  }
+
+  /** Sponsors around the cage: a ribbon board under the lighting rig, decals on the canvas, ads on the big screens. */
+  private buildAds(): void {
+    const sp = this.info.sponsors ?? [];
+    if (!sp.length) return;
+    // ribbon board: a dark LED strip, sponsor names scrolling in their colours
+    const strip = new Graphics().rect(0, 31, AW, 7).fill(0x07060a).rect(0, 31, AW, 1).fill(0x2a2230).rect(0, 37, AW, 1).fill(0x2a2230);
+    this.ads.addChild(strip);
+    this.ribbon.y = 32;
+    this.ads.addChild(this.ribbon);
+    let x = 0;
+    // repeat the names until the strip is covered twice (so the scroll can wrap)
+    while (x < AW * 2) {
+      for (const a of sp) {
+        const t = text(a.name.toUpperCase(), x, 0, { small: true, color: a.color });
+        this.ribbon.addChild(t);
+        x += t.textWidth + 6;
+        const dot = new Graphics().rect(x - 4, 2, 2, 2).fill(0x5a5060);
+        this.ribbon.addChild(dot);
+      }
+    }
+    this.ribbonX = 0;
+    (this.ribbon as Container & { loopW?: number }).loopW = x / 2;
+    // canvas decals: the presenting sponsor left of centre, the next one right (squashed into the floor's perspective)
+    const cy = FLOOR + 1;
+    sp.slice(0, 2).forEach((a, i) => {
+      const t = text(a.name.toUpperCase(), 0, 0, { small: true, color: a.color });
+      t.alpha = 0.55;
+      t.scale.set(1, 0.5);
+      t.position.set(i === 0 ? AW / 2 - 150 : AW / 2 + 150 - t.textWidth, cy + 5);
+      this.ads.addChild(t);
+    });
+    // the two big screens alternate between the action and an ad
+    for (const sx of [152, 272]) {
+      const t = text('', sx, 2, { small: true, color: 0xffffff, width: 56, align: 'center', maxLines: 1 });
+      t.visible = false;
+      this.ads.addChild(t);
+      this.screenAd.push(t);
+    }
+  }
+
+  private tickAds(dt: number): void {
+    const sp = this.info.sponsors ?? [];
+    if (!sp.length) return;
+    const loop = (this.ribbon as Container & { loopW?: number }).loopW ?? AW;
+    this.ribbonX = (this.ribbonX + dt * 14) % loop;
+    this.ribbon.x = -Math.round(this.ribbonX);
+    // every few seconds the screens cut to a sponsor
+    const slot = Math.floor(this.t / 4);
+    const showAd = slot % 3 === 2 && this.scene !== 'intro';
+    this.screenAd.forEach((t, i) => {
+      t.visible = showAd;
+      if (showAd) {
+        const a = sp[(slot + i) % sp.length];
+        t.setText(a.name.toUpperCase());
+        t.tint = a.color;
+      }
+    });
   }
 
   private drawCrowd(): void {
@@ -1277,6 +1342,7 @@ export class ArenaView extends Container {
     if (!this.walkIn) this.touchT -= dt * this.pace;
     this.t += dt;
     this.drawCrowd();
+    this.tickAds(dt);
     const ground = this.ground === 'atop' || this.ground === 'btop';
     if (this.scene === 'fight') {
       // the action drifts around the cage; clinches end up on the fence; ground work stays put

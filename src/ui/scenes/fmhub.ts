@@ -15,20 +15,21 @@ import { fmtDate } from '../../core/time';
 import { Rng } from '../../core/rng';
 import { sfx } from '../../audio/sfx';
 import { fullName, overall } from '../../sim/fighters';
-import { divisionName } from '../../sim/divisions';
+import { divisionName, DIVISION_ORDER } from '../../sim/divisions';
 import { rankLabel, rankOf, undisputed } from '../../sim/rankings';
 import {
   fm, me, BODY_PARTS, STAFF_ROLES, PLANS, doAction, treat, clinicCost, weeklyStaffCost, calloutTargets, callOut, humblePost,
   startPeds, stopPeds, bareknuckle, gamble, acceptOffer, resolveEvent, endWeek, fightThisWeek, weighInInfo, doWeighIn, fightEvent,
   afterFight, postFightCallout, weightLimit, fightReadySkills, type ActionId, type StaffId, type BodyPart,
   ensureFM, condition, trainSkill, cutWeight, hire, fire, fightWeekPaperwork, cagesideReact, bkNext, bkPurse, bkSpot,
-  ladderSpot, TIER_NAME, BKB_NAME, BRADIE, bradieOnYou, askOnlyFighters, postContent, cardSlot, SLOT_NAME, type CutMethod,
+  ladderSpot, stage, BKB_NAME, BRADIE, bradieOnYou, askOnlyFighters, postContent, cardSlot, SLOT_NAME, type CutMethod,
 } from '../../sim/fighter';
 import { FightNightScene } from './fightnight';
 import { openCorner } from '../cutman';
 import type { GamePlan } from '../../sim/fight';
 import { openLiveFight } from '../livefight';
 import { openFMDesk } from '../fmdesk';
+import { eventSponsors } from '../../sim/sponsorship';
 import { openJumpRope, openTyreChop } from '../minigames';
 import { officialsFor } from '../../sim/events';
 import { portrait, namedPortrait, reporterPortrait } from '../sprites';
@@ -131,8 +132,8 @@ export class FMHubScene extends Scene {
     const rk = rankOf(s, f.id);
     const spot = ladderSpot(s);
     if (st.tier === 'of') L.addChild(text(rk === 0 ? 'CHAMPION' : rk ? `RANKED #${rk}` : 'UNRANKED', 72, 54, { small: true, color: rk === 0 ? PAL.gold : rk ? PAL.sky : PAL.ash }));
-    else L.addChild(text(`${st.tier === 'amateur' ? 'AMATEUR' : 'FURY FC'} ${spot === 0 ? 'CHAMP' : '#' + ((spot ?? 0) + 1)}`, 72, 54, { small: true, color: spot === 0 ? PAL.gold : PAL.sky }));
-    L.addChild(text(`${divisionName(f.division)}  •  ${st.tier === 'of' ? 'CBFC' : st.tier === 'amateur' ? 'Amateur' : 'Regional pro'}`, 4, 72, { small: true, color: PAL.ash, width: 140, maxLines: 1 }));
+    else L.addChild(text(`${stage(s).short} ${spot === 0 ? 'CHAMP' : '#' + ((spot ?? 0) + 1)}`, 72, 54, { small: true, color: spot === 0 ? PAL.gold : PAL.sky, width: 72, maxLines: 1 }));
+    L.addChild(text(`${divisionName(f.division)}  •  ${stage(s).short}`, 4, 72, { small: true, color: PAL.ash, width: 140, maxLines: 1 }));
     const cond = condition(s);
     L.addChild(text(`OVR ${Math.round(overall(f.skills))}  •  AGE ${f.age}  •`, 4, 82, { small: true, color: PAL.ash }));
     L.addChild(text(cond.label === 'PEAK CONDITION' ? 'PEAK' : cond.label, 98, 82, { small: true, color: PAL[cond.color] }));
@@ -185,7 +186,7 @@ export class FMHubScene extends Scene {
     free(`PAPERWORK${st.inbox.length ? ` (${st.inbox.length})` : ''}`, 126, () => this.paperwork(), st.inbox.length ? PAL.ember : PAL.shadow);
     free('CONDITION & CLINIC', 141, () => this.conditionMenu());
     free('STAFF', 156, () => this.staffMenu());
-    free(st.tier === 'of' ? 'RANKINGS' : 'THE LADDER', 171, () => this.rankingsMenu());
+    free(`${stage(s).short} ROSTER & RANKINGS`, 171, () => this.rankingsMenu());
     if (st.undergroundOpen) free('THE UNDERGROUND', 186, () => this.undergroundMenu(), 0x1d3a22);
     if (this.msg) M.addChild(text(this.msg, 6, 202, { small: true, width: 148, color: PAL.bone, maxLines: 3 }));
 
@@ -431,31 +432,37 @@ export class FMHubScene extends Scene {
     });
   }
 
-  private rankingsMenu(): void {
+  /** The whole roster of the promotion you're in, division by division (rankings, champion first). */
+  private rankingsMenu(div?: string): void {
     const s = this.g.state!;
     const f = me(s);
     const st = fm(s);
-    if (st.tier !== 'of') {
-      const win = openWindow(this.g, `${TIER_NAME[st.tier]}: ${divisionName(f.division)}`, 240, 150);
-      st.ladder.forEach((id, i) => {
-        const x = s.fighters[id];
-        win.body.addChild(text(`${i === 0 ? 'C ' : '#' + (i + 1)}  ${fullName(x)}  ${record(x.record)}`, 6, 4 + i * 11, { small: true, color: id === f.id ? PAL.gold : PAL.bone }));
-      });
-      win.body.addChild(text(st.tier === 'amateur' ? 'Beat the champ to turn pro.' : "Win the Fury FC belt and Bradie's people call.", 6, 4 + st.ladder.length * 11 + 4, { small: true, color: PAL.ash }));
-      return;
-    }
-    const win = openWindow(this.g, `${divisionName(f.division)} rankings`, 240, 220);
-    const sb = new ScrollBox(228, 196);
-    sb.position.set(6, 4);
-    const champ = undisputed(s, f.division)?.holder;
-    const ids = [champ, ...(s.rankings[f.division] ?? [])].filter((x): x is string => !!x);
+    const sg = stage(s);
+    const d = div ?? f.division;
+    const divs = st.tier === 'of' ? s.divisionsOpen.slice() : Object.keys(st.rosters).length ? Object.keys(st.rosters) : [f.division];
+    divs.sort((a, b) => DIVISION_ORDER.indexOf(a) - DIVISION_ORDER.indexOf(b));
+    const win = openWindow(this.g, `${sg.short} roster`, 250, 230);
+    win.body.addChild(text(sg.name, 6, 3, { small: true, color: PAL.gold, width: 238, maxLines: 1 }));
+    win.body.addChild(selector(6, 12, 238, divs.map((x) => ({ value: x, label: divisionName(x) })), d, (v) => { win.close(); this.rankingsMenu(v); }));
+    const sb = new ScrollBox(238, 166);
+    sb.position.set(6, 28);
+    let ids: string[];
+    let champ: string | null | undefined = null;
+    if (st.tier === 'of') {
+      champ = undisputed(s, d)?.holder;
+      ids = [champ, ...(s.rankings[d] ?? [])].filter((x): x is string => !!x);
+    } else ids = (d === f.division ? st.ladder : st.rosters[d]) ?? [];
     ids.forEach((id, i) => {
       const x = s.fighters[id];
-      sb.content.addChild(text(`${i === 0 && champ ? 'C ' : '#' + (champ ? i : i + 1)}  ${fullName(x)}  ${record(x.record)}`, 0, i * 11, { small: true, color: id === f.id ? PAL.gold : PAL.bone }));
+      if (!x) return;
+      const label = st.tier === 'of' ? (i === 0 && champ ? 'C ' : '#' + (champ ? i : i + 1)) : i === 0 ? 'C ' : '#' + (i + 1);
+      sb.content.addChild(text(`${label}  ${fullName(x)}  ${record(x.record)}`, 0, i * 11, { small: true, color: id === f.id ? PAL.gold : PAL.bone, width: 228, maxLines: 1 }));
     });
-    if (!ids.includes(f.id)) sb.content.addChild(text(`…  ${fullName(f)} (unranked)`, 0, ids.length * 11 + 4, { small: true, color: PAL.gold }));
+    if (d === f.division && !ids.includes(f.id)) sb.content.addChild(text(`…  ${fullName(f)} (unranked)`, 0, ids.length * 11 + 4, { small: true, color: PAL.gold }));
     win.body.addChild(sb);
     sb.refresh();
+    const foot = st.tier === 'of' ? 'Rankings follow the real ones.' : st.tier === 'pfl' ? 'Lounge order follows the real PFL. Win the season final and the CBFC calls.' : `Beat the ${sg.short} champ to move up.`;
+    win.body.addChild(text(foot, 6, 198, { small: true, color: PAL.ash, width: 238, maxLines: 2 }));
   }
 
   private menu(): void {
@@ -614,7 +621,7 @@ export class FMHubScene extends Scene {
           const B = s.fighters[bout.b];
           openLiveFight(this.g, {
             bout, A, B, skills: [A.skills, B.skills], player: side(bout) as 0 | 1, plan: st.plan, oppPlan: oppPlan(2), cutTier: st.staff.cutman, seed,
-            event: ev.name, judges: off.judges.map((j) => j.name), referee: off.referee.name,
+            event: ev.name, judges: off.judges.map((j) => j.name), referee: off.referee.name, sponsors: eventSponsors(s, ev),
             done: (res) => {
               bout.result = res;
               done();

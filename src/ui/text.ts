@@ -173,7 +173,13 @@ export class PixelText extends Container {
     // single-line small text reads as a label: keep the small-caps look
     if (small && !this.opts.width) text = upperKeepMarkup(text);
     let lines = this.opts.width ? wrapText(face, text, Math.floor(this.opts.width / layoutScale)) : text.split('\n');
-    if (this.opts.maxLines && lines.length > this.opts.maxLines) {
+    if (this.opts.maxLines === 1 && this.opts.width && lines.length > 1 && !text.includes('\n')) {
+      // a one-line label that doesn't fit: cut it at the character, not at the last whole word
+      const maxW = Math.floor(this.opts.width / layoutScale);
+      let cut = text;
+      while (cut.length > 1 && measureLine(face, cut + '...') > maxW) cut = cut.slice(0, -1);
+      lines = [cut.trimEnd() + '...'];
+    } else if (this.opts.maxLines && lines.length > this.opts.maxLines) {
       lines = lines.slice(0, this.opts.maxLines);
       lines[lines.length - 1] = lines[lines.length - 1].replace(/.{0,3}$/, '...');
     }

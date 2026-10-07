@@ -8,6 +8,7 @@ import { Container, Graphics } from 'pixi.js';
 import { Scene, Game, fullBg } from '../app';
 import type { Bout, FightEvent, TickerLine, EventFinancials } from '../../core/types';
 import { PostFightPresser } from '../presser';
+import { eventSponsors, sponsorColor } from '../../sim/sponsorship';
 import { setMusicContext, walkoutFor } from '../../audio/music';
 import { NewsRecap } from '../newsrecap';
 import { PAL, shade } from '../../art/palette';
@@ -163,6 +164,7 @@ export class FightNightScene extends Scene {
     const r = this.root;
     const v = content().venues.find((x) => x.id === this.ev.venue);
     r.addChild(text(this.ev.name.toUpperCase(), 0, 8, { width: W, align: 'center', scale: 2, color: PAL.gold, shadow: PAL.ink }));
+    if (this.ev.presentedBy) r.addChild(text(`PRESENTED BY ${this.ev.presentedBy.toUpperCase()}`, 0, 22, { width: W, align: 'center', small: true, color: sponsorColor(this.ev.presentedBy) }));
     r.addChild(text(`${fmtFightDate(this.ev.week)}  •  ${v?.name ?? this.ev.venue}  •  ${this.ev.ppv ? 'LIVE ON PAY-PER-VIEW' : 'LIVE ON TV'}`, 0, 28, { width: W, align: 'center', color: PAL.ash, small: true }));
     const main = this.live()[0];
     if (main) {
@@ -366,7 +368,7 @@ export class FightNightScene extends Scene {
     const A = s.fighters[p.bout.a];
     const B = s.fighters[p.bout.b];
     const champ = (id: string) => Object.values(s.belts).some((bt) => bt.holder === id);
-    this.arena = new ArenaView(A, B, p.bout.rounds, { event: this.ev.name, eventKey: this.ev.id, champs: [champ(A.id), champ(B.id)] });
+    this.arena = new ArenaView(A, B, p.bout.rounds, { event: this.ev.name, eventKey: this.ev.id, champs: [champ(A.id), champ(B.id)], sponsors: eventSponsors(s, this.ev) });
     this.arena.position.set(0, 0);
     r.addChild(this.arena);
     this.arena.setMode(this.g.settings.fightCam ?? 'side');

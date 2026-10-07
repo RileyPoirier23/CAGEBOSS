@@ -66,6 +66,10 @@ export interface LiveFighter {
   getup: number;
   kdsRound: number;
   counterT: number;
+  /** a strike pressed while still busy: thrown the moment you're free (so inputs never get eaten) */
+  buffer: { it: FightIntent; t: number } | null;
+  /** just landed something: the next strike in the combo comes out faster */
+  comboT: number;
   sinceHit: number;
   cut: number;
   // stats
@@ -126,7 +130,7 @@ export class LiveFight {
     this.rng = new Rng(seed);
     const mk = (f: Fighter, sk: Skills, x: number): LiveFighter => ({
       id: f.id, sk, x, hp: 100, hpMax: 100, body: 100, legs: 100, gas: 100, bpm: 92, exert: 0,
-      act: null, block: false, parryT: 0, evade: null, stun: 0, down: 0, getup: 0, kdsRound: 0, counterT: 0, sinceHit: 9, cut: 0,
+      act: null, block: false, parryT: 0, evade: null, stun: 0, down: 0, getup: 0, kdsRound: 0, counterT: 0, buffer: null, comboT: 0, sinceHit: 9, cut: 0,
       landed: 0, thrown: 0, tds: 0, kds: 0, dealt: 0, ctrl: 0,
     });
     this.F = [mk(A, skA, 200), mk(B, skB, 280)];
@@ -186,6 +190,16 @@ export class LiveFight {
 
   private tickFighter(i: Side, dt: number): void {
     const f = this.F[i];
+    f.comboT = Math.max(0, f.comboT - dt);
+    if (f.buffer) {
+      f.buffer.t -= dt;
+      if (f.buffer.t <= 0) f.buffer = null;
+      else if (!f.act && f.stun <= 0.15 && f.down <= 0) {
+        const it = f.buffer.it;
+        f.buffer = null;
+        this.intent(i, it);
+      }
+    }
     f.parryT = Math.max(0, f.parryT - dt);
     f.stun = Math.max(0, f.stun - dt);
     f.counterT = Math.max(0, f.counterT - dt);
@@ -232,7 +246,11 @@ export class LiveFight {
       }
       return;
     }
-    if (f.act) return; // one thing at a time
+    if (f.act) {
+      // one thing at a time, but remember the next strike so a quick combo isn't lost
+      if (it.type === 'punch' || it.type === 'kick' || it.type === 'feint') f.buffer = { it, t: 0.35 };
+      return;
+    }
     switch (it.type) {
       case 'punch': {
         if (this.pos === 'ground') {
@@ -364,7 +382,8 @@ export class LiveFight {
   }
 
   private startAct(f: LiveFighter, a: Omit<Act, 't' | 'done'>, gas: number): void {
-    f.act = { ...a, t: 0, done: false };
+    const chain = f.comboT > 0 && (a.kind === 'punch' || a.kind === 'kick' || a.kind === 'knee') ? 0.75 : 1;
+    f.act = { ...a, wind: a.wind * chain, rec: a.rec * chain, t: 0, done: false };
     f.gas = Math.max(0, f.gas - gas);
     f.exert += gas * 1.4;
     f.block = f.block && a.kind === 'feint';
@@ -403,7 +422,7 @@ export class LiveFight {
     for (const i of [0, 1] as Side[]) {
       const f = this.F[i];
       if (f.stun > 0.3 || (f.act && f.act.kind !== 'feint')) continue;
-      const speed = 70 * (0.55 + f.legs / 220) * (0.6 + f.gas / 250) * (f.block ? 0.6 : 1);
+      const speed = 90 * (0.55 + f.legs / 220) * (0.6 + f.gas / 250) * (f.block ? 0.6 : 1);
       f.x += clamp(moves[i], -1, 1) * speed * dt;
       if (Math.abs(moves[i]) > 0.2) f.exert += dt * 3;
     }
@@ -477,6 +496,7 @@ export class LiveFight {
       return;
     }
     f.landed++;
+    f.comboT = 0.45;
     this.apply(i, a.target, dmg, a.heavy || counter, counter, a.name);
   }
 

@@ -92,6 +92,7 @@ export function openCorner(
   if (hp < 40) probs.push({ zone: 'Nose', kind: 'nose', x: 31, y: A.noseY, sev: Math.min(1, (40 - hp) / 30 + 0.35), start: 0, tools: ['gauze', 'ice'] });
   for (const p of probs) p.start = p.sev;
 
+  let answered = false;
   const finishCoach = (aid: number) => {
     setPadUiMode('cursor');
     Ticker.shared.remove(tick);
@@ -113,7 +114,7 @@ export function openCorner(
     PLANS.forEach((p, i) => {
       const x = bx + 8 + (i % 2) * 204;
       const y = by + 58 + Math.floor(i / 2) * 40;
-      frame.addChild(button(p.name, x, y, 196, 16, () => { g.closeModal(wrap); sfx('click'); done(aid, p.id); }, { small: true, fill: p.id === 'survive' ? PAL.shadow : PAL.steel }));
+      frame.addChild(button(p.name, x, y, 196, 16, () => { answered = true; g.closeModal(wrap); sfx('click'); done(aid, p.id); }, { small: true, fill: p.id === 'survive' ? PAL.shadow : PAL.steel }));
       frame.addChild(text(p.text, x + 2, y + 19, { small: true, width: 192, color: PAL.ash, maxLines: 2 }));
     });
   };
@@ -371,6 +372,17 @@ export function openCorner(
   }
   drawFace();
   Ticker.shared.add(tick);
+  // closed from outside (Esc / back): stop the mini game and send him out with an average corner
+  wrap.once('destroyed', () => {
+    Ticker.shared.remove(tick);
+    window.removeEventListener('keydown', keyDown);
+    window.removeEventListener('keyup', keyUp);
+    setPadUiMode('cursor');
+    if (!answered) {
+      answered = true;
+      done(0.4, 'balanced');
+    }
+  });
 }
 
 /** Corner damage -> portrait wounds (treated cuts get bandaged). */

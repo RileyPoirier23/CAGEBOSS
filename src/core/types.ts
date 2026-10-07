@@ -255,6 +255,10 @@ export interface FightEvent {
   ppv: boolean;
   fin?: EventFinancials;
   notes: string[];
+  /** the company paying to present the event ("..., presented by X") */
+  presentedBy?: string;
+  /** extra sponsor names on the cage / canvas / ribbon boards */
+  sponsors?: string[];
 }
 
 export interface Belt {

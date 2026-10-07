@@ -10,6 +10,7 @@
  *
  *   simulateWeek(s, policy) runs all of the above with a bot policy.
  */
+import { weeklySponsorOffers } from './sponsorship';
 import type { GameState, DeskDoc, Stamp, FightEvent, Fighter } from '../core/types';
 import { Rng, withRng } from '../core/rng';
 import { clamp } from '../core/format';
@@ -56,6 +57,7 @@ export function startWeek(s: GameState): void {
         .forEach((b) => s.desk.queue.push(weighInDoc(s, ev, b, rng)));
     }
     weeklyContracts(s, rng);
+    weeklySponsorOffers(s, rng); // companies asking to present an upcoming event
     selectWeek(s, rng);
     careerStartWeek(s, rng); // career: owner check-in, contender series card
     if (s.flags.actIntro) {

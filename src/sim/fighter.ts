@@ -15,7 +15,7 @@ import { Rng } from '../core/rng';
 import { content } from '../core/content';
 import { createNewGame } from './newgame';
 import { generateFighter } from './generate';
-import { DIVISION_LIMITS, divisionName } from './divisions';
+import { DIVISION_LIMITS, DIVISION_ORDER, divisionName } from './divisions';
 import { fullName, overall, computeStarPower, healWeek } from './fighters';
 import { computeRankings, rankOf, undisputed } from './rankings';
 import { makeBout, runBout, applyBout } from './events';
@@ -23,6 +23,7 @@ import { heatUp, feudKey } from './feuds';
 import type { GamePlan } from './fight';
 import { money } from '../core/format';
 import { sigOf } from './docs';
+import { LOCAL_SPONSORS, REGIONAL_SPONSORS } from './sponsorship';
 
 export type BodyPart = 'head' | 'jaw' | 'body' | 'larm' | 'rarm' | 'lhand' | 'rhand' | 'legs';
 export const BODY_PARTS: { id: BodyPart; name: string; effect: string }[] = [
@@ -38,9 +39,38 @@ export const BODY_PARTS: { id: BodyPart; name: string; effect: string }[] = [
 
 export type Archetype = 'striker' | 'wrestler' | 'grappler';
 
-export interface FMOffer { opp: string; week: number; purse: number; win: number; rounds: 3 | 5; title: string | null; why: string; expires: number; /** amateur / regional belt on the line */ tierTitle?: boolean; /** you signed a doctored catchweight: he comes in heavy */ heavyOpp?: boolean }
-export type Tier = 'amateur' | 'regional' | 'of';
-export const TIER_NAME: Record<Tier, string> = { amateur: 'Amateur circuit', regional: 'Fury FC (regional)', of: 'CBFC' };
+export interface FMOffer { opp: string; week: number; purse: number; win: number; rounds: 3 | 5; title: string | null; why: string; expires: number; /** amateur / regional belt on the line */ tierTitle?: boolean; /** a sponsor asked you to plug it (and who's on the cage) */ promoAsked?: boolean; sponsors?: string[]; /** you signed a doctored catchweight: he comes in heavy */ heavyOpp?: boolean }
+export type Tier = 'amateur' | 'regional' | 'pfl' | 'of';
+export const TIER_NAME: Record<Tier, string> = { amateur: 'Local circuit', regional: 'Regional promotion', pfl: "Professional Fighters' Lounge", of: 'CBFC' };
+export const PFL_ID = 'pfl_ish';
+/** One stop on the road to the CBFC. */
+export interface Stage { tier: Tier; name: string; short: string; promo: string }
+const LOCAL_NAMES: [string, string][] = [
+  ['Basement Brawl Series', 'BBS'], ['Gas Station Fight League', 'GSFL'], ["Thursday Throwdown at Dave's Bar", 'TTDB'], ['Rec Centre Rumble', 'RCR'],
+  ['Strip Mall Showdown', 'SMS'], ['Backyard Cage League', 'BCL'], ['Bingo Hall Brawl', 'BHB'], ['Parking Lot Prizefights', 'PLP'],
+];
+const REGIONAL_NAMES: [string, string][] = [
+  ['Fury Fighting Championship', 'Fury FC'], ['Lionheart Combat', 'LHC'], ['Iron Cage Championship', 'ICC'], ['Cage Titans of Ohio', 'Cage Titans'],
+  ['Rumble on the River', 'ROTR'], ['Northern Combat League', 'NCL'], ['Big Sky Fight Series', 'BSFS'], ['Gulf Coast Cage Wars', 'GCCW'],
+  ['Desert Storm Fighting', 'DSF'], ['King of the Casino', 'KOTC'],
+];
+
+/** The road: a junk local promotion, one or two regional ones, the Lounge (PFL), then the CBFC. */
+export function makeCircuit(rng: Rng): Stage[] {
+  const [ln, ls] = rng.pick(LOCAL_NAMES);
+  const regs = rng.sample(REGIONAL_NAMES, rng.int(1, 2));
+  return [
+    { tier: 'amateur', name: ln, short: ls, promo: 'fm_local' },
+    ...regs.map(([n, sh], i) => ({ tier: 'regional' as Tier, name: n, short: sh, promo: 'fm_reg' + i })),
+    { tier: 'pfl', name: "Professional Fighters' Lounge", short: 'PFL', promo: PFL_ID },
+    { tier: 'of', name: 'Cage Boss Fighting Championship', short: 'CBFC', promo: 'us' },
+  ];
+}
+
+export function stage(s: GameState): Stage {
+  const st = fm(s);
+  return st.circuit[Math.min(st.stage, st.circuit.length - 1)];
+}
 /** Bradie also owns the bareknuckle circuit. "It's for the culture, bro." */
 export const BKB_NAME = "Bradie's Biggest Bird Bareknuckle";
 export interface StaffCandidate { role: StaffId; name: string; tier: number; quirk: string; shady: boolean }
@@ -92,8 +122,13 @@ export interface FMState {
   taint: number;
   missedWeight: boolean;
   tier: Tier;
-  /** ids on the current tier's ladder, [0] = champion (amateur / regional only) */
+  /** the promotions you climb through, and where you are on that road */
+  circuit: Stage[];
+  stage: number;
+  /** ids on the current tier's ladder, [0] = champion (amateur / regional / PFL; your division) */
   ladder: string[];
+  /** the rest of the current promotion's roster: division -> ranked ids, [0] = champion */
+  rosters: Record<string, string[]>;
   bk: { ladder: string[]; w: number; l: number; champ: boolean; signed?: boolean };
   /** Only Fighters account (Bradie's subscription site) */
   ofa: { joined: boolean; subs: number; posted: boolean; asked: boolean };
@@ -234,7 +269,7 @@ export function createFighterGame(o: CreateOpts): GameState {
   f.record = { w: 0, l: 0, d: 0, nc: 0 };
   f.streak = 0;
   f.status = 'active';
-  f.promotion = 'amateur'; // not in the Only Fighters rankings until Bradie signs you
+  f.promotion = 'fm_local'; // not in the CBFC rankings until you get there
   f.contract = { boutsLeft: 99, purse: 4000, winBonus: 4000, champClause: true, exclusive: true, signedWeek: 0 };
   f.hype = 10;
   f.scout = 3;
@@ -254,15 +289,29 @@ export function createFighterGame(o: CreateOpts): GameState {
     ped: { on: false, weeks: 0, caught: 0 }, suspendedUntil: 0,
     fight: null, offers: [], plan: 'balanced', roundPlans: {}, cornerAid: {},
     log: [], feed: [], pending: [], undergroundOpen: false, retired: false, history: [], weekReport: null, partied: 0, taint: 0, missedWeight: false,
-    tier: 'amateur', ladder: [], bk: { ladder: [], w: 0, l: 0, champ: false },
+    tier: 'amateur', circuit: makeCircuit(rng), stage: 0, ladder: [], rosters: {}, bk: { ladder: [], w: 0, l: 0, champ: false },
     staffNames: { coach: 'Uncle Ray', cutman: 'Some guy with a towel', nutrition: 'Google', manager: 'You' }, shady: {}, market: [], marketWeek: -99,
     partner: null, inbox: [], water: 0, oppFlagged: false,
     ofa: { joined: false, subs: 0, posted: false, asked: false }, clauses: [],
   };
+  // the Lounge (PFL) has its own parody roster (Bellator's lot went with it when it got bought)
+  for (const x of Object.values(s.fighters)) {
+    const sw = (x as { startWith?: string }).startWith;
+    if (x.parody && (sw === PFL_ID || sw === 'bellatrix' || x.parody === 'Francis Ngannou')) {
+      x.promotion = PFL_ID;
+      x.status = 'active';
+    }
+  }
+  computeRankings(s);
+  // any CBFC belt that went with them goes to the top contender left behind
+  for (const b of Object.values(s.belts)) {
+    if (!b.holder || !b.division || s.fighters[b.holder]?.promotion !== PFL_ID) continue;
+    b.holder = (s.rankings[b.division] ?? []).find((id) => s.fighters[id]?.promotion === 'us') ?? null;
+  }
   buildLadder(s, rng, 'amateur');
   refreshMarket(s, rng);
   computeRankings(s);
-  log(s, `You signed up for the ${TIER_NAME.amateur}. Climb the ladder, win the belt, turn pro, and maybe the CBFC calls.`);
+  log(s, `You signed with the ${fm(s).circuit[0].name}. Climb the ladder, win the belt, move up. The CBFC is a long way off.`);
   post(s, '@' + (f.last.toLowerCase()), 'First amateur fight coming up. Mom cried. I cried. The guy at the gas station cried. LETS GO');
   makeOffers(s, rng, true);
   return s;
@@ -273,7 +322,13 @@ export function ensureFM(s: GameState): void {
   const st = s.fm;
   if (!st) return;
   st.tier ??= 'of';
+  if (!st.circuit) {
+    st.circuit = makeCircuit(new Rng(s.rng));
+    st.stage = st.circuit.findIndex((x) => x.tier === st.tier);
+    if (st.stage < 0) st.stage = st.circuit.length - 1;
+  }
   st.ladder ??= [];
+  st.rosters ??= {};
   st.bk ??= { ladder: [], w: 0, l: 0, champ: false };
   st.staffNames ??= { coach: STAFF_ROLES[0].tiers[st.staff.coach], cutman: STAFF_ROLES[1].tiers[st.staff.cutman], nutrition: STAFF_ROLES[2].tiers[st.staff.nutrition], manager: STAFF_ROLES[3].tiers[st.staff.manager] };
   st.shady ??= {};
@@ -289,13 +344,30 @@ export function ensureFM(s: GameState): void {
 
 // ---------------------------------------------------------------- tiers & ladders
 
-const LADDER_SIZE: Record<'amateur' | 'regional' | 'bk', number> = { amateur: 6, regional: 8, bk: 8 };
-const LADDER_OVR: Record<'amateur' | 'regional' | 'bk', [number, number]> = { amateur: [40, 52], regional: [50, 63], bk: [46, 66] };
+const LADDER_SIZE: Record<'amateur' | 'regional' | 'pfl' | 'bk', number> = { amateur: 6, regional: 8, pfl: 10, bk: 8 };
+const LADDER_OVR: Record<'amateur' | 'regional' | 'pfl' | 'bk', [number, number]> = { amateur: [40, 52], regional: [50, 63], pfl: [64, 76], bk: [46, 66] };
+
+/**
+ * Real-life order of the Lounge (PFL) parodies per division: champion first. Edit this list to
+ * follow the real rankings; anyone not listed is ranked behind, by ability.
+ */
+export const PFL_ORDER: Record<string, string[]> = {
+  heavy: ['francis_ngonnagetpaid', 'renan_ferreirah', 'denis_goldsov', 'ryan_badder'],
+  lightheavy: ['vadim_nemcough', 'corey_andersun'],
+  middle: ['johnny_eblenz', 'fabian_edwardz', 'impa_kasangabay'],
+  welter: ['ray_cooper_threeish', 'mvp_paige', 'magomed_magomedkerimoof', 'cedric_doomby'],
+  light: ['usman_nurmagomedoof', 'gadzhi_rabadanoof', 'clay_collards'],
+  feather: ['patricio_freirepit', 'aj_mckeen', 'timur_khizrieff', 'jesus_pinedough', 'brendan_loughnaine'],
+  bantam: ['patchy_remix', 'sergio_petis'],
+  wfly: ['dakota_ditchvisa', 'liz_carmoosh', 'taila_santoss'],
+  wbantam: ['cris_cyberborg', 'larissa_pachecko'],
+};
 
 /** A local fighter (not a parody): generated, then pulled to the overall we want. */
-function localFighter(s: GameState, rng: Rng, promo: string, target: number, idx: number): Fighter {
+function localFighter(s: GameState, rng: Rng, promo: string, target: number, idx: number, division?: string): Fighter {
   const f0 = me(s);
-  const x = generateFighter(rng, content().names, { division: f0.division, gender: f0.gender, tier: 'prospect', id: `${promo}_${s.week}_${idx}_${rng.int(0, 1e6)}` });
+  const div = division ?? f0.division;
+  const x = generateFighter(rng, content().names, { division: div, gender: div.startsWith('w') ? 'W' : 'M', tier: 'prospect', id: `${promo}_${div}_${s.week}_${idx}_${rng.int(0, 1e6)}` });
   const shift = target - overall(x.skills);
   for (const k of Object.keys(x.skills) as (keyof Skills)[]) x.skills[k] = clamp(Math.round(x.skills[k] + shift), 15, 95);
   x.promotion = promo;
@@ -314,14 +386,42 @@ function localFighter(s: GameState, rng: Rng, promo: string, target: number, idx
   return x;
 }
 
-export function buildLadder(s: GameState, rng: Rng, which: 'amateur' | 'regional' | 'bk'): void {
+export function buildLadder(s: GameState, rng: Rng, which: 'amateur' | 'regional' | 'pfl' | 'bk'): void {
   const st = fm(s);
   const n = LADDER_SIZE[which];
-  const [lo, hi] = LADDER_OVR[which];
-  const ids: string[] = [];
-  for (let i = 0; i < n; i++) ids.push(localFighter(s, rng, which, Math.round(hi - ((hi - lo) * i) / (n - 1)), i).id);
-  if (which === 'bk') st.bk.ladder = [...ids, st.player];
-  else st.ladder = [...ids, st.player];
+  let [lo, hi] = LADDER_OVR[which];
+  // each regional promotion is a step up from the last
+  const regIdx = which === 'regional' ? st.circuit.slice(0, st.stage).filter((x) => x.tier === 'regional').length : 0;
+  lo += regIdx * 5;
+  hi += regIdx * 5;
+  const promo = which === 'bk' ? 'bkb' : stage(s).promo;
+  const f0 = me(s);
+  const division = (div: string, size: number): string[] => {
+    const ids: string[] = [];
+    if (which === 'pfl') {
+      // the Lounge's parody roster in its real-life order (champion first); local signings fill the gaps
+      const order = PFL_ORDER[div] ?? [];
+      const par = Object.values(s.fighters).filter((x) => x.promotion === PFL_ID && x.division === div && x.status === 'active' && x.id !== f0.id)
+        .sort((a, b) => {
+          const ia = order.indexOf(a.id);
+          const ib = order.indexOf(b.id);
+          if (ia >= 0 || ib >= 0) return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+          return overall(b.skills) - overall(a.skills);
+        }).slice(0, size);
+      ids.push(...par.map((x) => x.id));
+    }
+    for (let i = ids.length; i < size; i++) ids.push(localFighter(s, rng, promo, Math.round(hi - ((hi - lo) * i) / (size - 1)), i, div).id);
+    return ids;
+  };
+  if (which === 'bk') {
+    st.bk.ladder = [...division(f0.division, n), st.player];
+    return;
+  }
+  st.ladder = [...division(f0.division, n), st.player];
+  // a full roster: every division of the promotion has its own ranked ladder
+  st.rosters = { [f0.division]: st.ladder };
+  const divs = DIVISION_ORDER.filter((d) => d !== f0.division && (which !== 'amateur' || rng.chance(0.7)));
+  for (const d of divs) st.rosters[d] = division(d, which === 'pfl' ? Math.max(5, (PFL_ORDER[d] ?? []).length) : 5);
 }
 
 /** Your spot on the current tier's ladder (0 = champion). Null in Only Fighters. */
@@ -341,23 +441,31 @@ function climb(list: string[], winner: string, loser: string): void {
   list.splice(l, 0, winner);
 }
 
-/** Win a tier's belt: amateur -> regional -> Bradie signs you. */
+/** Win a promotion's belt and move up the road: local -> regional (one or two) -> the Lounge -> the CBFC. */
 function promote(s: GameState, rng: Rng, out: string[]): void {
   const st = fm(s);
   const f = me(s);
-  if (st.tier === 'amateur') {
-    st.tier = 'regional';
-    buildLadder(s, rng, 'regional');
-    out.push(`AMATEUR CHAMPION. You turn pro with ${TIER_NAME.regional}. Real purses, real hospitals.`);
-    log(s, 'Won the amateur belt and turned pro.', 2);
-    f.hype = clamp(f.hype + 8, 0, 100);
-  } else if (st.tier === 'regional') {
-    st.tier = 'of';
+  const was = stage(s);
+  st.stage = Math.min(st.stage + 1, st.circuit.length - 1);
+  const next = stage(s);
+  st.tier = next.tier;
+  if (next.tier === 'regional' || next.tier === 'pfl') {
+    f.promotion = next.promo;
+    buildLadder(s, rng, next.tier);
+    st.offers = [];
+    out.push(next.tier === 'pfl'
+      ? `${was.short} CHAMPION. The Professional Fighters' Lounge calls: season format, playoffs, and a "million dollar" prize. Real names on this roster now.`
+      : `${was.short} CHAMPION. ${next.name} signs you. Bigger shows, better purses, harder men.`);
+    log(s, `Won the ${was.name} belt and signed with ${next.name}.`, 2);
+    f.hype = clamp(f.hype + (next.tier === 'pfl' ? 10 : 6), 0, 100);
+    return;
+  }
+  if (next.tier === 'of') {
     st.ladder = [];
     f.promotion = 'us';
     if (!s.divisionsOpen.includes(f.division)) s.divisionsOpen.push(f.division);
     f.contract = { boutsLeft: 99, purse: 6000, winBonus: 6000, champClause: true, exclusive: true, signedWeek: s.week };
-    out.push(`REGIONAL CHAMPION. The CBFC calls. You're in the big show now: bottom of the prelims, but you're in.`);
+    out.push(`LOUNGE CHAMPION. The CBFC calls. You're in the big show now: bottom of the prelims, but you're in.`);
     log(s, `Signed with the ${s.promotion.name}.`, 2);
     post(s, BRADIE.handle, `${f.last.toLowerCase()} made the cbfc. congrats bro. also check your DMs. i have an only fighters offer. its mostly normal`);
     f.hype = clamp(f.hype + 12, 0, 100);
@@ -803,9 +911,14 @@ function offerVs(s: GameState, opp: Fighter, rng: Rng, why: string, title: strin
   if (st.tier !== 'of') {
     const top = st.ladder[0] === opp.id;
     const mgr = [1, 1.1, 1.25, 1.4][st.staff.manager];
-    const base = st.tier === 'amateur' ? 150 : 1500 + Math.max(0, 8 - st.ladder.indexOf(opp.id)) * 250;
+    const idx = Math.max(0, st.ladder.indexOf(opp.id));
+    const regIdx = st.circuit.slice(0, st.stage).filter((x) => x.tier === 'regional').length;
+    const base = st.tier === 'amateur' ? 150 : st.tier === 'regional' ? (1500 + regIdx * 1000) + Math.max(0, 8 - idx) * 250 : 6000 + Math.max(0, 10 - idx) * 900;
     const purse = Math.round((base * mgr * (top ? 2 : 1)) / 50) * 50;
-    return { opp: opp.id, week: s.week + rng.int(2, 4), purse, win: purse, rounds: 3, title: null, tierTitle: top, why: top ? `${st.tier === 'amateur' ? 'Amateur' : 'Fury FC'} TITLE FIGHT. Win and move up.` : why, expires: s.week + 2 };
+    // the Lounge's season final pays the famous "million dollars"
+    const win = st.tier === 'pfl' && top ? 1_000_000 : purse;
+    const name = stage(s).short;
+    return { opp: opp.id, week: s.week + rng.int(2, 4), purse, win, rounds: top && st.tier === 'pfl' ? 5 : 3, title: null, tierTitle: top, why: top ? (st.tier === 'pfl' ? 'LOUNGE SEASON FINAL. Win the "million dollars" and the CBFC calls.' : `${name} TITLE FIGHT. Win and move up.`) : why, expires: s.week + 2 };
   }
   const mine = rankOf(s, f.id);
   const base = 4000 + (mine === null ? 0 : (16 - mine) * 2500) + f.hype * 120;
@@ -829,7 +942,10 @@ export function makeOffers(s: GameState, rng: Rng, force = false): void {
     const n = 1 + (rng.chance(0.4 + st.staff.manager * 0.15) ? 1 : 0);
     for (const id of rng.sample(pool, Math.min(n, pool.length))) {
       if (st.offers.some((o) => o.opp === id) || st.offers.length >= 3) continue;
-      st.offers.push(offerVs(s, s.fighters[id], rng, rng.pick(st.tier === 'amateur' ? ['Rec-centre smoker. Bring your own mouthguard.', 'Church basement card. Headgear optional.', 'A bar show. The ring is a little small.'] : ['Fury FC on a Friday night. Real crowd, real purse.', 'Casino ballroom card. The buffet is included.', 'Main card at the county fair. Right after the pig race.'])));
+      const lines = st.tier === 'amateur' ? ['Rec-centre smoker. Bring your own mouthguard.', 'Church basement card. Headgear optional.', 'A bar show. The cage is a little small.', 'The ring card girl is the promoter\'s mum.']
+        : st.tier === 'pfl' ? ['Lounge regular season: points for finishes.', 'A Lounge card in a half-empty arena. Great lighting.', 'Lounge playoffs. Somebody\'s sovereign wealth fund is watching.', 'Lounge "super fight". Nobody knows what makes it super.']
+          : [`${stage(s).short} on a Friday night. Real crowd, real purse.`, 'Casino ballroom card. The buffet is included.', 'Main card at the county fair. Right after the pig race.', 'A TV deal with a channel you\'ve never heard of.'];
+      st.offers.push(offerVs(s, s.fighters[id], rng, rng.pick(lines)));
     }
     return;
   }
@@ -1172,6 +1288,17 @@ export function resolveEvent(s: GameState, choice: string, rng: Rng): string {
     case 'reply:meme': hype(2); mor(2); return 'The clown emoji got 40k likes. He is furious. You are at peace.';
     case 'reply:bkb': { const by = s.fighters[String(ev.data?.by)]; hype(4); if (by) heatUp(s, f.id, by.id, 10); post(s, BRADIE.handle, 'ayo. bareknuckle. both of yall. my backyard. i have a hot tub'); return "You challenged him to Bradie's bareknuckle circuit. Bradie is very into it. The Commission is not."; }
     case 'reply:drop': mor(2); return 'You let it go. Growth.';
+    case 'promo:plug':
+    case 'promo:shorts': {
+      const pay = Number(ev.data?.pay ?? 0) * (choice === 'shorts' ? 2 : 1);
+      st.money += pay;
+      if (st.fight) st.fight.sponsors = [String(ev.data?.name), ...(st.fight.sponsors ?? [])];
+      if (choice === 'shorts') hype(-1);
+      mor(1);
+      post(s, '@' + f.last.toLowerCase(), `Big thanks to ${ev.data?.name} for presenting my fight!! ${choice === 'shorts' ? 'Logo on the shorts, baby.' : 'Link in bio.'}`);
+      return `+${money(pay)}. ${ev.data?.name} is on the cage for your fight${choice === 'shorts' ? ' and on your shorts. The comments say "sellout". The bank says thank you.' : '.'}`;
+    }
+    case 'promo:no': mor(1); return 'You passed. Your integrity is intact. Your wallet is not.';
     case 'jimmy:cycle': return startPeds(s);
     case 'jimmy:vitamins':
       if (st.money < 300) return 'Jimmy: "No money, no vitamins, bro."';
@@ -1246,7 +1373,7 @@ export function boutDoc(s: GameState, rng: Rng, o: FMOffer): FMDoc {
     if (fault === 'Fighter signature') f.value = sigOf(me(s), 2);
     f.bad = true;
   }
-  return { id: docId(s, rng), kind: 'bout', title: 'BOUT AGREEMENT', from: fm(s).tier === 'of' ? 'CBFC matchmaking' : TIER_NAME[fm(s).tier], fields, ref, fault, week: s.week };
+  return { id: docId(s, rng), kind: 'bout', title: 'BOUT AGREEMENT', from: fm(s).tier === 'of' ? 'CBFC matchmaking' : stage(s).name, fields, ref, fault, week: s.week };
 }
 
 /** Your manager's statement after a fight. Shady managers skim. */
@@ -1674,6 +1801,18 @@ export function endWeek(s: GameState, rng: Rng): string[] {
   if (s.week >= 4) st.undergroundOpen = true;
   if (s.week - st.marketWeek >= 4) refreshMarket(s, rng);
   ofWeek(s, rng, out);
+  // a company sponsoring your next event wants you to plug it
+  if (st.fight && !st.fight.promoAsked && st.fight.week - s.week <= 3 && rng.chance(0.45)) {
+    st.fight.promoAsked = true;
+    const pool = st.tier === 'amateur' ? LOCAL_SPONSORS : st.tier === 'regional' ? REGIONAL_SPONSORS : content().sponsors.map((x) => x.name.replace(/ \(.*\)$/, ''));
+    const name = rng.pick(pool);
+    const pay = { amateur: 200, regional: 900, pfl: 3500, of: 9000 }[st.tier] * rng.float(0.8, 1.3);
+    st.pending.push({
+      id: 'promo', title: 'A SPONSOR WANTS A PLUG', data: { name, pay: Math.round(pay / 50) * 50 },
+      text: `${name} is sponsoring your next event and wants you to promote it: three posts, a video "in your own words" (they wrote the words) and a mention at the weigh-in. ${money(Math.round(pay / 50) * 50)}. Double if their logo goes on your shorts.`,
+      choices: [{ id: 'plug', label: 'Plug it' }, { id: 'shorts', label: 'Plug it + logo on the shorts' }, { id: 'no', label: 'No thanks' }],
+    });
+  }
   if (!st.ped.on && !st.pending.some((e) => e.id === 'jimmy') && rng.chance(s.week < 3 ? 0 : 0.06)) st.pending.push(EVENTS.jimmy(s, rng));
   if (st.tier === 'of' && !st.ofa.asked && rng.chance(0.25)) {
     st.ofa.asked = true;
@@ -1767,16 +1906,19 @@ export function fightEvent(s: GameState, rng: Rng): FightEvent {
   const o = st.fight!;
   const f = me(s);
   const opp = s.fighters[o.opp];
-  const evName = st.tier === 'amateur' ? `Amateur Smoker ${s.week + 1}` : st.tier === 'regional' ? `Fury FC ${20 + s.week}` : `CBFC ${o.title ? 'Championship Night' : 'Fight Night'} ${s.week + 1}`;
-  const ev: FightEvent = { id: o.eventId, name: evName, number: null, week: s.week, venue: 'ape_x', region: 'na', card: [], status: 'scheduled', ppv: !!o.title, notes: ['started', 'fighter'] };
+  const sg = stage(s);
+  const evName = st.tier === 'of' ? `CBFC ${o.title ? 'Championship Night' : 'Fight Night'} ${s.week + 1}`
+    : st.tier === 'pfl' ? `PFL Lounge ${o.tierTitle ? 'Season Final' : 'Week ' + ((s.week % 20) + 1)}`
+      : `${sg.short} ${o.tierTitle ? 'Title Night' : sg.tier === 'amateur' ? 'Smoker' : 'Fight Night'} ${10 + s.week}`;
+  const ev: FightEvent = { sponsors: o.sponsors, presentedBy: o.sponsors?.[0], id: o.eventId, name: evName, number: null, week: s.week, venue: 'ape_x', region: 'na', card: [], status: 'scheduled', ppv: !!o.title, notes: ['started', 'fighter'] };
   // where you are on the card depends on your rank and how famous you are: everybody starts on the prelims
   const slot = cardSlot(s);
-  const size = st.tier === 'of' ? 8 : 5;
+  const size = st.tier === 'of' ? 8 : st.tier === 'pfl' ? 6 : 5;
   const mine = makeBout(s, ev, f, opp, slot, o.title);
   mine.rounds = slot === 0 ? 5 : o.rounds;
   ev.card.push(mine);
   // the rest of the card (the better the fighters, the higher they go). Watch them from cageside.
-  const promo = st.tier === 'of' ? 'us' : st.tier;
+  const promo = sg.promo;
   const pool = Object.values(s.fighters)
     .filter((x) => x.promotion === promo && x.status === 'active' && x.id !== f.id && x.id !== opp.id && !x.injuries.some((i) => i.until > s.week))
     .sort((a, b) => overall(b.skills) + b.hype * 0.3 - (overall(a.skills) + a.hype * 0.3));
@@ -1864,9 +2006,13 @@ export function afterFight(s: GameState, ev: FightEvent, rng: Rng): string[] {
   if (o.title && won) out.push(`YOU ARE THE ${divisionName(f.division).toUpperCase()} CHAMPION.`);
   // ladders: the other fights on the card move the ladder too
   if (st.tier !== 'of') {
-    for (const bb of ev.card) if (bb.result?.winner && bb.result.loser) climb(st.ladder, bb.result.winner, bb.result.loser);
+    for (const bb of ev.card) {
+      if (!bb.result?.winner || !bb.result.loser) continue;
+      const list = bb.division === f.division ? st.ladder : st.rosters[bb.division];
+      if (list) climb(list, bb.result.winner, bb.result.loser);
+    }
     if (won && o.tierTitle) promote(s, rng, out);
-    else out.push(`You're #${(ladderSpot(s) ?? 0) + 1} on the ${TIER_NAME[st.tier]} ladder${ladderSpot(s) === 0 ? ' (champion)' : ''}.`);
+    else out.push(`You're #${(ladderSpot(s) ?? 0) + 1} in the ${stage(s).name}${ladderSpot(s) === 0 ? ' (champion)' : ''}.`);
   }
   // your manager's statement lands in the inbox
   if (st.staff.manager > 0) st.inbox.push(statementDoc(s, rng, pay));

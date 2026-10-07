@@ -66,7 +66,7 @@ export class FMCreateScene extends Scene {
     const p = new Container();
     p.position.set(10, 40);
     r.addChild(p);
-    p.addChild(box(282, 206, PAL.night, PAL.slate, { bevel: true }));
+    p.addChild(box(282, 184, PAL.night, PAL.slate, { bevel: true })); // short enough to clear the NOW PLAYING tag
     let y = 8;
     const row = (label: string) => {
       p.addChild(text(label, 8, y + 3, { small: true, color: PAL.ash }));
@@ -100,7 +100,7 @@ export class FMCreateScene extends Scene {
     y += 16;
     p.addChild(text(ARCHES.find((a) => a.value === this.arch)!.blurb, 84, y, { small: true, width: 190, color: PAL.bone, maxLines: 2 }));
     y += 22;
-    p.addChild(text('You start 0-0 on the amateur circuit with $2,500 and a cousin who says he can corner. Climb the ladder, turn pro, make the CBFC.', 8, y, { small: true, width: 266, color: PAL.ash, maxLines: 3 }));
+    p.addChild(text('You start 0-0 in a junk local promotion with $2,500 and a cousin who says he can corner. Win belts to move up: regional shows, the PFL Lounge, then the CBFC.', 8, y, { small: true, width: 266, color: PAL.ash, maxLines: 3 }));
 
     // right: look
     const q = new Container();

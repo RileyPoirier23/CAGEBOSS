@@ -6,6 +6,7 @@ import type { Game } from '../app';
 import { PAL } from '../../art/palette';
 import { W, H, text, button, box, ScrollBox, clickable, paper } from '../kit';
 import { openWindow, alertBox } from '../widgets';
+import { eventOffers, answerEventOffer } from '../../sim/sponsorship';
 import { content } from '../../core/content';
 import { money } from '../../core/format';
 import { fmtDate } from '../../core/time';
@@ -14,7 +15,7 @@ import { sfx } from '../../audio/sfx';
 
 export function openInbox(g: Game, onClose: () => void): void {
   const s = g.state!;
-  let tab: 'mail' | 'offers' | 'citations' | 'log' = s.market.tvOffers.length ? 'offers' : 'mail';
+  let tab: 'mail' | 'offers' | 'citations' | 'log' = s.market.tvOffers.length || eventOffers(s).length ? 'offers' : 'mail';
   const win = openWindow(g, 'Inbox', W - 40, H - 30, { onClose });
   const draw = () => {
     win.body.removeChildren().forEach((c) => c.destroy({ children: true }));
@@ -40,6 +41,17 @@ export function openInbox(g: Game, onClose: () => void): void {
         add(p, t.textHeight + 8);
       }
     } else if (tab === 'offers') {
+      // companies that want to present one of your events
+      for (const o of eventOffers(s)) {
+        const ev = s.events.find((e) => e.id === o.eventId);
+        const c = new Container();
+        c.addChild(box(W - 60, 40, 0x2a2630, o.banned ? PAL.blood : PAL.gold));
+        c.addChild(text(`${o.name} wants to present ${ev?.name ?? 'an event'}`, 4, 3, { color: PAL.gold, width: W - 190, maxLines: 1 }));
+        c.addChild(text(`${money(o.fee)}. ${o.ask}${o.banned ? ' (Banned sponsor category!)' : ''}`, 4, 14, { small: true, color: PAL.bone, width: W - 190, maxLines: 3 }));
+        c.addChild(button('ACCEPT', W - 180, 6, 54, 13, () => { const msg = answerEventOffer(s, o.id, true); sfx('cash'); g.toast(msg, PAL.moss, { small: true }); draw(); }, { small: true, fill: PAL.moss }));
+        c.addChild(button('DECLINE', W - 120, 6, 54, 13, () => { answerEventOffer(s, o.id, false); draw(); }, { small: true, fill: PAL.shadow }));
+        add(c, 40);
+      }
       if (!s.market.tvOffers.length) add(text('No TV offers on the table. Make the product better (or the network meter higher).', 0, 0, { color: PAL.ash, width: W - 60 }), 20);
       for (const o of s.market.tvOffers) {
         const n = content().networks.find((x) => x.id === o.network);

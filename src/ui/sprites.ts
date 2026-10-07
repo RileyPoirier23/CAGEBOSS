@@ -92,12 +92,12 @@ export function npcPortrait(seed: string, kind: 'cop' | 'exec' | 'manager' | 'la
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
   const look = {
-    head: h % 4, skin: (h >> 3) % 6, hair: kind === 'exec' ? (h >> 5) % 3 : (h >> 5) % 8, hairColor: (h >> 8) % 8, beard: (h >> 11) % 5,
-    brows: (h >> 13) % 3, eyes: (h >> 15) % 3, nose: (h >> 17) % 2, ears: 0, scar: 0, tattoo: kind === 'manager' ? (h >> 19) % 3 : 0, build: (h >> 21) % 3,
+    head: h % 4, skin: (h >>> 3) % 6, hair: kind === 'exec' ? (h >>> 5) % 3 : (h >>> 5) % 8, hairColor: (h >>> 8) % 8, beard: (h >>> 11) % 5,
+    brows: (h >>> 13) % 3, eyes: (h >>> 15) % 3, nose: (h >>> 17) % 2, ears: 0, scar: 0, tattoo: kind === 'manager' ? (h >>> 19) % 3 : 0, build: (h >>> 21) % 3,
   };
   const attire = kind === 'cop' ? 'jersey' : kind === 'fan' ? 'hoodie' : kind === 'doctor' ? 'shirt' : 'suit';
   const accent = kind === 'cop' ? 0x2c3a5a : kind === 'exec' ? PAL.steel : kind === 'lawyer' ? PAL.plum : undefined;
-  return portrait({ id: seed, look, gender: (h >> 23) % 4 === 0 ? 'W' : 'M', age: 30 + ((h >> 4) % 30), variant: kind === 'cop' ? 'mugshot' : 'reporter', attire, accent }, size);
+  return portrait({ id: seed, look, gender: (h >>> 23) % 4 === 0 ? 'W' : 'M', age: 30 + ((h >>> 4) % 30), variant: kind === 'cop' ? 'mugshot' : 'reporter', attire, accent }, size);
 }
 
 /** Recurring named characters (storylets use portrait: 'npc:<key>'). */

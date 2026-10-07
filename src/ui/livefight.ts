@@ -39,6 +39,7 @@ export interface LiveFightOpts {
   event: string;
   judges: string[];
   referee: string;
+  sponsors?: { name: string; color: number }[];
   done: (r: FightResult) => void;
 }
 
@@ -64,7 +65,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
 
   const root = new Container();
   root.addChild(new Graphics().rect(0, 0, W, H).fill(0x0c0a10));
-  const arena = new ArenaView(o.A, o.B, o.bout.rounds, { event: o.event, eventKey: o.bout.id });
+  const arena = new ArenaView(o.A, o.B, o.bout.rounds, { event: o.event, eventKey: o.bout.id, sponsors: o.sponsors });
   arena.manual = [L.F[0].x, L.F[1].x];
   arena.startFight();
   arena.manualRound();

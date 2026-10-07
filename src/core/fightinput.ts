@@ -338,8 +338,9 @@ export class FightInput {
     }
 
     // block / parry
+    // the guard comes up the instant you press (a well-timed press also parries)
     if (down('block')) out.push({ type: 'parry' });
-    if (s.held.has('block') && !this.blocking && this.heldFor('block') >= T.parryWindow) {
+    if (s.held.has('block') && !this.blocking) {
       this.blocking = true;
       out.push({ type: 'block', phase: 'start' });
     }

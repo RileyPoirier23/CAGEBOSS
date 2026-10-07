@@ -43,17 +43,17 @@ describe('fighter mode', () => {
     expect(fights).toBeGreaterThan(2);
     expect(fm(s).history.length).toBe(fights);
     const f = me(s);
-    expect(f.record.w + f.record.l + f.record.d).toBe(fights);
+    expect(f.record.w + f.record.l + f.record.d + f.record.nc).toBe(fights);
   });
 
-  it('climbs amateur -> regional -> Only Fighters, does paperwork and bareknuckle', () => {
+  it('climbs local -> regional -> the Lounge (PFL) -> CBFC, does paperwork and bareknuckle', () => {
     const look = generateFighter(new Rng(2), content().names, { division: 'welter', tier: 'prospect' }).look;
     const s = createFighterGame({ seed: 21, first: 'Lad', last: 'Climber', nick: '', gender: 'M', culture: 'uk', division: 'welter', archetype: 'striker', look });
     expect(fm(s).tier).toBe('amateur');
     expect(fm(s).ladder.length).toBe(7);
     const rng = new Rng(7);
     const tiers = new Set<string>();
-    for (let w = 0; w < 150 && fm(s).tier !== 'of'; w++) {
+    for (let w = 0; w < 400 && fm(s).tier !== 'of'; w++) {
       while (fm(s).pending.length) resolveEvent(s, fm(s).pending[0].id === 'jimmy' ? 'no' : fm(s).pending[0].choices[0].id, rng);
       for (const d of fm(s).inbox.slice()) resolveDoc(s, d.id, d.fault ? 'dispute' : 'sign', d.fault ? [d.fault] : [], rng);
       if (!fm(s).fight && fm(s).offers.length) acceptOffer(s, 0);
@@ -74,6 +74,7 @@ describe('fighter mode', () => {
       endWeek(s, rng);
     }
     expect(tiers.has('regional')).toBe(true);
+    expect(tiers.has('pfl')).toBe(true);
     expect(fm(s).tier).toBe('of');
     expect(me(s).promotion).toBe('us');
     expect(fm(s).bk.w + fm(s).bk.l).toBeGreaterThan(0);
