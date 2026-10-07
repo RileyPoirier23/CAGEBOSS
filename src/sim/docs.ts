@@ -21,7 +21,7 @@ import { fmtDate, fmtFightDate, dateOf } from '../core/time';
 import { fullName, isOurs, isBooked } from './fighters';
 import { param, ruleActive, activateScheduledRules, ruleDef } from './rules';
 import { DIVISION_LIMITS, divisionName } from './divisions';
-import { upcomingEvents } from './events';
+import { upcomingEvents, eventThisWeek } from './events';
 import { scale } from './econ';
 
 type Facts = Record<string, DocFact>;
@@ -361,7 +361,7 @@ export const FORGERIES: Forgery[] = [
   { kind: 'sig', type: 'bout', rule: 'contract_basics', crime: true, fixable: false, apply: (F, c) => (F.sig = sigOf({ id: c.ft?.id ?? 'x' }, c.rng.int(1, 9))) },
   { kind: 'purse', type: 'bout', rule: 'purse_match', crime: true, fixable: true, apply: (F, c) => (F.purse = Math.round((num(F.recPurse) * c.rng.float(1.2, 2.2)) / 500) * 500 + 500) },
   { kind: 'bonus', type: 'bout', rule: 'purse_match', crime: false, fixable: true, apply: (F, c) => (F.bonus = num(F.recBonus) + c.rng.int(1, 6) * 500) },
-  { kind: 'replicense', type: 'bout', rule: 'manager_license', crime: true, fixable: false, when: (F) => !!F.regLicense, apply: (F, c) => (F.repLicense = tweakCode(str(F.regLicense), c.rng)) },
+  { kind: 'replicense', type: 'bout', rule: 'manager_license', crime: true, fixable: false, when: (F) => !!F.regLicense && F.regLicense !== 'N/A (self)', apply: (F, c) => (F.repLicense = tweakCode(str(F.regLicense), c.rng)) },
   { kind: 'exclusive', type: 'bout', rule: 'exclusivity', crime: false, fixable: true, apply: (F) => (F.exclusive = false) },
   { kind: 'idphoto', type: 'bout', rule: 'fighter_license', crime: true, fixable: false, when: (F) => !!F.hasId, apply: (F, c) => (F.idPhoto = c.rng.int(1, 5)) },
   { kind: 'idexpired', type: 'bout', rule: 'fighter_license', crime: false, fixable: true, when: (F) => !!F.hasId && num(F.boutDay) >= 0, apply: (F, c) => (F.idExpires = num(F.boutDay) - c.rng.int(3, 80)) },
@@ -518,7 +518,8 @@ const KINDS: Partial<Record<DocType, Kind>> = {
         sig: sigOf(ft), recSig: sigOf(ft),
         boutWeek, boutDay: boutWeek >= 0 ? fightDayOf(boutWeek) : -1, event: next?.ev.name ?? '',
         suspUntil: ft.medSuspUntil,
-        rep: mgr?.name ?? ft.manager, regLicense: mgr?.licensed ? mgr.license : '', repLicense: mgr?.licensed ? mgr.license : 'PENDING',
+        // self-represented fighters sign for themselves: no rep licence needed
+        rep: mgr ? mgr.name : 'Self-represented', regLicense: !mgr ? 'N/A (self)' : mgr.licensed ? mgr.license : '', repLicense: !mgr ? 'N/A (self)' : mgr.licensed ? mgr.license : 'PENDING',
         exclusive: true,
         hasId: ruleActive(s, 'fighter_license'),
         idNumber: lic, flicense: lic, idPhoto: 0,
@@ -948,7 +949,12 @@ export function bulletinDoc(s: GameState, ruleIds: string[]): DeskDoc | null {
 export function generateWeekDocs(s: GameState, rng: Rng): DeskDoc[] {
   const out: DeskDoc[] = [];
   const fresh = activateScheduledRules(s);
-  const todays = s.week === 0 ? s.rules.active.filter((id) => ruleDef(id)?.week === 0) : fresh;
+  const todays = s.week === 0 ? s.rules.active.filter((id) => ruleDef(id)?.week === 0 && id !== 'weigh_tolerance') : fresh.slice();
+  // weigh-in sheets are introduced on the first fight week
+  if (eventThisWeek(s) && !s.flags.weighin_intro) {
+    s.flags.weighin_intro = 1;
+    if (ruleActive(s, 'weigh_tolerance') && !todays.includes('weigh_tolerance')) todays.push('weigh_tolerance');
+  }
   const bulletin = bulletinDoc(s, todays);
   if (bulletin) out.push(bulletin);
   const roster = Object.values(s.fighters).filter(isOurs);
@@ -971,7 +977,9 @@ export function generateWeekDocs(s: GameState, rng: Rng): DeskDoc[] {
     if (out.some((d) => d.subject === ft.id && d.type === type)) ft = rng.pick(roster);
     if (out.some((d) => d.subject === ft.id && d.type === type)) continue;
     const isFresh = freshTypes.has(type) || fresh.some((id) => ruleDef(id)?.docTypes.includes(type));
-    const bad = rng.chance(isFresh ? 0.55 : type === 'drug' ? badRate * 0.5 : badRate);
+    // the last document of a clean day is a dud more often than not: every shift has a catch in it
+    const lastCall = out.length - (bulletin ? 1 : 0) === queue.length - 1 && !out.some((d) => d.violations.length);
+    const bad = rng.chance(lastCall ? 0.8 : isFresh ? 0.55 : type === 'drug' ? badRate * 0.5 : badRate);
     const doc = makeDoc(s, type, ft, bad, rng, undefined, isFresh ? fresh : undefined);
     if (doc) out.push(doc);
   }
