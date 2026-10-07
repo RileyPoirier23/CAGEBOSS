@@ -3,6 +3,7 @@
  * scene manager with a modal stack, settings, toasts and screen shake.
  */
 import { maybeTutorial } from './tutorial';
+import { checkAchievements } from './achievements';
 import { Application, Container, TextureStyle, Graphics, Ticker } from 'pixi.js';
 import type { GameState } from '../core/types';
 import { loadJSON, storeJSON, saveToSlot, autoSlot } from '../core/save';
@@ -191,6 +192,8 @@ export class Game {
     setMusicContext(scene.music);
     scene.enter();
     if (scene.tutorialKey) maybeTutorial(this, scene.tutorialKey);
+    // anything earned since the last screen gets its congratulations
+    if (this.state) setTimeout(() => checkAchievements(this), 1500);
   }
 
   /**

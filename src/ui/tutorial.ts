@@ -41,14 +41,36 @@ const STEPS: Record<string, Step[]> = {
   contender: [
     { title: 'CONTENDER SERIES', text: 'Young prospects fight for a contract. Watch or sim the card, then decide who gets signed. Losers can come back on a later card.' },
   ],
+  // ---------------- Road To Champion / Legacy Mode
+  fmhub: [
+    { title: 'THIS IS YOU', text: 'Your fighter: record, rank, condition, weight and health. Energy and morale drive how much you get out of training. Keep an eye on WEIGHT: that number has to be on the scale come fight week.', rect: [6, 22, 146, 226] },
+    { title: 'YOUR WEEK', text: 'Three actions a week (the gold pips): TRAIN, SPAR, CUT WEIGHT, WORK A SHIFT, REST, GO OUT or work BLEETER. PAPERWORK, CONDITION, STAFF and RANKINGS are free.', rect: [158, 22, 160, 226] },
+    { title: 'FIGHT OFFERS', text: 'Promoters send offers here. SIGN one and the bout agreement lands in PAPERWORK. Read it: whatever you sign is legally binding, mistakes included.', rect: [324, 22, 150, 106] },
+    { title: 'BLEETER', text: 'What the internet says about you. Callouts, beef, and your opponent talking nonsense. Hype sells tickets and moves you up the card.', rect: [324, 132, 150, 116] },
+    { title: 'END THE WEEK', text: 'When you are out of actions, END WEEK. On fight week it becomes WEIGH-IN. Win your promotion\'s belt and the next league comes calling. HELP (in MENU) has everything else.', rect: [W - 172, H - 21, 168, 20] },
+  ],
+  fm_fightnight: [
+    { title: 'FIGHT NIGHT', text: "You're on the card. Watch the other fights from cageside (or sim them). When it's your turn, press FIGHT! to fight it yourself, or WATCH / SIM to let your gameplan do it." },
+    { title: 'YOUR CORNER', text: 'Between rounds your cutman works the face and your coach changes the plan. After the fight: the purse, the rankings and the internet.' },
+  ],
+  fm_live: [
+    { title: 'YOUR FIRST FIGHT', text: 'Move with the left stick / A-D. RB (J) lead hand, RT (K) rear hand, A (L) kick, LB (I) block, B (Space) grab. The stick direction picks the strike: hooks, uppercuts, body shots, overhands.' },
+    { title: 'CLINCH & GROUND', text: 'Hold grab to clinch (stick toward = shoot). In the clinch, tap grab + stick to fight for the plum or underhooks, trip, or break. On the mat, kick + stick passes, sweeps and stands up; grab + stick goes for a submission.' },
+    { title: 'PAUSE = HELP', text: "There are no button prompts on screen. Pause (ESC / MENU) for HELP with the full move list, AUTOPILOT, or SIM THE REST. Now go hurt somebody (legally)." },
+  ],
 };
+
+/** Fighter modes use their own cards for shared screens. */
+const keyFor = (g: Game, key: string) => (g.state?.mode === 'fighter' && STEPS['fm_' + key] ? 'fm_' + key : key);
 
 const done = (g: Game, key: string) => !!g.state?.flags['tut_' + key];
 
 /** Called whenever a scene with a tutorial key is entered. */
-export function maybeTutorial(g: Game, key: string): void {
+export function maybeTutorial(g: Game, key0: string): void {
   const s = g.state;
-  if (!s || s.mode !== 'career' || !STEPS[key]) return;
+  const key = keyFor(g, key0);
+  if (!s || (s.mode !== 'career' && s.mode !== 'fighter') || !STEPS[key]) return;
+  if (s.mode === 'career' && key.startsWith('fm')) return;
   if (s.flags.tutorial === 'off' || done(g, key)) return;
   const start = performance.now();
   const go = () => {
@@ -77,11 +99,12 @@ function offer(g: Game, then: () => void): void {
   const bx = (W - bw) / 2;
   const by = (H - bh) / 2;
   frame.addChild(box(bw, bh, PAL.night, PAL.gold, { bevel: true })).position.set(bx, by);
-  const por = npcPortrait('assistant', 'manager', 32);
+  const fighter = s.mode === 'fighter';
+  const por = npcPortrait(fighter ? 'coach' : 'assistant', 'manager', 32);
   por.position.set(bx + 8, by + 8);
   frame.addChild(por);
-  frame.addChild(text('FIRST DAY ON THE JOB?', bx + 46, by + 8, { color: PAL.gold }));
-  frame.addChild(text("I'm your assistant. I can walk you through the paperwork, the cards and fight night as you get to each part. Takes two minutes. Skip any time.", bx + 46, by + 22, { small: true, width: bw - 54, color: PAL.bone }));
+  frame.addChild(text(fighter ? 'FIRST DAY IN THE GYM?' : 'FIRST DAY ON THE JOB?', bx + 46, by + 8, { color: PAL.gold }));
+  frame.addChild(text(fighter ? "I'm your coach (for now). I'll show you how the week works, how fight night works, and how not to embarrass us in the cage. Skip any time." : "I'm your assistant. I can walk you through the paperwork, the cards and fight night as you get to each part. Takes two minutes. Skip any time.", bx + 46, by + 22, { small: true, width: bw - 54, color: PAL.bone }));
   frame.addChild(button('SHOW ME THE ROPES', bx + 46, by + bh - 24, 112, 16, () => {
     s.flags.tutorial = 'on';
     g.closeModal(wrap);
@@ -93,6 +116,14 @@ function offer(g: Game, then: () => void): void {
     g.closeModal(wrap);
     g.toast('Tutorial skipped. Replay it from Settings any time.', PAL.ash, { small: true });
   }, { small: true, fill: PAL.shadow }));
+}
+
+/** The first hands-on fight: a few cards before the tale of the tape (only if the tutorial is on). */
+export function liveTutorial(g: Game): boolean {
+  const s = g.state;
+  if (!s || s.flags.tutorial !== 'on' || s.flags.tut_fm_live) return false;
+  run(g, 'fm_live');
+  return true;
 }
 
 function run(g: Game, key: string): void {

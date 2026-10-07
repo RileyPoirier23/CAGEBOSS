@@ -8,6 +8,7 @@ import { openWindow, confirm, downloadText } from '../widgets';
 import { slotsFor, familyOf, isAutoSlot, saveToSlot, slotMeta, exportSave } from '../../core/save';
 import { openSettings } from './settings';
 import { openHelp } from '../help';
+import { openAchievements } from '../achievements';
 import { openLoad } from './loadmenu';
 import { TitleScene } from './title';
 import { exportRosterPack, importRosterPack } from '../rosterpack';
@@ -43,8 +44,9 @@ export function openGameMenu(g: Game, onClose: () => void): void {
   y += 15;
   win.body.addChild(button('HELP: HOW TO PLAY', 8, y, 204, 13, () => openHelp(g, g.state?.mode === 'fighter' ? 'rtc' : 'career'), { small: true, fill: PAL.shadow, border: PAL.gold }));
   y += 15;
-  win.body.addChild(button('SETTINGS', 8, y, 100, 13, () => openSettings(g), { small: true }));
-  win.body.addChild(button('JUKEBOX', 112, y, 100, 13, () => openJukebox(g), { small: true, fill: PAL.plum }));
+  win.body.addChild(button('SETTINGS', 8, y, 66, 13, () => openSettings(g), { small: true }));
+  win.body.addChild(button('TROPHIES', 77, y, 66, 13, () => openAchievements(g), { small: true, fill: PAL.steel }));
+  win.body.addChild(button('JUKEBOX', 146, y, 66, 13, () => openJukebox(g), { small: true, fill: PAL.plum }));
   y += 15;
   win.body.addChild(button('QUIT TO TITLE', 8, y, 204, 13, () => confirm(g, 'Quit to title? Progress since the last autosave (start of today) is lost.', () => {
     g.state = null;

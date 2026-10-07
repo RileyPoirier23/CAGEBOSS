@@ -24,6 +24,8 @@ import type { GamePlan } from './fight';
 import { money } from '../core/format';
 import { sigOf } from './docs';
 import { LOCAL_SPONSORS, REGIONAL_SPONSORS } from './sponsorship';
+import type { FMMoment, StoryState, FMStats } from './fmstory';
+import { pushMoment, signingMoment, storyPromote, storyWeek, startStory, staffCheckin, interviewMoment, storyPurse, stats, isLegacy } from './fmstory';
 
 export type BodyPart = 'head' | 'jaw' | 'body' | 'larm' | 'rarm' | 'lhand' | 'rhand' | 'legs';
 export const BODY_PARTS: { id: BodyPart; name: string; effect: string }[] = [
@@ -126,6 +128,12 @@ export interface FMState {
   rap?: RapEntry[];
   /** what the press wrote about you */
   press?: { week: number; outlet: string; headline: string }[];
+  /** things the hub shows between weeks: signings, check-ins, story beats, interviews */
+  moments?: FMMoment[];
+  /** Legacy Mode: no storyline, more chaos */
+  legacy?: boolean;
+  story?: StoryState;
+  stats?: FMStats;
   weekReport: string[] | null;
   partied: number;
   /** sketchy supplement in your system */
@@ -266,6 +274,9 @@ export interface CreateOpts {
   division: string;
   archetype: Archetype;
   look: Fighter['look'];
+  /** Legacy Mode: no storyline, more chaos, start anywhere on the road */
+  legacy?: boolean;
+  startTier?: Tier;
 }
 
 const ARCH_SKILLS: Record<Archetype, Partial<Skills>> = {
@@ -339,7 +350,21 @@ export function createFighterGame(o: CreateOpts): GameState {
   buildLadder(s, rng, 'amateur');
   refreshMarket(s, rng);
   computeRankings(s);
-  log(s, `You signed with the ${fm(s).circuit[0].name}. Climb the ladder, win the belt, move up. The CBFC is a long way off.`);
+  if (o.legacy) {
+    const st = fm(s);
+    st.legacy = true;
+    st.money = 10000;
+    // start wherever you like: skip ahead through the road (no belts, no story)
+    const want = o.startTier ?? 'amateur';
+    const tmp: string[] = [];
+    while (st.tier !== want && st.stage < st.circuit.length - 1) promote(s, rng, tmp);
+    if (st.moments) st.moments = st.moments.slice(-1);
+  } else {
+    startStory(s, rng);
+    pushMoment(s, signingMoment(s, rng));
+    storyWeek(s);
+  }
+  log(s, `You signed with the ${stage(s).name}. Climb the ladder, win the belt, move up.${stage(s).tier === 'of' ? '' : ' The CBFC is a long way off.'}`);
   post(s, '@' + (f.last.toLowerCase()), 'First amateur fight coming up. Mom cried. I cried. The guy at the gas station cried. LETS GO');
   makeOffers(s, rng, true);
   return s;
@@ -477,6 +502,9 @@ function promote(s: GameState, rng: Rng, out: string[]): void {
   st.stage = Math.min(st.stage + 1, st.circuit.length - 1);
   const next = stage(s);
   st.tier = next.tier;
+  stats(s).belts++;
+  // a new league is a new contract: the hub plays the signing
+  pushMoment(s, signingMoment(s, rng));
   if (was.tier === 'amateur' && next.tier !== 'amateur' && !st.amateur) {
     // turning pro: the amateur record is frozen, the pro record starts at 0-0
     st.amateur = { ...f.record };
@@ -494,6 +522,7 @@ function promote(s: GameState, rng: Rng, out: string[]): void {
       : `${was.short} CHAMPION. ${next.name} signs you. Bigger shows, better purses, harder men.`);
     log(s, `Won the ${was.name} belt and signed with ${next.name}.`, 2);
     f.hype = clamp(f.hype + (next.tier === 'pfl' ? 10 : 6), 0, 100);
+    storyPromote(s);
     return;
   }
   if (next.tier === 'of') {
@@ -505,6 +534,7 @@ function promote(s: GameState, rng: Rng, out: string[]): void {
     log(s, `Signed with the ${s.promotion.name}.`, 2);
     post(s, BRADIE.handle, `${f.last.toLowerCase()} made the cbfc. congrats bro. also check your DMs. i have an only fighters offer. its mostly normal`);
     f.hype = clamp(f.hype + 12, 0, 100);
+    storyPromote(s);
     computeRankings(s);
   }
 }
@@ -1679,6 +1709,8 @@ export function resolveDoc(s: GameState, id: string, action: 'sign' | 'dispute',
   const d = st.inbox.splice(i, 1)[0];
   const caught = action === 'dispute' && !!d.fault && flagged.includes(d.fault);
   const wrong = action === 'dispute' && !caught;
+  if (caught) stats(s).docsCaught++;
+  if (action === 'sign' && d.fault) stats(s).badSigned++;
   if (caught) {
     f.hype = clamp(f.hype + 1, 0, 100);
     st.morale = clamp(st.morale + 3, 0, 100);
@@ -1854,10 +1886,18 @@ export function endWeek(s: GameState, rng: Rng): string[] {
   if (before !== after) out.push(after === null ? 'You dropped out of the rankings.' : before === null ? `You're ranked! #${after} at ${divisionName(f.division)}.` : after < before ? `You moved up to #${after}.` : `You slipped to #${after}.`);
   s.week++;
   st.ap = 3;
-  // controversy & life
+  // the story, your team, the press
+  storyWeek(s);
+  const chk = staffCheckin(s, rng);
+  if (chk) pushMoment(s, chk);
+  if (st.fight && st.fight.week === s.week) {
+    const iv = interviewMoment(s, rng, 'pre');
+    if (iv) pushMoment(s, iv);
+  }
+  // controversy & life (Legacy Mode: a lot more of it)
   if (!st.pending.length) {
     const roll = rng.next();
-    const r = 0.16 + st.partied * 0.03;
+    const r = (0.16 + st.partied * 0.03) * (isLegacy(s) ? 1.8 : 1);
     if (roll < r * 0.3) st.pending.push(EVENTS.ex(s, rng));
     else if (roll < r * 0.55) st.inbox.push(sponsorDoc(s, rng));
     else if (roll < r && rankOf(s, f.id) !== null) {
@@ -2060,6 +2100,20 @@ export function afterFight(s: GameState, ev: FightEvent, rng: Rng): string[] {
   const bradieCut = hasClause(s, 'of_likeness') ? Math.round(pay * 0.1) : 0;
   st.money += pay - fee - bradieCut;
   out.push(`Purse: ${money(pay)}${fee ? ` (manager takes ${money(fee)})` : ''}${bradieCut ? ` (Bradie's "likeness" cut: ${money(bradieCut)})` : ''}.`);
+  const rent = storyPurse(s, pay - fee - bradieCut);
+  if (rent) out.push(rent);
+  {
+    const k = stats(s);
+    if (won) {
+      k.streak++;
+      k.best = Math.max(k.best, k.streak);
+      if (r.method === 'KO' || r.method === 'TKO') k.kos++;
+      else if (r.method === 'SUB') k.subs++;
+      else k.decs++;
+    } else if (lost) k.streak = 0;
+    const iv = interviewMoment(s, rng, 'post', won);
+    if (iv) pushMoment(s, iv);
+  }
   // damage to the body
   const mine = r.damage[b.a === f.id ? 0 : 1];
   st.body.head = clamp(st.body.head - mine * 0.5, 0, st.headCap);
@@ -2111,6 +2165,7 @@ export function afterFight(s: GameState, ev: FightEvent, rng: Rng): string[] {
   st.oppFlagged = false;
   // your night isn't over: presser, 1ton, whatever else happened in the tunnel
   fightNightEvents(s, ev, rng);
+  storyWeek(s);
   if (st.tier === 'of') {
     const rk = rankOf(s, f.id);
     out.push(rk === null ? 'Still unranked.' : rk === 0 ? 'Champion.' : `Ranked #${rk}.`);

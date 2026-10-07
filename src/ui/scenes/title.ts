@@ -10,6 +10,7 @@ import { sfx } from '../../audio/sfx';
 import type { PixelText } from '../text';
 import { openSettings } from './settings';
 import { openHelp } from '../help';
+import { openAchievements } from '../achievements';
 import { maybeWhatsNew } from '../whatsnew';
 import { openLoad, latestSave, continueLatest } from './loadmenu';
 import { NewGameScene } from './newgame';
@@ -93,18 +94,20 @@ export class TitleScene extends Scene {
       ...(last ? [['CONTINUE', () => continueLatest(this.g)] as [string, () => void]] : []),
       ['NEW CAREER', () => this.g.goto(new NewGameScene(this.g, 'career'))],
       ['ROAD TO CHAMPION', () => this.g.goto(new FMCreateScene(this.g))],
+      ['LEGACY MODE', () => this.g.goto(new FMCreateScene(this.g, true))],
       ['SANDBOX', () => this.g.goto(new NewGameScene(this.g, 'sandbox'))],
       ['LOAD', () => openLoad(this.g)],
       ['HELP', () => openHelp(this.g)],
+      ['ACHIEVEMENTS', () => openAchievements(this.g)],
       ['SETTINGS', () => openSettings(this.g)],
       ['CREDITS', () => openCredits(this.g)],
     ];
     if (desktop) items.push(['QUIT GAME', () => desktop!.quit()]);
     items.forEach(([label, fn], i) => {
-      menu.addChild(button(label, 0, i * 15, 116, 13, fn, { fill: label === 'CONTINUE' ? PAL.moss : label === 'HELP' ? PAL.shadow : PAL.night, border: label === 'HELP' || label === 'CONTINUE' ? PAL.gold : PAL.ash }));
+      menu.addChild(button(label, 0, i * 14, 116, 12, fn, { fill: label === 'CONTINUE' ? PAL.moss : label === 'HELP' ? PAL.shadow : PAL.night, border: label === 'HELP' || label === 'CONTINUE' ? PAL.gold : PAL.ash }));
     });
     menu.x = Math.floor((W - 116) / 2);
-    menu.y = (desktop ? 124 : 132) - (last ? 8 : 0);
+    menu.y = Math.max(80, H - 14 - items.length * 14);
     r.addChild(menu);
     r.addChild(text(`V${__APP_VERSION__}  •  M = MUTE  •  ALL CHARACTERS ARE FICTIONAL. ANY RESEMBLANCE IS A LAWSUIT WAITING TO HAPPEN.`, 0, H - 9, { small: true, width: W, align: 'center', color: PAL.grey }));
     setTimeout(() => maybeWhatsNew(this.g), 400);

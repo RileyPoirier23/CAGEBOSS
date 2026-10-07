@@ -13,7 +13,7 @@ import { content } from '../../core/content';
 import { Rng } from '../../core/rng';
 import { makeLook } from '../../sim/generate';
 import { DIVISION_ORDER, divisionName, DIVISION_LIMITS } from '../../sim/divisions';
-import { createFighterGame, type Archetype } from '../../sim/fighter';
+import { createFighterGame, type Archetype, type Tier } from '../../sim/fighter';
 import { FMHubScene } from './fmhub';
 import { sfx } from '../../audio/sfx';
 
@@ -43,7 +43,10 @@ export class FMCreateScene extends Scene {
   private inputs: { remove: () => void }[] = [];
   private preview: Container = new Container();
 
-  constructor(g: ConstructorParameters<typeof Scene>[0]) {
+  private startTier: Tier = 'amateur';
+
+  /** legacy = Legacy Mode: no storyline, start anywhere, more chaos */
+  constructor(g: ConstructorParameters<typeof Scene>[0], private legacy = false) {
     super(g);
     this.look = this.randomLook();
   }
@@ -59,8 +62,8 @@ export class FMCreateScene extends Scene {
     const bg = new Graphics().rect(0, 0, W, H).fill(0x15121a);
     for (let y = 0; y < H; y += 6) bg.rect(0, y, W, 1).fill({ color: 0x000000, alpha: 0.25 });
     r.addChild(bg);
-    r.addChild(bigTitle('ROAD TO CHAMPION', 6, PAL.gold));
-    r.addChild(text('Build your fighter. Then go take somebody\'s spot.', 0, 26, { width: W, align: 'center', small: true, color: PAL.ash }));
+    r.addChild(bigTitle(this.legacy ? 'LEGACY MODE' : 'ROAD TO CHAMPION', 6, PAL.gold));
+    r.addChild(text(this.legacy ? 'No script. No soup. Just you, a fight career and a lot of bad decisions.' : 'Build your fighter. Then go take somebody\'s spot.', 0, 26, { width: W, align: 'center', small: true, color: PAL.ash }));
 
     // left: identity
     const p = new Container();
@@ -100,7 +103,11 @@ export class FMCreateScene extends Scene {
     y += 16;
     p.addChild(text(ARCHES.find((a) => a.value === this.arch)!.blurb, 84, y, { small: true, width: 190, color: PAL.bone, maxLines: 2 }));
     y += 22;
-    p.addChild(text('You start 0-0 in a junk local promotion with $2,500 and a cousin who says he can corner. Win belts to move up: regional shows, the PFL Lounge, then the CBFC.', 8, y, { small: true, width: 266, color: PAL.ash, maxLines: 3 }));
+    if (this.legacy) {
+      p.addChild(text('START IN', 8, y + 3, { small: true, color: PAL.ash }));
+      p.addChild(selector(84, y, 190, [{ value: 'amateur' as Tier, label: 'Local circuit (amateur)' }, { value: 'regional' as Tier, label: 'Regional promotion' }, { value: 'pfl' as Tier, label: "The Lounge (PFL)" }, { value: 'of' as Tier, label: 'The CBFC' }], this.startTier, (v) => (this.startTier = v)));
+      p.addChild(text('$10,000 to start. More chaos, no storyline.', 8, y + 17, { small: true, width: 266, color: PAL.ash, maxLines: 2 }));
+    } else p.addChild(text("You start 0-0 at Uncle Ray's soup-kitchen gym with $2,500 and a rival who owns a cold plunge. Win belts to move up: regional shows, the PFL Lounge, then the CBFC.", 8, y, { small: true, width: 266, color: PAL.ash, maxLines: 3 }));
 
     // right: look
     const q = new Container();
@@ -144,7 +151,7 @@ export class FMCreateScene extends Scene {
     if (!last) return this.g.toast('Every fighter needs a last name. It goes on the shorts.', PAL.ember);
     this.exit();
     this.g.loading('Signing your contract', () => {
-      const s = createFighterGame({ seed: this.seed, first, last, nick: this.nick.trim(), gender: this.gender, culture: this.culture, division: this.division, archetype: this.arch, look: this.look });
+      const s = createFighterGame({ seed: this.seed, first, last, nick: this.nick.trim(), gender: this.gender, culture: this.culture, division: this.division, archetype: this.arch, look: this.look, legacy: this.legacy, startTier: this.startTier });
       this.g.state = s;
       this.g.goto(new FMHubScene(this.g));
       this.g.autosave();

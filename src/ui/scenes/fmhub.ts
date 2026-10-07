@@ -11,6 +11,8 @@ import { W, H, text, button, box, ScrollBox } from '../kit';
 import { openWindow, confirm, alertBox, selector } from '../widgets';
 import { openHelp } from '../help';
 import { openSettings } from './settings';
+import { showMoment } from '../moments';
+import { openAchievements, checkAchievements } from '../achievements';
 import { openSaveSlots, openLoad } from './loadmenu';
 import { familyOf } from '../../core/save';
 import { fighterPortrait } from '../sprites';
@@ -48,6 +50,7 @@ const bar = (w: number, v: number, color: number): Graphics => {
 
 export class FMHubScene extends Scene {
   music = 'office' as const;
+  tutorialKey = 'fmhub';
   private msg = '';
   private paperworkWarned = false;
   private rng(): Rng {
@@ -77,8 +80,17 @@ export class FMHubScene extends Scene {
       alertBox(this.g, `WEEK ${s.week + 1}`, lines.slice(0, 9).join('\n'), () => this.popups());
       return;
     }
+    if (st.moments?.length) {
+      const m = st.moments.shift()!;
+      showMoment(this.g, s, m, () => new Rng((Math.random() * 1e9) | 0), () => {
+        this.g.autosave();
+        this.refresh();
+        setTimeout(() => this.popups(), 250);
+      });
+      return;
+    }
     const ev = st.pending[0];
-    if (!ev) return;
+    if (!ev) return checkAchievements(this.g);
     const frame = new Container();
     const wrap = this.g.modal(frame, { dim: 0.7 });
     const bw = 320;
@@ -519,13 +531,14 @@ export class FMHubScene extends Scene {
   }
 
   private menu(): void {
-    const win = openWindow(this.g, 'Menu', 160, 128);
+    const win = openWindow(this.g, 'Menu', 160, 146);
     win.body.addChild(button('SAVE…', 6, 6, 72, 15, () => { this.g.autosave(); win.close(); openSaveSlots(this.g); }, { small: true }));
     win.body.addChild(button('LOAD…', 82, 6, 72, 15, () => { win.close(); openLoad(this.g, familyOf(this.g.state!)); }, { small: true }));
     win.body.addChild(button('HELP: HOW TO BE A PRO', 6, 24, 148, 15, () => openHelp(this.g, 'rtc'), { small: true, fill: PAL.shadow, border: PAL.gold }));
     win.body.addChild(button('SETTINGS', 6, 42, 148, 15, () => openSettings(this.g), { small: true }));
-    win.body.addChild(button('RETIRE…', 6, 60, 148, 15, () => { win.close(); confirm(this.g, 'Hang up the gloves for good?', () => this.legacy()); }, { small: true, fill: PAL.ember }));
-    win.body.addChild(button('QUIT TO TITLE', 6, 78, 148, 15, () => { this.g.autosave(); win.close(); void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g))); }, { small: true }));
+    win.body.addChild(button('ACHIEVEMENTS', 6, 60, 148, 15, () => openAchievements(this.g), { small: true }));
+    win.body.addChild(button('RETIRE…', 6, 78, 148, 15, () => { win.close(); confirm(this.g, 'Hang up the gloves for good?', () => this.legacy()); }, { small: true, fill: PAL.ember }));
+    win.body.addChild(button('QUIT TO TITLE', 6, 96, 148, 15, () => { this.g.autosave(); win.close(); void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g))); }, { small: true }));
   }
 
   private legacy(): void {

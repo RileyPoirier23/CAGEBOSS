@@ -31,6 +31,7 @@ import { fighterPortrait } from './sprites';
 import { sfx } from '../audio/sfx';
 import { LiveFight, LiveAI, GPOS_NAME, type LiveEvent, type Side } from '../sim/live';
 import { openHelp } from './help';
+import { liveTutorial } from './tutorial';
 import type { GamePlan } from '../sim/fight';
 import { openCorner } from './cutman';
 import { openFightLab } from './scenes/fightlab';
@@ -200,6 +201,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   hud.addChild(text((P === 1 ? 'YOU: ' : '') + o.B.last.toUpperCase(), W - 140, y0 + 3, { small: true, color: P === 1 ? PAL.gold : PAL.bone, width: 100, align: 'right' }));
 
   const wrap = g.modal(root, { dim: 0 });
+  // first hands-on fight: the coach's three cards (the fight waits for them)
+  setTimeout(() => liveTutorial(g), 50);
   setPadUiMode('game');
   const popKeys = g.pushKeyHandler((e) => {
     if (e.type !== 'keydown') return true;
