@@ -8,7 +8,7 @@ export type MeterKey = (typeof METER_KEYS)[number];
 export type Meters = Record<MeterKey, number>;
 
 export type Difficulty = 'easy' | 'normal' | 'fightweek' | 'ironman';
-export type GameMode = 'career' | 'sandbox';
+export type GameMode = 'career' | 'sandbox' | 'fighter';
 
 // ---------------------------------------------------------------- fighters
 
@@ -618,6 +618,8 @@ export interface GameState {
   rivals: Record<string, RivalState>;
   /** fighter feuds: online beef between pairs, keyed 'idA|idB' (sorted) */
   feuds?: Record<string, Feud>;
+  /** Fighter Mode state (src/sim/fighter.ts) */
+  fm?: import('../sim/fighter').FMState;
   owner: {
     name: string;
     target: number;

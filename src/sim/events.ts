@@ -2,6 +2,7 @@
  * Fight events: scheduling, automatic matchmaking, running bouts, applying
  * results (records, belts, damage, wounds, suspensions) and event money.
  */
+import type { FightOpts } from './fight';
 import { feudResult, getFeud } from './feuds';
 import type { Bout, FightEvent, GameState, Fighter, EventFinancials } from '../core/types';
 import { content } from '../core/content';
@@ -323,7 +324,7 @@ export function officialsFor(s: GameState, ev: FightEvent, rng: Rng) {
   return { judges: js, referee: pickWeighted(refs) };
 }
 
-export function runBout(s: GameState, ev: FightEvent, bout: Bout, rng: Rng, keepTicker = false): void {
+export function runBout(s: GameState, ev: FightEvent, bout: Bout, rng: Rng, keepTicker = false, extra: Partial<FightOpts> = {}): void {
   const a = s.fighters[bout.a];
   const b = s.fighters[bout.b];
   const off = officialsFor(s, ev, rng);
@@ -340,6 +341,7 @@ export function runBout(s: GameState, ev: FightEvent, bout: Bout, rng: Rng, keep
       ticker: content().templates.ticker,
       keepTicker,
       homeSide: homeSide as 0 | 1 | -1,
+      ...extra,
     },
     rng,
   );

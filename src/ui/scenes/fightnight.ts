@@ -3,6 +3,7 @@
  * sim each bout) -> post-fight interviews & fight-night chaos -> performance
  * bonuses -> post-fight presser -> ledger.
  */
+import type { FightOpts } from '../../sim/fight';
 import { Container, Graphics } from 'pixi.js';
 import { Scene, Game, fullBg } from '../app';
 import type { Bout, FightEvent, TickerLine, EventFinancials } from '../../core/types';
@@ -67,6 +68,13 @@ const INTERVIEW: Record<string, string[]> = {
 
 const CAM_NAMES: Record<string, string> = { side: 'WIDE', tv: 'TV', top: 'TOP-DOWN' };
 
+/** Fighter Mode hooks: your gameplan/corner feed the sim; the corner break is played by you. */
+export interface FightNightFM {
+  player: string;
+  extra: () => Partial<FightOpts>;
+  corner: (round: number, bout: Bout, done: () => void) => void;
+}
+
 export class FightNightScene extends Scene {
   tutorialKey = 'fightnight';
   music = 'fightnight' as const;
@@ -75,6 +83,7 @@ export class FightNightScene extends Scene {
   private arena: ArenaView | null = null;
   private playing: {
     bout: Bout; lines: TickerLine[]; idx: number; timer: number; paused: boolean;
+    simRng: number; seed: number; fmDone: number[];
     phase: 'intro' | 'fight' | 'corner' | 'ringcard' | 'end' | 'ceremony'; phaseT: number;
     ringcard: RingCardWalk | null; corner: Container | null;
     intro: AnnounceLine[]; introIdx: number; cer: AnnounceLine[]; cerIdx: number; cerWinner: -1 | 0 | 1; raised: boolean;
@@ -94,7 +103,7 @@ export class FightNightScene extends Scene {
   private pressersDone = 0;
 
   /** opts.event: an event that isn't in state.events (Contender Series); opts.onWrap replaces bonuses/presser/ledger. */
-  constructor(g: Game, evId: string, private opts: { event?: FightEvent; onWrap?: () => void } = {}) {
+  constructor(g: Game, evId: string, private opts: { event?: FightEvent; onWrap?: () => void; fm?: FightNightFM } = {}) {
     super(g);
     this.ev = opts.event ?? g.state!.events.find((e) => e.id === evId)!;
   }
@@ -298,8 +307,9 @@ export class FightNightScene extends Scene {
   // ------------------------------------------------------------ watch
   private watch(b: Bout): void {
     const s = this.g.state!;
+    const simRng = s.rng;
     const rng = new Rng(s.rng);
-    runBout(s, this.ev, b, rng, true);
+    runBout(s, this.ev, b, rng, true, this.fmFor(b)?.extra() ?? {});
     s.rng = rng.state;
     const seed = rng.int(1, 1e9);
     const base = b.result!.ticker ?? [];
@@ -307,7 +317,7 @@ export class FightNightScene extends Scene {
     const intro = this.g.settings.intros === false ? [] : butlerIntro(s, this.ev, b, seed);
     this.playing = {
       bout: b, lines, idx: 0, timer: 0.8, paused: false, phase: intro.length ? 'intro' : 'fight', phaseT: 0, ringcard: null, corner: null,
-      intro, introIdx: 0, cer: [], cerIdx: 0, cerWinner: -1, raised: false,
+      intro, introIdx: 0, cer: [], cerIdx: 0, cerWinner: -1, raised: false, simRng, seed, fmDone: [],
     };
     this.step = 'watch';
     this.tapeShown = false;
@@ -589,6 +599,14 @@ export class FightNightScene extends Scene {
     }
     if (p.phase === 'corner') {
       p.phaseT -= dt * speed;
+      // Fighter Mode: you work the corner, then the rest of the fight re-runs with your choices
+      const fm = this.fmFor(p.bout);
+      const rnd = p.lines[p.idx - 1]?.round ?? 1;
+      if (p.phaseT <= 0 && fm && !p.fmDone.includes(rnd)) {
+        p.fmDone.push(rnd);
+        fm.corner(rnd, p.bout, () => this.fmResim(rnd));
+        return;
+      }
       if (p.phaseT <= 0) {
         p.corner?.destroy({ children: true });
         p.corner = null;
@@ -648,6 +666,30 @@ export class FightNightScene extends Scene {
         p.phase = 'corner';
         p.phaseT = 4.5;
       }
+    }
+  }
+
+  private fmFor(b: Bout): FightNightFM | null {
+    const fm = this.opts.fm;
+    return fm && (b.a === fm.player || b.b === fm.player) ? fm : null;
+  }
+
+  /** Re-simulate from the same seed: everything already shown is identical, the rest follows the new plan & corner. */
+  private fmResim(round: number): void {
+    const p = this.playing;
+    const fm = p && this.fmFor(p.bout);
+    if (!p || !fm) return;
+    const s = this.g.state!;
+    const rng = new Rng(p.simRng);
+    runBout(s, this.ev, p.bout, rng, true, fm.extra());
+    const base = p.bout.result!.ticker ?? [];
+    const lines = [...boothOpen(s, this.ev, p.bout, p.seed), ...commentate(s, this.ev, p.bout, base, p.seed)];
+    let at = lines.findIndex((l) => !l.speaker && l.act === 'bell' && l.round === round);
+    if (at >= 0) {
+      at++;
+      while (lines[at]?.speaker && lines[at].round === round) at++;
+      p.lines = lines;
+      p.idx = at;
     }
   }
 

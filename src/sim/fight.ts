@@ -19,7 +19,25 @@ export interface FightOpts {
   ticker?: Record<string, string[]>;
   keepTicker?: boolean;
   homeSide?: 0 | 1 | -1; // for hometown-biased judges
+  /** Fighter Mode: the gameplan each side runs in a given round */
+  plan?: (side: 0 | 1, round: number) => GamePlan | null | undefined;
+  /** Fighter Mode: how well the corner worked between rounds (0 = botched .. 1 = perfect; undefined = normal) */
+  cornerAid?: (side: 0 | 1, round: number) => number | undefined;
 }
+
+export type GamePlan = 'balanced' | 'pressure' | 'counter' | 'wrestle' | 'grind' | 'legs' | 'subhunt' | 'survive';
+
+/** Multipliers a gameplan applies to a fighter's tendencies, and how much more gas it burns. */
+export const PLAN_MODS: Record<GamePlan, { pressure: number; kick: number; shoot: number; sub: number; counter: number; burn: number }> = {
+  balanced: { pressure: 1, kick: 1, shoot: 1, sub: 1, counter: 1, burn: 1 },
+  pressure: { pressure: 1.6, kick: 0.9, shoot: 0.8, sub: 0.9, counter: 0.7, burn: 1.3 },
+  counter: { pressure: 0.6, kick: 0.9, shoot: 0.6, sub: 0.9, counter: 2.2, burn: 0.85 },
+  wrestle: { pressure: 1.1, kick: 0.5, shoot: 2.4, sub: 1, counter: 0.9, burn: 1.2 },
+  grind: { pressure: 1.2, kick: 0.4, shoot: 2.0, sub: 0.6, counter: 0.8, burn: 1.15 },
+  legs: { pressure: 1.1, kick: 2.2, shoot: 0.6, sub: 0.8, counter: 1, burn: 1.05 },
+  subhunt: { pressure: 1, kick: 0.7, shoot: 1.6, sub: 2.4, counter: 0.9, burn: 1.1 },
+  survive: { pressure: 0.45, kick: 0.8, shoot: 0.7, sub: 0.6, counter: 1.4, burn: 0.7 },
+};
 
 type Pos = 'stand' | 'clinch' | 'atop' | 'btop';
 
@@ -88,6 +106,20 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
     };
   };
   const S: [Side, Side] = [mk(a), mk(b)];
+  const base = S.map((x) => ({ pressure: x.pressure, kick: x.kickRate, shoot: x.shootRate, sub: x.subRate, counter: x.counter }));
+  const burnMul: [number, number] = [1, 1];
+  const applyPlans = () => {
+    for (const i of [0, 1] as const) {
+      const m = PLAN_MODS[opts.plan?.(i, round) ?? 'balanced'] ?? PLAN_MODS.balanced;
+      const b0 = base[i];
+      S[i].pressure = b0.pressure * m.pressure;
+      S[i].kickRate = Math.min(0.85, b0.kick * m.kick);
+      S[i].shootRate = Math.min(0.8, b0.shoot * m.shoot);
+      S[i].subRate = Math.min(1.2, b0.sub * m.sub);
+      S[i].counter = Math.min(0.75, b0.counter * m.counter);
+      burnMul[i] = m.burn;
+    }
+  };
   let pos: Pos = 'stand';
   let stall = 0;
   let round = 1;
@@ -464,7 +496,8 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
     for (const i of [0, 1] as const) {
       const s = S[i];
       // cutman work between rounds: better cutmen close cuts
-      const fix = s.f.cutman.rating / 45;
+      const aid = opts.cornerAid?.(i, round);
+      const fix = s.f.cutman.rating / 45 * (aid === undefined ? 1 : 0.3 + aid * 1.6);
       s.cut = Math.max(0, s.cut - Math.floor(fix * rng.float(0.3, 1)));
       const losing = roundScores.length && roundScores.reduce((acc, rr) => acc + (rr[0][i] - rr[0][1 - i]), 0) < -1;
       let quitP = 0;
@@ -500,9 +533,10 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
         finishT = 300;
         return true;
       }
-      s.stam = Math.min(100, s.stam + 22 + s.sk.cardio / 5);
-      s.hp = Math.min(100, s.hp + 3 + s.sk.durability / 25);
-      s.hurt = Math.max(0, s.hurt - 0.7);
+      const aidM = aid === undefined ? 1 : 0.6 + aid * 0.8;
+      s.stam = Math.min(100, s.stam + (22 + s.sk.cardio / 5) * aidM);
+      s.hp = Math.min(100, s.hp + (3 + s.sk.durability / 25) * aidM);
+      s.hurt = Math.max(0, s.hurt - 0.7 * aidM);
     }
     return false;
   };
@@ -511,6 +545,7 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
   for (round = 1; round <= opts.rounds && !finish; round++) {
     t = 0;
     for (const s of S) s.r = { str: 0, dmg: 0, td: 0, ctrl: 0, agg: 0, kd: 0 };
+    if (opts.plan) applyPlans();
     pos = 'stand';
     if (keep) sayN(round === 1 ? 'opening' : 'round_start', 'idle', 1);
     while (!finish) {
@@ -519,7 +554,7 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
       if ((pos as Pos) === 'atop' || (pos as Pos) === 'btop') groundExchange();
       else standExchange();
       for (const s of S) {
-        const burn = 0.9 + (100 - s.sk.cardio) / 60 + (s.f.addiction > 50 ? 0.5 : 0);
+        const burn = (0.9 + (100 - s.sk.cardio) / 60 + (s.f.addiction > 50 ? 0.5 : 0)) * burnMul[s === S[0] ? 0 : 1];
         s.stam = Math.max(5, s.stam - burn * rng.float(0.5, 1.2));
         s.hurt = Math.max(0, s.hurt - 0.05);
         if (s.cut > 0) s.hp -= s.cut * 0.04;

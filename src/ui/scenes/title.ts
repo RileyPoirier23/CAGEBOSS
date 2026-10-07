@@ -1,6 +1,7 @@
 /**
  * Title screen: a rain-soaked arena facade at night with a flickering marquee.
  */
+import { FMCreateScene } from './fmcreate';
 import { Container, Graphics } from 'pixi.js';
 import { Scene, fullBg } from '../app';
 import { PAL, shade } from '../../art/palette';
@@ -87,6 +88,7 @@ export class TitleScene extends Scene {
     const menu = new Container();
     const items: [string, () => void][] = [
       ['NEW CAREER', () => this.g.goto(new NewGameScene(this.g, 'career'))],
+      ['FIGHTER MODE', () => this.g.goto(new FMCreateScene(this.g))],
       ['SANDBOX', () => this.g.goto(new NewGameScene(this.g, 'sandbox'))],
       ['LOAD', () => openLoad(this.g)],
       ['SETTINGS', () => openSettings(this.g)],
@@ -94,10 +96,10 @@ export class TitleScene extends Scene {
     ];
     if (desktop) items.push(['QUIT GAME', () => desktop!.quit()]);
     items.forEach(([label, fn], i) => {
-      menu.addChild(button(label, 0, i * 17, 96, 14, fn, { fill: PAL.night, border: PAL.ash }));
+      menu.addChild(button(label, 0, i * 15, 96, 13, fn, { fill: PAL.night, border: PAL.ash }));
     });
     menu.x = Math.floor((W - 96) / 2);
-    menu.y = desktop ? 146 : 150;
+    menu.y = desktop ? 132 : 138;
     r.addChild(menu);
     r.addChild(text(`V${__APP_VERSION__}  •  M = MUTE  •  ALL CHARACTERS ARE FICTIONAL. ANY RESEMBLANCE IS A LAWSUIT WAITING TO HAPPEN.`, 0, H - 9, { small: true, width: W, align: 'center', color: PAL.grey }));
   }
