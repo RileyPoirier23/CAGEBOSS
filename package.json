@@ -1,7 +1,7 @@
 {
   "name": "cage-boss",
   "private": true,
-  "version": "1.0.5",
+  "version": "1.1.0",
   "type": "module",
   "description": "CAGE BOSS - a satirical MMA-promoter management sim",
   "scripts": {
