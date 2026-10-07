@@ -5,7 +5,7 @@
 import { maybeTutorial } from './tutorial';
 import { Application, Container, TextureStyle, Graphics, Ticker } from 'pixi.js';
 import type { GameState } from '../core/types';
-import { loadJSON, storeJSON, saveToSlot } from '../core/save';
+import { loadJSON, storeJSON, saveToSlot, autoSlot } from '../core/save';
 import { setColorblind, PAL } from '../art/palette';
 import { setMuted, setMusic, setVolumes, sfx, unlock as sfxUnlock } from '../audio/sfx';
 import { W, H, tooltip, clearChildren, dimmer, box, text } from './kit';
@@ -293,7 +293,7 @@ export class Game {
   }
 
   autosave(): void {
-    if (this.state) saveToSlot(this.state, 'auto');
+    if (this.state) saveToSlot(this.state, autoSlot(this.state));
   }
 
   private tick(dt: number): void {

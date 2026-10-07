@@ -1718,7 +1718,9 @@ export class ArenaView extends Container {
   private topBody(i: 0 | 1): { x: number; y: number; ang: number } {
     const c = this.tc;
     const ground = this.ground === 'atop' || this.ground === 'btop';
-    const d = this.ground === 'clinch' ? 10 : ground ? 4 : 26 + Math.sin(this.t * 1.3) * 3;
+    // the real gap between them (side view feet), so range, footwork and pressure read from above too
+    const real = Math.abs(this.F[1].x - this.F[0].x);
+    const d = this.ground === 'clinch' ? 13 : ground ? 4 : Math.max(16, Math.min(64, real * 0.62));
     const dir = i === 0 ? -1 : 1;
     const f = this.F[i];
     const push = (f.lunge - f.recoil) * 0.8;
@@ -1770,7 +1772,9 @@ export class ArenaView extends Container {
     // action centre wanders; clinches drift to the fence
     const c = this.tc;
     const ground = this.ground === 'atop' || this.ground === 'btop';
-    let tx = TCX + Math.sin(this.t * 0.31) * 28;
+    // follow the action along the side view's x (so pushing a man to the fence reads the same), wander in depth
+    const mid = (this.F[0].x + this.F[1].x) / 2;
+    let tx = TCX + Math.max(-1, Math.min(1, (mid - AW / 2) / 200)) * (TR - 30);
     let ty = TCY + Math.cos(this.t * 0.23) * 22;
     if (this.ground === 'clinch') {
       const fence = this.clinchTie.fence;

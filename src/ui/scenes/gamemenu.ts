@@ -5,7 +5,7 @@ import type { Game } from '../app';
 import { PAL } from '../../art/palette';
 import { text, button } from '../kit';
 import { openWindow, confirm, downloadText } from '../widgets';
-import { SLOTS, saveToSlot, slotMeta, exportSave } from '../../core/save';
+import { slotsFor, familyOf, isAutoSlot, saveToSlot, slotMeta, exportSave } from '../../core/save';
 import { openSettings } from './settings';
 import { openHelp } from '../help';
 import { openLoad } from './loadmenu';
@@ -20,9 +20,9 @@ export function openGameMenu(g: Game, onClose: () => void): void {
   let y = 4;
   win.body.addChild(text(s.difficulty === 'ironman' ? 'IRONMAN: autosave only.' : 'Save to slot:', 8, y, { small: true, color: PAL.ash }));
   y += 10;
-  for (const slot of SLOTS.filter((x) => x !== 'auto')) {
+  for (const slot of slotsFor(familyOf(s)).filter((x) => !isAutoSlot(x))) {
     const meta = slotMeta(slot);
-    win.body.addChild(button(`SLOT ${slot}${meta ? ` - ${meta.date}` : ' - empty'}`, 8, y, 204, 13, () => {
+    win.body.addChild(button(`SLOT ${slot.replace(/^[rl]/, '')}${meta ? ` - ${meta.date}` : ' - empty'}`, 8, y, 204, 13, () => {
       const go = () => {
         const ok = saveToSlot(s, slot);
         g.toast(ok ? `Saved to slot ${slot}` : 'Save failed', ok ? PAL.moss : PAL.blood);

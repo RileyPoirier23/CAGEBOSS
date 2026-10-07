@@ -10,10 +10,18 @@
  */
 import { Container, Graphics, type Ticker } from 'pixi.js';
 import type { Game } from './app';
-import type { Bout, CornerReport, Fighter, FightResult, Skills } from '../core/types';
+import type { Bout, CornerReport, Fighter, FightEvent, FightResult, GameState, Skills, TickerLine } from '../core/types';
+import { content } from '../core/content';
+import { Rng } from '../core/rng';
+import { TaleOfTape } from './taleoftape';
+import { BleetFeed } from './bleetfeed';
+import { bleetSituation, makeBleet } from '../sim/bleets';
+import { boothOpen, commentate, butlerIntro, butlerDecision, butlerFinish, weighInWeight, type AnnounceLine } from '../sim/commentary';
+import { boutLabel } from '../sim/events';
+import { rankLabel } from '../sim/rankings';
 import { PAL } from '../art/palette';
 import { W, H, text, button, box } from './kit';
-import { ArenaView, AH, type CanvasInfo } from './arena';
+import { ArenaView, AH, AW, type CanvasInfo } from './arena';
 import { input } from '../core/input';
 import { isTouchDevice } from '../core/platform';
 import { FightInput, sampleFight, rumbleForHit, type FightIntent } from '../core/fightinput';
@@ -44,6 +52,9 @@ export interface LiveFightOpts {
   canvas?: CanvasInfo;
   /** bareknuckle rules (somebody signed without reading) */
   bare?: boolean;
+  /** with the game state and event: the full broadcast (tale of the tape, Juiced Butler, the booth, Bleeter, the decision) */
+  state?: GameState;
+  ev?: FightEvent;
   done: (r: FightResult) => void;
 }
 
@@ -80,10 +91,89 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   const root = new Container();
   root.addChild(new Graphics().rect(0, 0, W, H).fill(0x0c0a10));
   const arena = new ArenaView(o.A, o.B, o.bout.rounds, { event: o.event, eventKey: o.bout.id, sponsors: o.sponsors, canvas: o.canvas, bare: o.bare });
+  (window as unknown as { __liveArena?: ArenaView }).__liveArena = arena;
   arena.manual = [L.F[0].x, L.F[1].x];
   arena.startFight();
   arena.manualRound();
   root.addChild(arena);
+  // ------------------------------------------------------------ broadcast: tape, Juiced Butler, booth, Bleeter
+  const S = o.state;
+  const EV = o.ev;
+  const pseed = (o.seed ^ 0x2545f491) >>> 0;
+  let stage: 'tape' | 'intro' | 'fight' | 'ceremony' = 'fight';
+  let tape: TaleOfTape | null = null;
+  let intro: AnnounceLine[] = [];
+  let introIdx = 0;
+  let annT = 0.6;
+  let cer: AnnounceLine[] = [];
+  let cerIdx = 0;
+  const subtitle = new Container();
+  const booth: TickerLine[] = []; // what the booth has said (newest last)
+  let boothT = 0;
+  let boothK = 0;
+  let feed: BleetFeed | null = null;
+  const bleetQ: { at: number; sit: string; actor: 0 | 1 }[] = [];
+  let bleetClock = 0;
+  if (S && EV) {
+    if (g.settings.intros !== false) intro = butlerIntro(S, EV, o.bout, pseed);
+    booth.push(...boothOpen(S, EV, o.bout, pseed).filter((l) => l.speaker));
+    if (intro.length) {
+      stage = 'tape';
+      arena.startIntro();
+      tape = new TaleOfTape(o.A, o.B, AW, boutLabel(S, o.bout), weighInWeight(o.A, o.bout, 1), weighInWeight(o.B, o.bout, 2), [rankLabel(S, o.A.id), rankLabel(S, o.B.id)]);
+      root.addChild(tape);
+      sfx('crowd');
+    }
+    if (g.settings.bleets !== false) {
+      feed = new BleetFeed();
+      feed.position.set(AW - 146, 36);
+      root.addChild(feed);
+    }
+  }
+  root.addChild(subtitle);
+  const say = (line: AnnounceLine | null) => {
+    subtitle.removeChildren().forEach((c) => c.destroy({ children: true }));
+    if (!line) return;
+    const t = text(line.text, 0, 0, { width: W - 40, align: 'center', color: line.stage ? PAL.ash : /!!!$/.test(line.text) ? PAL.gold : PAL.bone, small: line.stage, maxLines: 3, shadow: PAL.ink });
+    const h = t.textHeight + 8;
+    const bg = box(W - 24, h, 0x0a080c);
+    bg.alpha = 0.82;
+    bg.position.set(12, AH - 8 - h);
+    subtitle.addChild(bg);
+    if (!line.stage) subtitle.addChild(text('JUICED BUTLER', 16, AH - 17 - h, { small: true, color: PAL.gold, shadow: PAL.ink }));
+    t.position.set(20, AH - 8 - h + 4);
+    subtitle.addChild(t);
+  };
+  const queueBleet = (sit: string, actor: 0 | 1, delay = 0.8 + Math.random() * 1.4) => {
+    if (feed && bleetQ.length < 4) bleetQ.push({ at: bleetClock + delay, sit, actor });
+  };
+  /** A new line from the fight: the booth might say something, Bleeter might react. */
+  const react = (line: TickerLine) => {
+    if (!S || !EV) return;
+    const urgent = line.intensity >= 3 || line.act === 'kd' || line.act === 'tap' || line.act === 'ko' || line.act === 'tko';
+    if (urgent || boothT <= 0) {
+      const said = commentate(S, EV, o.bout, [line], pseed + ++boothK * 7919).filter((l) => l.speaker);
+      if (said.length) {
+        booth.push(...said.slice(0, urgent ? 2 : 1));
+        boothT = 4.5;
+      }
+    }
+    const sit = bleetSituation(line);
+    if (sit && Math.random() < sit.chance) queueBleet(sit.sit, line.side === 1 ? 1 : 0);
+  };
+  const endIntro = () => {
+    if (stage !== 'tape' && stage !== 'intro') return;
+    tape?.destroy({ children: true });
+    tape = null;
+    stage = 'fight';
+    say(null);
+    arena.startFight();
+    arena.manual = [L.F[0].x, L.F[1].x];
+    arena.manualRound();
+    freeze = 1.4;
+    arena.showCallout('ROUND 1');
+    queueBleet('open', 0, 1.2);
+  };
   const hud = new Container();
   root.addChild(hud);
   const hudG = new Graphics();
@@ -113,6 +203,10 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   setPadUiMode('game');
   const popKeys = g.pushKeyHandler((e) => {
     if (e.type !== 'keydown') return true;
+    if ((stage === 'tape' || stage === 'intro') && !paused) {
+      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') endIntro();
+      return true;
+    }
     if (e.key === 'Escape') {
       if (!paused && !resultShown) pause();
       else if (paused && pauseWrap && g.modals[g.modals.length - 1] === pauseWrap) g.closeModal(pauseWrap);
@@ -192,9 +286,28 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         hudG.rect(W / 2 - 40, y0 + 38, 80, 3).fill(PAL.night).rect(W / 2 - 40, y0 + 38, Math.round(80 * v), 3).fill(PAL.gold);
       }
     }
-    // play-by-play
-    if (lineT > 0) dyn.addChild(text(lastLine, 8, H - 12, { small: true, color: PAL.bone, width: W - 16, align: 'center', maxLines: 1 }));
-    else dyn.addChild(text('ESC / MENU: pause', 0, H - 11, { small: true, color: PAL.grey, width: W, align: 'center' }));
+    // the booth and the play-by-play, newest at the bottom
+    if (stage === 'tape' || stage === 'intro') dyn.addChild(text('ENTER / A: SKIP THE INTROS', 0, H - 11, { small: true, color: PAL.grey, width: W, align: 'center' }));
+    else {
+      const speakers = content().commentary.speakers;
+      const rows: { t: string; c: number }[] = booth.slice(-3).map((l) => ({ t: `{#${speakers[l.speaker!]?.color ?? 'c4a04a'}}${speakers[l.speaker!]?.short ?? l.speaker!.toUpperCase()}:{/} ${l.text}`, c: PAL.fog }));
+      let yy = H - 12;
+      if (lineT > 0) {
+        dyn.addChild(text(lastLine, 112, yy, { small: true, color: PAL.gold, width: W - 224, align: 'center', maxLines: 1 }));
+        yy -= 10;
+      }
+      for (const r of rows.reverse()) {
+        const t = text(r.t, 112, 0, { small: true, color: r.c, width: W - 224, maxLines: 3 });
+        yy -= t.textHeight - 6;
+        t.y = yy;
+        if (yy < y0 + 44) {
+          t.destroy();
+          break;
+        }
+        dyn.addChild(t);
+        yy -= 10;
+      }
+    }
     // overlays: the count, submission struggle
     for (const i of [0, 1] as Side[]) {
       if (L.F[i].down <= 0) continue;
@@ -213,7 +326,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
 
   // ------------------------------------------------------------ events -> animation
 
-  const say = (s: string) => {
+  const sayLine = (s: string) => {
     lastLine = s;
     lineT = 3;
   };
@@ -512,7 +625,38 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     // a modal on top (corner, pause, controls): the fight waits
     const onTop = g.modals[g.modals.length - 1] === wrap;
     lineT -= dt;
-    if (onTop && !paused) {
+    boothT -= dt;
+    if (feed && !feed.destroyed && S && EV) {
+      bleetClock += dt;
+      feed.update(dt);
+      for (const q of bleetQ.filter((x) => x.at <= bleetClock)) {
+        const b = makeBleet(S, EV, o.bout, q.sit, q.actor, new Rng((Math.random() * 1e9) | 0));
+        if (b) feed.push(b);
+      }
+      for (let k = bleetQ.length - 1; k >= 0; k--) if (bleetQ[k].at <= bleetClock) bleetQ.splice(k, 1);
+    }
+    if (onTop && !paused && (stage === 'tape' || stage === 'intro')) {
+      if (input.buttonPressed('A' as never)) endIntro();
+      else if (stage === 'tape') {
+        if (!tape || !tape.update(dt)) {
+          tape?.destroy({ children: true });
+          tape = null;
+          stage = 'intro';
+        }
+      } else {
+        annT -= dt;
+        if (annT <= 0) {
+          const line = intro[introIdx++];
+          if (!line) endIntro();
+          else {
+            arena.introCue(line.corner, !!line.stage, line.text);
+            say(line);
+            if (/!!!$/.test(line.text)) sfx('roar');
+            annT = line.stage ? 1.8 : 1.0 + line.text.length / 38;
+          }
+        }
+      }
+    } else if (onTop && !paused) {
       if (freeze > 0) {
         freeze -= dt;
         if (freeze <= 0.5 && freeze + dt > 0.5) {
@@ -545,25 +689,62 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         L.update(dt, intents, moves);
         for (const e of L.events) handle(e);
         L.events.length = 0;
-        if (L.log.length > logLen) say(L.log[L.log.length - 1].text);
+        if (L.log.length > logLen) {
+          for (const ln of L.log.slice(logLen)) react(ln);
+          sayLine(L.log[L.log.length - 1].text);
+        }
         if ((L.phase as string) === 'break') {
           arena.restInCorners();
           setTimeout(corner, 900);
         }
       } else if (L.phase === 'over' && !resultShown) {
-        if (L.result?.method === 'DEC' || L.result?.method === 'DRAW') arena.over(L.result.winner);
-        endT += dt;
-        if (endT > 2.6) showResult();
+        if (stage !== 'ceremony') {
+          if (L.result?.method === 'DEC' || L.result?.method === 'DRAW') arena.over(L.result.winner);
+          endT += dt;
+          if (endT > 2.6) {
+            if (S && EV) {
+              // Juiced Butler reads it out
+              const r = L.toResult(o.judges, o.referee);
+              const b = { ...o.bout, result: r };
+              cer = r.method === 'DEC' || r.method === 'DRAW' ? butlerDecision(S, EV, b, pseed).lines : butlerFinish(S, b, pseed);
+              cerIdx = 0;
+              annT = 0.6;
+              stage = 'ceremony';
+              arena.manual = null;
+              arena.startCeremony();
+              react({ ...L.log[L.log.length - 1], key: r.method === 'DEC' ? 'decision' : r.method === 'SUB' ? 'tap' : 'ko_live' });
+            } else showResult();
+          }
+        } else {
+          annT -= dt;
+          if (annT <= 0) {
+            const line = cer[cerIdx++];
+            if (!line) {
+              say(null);
+              showResult();
+            } else {
+              arena.ceremonyCue(line.text);
+              say(line);
+              const last = cerIdx >= cer.length;
+              if (last) {
+                const w = L.result?.winner ?? -1;
+                arena.raiseHand(w as 0 | 1 | -1);
+                sfx('roar');
+              }
+              annT = last ? 3 : 1 + line.text.length / 40;
+            }
+          }
+        }
       }
     }
     // mirror the engine into the arena
     const mid = (L.F[0].x + L.F[1].x) / 2;
-    arena.manual = L.pos === 'clinch' ? [mid - 6, mid + 6] : [L.F[0].x, L.F[1].x];
+    if (stage === 'fight') arena.manual = L.pos === 'clinch' ? [mid - 6, mid + 6] : [L.F[0].x, L.F[1].x];
     arena.clinchTie = { dom: L.clinch.dom, tie: L.clinch.tie, fence: L.clinch.fence };
     arena.hp = [Math.max(0, L.F[0].hp), Math.max(0, L.F[1].hp)];
     arena.round = L.round;
     arena.sec = 300 - (L.clock / 75) * 300;
-    if (L.phase === 'fight' || L.phase === 'over') arena.setMat(L.pos === 'ground' ? (L.top === 0 ? 'atop' : 'btop') : L.pos, L.gpos, L.sub);
+    if (stage === 'fight' && (L.phase === 'fight' || L.phase === 'over')) arena.setMat(L.pos === 'ground' ? (L.top === 0 ? 'atop' : 'btop') : L.pos, L.gpos, L.sub);
     for (const i of [0, 1] as Side[]) if (L.F[i].block && !L.F[i].act && L.phase === 'fight' && L.pos === 'stand') arena.play(i, 'block', 0.06);
     arena.update(dt);
     drawHud();
@@ -574,6 +755,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     popKeys();
     setPadUiMode('cursor');
   });
-  arena.showCallout('ROUND 1');
-  sfx('crowd');
+  if (stage === 'fight') {
+    arena.showCallout('ROUND 1');
+    sfx('crowd');
+  }
 }

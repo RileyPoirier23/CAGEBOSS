@@ -11,6 +11,8 @@ import { W, H, text, button, box, ScrollBox } from '../kit';
 import { openWindow, confirm, alertBox, selector } from '../widgets';
 import { openHelp } from '../help';
 import { openSettings } from './settings';
+import { openSaveSlots, openLoad } from './loadmenu';
+import { familyOf } from '../../core/save';
 import { fighterPortrait } from '../sprites';
 import { money, record } from '../../core/format';
 import { fmtDate } from '../../core/time';
@@ -518,7 +520,8 @@ export class FMHubScene extends Scene {
 
   private menu(): void {
     const win = openWindow(this.g, 'Menu', 160, 128);
-    win.body.addChild(button('SAVE', 6, 6, 148, 15, () => { this.g.autosave(); this.g.toast('Saved.', PAL.moss, { small: true }); win.close(); }, { small: true }));
+    win.body.addChild(button('SAVE…', 6, 6, 72, 15, () => { this.g.autosave(); win.close(); openSaveSlots(this.g); }, { small: true }));
+    win.body.addChild(button('LOAD…', 82, 6, 72, 15, () => { win.close(); openLoad(this.g, familyOf(this.g.state!)); }, { small: true }));
     win.body.addChild(button('HELP: HOW TO BE A PRO', 6, 24, 148, 15, () => openHelp(this.g, 'rtc'), { small: true, fill: PAL.shadow, border: PAL.gold }));
     win.body.addChild(button('SETTINGS', 6, 42, 148, 15, () => openSettings(this.g), { small: true }));
     win.body.addChild(button('RETIRE…', 6, 60, 148, 15, () => { win.close(); confirm(this.g, 'Hang up the gloves for good?', () => this.legacy()); }, { small: true, fill: PAL.ember }));
@@ -688,7 +691,7 @@ export class FMHubScene extends Scene {
           const B = s.fighters[bout.b];
           openLiveFight(this.g, {
             bout, A, B, skills: [A.skills, B.skills], player: side(bout) as 0 | 1, plan: st.plan, oppPlan: oppPlan(2), cutTier: st.staff.cutman, seed,
-            event: ev.name, judges: off.judges.map((j) => j.name), referee: off.referee.name, sponsors: eventSponsors(s, ev), canvas: eventCanvas(s, ev), bare: !!st.fight?.bare,
+            event: ev.name, judges: off.judges.map((j) => j.name), referee: off.referee.name, sponsors: eventSponsors(s, ev), canvas: eventCanvas(s, ev), bare: !!st.fight?.bare, state: s, ev,
             done: (res) => {
               bout.result = res;
               done();

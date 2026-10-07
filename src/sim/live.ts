@@ -146,6 +146,11 @@ const SUB_START: Record<string, number> = {
 export const LEG_LOCKS = new Set(['heel hook', 'kneebar', 'ankle lock']);
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+const LINE_KEY: Record<string, string> = {
+  td: 'takedown', sprawl: 'takedown', ctrl: 'ground_control', sub: 'sub_attempt', sweep: 'sweep', escape: 'escape', rocked: 'rocked', kd: 'knockdown',
+  cut: 'cut', headkick: 'land_headkick', legkick: 'land_legkick', kick: 'land_bodykick', knee: 'clinch_work', elbow: 'clinch_work', clinch: 'clinch_work',
+  round_start: 'round_start', bell: 'round_end', tap: 'tap', ko: 'ko_live', tko: 'tko_live', getup: 'standup', standup: 'standup', idle: 'clinch_work',
+};
 
 export class LiveFight {
   F: [LiveFighter, LiveFighter];
@@ -212,7 +217,9 @@ export class LiveFight {
 
   private line(side: Side | -1, act: string, text: string, intensity = 1): void {
     const pos = this.pos === 'ground' ? (this.top === 0 ? 'atop' : 'btop') : this.pos;
-    this.log.push({ round: this.round, t: Math.round(300 - (this.clock / ROUND_SECONDS) * 300), text, side, intensity, act, pos, hp: [Math.round(this.F[0].hp), Math.round(this.F[1].hp)] });
+    // the same situation keys the sim uses, so the booth and Bleeter react to hands-on fights too
+    const key = /spinning/.test(text) ? 'land_spinning' : act === 'punch' && /body/.test(text) ? 'land_body' : LINE_KEY[act];
+    this.log.push({ round: this.round, t: Math.round(300 - (this.clock / ROUND_SECONDS) * 300), text, side, intensity, act, pos, hp: [Math.round(this.F[0].hp), Math.round(this.F[1].hp)], key });
   }
 
   private name(i: Side): string {
@@ -790,6 +797,7 @@ export class LiveFight {
       if (big && this.rng.chance(name === 'elbow' ? 0.3 : 0.12)) {
         o.cut++;
         this.ev({ type: 'cut', side: (1 - i) as Side });
+        this.line(i, 'cut', `${this.name((1 - i) as Side)} is cut open.`, 2);
       }
       if (o.hp <= 0) {
         if (o.hp < -12 || o.kdsRound >= 2 || this.pos === 'ground') return this.finish(i, this.pos === 'ground' ? 'TKO' : 'KO', this.pos === 'ground' ? 'ground and pound' : name ?? 'punch');

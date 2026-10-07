@@ -6,7 +6,7 @@ import type { Game } from './app';
 import { PAL } from '../art/palette';
 import { text, button } from './kit';
 import { openWindow } from './widgets';
-import { loadJSON, storeJSON, slotMeta, SLOTS } from '../core/save';
+import { loadJSON, storeJSON, slotMeta, ALL_SLOTS } from '../core/save';
 import { openHelp } from './help';
 
 /** Newest first. Keep each version to a few lines. */
@@ -36,7 +36,7 @@ export function maybeWhatsNew(g: Game): void {
   if (seen === __APP_VERSION__) return;
   storeJSON('cageboss-whatsnew', __APP_VERSION__);
   // a brand-new player (no saves at all) doesn't need a changelog
-  if (!seen && SLOTS.every((x) => !slotMeta(x))) return;
+  if (!seen && ALL_SLOTS.every((x) => !slotMeta(x))) return;
   openWhatsNew(g);
 }
 

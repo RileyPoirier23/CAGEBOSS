@@ -11,7 +11,7 @@ import type { PixelText } from '../text';
 import { openSettings } from './settings';
 import { openHelp } from '../help';
 import { maybeWhatsNew } from '../whatsnew';
-import { openLoad } from './loadmenu';
+import { openLoad, latestSave, continueLatest } from './loadmenu';
 import { NewGameScene } from './newgame';
 import { openCredits } from './credits';
 import { desktop } from '../../desktop';
@@ -88,7 +88,9 @@ export class TitleScene extends Scene {
     r.addChild(text('A PROMOTER SIMULATOR OF DUBIOUS ETHICS', 0, 64, { small: true, width: W, align: 'center', color: PAL.ash }));
 
     const menu = new Container();
+    const last = latestSave();
     const items: [string, () => void][] = [
+      ...(last ? [['CONTINUE', () => continueLatest(this.g)] as [string, () => void]] : []),
       ['NEW CAREER', () => this.g.goto(new NewGameScene(this.g, 'career'))],
       ['ROAD TO CHAMPION', () => this.g.goto(new FMCreateScene(this.g))],
       ['SANDBOX', () => this.g.goto(new NewGameScene(this.g, 'sandbox'))],
@@ -99,10 +101,10 @@ export class TitleScene extends Scene {
     ];
     if (desktop) items.push(['QUIT GAME', () => desktop!.quit()]);
     items.forEach(([label, fn], i) => {
-      menu.addChild(button(label, 0, i * 15, 116, 13, fn, { fill: label === 'HELP' ? PAL.shadow : PAL.night, border: label === 'HELP' ? PAL.gold : PAL.ash }));
+      menu.addChild(button(label, 0, i * 15, 116, 13, fn, { fill: label === 'CONTINUE' ? PAL.moss : label === 'HELP' ? PAL.shadow : PAL.night, border: label === 'HELP' || label === 'CONTINUE' ? PAL.gold : PAL.ash }));
     });
     menu.x = Math.floor((W - 116) / 2);
-    menu.y = desktop ? 124 : 132;
+    menu.y = (desktop ? 124 : 132) - (last ? 8 : 0);
     r.addChild(menu);
     r.addChild(text(`V${__APP_VERSION__}  •  M = MUTE  •  ALL CHARACTERS ARE FICTIONAL. ANY RESEMBLANCE IS A LAWSUIT WAITING TO HAPPEN.`, 0, H - 9, { small: true, width: W, align: 'center', color: PAL.grey }));
     setTimeout(() => maybeWhatsNew(this.g), 400);
