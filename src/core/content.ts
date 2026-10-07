@@ -239,6 +239,15 @@ export interface CareerContent {
   frontpage: FrontPageDef[];
   owner: Record<string, string[]>;
   oneton: Record<string, string[]>;
+  /** data/rankings/real_snapshot.json: real-world rankings mapped to parody ids */
+  realRankings: RealRankings | null;
+}
+
+export interface RealRankEntry { real: string; parody: string | null }
+export interface RealRankings {
+  asOf: string;
+  divisions: Record<string, { champion: RealRankEntry; ranked: RealRankEntry[] }>;
+  p4p: { men: RealRankEntry[]; women: RealRankEntry[] };
 }
 
 export interface Content {
@@ -333,6 +342,7 @@ export function buildContent(files: Record<string, unknown>): Content {
       frontpage: (() => { const fp = get('career/frontpage.json', []); return Array.isArray(fp) ? fp : fp.items ?? []; })(),
       owner: get('career/owner.json', {}),
       oneton: get('career/oneton.json', {}),
+      realRankings: get('rankings/real_snapshot.json', null),
     },
     divisions: get('divisions/divisions.json', REQUIRED),
     roster,

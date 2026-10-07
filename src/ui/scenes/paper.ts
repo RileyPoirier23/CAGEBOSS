@@ -10,9 +10,11 @@ import { sfx } from '../../audio/sfx';
 import { routePhase } from '../flow';
 import { compact } from '../../core/format';
 import { ensureCareer, TIERS, nextUnlock, contenderEvent, hasUnlock } from '../../sim/career';
+import { ContenderScene } from './contender';
 import { showOwnerCheckIn, playUnlockQueue, openCareerPanel, cloutBar } from '../career';
 
 export class PaperScene extends Scene {
+  tutorialKey = 'paper';
   private sheet: Container | null = null;
   private t = 0;
   private careerShown = false;
@@ -126,6 +128,7 @@ export class PaperScene extends Scene {
     else if (!open.length) side.addChild(text('Grab a coffee.\nThe desk is waiting.', 0, sy, { width: 92, color: PAL.ash, small: true }));
     r.addChild(side);
     if (s.mode === 'career' || hasUnlock(s, 'contender_series') || c.clout > 0) r.addChild(button('CAREER', W - 96, H - 50, 88, 16, () => openCareerPanel(this.g), { fill: PAL.plum }));
+    if (contenderEvent(s)) r.addChild(button('CONTENDER SERIES', W - 96, H - 72, 88, 16, () => this.g.goto(new ContenderScene(this.g)), { fill: PAL.sky }));
     r.addChild(button('TO THE DESK →', W - 96, H - 28, 88, 18, () => this.next(), { fill: PAL.blood }));
     if (!this.careerShown) {
       this.t = 0;

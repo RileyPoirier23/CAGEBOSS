@@ -95,7 +95,7 @@ export function onetonBleet(s: GameState, bout: Bout, rng: Rng): { handle: strin
   if (!lines.length) return null;
   const x = mex ?? (rng.chance(0.5) ? A : B);
   const y = x === A ? B : A;
-  const text = expandPop(rng.pick(lines)).replace(/\{x\}/g, x.last).replace(/\{y\}/g, y.last).replace(/\{promotion\}/g, s.promotion.name);
+  const text = expandPop(rng.pick(lines)).replace(/\{x\}/g, x.last).replace(/\{y\}/g, y.last).replace(/\{promotion\}/g, s.promotion.name).replace(/\{presidentLast\}/g, s.president.name.split(' ').slice(-1)[0]);
   return { handle: ONETON_HANDLE, kind: 'media', text };
 }
 

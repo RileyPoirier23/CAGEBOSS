@@ -16,7 +16,7 @@ const HOLD = 5.5;
 export class TaleOfTape extends Container {
   t = 0;
 
-  constructor(A: Fighter, B: Fighter, aw: number, title: string, weightA: number, weightB: number) {
+  constructor(A: Fighter, B: Fighter, aw: number, title: string, weightA: number, weightB: number, ranks: [string, string] = ['NR', 'NR']) {
     super();
     const w = 300;
     const x0 = Math.round((aw - w) / 2);
@@ -41,6 +41,7 @@ export class TaleOfTape extends Container {
     const p = quickOdds(A, B);
     const rows: [string, string, string][] = [
       ['RECORD', record(A.record), record(B.record)],
+      ['RANK', ranks[0], ranks[1]],
       ['AGE', String(A.age), String(B.age)],
       ['HEIGHT', heightStr(A.height), heightStr(B.height)],
       ['WEIGHT', `${weightA} LBS`, `${weightB} LBS`],

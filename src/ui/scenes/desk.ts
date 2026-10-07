@@ -54,6 +54,7 @@ const STAMP_FILL: Record<Stamp, () => number> = {
 };
 
 export class DeskScene extends Scene {
+  tutorialKey = 'desk';
   private ins = new Inspector();
   private selected: string | null = null;
   private rulebookOpen = false;

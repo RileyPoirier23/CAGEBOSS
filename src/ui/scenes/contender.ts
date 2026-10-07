@@ -36,6 +36,7 @@ const SIGNED_LINES = [
 ];
 
 export class ContenderScene extends Scene {
+  tutorialKey = 'contender';
   music = 'fightnight' as const;
   private offers = false;
 

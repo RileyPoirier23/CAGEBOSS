@@ -1,4 +1,5 @@
 import type { Game } from '../app';
+import { resetTutorial } from '../tutorial';
 import { PAL } from '../../art/palette';
 import { text, button } from '../kit';
 import { openJukebox } from './jukebox';
@@ -7,7 +8,7 @@ import { isTenFoot } from '../../core/platform';
 import { openWindow, selector, checkbox, stepper } from '../widgets';
 
 export function openSettings(g: Game, onClose?: () => void): void {
-  const win = openWindow(g, 'Settings', 260, desktop ? 254 : isTenFoot ? 258 : 241, { onClose });
+  const win = openWindow(g, 'Settings', 260, desktop ? 267 : isTenFoot ? 271 : 254, { onClose });
   const b = win.body;
   const s = g.settings;
   const save = () => g.applySettings();
@@ -54,6 +55,9 @@ export function openSettings(g: Game, onClose?: () => void): void {
   b.addChild(checkbox(8, y, 'Live Bleeter feed during fights', s.bleets !== false, (v) => { s.bleets = v; save(); }));
   y += 13;
   b.addChild(checkbox(8, y, 'Bleep the swearing (streamer mode)', !!s.bleep, (v) => { s.bleep = v; save(); g.scene?.refresh(); }));
+  y += 13;
+  b.addChild(checkbox(8, y, 'Offer the tutorial on new careers', s.tutorial !== false, (v) => { s.tutorial = v; save(); }));
+  if (g.state?.mode === 'career') b.addChild(button('REPLAY', 196, y - 1, 46, 11, () => { resetTutorial(g); g.toast('Tutorial back on for this career.', PAL.moss, { small: true }); }, { small: true, fill: PAL.steel }));
   y += 13;
   if (desktop) {
     b.addChild(checkbox(8, y, 'Fullscreen (F11)', s.fullscreen !== false, (v) => { s.fullscreen = v; save(); }));

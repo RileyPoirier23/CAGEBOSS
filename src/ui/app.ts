@@ -2,6 +2,7 @@
  * Game shell: Pixi application at 480x270 integer-scaled to the window,
  * scene manager with a modal stack, settings, toasts and screen shake.
  */
+import { maybeTutorial } from './tutorial';
 import { Application, Container, TextureStyle, Graphics, Ticker } from 'pixi.js';
 import type { GameState } from '../core/types';
 import { loadJSON, storeJSON, saveToSlot } from '../core/save';
@@ -31,6 +32,7 @@ export interface Settings {
   bleep?: boolean; // streamer mode: grawlix instead of swears
   fullscreen?: boolean; // desktop build only
   bleets?: boolean; // live Bleeter feed while watching fights
+  tutorial?: boolean; // offer the tutorial on new careers
   tvSafe?: number; // TV-safe margin in % of each edge (consoles / TVs)
 }
 
@@ -52,6 +54,8 @@ export abstract class Scene {
   root = new Container();
   /** what the soundtrack should be doing while this scene is up */
   music: MusicContext = 'office';
+  /** first visit in a new career shows the tutorial cards for this key */
+  tutorialKey?: string;
   constructor(protected g: Game) {}
   abstract build(): void;
   enter(): void {
@@ -184,6 +188,7 @@ export class Game {
     this.sceneLayer.addChild(scene.root);
     setMusicContext(scene.music);
     scene.enter();
+    if (scene.tutorialKey) maybeTutorial(this, scene.tutorialKey);
   }
 
   /**

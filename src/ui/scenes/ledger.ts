@@ -74,6 +74,7 @@ export function drawLedgerBook(g: Game, l: LedgerWeek, prev: LedgerWeek | null, 
 }
 
 export class LedgerScene extends Scene {
+  tutorialKey = 'ledger';
   private report: WeekReport | null = null;
   private quip = '';
 

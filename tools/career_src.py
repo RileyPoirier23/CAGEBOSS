@@ -613,6 +613,35 @@ add('oneton', [
   ("1TON TOLD THERE ARE NO MORE QUESTIONS; ASKS ABOUT MEXICAN FIGHTERS ANYWAY", ""),
 ], 0.1)
 
+# more 1ton
+ONETON['bleet_mex'] += [
+    "{x} just threw a combination I can only describe as 'Sunday at my tío's house'. VIVA.",
+    "Every time {x} lands, a mariachi band somewhere gets its wings.",
+    "{y} is learning about Mexico in real time. Lesson one: we don't stop coming.",
+    "Main event {x}. Next card. I'm not asking. (I'm asking. Loudly. At the presser.)",
+    "{x} has the chin of a man raised on menudo and bad decisions. Respect.",
+    "I would die for {x}. I would also ask about {x} at the presser, which is worse for {presidentLast}.",
+]
+ONETON['bleet_non'] += [
+    "Two non-Mexican guys hugging for three rounds. Riveting. Truly the sport of kings.",
+    "{x} just threw a jab that couldn't break a piñata. A small piñata. A sad one.",
+    "This is the part of the card where I go get tacos. Text me if a Mexican fighter shows up.",
+    "Unpopular opinion: this fight would be better if both guys were from Sinaloa.",
+    "{y} has the cardio of a guy who thinks salsa is spicy.",
+    "Respectfully, who are these men and why aren't they Mexican.",
+    "Judges, score this one 10-9 for the guy who looks most likely to have an abuela in Guadalajara.",
+    "I asked {x}'s corner if he has Mexican heritage. Security asked me to leave the corner.",
+]
+ONETON['ask_none'] += [
+    "1ton. {presidentLast}, I'll make this simple. One Mexican fighter. One. I'll even find him for you. He's in my car right now.",
+    "1ton, the Lucha Lowdown. My question is a silence. (He stands there. He stares. Nobody moves.)",
+]
+ONETON['answer_joke'] += ["1ton, I'm starting to think you might be Mexican.", "Let's go to someone without a beard this time."]
+ONETON['feed'] += [
+    "Counted the {promotion} roster again. Still not enough Mexico. Morale low. Beard high.",
+    "New episode of the Lucha Lowdown: 3 hours, 1 topic. You know the topic.",
+]
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     with open(os.path.join(OUT, 'owner.json'), 'w') as f:

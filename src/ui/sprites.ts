@@ -75,7 +75,7 @@ export function fighterPortrait(f: Fighter, size: 64 | 32 | 24 = 64, variant: Po
 }
 
 export function reporterPortrait(r: ReporterDef, size: 64 | 32 | 24 = 64): Container {
-  return portrait({ id: r.id, look: r.look, gender: r.gender, age: 40, variant: 'reporter', attire: 'suit' }, size);
+  return portrait({ id: r.id, look: r.look, gender: r.gender, age: (r as { age?: number }).age ?? 40, variant: 'reporter', attire: 'suit' }, size);
 }
 
 export function signatureSprite(seed: string): Sprite {

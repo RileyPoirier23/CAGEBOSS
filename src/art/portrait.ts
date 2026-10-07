@@ -360,6 +360,7 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
         const dx = Math.abs(x - CX + 0.5);
         const r = y - top;
         let hairline = rows - (dx < 3 + rec * 2 ? rec * 2 : 0) - (dx > inner - 4 ? -2 : 0);
+        if (look.widow) hairline += dx < 1.5 ? 4 : dx < 3 ? 2 : dx < 7 ? -2 : 0; // sharp widow's peak, deep temples
         if (sideburns && dx > inner - 3 && y < eyeY - 2) hairline = 99; // temples & sideburns
         if (r >= hairline) continue;
         if (y >= top && r >= rows && !(sideburns && dx > inner - 3)) continue;

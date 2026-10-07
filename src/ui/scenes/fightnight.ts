@@ -68,6 +68,7 @@ const INTERVIEW: Record<string, string[]> = {
 const CAM_NAMES: Record<string, string> = { side: 'WIDE', tv: 'TV', top: 'TOP-DOWN' };
 
 export class FightNightScene extends Scene {
+  tutorialKey = 'fightnight';
   music = 'fightnight' as const;
   private step: Step = 'intro';
   private ev: FightEvent;
@@ -92,15 +93,16 @@ export class FightNightScene extends Scene {
   private recapView: NewsRecap | null = null;
   private pressersDone = 0;
 
-  constructor(g: Game, evId: string) {
+  /** opts.event: an event that isn't in state.events (Contender Series); opts.onWrap replaces bonuses/presser/ledger. */
+  constructor(g: Game, evId: string, private opts: { event?: FightEvent; onWrap?: () => void } = {}) {
     super(g);
-    this.ev = g.state!.events.find((e) => e.id === evId)!;
+    this.ev = opts.event ?? g.state!.events.find((e) => e.id === evId)!;
   }
 
   enter(): void {
     const s = this.g.state!;
     const fresh = !this.ev.notes.includes('started');
-    if (!fresh) autoFixCard(s, this.ev);
+    if (!fresh && !this.opts.onWrap) autoFixCard(s, this.ev);
     this.settleStep();
     super.enter();
     // late withdrawals: the boss picks the short-notice replacements
@@ -120,6 +122,11 @@ export class FightNightScene extends Scene {
   build(): void {
     const r = this.root;
     r.addChild(fullBg(0x120e14));
+    if (this.opts.onWrap && (this.step === 'bonus' || this.step === 'presser' || this.step === 'recap' || this.step === 'done')) {
+      const done = this.opts.onWrap;
+      this.opts.onWrap = undefined;
+      return void setTimeout(done, 0);
+    }
     switch (this.step) {
       case 'intro': return this.buildIntro();
       case 'card': return this.buildCard();
@@ -273,7 +280,7 @@ export class FightNightScene extends Scene {
       remaining.sort((a, b) => b.position - a.position).forEach((b) => this.simBout(b, true));
       this.refresh();
     }, { small: true, disabled: !remaining.length }));
-    if (!remaining.length) r.addChild(button('BONUSES & WRAP UP →', W - 150, H - 26, 142, 18, () => { this.step = 'bonus'; this.refresh(); }, { fill: PAL.blood }));
+    if (!remaining.length) r.addChild(button(this.opts.onWrap ? 'CONTRACT TIME →' : 'BONUSES & WRAP UP →', W - 150, H - 26, 142, 18, () => { this.step = 'bonus'; this.refresh(); }, { fill: PAL.blood }));
     else r.addChild(text('Watch a fight, or sim it. Prelims run first, main event last.', 220, H - 21, { small: true, color: PAL.ash }));
   }
 
@@ -333,7 +340,7 @@ export class FightNightScene extends Scene {
     // tale of the tape before the walkouts (once per fight)
     if (p.phase === 'intro' && p.introIdx === 0 && !this.tapeShown) {
       this.tapeShown = true;
-      this.tape = new TaleOfTape(A, B, AW, boutLabel(s, p.bout), weighInWeight(A, p.bout, 1), weighInWeight(B, p.bout, 2));
+      this.tape = new TaleOfTape(A, B, AW, boutLabel(s, p.bout), weighInWeight(A, p.bout, 1), weighInWeight(B, p.bout, 2), [rankLabel(s, A.id), rankLabel(s, B.id)]);
       r.addChild(this.tape);
     } else this.tape = null;
     if (this.g.settings.bleets !== false) {

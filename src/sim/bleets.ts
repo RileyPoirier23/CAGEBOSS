@@ -7,6 +7,7 @@ import type { Rng } from '../core/rng';
 import { content } from '../core/content';
 import { handleOf, FAN_HANDLES } from './news';
 import { expandPop } from './popculture';
+import { onetonBleet } from './oneton';
 
 export type BleetKind = 'fighter' | 'media' | 'fan';
 export interface Bleet {
@@ -55,6 +56,11 @@ export function makeBleet(s: GameState, ev: FightEvent, bout: Bout, sit: string,
   const A = s.fighters[actor === 0 ? bout.a : bout.b];
   const B = s.fighters[actor === 0 ? bout.b : bout.a];
   if (!A || !B) return null;
+  // @1ton lurks in every fight's replies
+  if (rng.chance(0.07)) {
+    const o = onetonBleet(s, bout, rng);
+    if (o) return o;
+  }
   const r = rng.next();
   let kind: BleetKind = r < 0.5 ? 'fan' : r < 0.8 ? 'fighter' : 'media';
   let handle = '';

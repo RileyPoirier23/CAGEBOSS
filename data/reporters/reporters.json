@@ -1131,7 +1131,7 @@
   "nemesis": false,
   "look": {
    "head": 3,
-   "skin": 2,
+   "skin": 3,
    "hair": 2,
    "hairColor": 0,
    "beard": 3,
@@ -1142,8 +1142,10 @@
    "scar": 0,
    "tattoo": 0,
    "build": 2,
-   "glasses": 0
+   "glasses": 0,
+   "widow": 1
   },
-  "catchphrase": "Okay, but what about the Mexican fighters?"
+  "catchphrase": "Okay, but what about the Mexican fighters?",
+  "age": 31
  }
 ]
