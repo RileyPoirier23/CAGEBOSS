@@ -28,6 +28,7 @@ import { upkeepWeek, ageFighter, retirementChance, retire, isChamp, fullName, ad
 import { computeRankings, auditBelts, beltsOf, vacateBelt } from './rankings';
 import { spawnProspects } from './newgame';
 import { DAY_MINUTES } from '../core/time';
+import { careerStartWeek, careerEndWeek, careerOnAct, autoCareer, ensureCareer } from './career';
 
 // ---------------------------------------------------------------- start
 
@@ -56,6 +57,7 @@ export function startWeek(s: GameState): void {
     }
     weeklyContracts(s, rng);
     selectWeek(s, rng);
+    careerStartWeek(s, rng); // career: owner check-in, contender series card
     if (s.flags.actIntro) {
       trigger(s, 'act' + s.flags.actIntro + '_intro', rng);
       delete s.flags.actIntro;
@@ -447,6 +449,7 @@ export function endWeek(s: GameState): WeekReport {
     notes.push(...weeklyLegal(s, rng));
     weeklyRivals(s, rng);
     weeklyOwner(s, rng);
+    careerEndWeek(s, rng, notes); // career: objectives, contender series, staff perks, rankings drift
     // yearly cycle
     if (s.week > 0 && s.week % 52 === 51) yearlyCycle(s, rng, notes);
     // new prospects each month
@@ -468,7 +471,10 @@ export function endWeek(s: GameState): WeekReport {
     closeLedger(s);
     s.week += 1;
     newAct = checkActProgress(s);
-    if (newAct) notes.push(`ACT ${newAct} BEGINS`);
+    if (newAct) {
+      notes.push(`ACT ${newAct} BEGINS`);
+      careerOnAct(s, newAct);
+    }
     // trim old events
     if (s.events.length > 60) s.events = s.events.filter((e) => e.status === 'scheduled' || s.week - e.week < 52);
   });
@@ -491,6 +497,8 @@ export function pruneFighters(s: GameState): void {
   for (const n of s.negotiations) referenced.add(n.fighter);
   for (const p of s.storylets.pending) Object.values(p.roles).forEach((x) => referenced.add(x));
   for (const p of s.storylets.scheduled) Object.values(p.roles).forEach((x) => referenced.add(x));
+  const career = ensureCareer(s); // contender series alumni can come back; the owner's gifts are remembered
+  for (const id of [...career.contender.alumni, ...career.owner.gifts]) referenced.add(id);
   const keep = (f: Fighter) => authored.has(f.id) || referenced.has(f.id) || f.hallOfFame || !!f.marquee;
   // free-agent pool: keep the 160 most interesting unsigned fighters
   const fas = Object.values(s.fighters).filter((f) => f.status === 'free-agent' && !keep(f));
@@ -545,6 +553,7 @@ export function simulateWeek(s: GameState, policy: Policy): WeekReport {
   s.phase = 'desk';
   withRng(s, (rng) => {
     policy.weekly(s, rng);
+    autoCareer(s, rng, policy.name); // owner check-in & contender series offers
     // storylets (may spawn more; loop until settled)
     const settle = () => {
       for (let guard = 0; guard < 10 && s.storylets.pending.length; guard++) {

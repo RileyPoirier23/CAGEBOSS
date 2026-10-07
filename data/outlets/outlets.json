@@ -94,5 +94,13 @@
   "bias": -0.4,
   "reach": 2,
   "style": "Anonymous forum where every rumor starts and no apology ever ends."
+ },
+ {
+  "id": "lucha_lowdown",
+  "name": "The Lucha Lowdown",
+  "type": "podcast",
+  "bias": 0.1,
+  "reach": 2,
+  "style": "One host, one beard, one topic: Mexican fighters. Has never once changed the subject."
  }
 ]

@@ -1,0 +1,78 @@
+{
+ "ask_card": [
+  "1ton, the Lucha Lowdown. Question for {f}: when do you headline? Because Mexico has been watching and Mexico is ready to riot. Politely.",
+  "Big guy in the back, it's me, 1ton. {f}, real talk: is it true you trained for this camp in the mountains outside Guadalajara and fought a bull? My sources say yes. My sources are me.",
+  "1ton. Only one question tonight, and it's for {f}. Is {opp} aware of what's about to happen to him? Is he aware of Mexican cardio? Has anyone warned him?",
+  "1ton here. {presidentLast}, why is {f} not the main event? I've done the math. The math says main event. The math is Mexican.",
+  "{f}! 1ton! Is it true your abuela is flying in? Because if she's in the building, I'm calling it now: knockout, round one."
+ ],
+ "ask_roster": [
+  "1ton. Where is {f}? Why is {f} not on this card? I flew here. I paid for parking. I'm asking about {f}.",
+  "1ton, the Lucha Lowdown. I have one question and it's the same question as last time: when does {f} fight again, and can it be in Mexico City, and can I have front row?",
+  "Hi, 1ton. Great event. Anyway. {f}. When? Where? Against who? Can it be a five-rounder? Asking for 130 million people."
+ ],
+ "ask_none": [
+  "1ton. I counted the card twice. Zero Mexican fighters. Zero. Do you hate tacos, {presidentLast}? Do you hate joy? Explain yourself.",
+  "1ton, the Lucha Lowdown. No Mexican fighters on this roster. None. I'm not even mad, I'm just going to sit here and breathe loudly until you fix it.",
+  "Question from 1ton: is {promotion} aware Mexico exists? It's right there. Under Texas. You can drive to it."
+ ],
+ "ask_other": [
+  "1ton. Have you heard of {f}? {where}. Undefeated in my heart. Sign him. I'll carry his bags. I'll carry HIM.",
+  "1ton here. There's a kid named {f}, {where}, and he's better than half your roster. I'm not saying which half. I'm saying it with my eyes."
+ ],
+ "answer_promise": [
+  "Main event. Soon. I promise.",
+  "You'll get your Mexican fighter in a main event, 1ton.",
+  "Mexico City show. I'm working on it."
+ ],
+ "answer_deflect": [
+  "Next question.",
+  "Anybody else? Anybody? Not you, 1ton.",
+  "We'll see, 1ton. We'll see."
+ ],
+ "answer_joke": [
+  "1ton, do you have a question that isn't about Mexican fighters?",
+  "Is there a version of you that asks about anyone else?"
+ ],
+ "react_promise": [
+  "1ton writes PROMISE in capital letters, underlines it three times, and shows it to the camera.",
+  "\"I'm holding you to that,\" says 1ton, stroking a beard you could lose a set of keys in.",
+  "1ton nods slowly, like a man who has been lied to before and has a long memory and a longer beard."
+ ],
+ "react_deflect": [
+  "1ton keeps his hand up. He keeps it up for the rest of the press conference. He keeps it up in the parking lot.",
+  "\"That's not an answer,\" says 1ton. \"That's a Wikipedia article about not answering.\"",
+  "1ton sighs so hard the mic stands sway."
+ ],
+ "react_joke": [
+  "\"Yes,\" says 1ton. \"Here it is: what about the Mexican fighters?\" The room applauds.",
+  "1ton considers it. \"No,\" he says, with enormous dignity.",
+  "\"I asked about the weather once,\" says 1ton. \"It was in Monterrey.\""
+ ],
+ "bleet_mex": [
+  "{x} IS THE REAL DEAL. VIVA MEXICO. I SAID THIS IN 2019.",
+  "Mexican cardio is not a meme. It's a law of physics. Look at {x}.",
+  "My beard just stood up. {x} is cooking.",
+  "{x} fighting like rent is due in pesos. Beautiful.",
+  "Somebody check on {y}. Actually don't. Let {x} cook.",
+  "Abuela is watching, {x}. Make her proud. (You are making her proud.)",
+  "THIS is why I only ask about Mexican fighters. Look at {x}. LOOK AT HIM."
+ ],
+ "bleet_non": [
+  "Neither of these guys would last a round in a Tijuana parking lot.",
+  "Wake me up when a Mexican fighter is on.",
+  "{x} and {y} fighting like two guys arguing over a parking spot. Where's the heart? Where's the Mexico?",
+  "This fight has the energy of decaf. Put a Mexican fighter on this card, cowards.",
+  "{x} is okay. {x} is not Mexican, but okay.",
+  "Still no Mexican fighters on this card. I'll keep bleeting until it changes. I have time. I have a big phone.",
+  "{y} fighting like he's never had a real torta. You can tell.",
+  "My nephew could beat both of these men and he's eleven and from Puebla."
+ ],
+ "feed": [
+  "Reminder: {promotion} has {n} Mexican fighters on the roster. I'll be asking about every single one at the presser.",
+  "I've asked about Mexican fighters at 40 straight press conferences. Going for 41.",
+  "If {promotion} doesn't do a Mexico City card this year I'm shaving my beard. (I'm not. But think about how serious that sounds.)",
+  "Ranking every fighter on the {promotion} roster by how Mexican they are. Thread. 1/1.",
+  "People say I only care about Mexican fighters. That's not true. I also care about their opponents, a little, as obstacles."
+ ]
+}
