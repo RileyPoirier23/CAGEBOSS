@@ -51,7 +51,7 @@ export function startWeek(s: GameState): void {
       ev.card
         .filter((b) => b.status === 'scheduled')
         .sort((a, b) => a.position - b.position)
-        .slice(0, 5)
+        .slice(0, Math.min(5, 2 + Math.floor(s.week / 4)))
         .forEach((b) => s.desk.queue.push(weighInDoc(s, ev, b, rng)));
     }
     weeklyContracts(s, rng);
@@ -87,8 +87,10 @@ export function compareFields(s: GameState, docId: string, a: string, b: string)
   spendMinutes(s, COMPARE_MINUTES);
   const v = checkPair(d, a, b);
   if (!v) return { found: false, text: 'No discrepancy.' };
+  // record the matched pair (desk highlights it; interrogation needs it)
   const flagged = String(d.meta.flagged ?? '');
-  if (!flagged.split('|').includes(v.rule + ':' + v.a)) d.meta.flagged = (flagged ? flagged + '|' : '') + v.rule + ':' + v.a;
+  const pair = a + '~' + b;
+  if (!flagged.split('|').includes(pair)) d.meta.flagged = (flagged ? flagged + '|' : '') + pair;
   return { found: true, text: v.text };
 }
 
@@ -99,7 +101,9 @@ function citationFine(s: GameState): number {
 
 function cite(s: GameState, reason: string): string {
   const thisWeek = s.desk.citations.filter((c) => c.week === s.week);
-  const warning = thisWeek.length === 0 && s.difficulty !== 'fightweek';
+  // the first slip(s) of the day are warnings; after that it comes out of your pay
+  const warnings = { easy: 3, normal: 2, fightweek: 1, ironman: 2 }[s.difficulty] ?? 2;
+  const warning = thisWeek.length < warnings;
   const fine = warning ? 0 : citationFine(s);
   s.desk.citations.push({ week: s.week, reason, fine, warning });
   if (fine) spend(s, 'citations', fine);
@@ -120,6 +124,7 @@ export function stampDoc(s: GameState, docId: string, stamp: Stamp, rngIn?: Rng)
   let deliberate = false;
   let citation: string | null = null;
   let text = '';
+  let caught = false;
   const subj = d.subject ? s.fighters[d.subject] : null;
 
   if (d.type === 'memo' || d.type === 'letter') {
@@ -161,7 +166,10 @@ export function stampDoc(s: GameState, docId: string, stamp: Stamp, rngIn?: Rng)
             subj.beefWithYou = clamp(subj.beefWithYou + 4, 0, 100);
           }
           text = 'Denied. That one was actually fine.';
-        } else text = flagged ? 'Denied, with cause.' : 'Denied.';
+        } else {
+          text = flagged ? 'Denied, with cause.' : 'Denied.';
+          if (flagged) caught = rewardCatch(s, d);
+        }
         applyDenial(s, d, invalid, rng);
         break;
       case 'escalate': {
@@ -189,13 +197,22 @@ export function stampDoc(s: GameState, docId: string, stamp: Stamp, rngIn?: Rng)
     }
   }
   if (deliberate) s.stats.ruleBreaks = (s.stats.ruleBreaks ?? 0) + 1;
-  s.desk.log.push({ week: s.week, docId: d.id, type: d.type, stamp, correct, deliberate });
+  s.desk.log.push({ week: s.week, docId: d.id, type: d.type, stamp, correct, deliberate, ...(caught ? { caught } : {}) });
   if (s.desk.log.length > 200) s.desk.log.splice(0, s.desk.log.length - 200);
   s.desk.queue = s.desk.queue.filter((x) => x !== d);
   s.stats.docs = (s.stats.docs ?? 0) + 1;
   if (correct) s.stats.docsCorrect = (s.stats.docsCorrect ?? 0) + 1;
   if (rngIn === undefined) s.rng = rng.state;
   return { correct, deliberate, citation, text };
+}
+
+/** A documented catch: the commission pays a small bounty (fraud and doping pay more). */
+function rewardCatch(s: GameState, d: DeskDoc): boolean {
+  const serious = d.type === 'drug' || ['sig', 'idphoto', 'doctor', 'doclicense', 'replicense', 'sum', 'receipt', 'luxury', 'hidden'].includes(String(d.meta.forgery ?? ''));
+  earn(s, 'commission bounty', Math.round((serious ? 600 : 250) * Math.max(1, scale(s) * 0.5)));
+  adjustMeter(s, 'commission', serious ? 0.5 : 0.2);
+  s.stats.catches = (s.stats.catches ?? 0) + 1;
+  return true;
 }
 
 function docName(t: string): string {
