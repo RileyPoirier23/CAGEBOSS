@@ -3,10 +3,11 @@ import { PAL } from '../../art/palette';
 import { text, button } from '../kit';
 import { openJukebox } from './jukebox';
 import { desktop } from '../../desktop';
+import { isTenFoot } from '../../core/platform';
 import { openWindow, selector, checkbox, stepper } from '../widgets';
 
 export function openSettings(g: Game, onClose?: () => void): void {
-  const win = openWindow(g, 'Settings', 260, desktop ? 254 : 241, { onClose });
+  const win = openWindow(g, 'Settings', 260, desktop ? 254 : isTenFoot ? 258 : 241, { onClose });
   const b = win.body;
   const s = g.settings;
   const save = () => g.applySettings();
@@ -57,6 +58,12 @@ export function openSettings(g: Game, onClose?: () => void): void {
   if (desktop) {
     b.addChild(checkbox(8, y, 'Fullscreen (F11)', s.fullscreen !== false, (v) => { s.fullscreen = v; save(); }));
     y += 13;
+  }
+  if (isTenFoot) {
+    // consoles: shrink the picture away from TV overscan
+    row('TV-safe margin');
+    b.addChild(stepper(110, y, 140, s.tvSafe ?? 0, 0, 5, 1, (v) => v + '%', (v) => { s.tvSafe = v; save(); }));
+    y += 17;
   }
   b.addChild(button('JUKEBOX...', 8, y, 80, 13, () => openJukebox(g), { small: true, fill: PAL.plum }));
 }
