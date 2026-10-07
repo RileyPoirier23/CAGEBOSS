@@ -121,3 +121,17 @@ export function answerEventOffer(s: GameState, id: string, accept: boolean): str
   adjustMeter(s, 'sponsors', 1);
   return `${ev.name} is now presented by ${o.name}. +${money(o.fee)}.`;
 }
+
+/** Which canvas the event is fought on: every promotion paints its own (see ArenaView CANVAS). */
+export function eventCanvas(s: GameState, ev: FightEvent): { style: 'cbfc' | 'local' | 'regional' | 'pfl' | 'bk'; logo?: string; accent?: number } {
+  void ev;
+  if (s.mode !== 'fighter' || !s.fm) return { style: 'cbfc' };
+  const st = s.fm as { tier: string; stage?: number; circuit?: { short: string; name: string }[] };
+  const sg = st.circuit?.[Math.min(st.stage ?? 0, (st.circuit?.length ?? 1) - 1)];
+  if (st.tier === 'of') return { style: 'cbfc' };
+  if (st.tier === 'pfl') return { style: 'pfl', logo: 'PFL LOUNGE' };
+  const short = sg?.short ?? 'LOCAL';
+  // each regional show has its own colour, picked from its name
+  const accent = st.tier === 'regional' ? [0x2a5aa0, 0xb83a2a, 0x2a8a4a, 0x8a3ab0, 0xd88a1a][hashString(short) % 5] : undefined;
+  return { style: st.tier === 'amateur' ? 'local' : 'regional', logo: short, accent };
+}

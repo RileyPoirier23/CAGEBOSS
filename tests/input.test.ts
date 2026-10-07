@@ -105,7 +105,7 @@ describe('fight input', () => {
     expect(stickDir({ x: 0.2, y: 0.1 }, 1)).toBe('neutral');
   });
 
-  it('tap = light jab, long hold with stick toward = heavy hook, down = uppercut', () => {
+  it('tap = light jab, long hold with stick toward = heavy hook, down+toward = uppercut, down = body, up = overhand', () => {
     const fi = new FightInput();
     run(fi, sample(['lead']), 0.08, ctx);
     const a = run(fi, sample(), DT, ctx);
@@ -115,10 +115,14 @@ describe('fight input', () => {
     run(fi, sample(['rear'], { x: -1, y: 0 }), 0.5, left);
     expect(run(fi, sample(), DT, left)).toMatchObject([{ type: 'punch', hand: 'rear', punch: 'hook', weight: 'heavy' }]);
 
-    run(fi, sample(['rear'], { x: 0, y: 1 }), 0.25, ctx);
+    run(fi, sample(['rear'], { x: 0.8, y: 0.8 }), 0.25, ctx);
     expect(run(fi, sample(), DT, ctx)).toMatchObject([{ punch: 'uppercut', weight: 'medium' }]);
-    run(fi, sample(['lead'], { x: 0, y: -1 }), 0.05, ctx);
+    run(fi, sample(['rear'], { x: 0, y: 1 }), 0.25, ctx);
+    expect(run(fi, sample(), DT, ctx)).toMatchObject([{ punch: 'bodyStraight', weight: 'medium' }]);
+    run(fi, sample(['rear'], { x: 0, y: -1 }), 0.05, ctx);
     expect(run(fi, sample(), DT, ctx)).toMatchObject([{ punch: 'overhand', weight: 'light' }]);
+    run(fi, sample(['lead'], { x: 0, y: -1 }), 0.05, ctx);
+    expect(run(fi, sample(), DT, ctx)).toMatchObject([{ punch: 'hook', weight: 'light' }]);
   });
 
   it('block: the guard comes up on press (a press also parries); release drops it', () => {

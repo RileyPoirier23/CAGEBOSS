@@ -9,6 +9,8 @@ import type { Skills } from '../../core/types';
 import { PAL } from '../../art/palette';
 import { W, H, text, button, box, ScrollBox } from '../kit';
 import { openWindow, confirm, alertBox, selector } from '../widgets';
+import { openHelp } from '../help';
+import { openSettings } from './settings';
 import { fighterPortrait } from '../sprites';
 import { money, record } from '../../core/format';
 import { fmtDate } from '../../core/time';
@@ -20,7 +22,7 @@ import { rankLabel, rankOf, undisputed } from '../../sim/rankings';
 import {
   fm, me, BODY_PARTS, STAFF_ROLES, PLANS, doAction, treat, clinicCost, weeklyStaffCost, calloutTargets, callOut, humblePost,
   startPeds, stopPeds, bareknuckle, gamble, acceptOffer, resolveEvent, endWeek, fightThisWeek, weighInInfo, doWeighIn, fightEvent,
-  afterFight, postFightCallout, weightLimit, fightReadySkills, type ActionId, type StaffId, type BodyPart,
+  afterFight, postFightCallout, weightLimit, contractLimit, fightReadySkills, type ActionId, type StaffId, type BodyPart,
   ensureFM, condition, trainSkill, cutWeight, hire, fire, fightWeekPaperwork, cagesideReact, bkNext, bkPurse, bkSpot,
   ladderSpot, stage, BKB_NAME, BRADIE, bradieOnYou, askOnlyFighters, postContent, cardSlot, SLOT_NAME, type CutMethod,
 } from '../../sim/fighter';
@@ -29,7 +31,7 @@ import { openCorner } from '../cutman';
 import type { GamePlan } from '../../sim/fight';
 import { openLiveFight } from '../livefight';
 import { openFMDesk } from '../fmdesk';
-import { eventSponsors } from '../../sim/sponsorship';
+import { eventSponsors, eventCanvas } from '../../sim/sponsorship';
 import { openJumpRope, openTyreChop } from '../minigames';
 import { officialsFor } from '../../sim/events';
 import { portrait, namedPortrait, reporterPortrait } from '../sprites';
@@ -128,7 +130,8 @@ export class FMHubScene extends Scene {
     L.addChild(por);
     L.addChild(text(fullName(f).toUpperCase(), 72, 6, { small: true, width: 72, color: PAL.bone, maxLines: 2 }));
     L.addChild(text(`"${f.nick}"`, 72, 24, { small: true, width: 72, color: PAL.gold, maxLines: 2 }));
-    L.addChild(text(record(f.record), 72, 42, { color: PAL.bone }));
+    L.addChild(text(st.tier === 'amateur' ? `AM ${record(f.record)}` : record(f.record), 72, 42, { color: PAL.bone }));
+    if (st.amateur) L.addChild(text(`PRO  (AM ${st.amateur.w}-${st.amateur.l}${st.amateur.d ? '-' + st.amateur.d : ''})`, 72, 62, { small: true, color: PAL.ash, width: 72, maxLines: 1 }));
     const rk = rankOf(s, f.id);
     const spot = ladderSpot(s);
     if (st.tier === 'of') L.addChild(text(rk === 0 ? 'CHAMPION' : rk ? `RANKED #${rk}` : 'UNRANKED', 72, 54, { small: true, color: rk === 0 ? PAL.gold : rk ? PAL.sky : PAL.ash }));
@@ -147,7 +150,7 @@ export class FMHubScene extends Scene {
     vit('ENERGY', st.energy, st.energy < 30 ? PAL.blood : PAL.moss, `${Math.round(st.energy)}`);
     vit('MORALE', st.morale, PAL.sky, `${Math.round(st.morale)}`);
     vit('HYPE', f.hype, PAL.gold, `${Math.round(f.hype)}`);
-    const lim = weightLimit(s);
+    const lim = contractLimit(s);
     const over = st.walkWeight - lim;
     vit('WEIGHT', Math.max(0, 100 - over * 5), over > 12 ? PAL.blood : over > 7 ? PAL.ember : PAL.moss, `${st.walkWeight.toFixed(1)} / ${lim}`);
     const health = Math.round(BODY_PARTS.reduce((a, p) => a + st.body[p.id], 0) / BODY_PARTS.length);
@@ -156,6 +159,7 @@ export class FMHubScene extends Scene {
     L.addChild(selector(30, y, 112, [{ value: 'clean' as const, label: 'Clean ($$)' }, { value: 'balanced' as const, label: 'Balanced' }, { value: 'junk' as const, label: 'Junk ($)' }], st.diet, (v) => { st.diet = v; }));
     y += 16;
     if (st.ped.on) L.addChild(text('ON A CYCLE', 4, y + 2, { small: true, color: PAL.blood }));
+    L.addChild(button(`CAREER FILE${st.rap?.length ? ` (${st.rap.length} FLAG${st.rap.length > 1 ? 'S' : ''})` : ''}`, 4, 212, 138, 11, () => this.careerFile(), { small: true, fill: st.rap?.length ? 0x3a1a1a : PAL.shadow }));
 
     // ------------------------------------------------ middle: this week
     const M = new Container();
@@ -272,8 +276,8 @@ export class FMHubScene extends Scene {
     const s = this.g.state!;
     const st = fm(s);
     const win = openWindow(this.g, 'Cut weight', 250, 128);
-    const lim = weightLimit(s);
-    win.body.addChild(text(`You walk around ${st.walkWeight.toFixed(1)} lbs. Limit ${lim}. ${st.water > 0 ? `(${st.water.toFixed(1)} lbs is sauna water.)` : ''}`, 6, 4, { small: true, width: 238, color: PAL.bone }));
+    const lim = contractLimit(s);
+    win.body.addChild(text(`You walk around ${st.walkWeight.toFixed(1)} lbs. ${lim !== weightLimit(s) ? 'Contracted' : 'Limit'} ${lim}. ${st.water > 0 ? `(${st.water.toFixed(1)} lbs is sauna water.)` : ''}`, 6, 4, { small: true, width: 238, color: PAL.bone }));
     const go = (m: CutMethod) => {
       win.close();
       this.msg = cutWeight(s, m);
@@ -465,11 +469,60 @@ export class FMHubScene extends Scene {
     win.body.addChild(text(foot, 6, 198, { small: true, color: PAL.ash, width: 238, maxLines: 2 }));
   }
 
+  /** Your file: every fight (amateur and pro), the rap sheet, and what the press wrote. */
+  private careerFile(tab: 'fights' | 'file' | 'press' = 'fights'): void {
+    const s = this.g.state!;
+    const st = fm(s);
+    const f = me(s);
+    const win = openWindow(this.g, `Career file: ${fullName(f)}`, 360, 226);
+    const am = st.amateur ?? (st.tier === 'amateur' ? f.record : null);
+    const pro = st.tier === 'amateur' ? null : f.record;
+    const rec = (r: { w: number; l: number; d: number } | null) => (r ? `${r.w}-${r.l}${r.d ? '-' + r.d : ''}` : '-');
+    win.body.addChild(text(`PRO ${rec(pro)}   •   AMATEUR ${rec(am)}${st.turnedPro !== undefined ? `   •   TURNED PRO ${fmtDate(st.turnedPro)}` : ''}`, 6, 2, { small: true, color: PAL.gold, width: 348, maxLines: 1 }));
+    const tabs: [typeof tab, string][] = [['fights', 'FIGHTS'], ['file', `RAP SHEET (${st.rap?.length ?? 0})`], ['press', 'PRESS']];
+    tabs.forEach(([id, label], i) => win.body.addChild(button(label, 6 + i * 116, 12, 112, 13, () => { win.close(); this.careerFile(id); }, { small: true, fill: id === tab ? PAL.gold : PAL.shadow })));
+    const sb = new ScrollBox(346, 172);
+    sb.position.set(6, 30);
+    win.body.addChild(sb);
+    let yy = 0;
+    const row = (t: string, c: number, tag?: [string, number]) => {
+      let x = 0;
+      if (tag) {
+        sb.content.addChild(text(tag[0], 0, yy, { small: true, color: tag[1] }));
+        x = 52;
+      }
+      const tt = text(t, x, yy, { small: true, width: 338 - x, color: c, maxLines: 3 });
+      sb.content.addChild(tt);
+      yy += Math.max(10, tt.textHeight + 3);
+    };
+    if (tab === 'fights') {
+      if (!st.history.length) row('No fights yet. Everybody starts somewhere. Usually a bingo hall.', PAL.ash);
+      for (const h of st.history.slice().reverse()) {
+        const o = s.fighters[h.opp];
+        const c = h.result === 'W' ? PAL.moss : h.result === 'L' ? PAL.blood : PAL.bone;
+        row(`${h.result}  vs ${o ? fullName(o) : 'unknown'}  •  ${h.method}, R${h.round}  •  ${h.promo ?? ''} ${fmtDate(h.week)}${h.title ? '  •  TITLE' : ''}`, c, [h.pro === false || (h.pro === undefined && st.turnedPro !== undefined && h.week < st.turnedPro) ? 'AMATEUR' : 'PRO', h.pro === false ? PAL.ash : PAL.gold]);
+      }
+    } else if (tab === 'file') {
+      const rap = st.rap ?? [];
+      if (!rap.length) row('Clean. No arrests, no failed tests, no missed weight, no bad contracts. Suspiciously clean.', PAL.moss);
+      const col: Record<string, number> = { ARREST: PAL.blood, CHARGE: PAL.blood, DOPING: PAL.ember, SUSPENSION: PAL.ember, WEIGHT: PAL.gold, CONTRACT: PAL.sky };
+      for (const r of rap.slice().reverse()) row(`${fmtDate(r.week)}: ${r.text}`, PAL.bone, [r.kind, col[r.kind] ?? PAL.ash]);
+      if (st.ped.caught) row(`USADA-ish flag: ${st.ped.caught} adverse finding${st.ped.caught > 1 ? 's' : ''}. Enhanced testing applies.`, PAL.ember);
+    } else {
+      const pr = st.press ?? [];
+      if (!pr.length) row('Nobody has written about you yet. Win something.', PAL.ash);
+      for (const a of pr.slice().reverse()) row(`"${a.headline}"`, PAL.bone, [a.outlet.toUpperCase().slice(0, 12), PAL.sky]);
+    }
+    sb.refresh();
+  }
+
   private menu(): void {
-    const win = openWindow(this.g, 'Menu', 160, 92);
+    const win = openWindow(this.g, 'Menu', 160, 128);
     win.body.addChild(button('SAVE', 6, 6, 148, 15, () => { this.g.autosave(); this.g.toast('Saved.', PAL.moss, { small: true }); win.close(); }, { small: true }));
-    win.body.addChild(button('RETIRE…', 6, 24, 148, 15, () => { win.close(); confirm(this.g, 'Hang up the gloves for good?', () => this.legacy()); }, { small: true, fill: PAL.ember }));
-    win.body.addChild(button('QUIT TO TITLE', 6, 42, 148, 15, () => { this.g.autosave(); win.close(); void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g))); }, { small: true }));
+    win.body.addChild(button('HELP: HOW TO BE A PRO', 6, 24, 148, 15, () => openHelp(this.g, 'rtc'), { small: true, fill: PAL.shadow, border: PAL.gold }));
+    win.body.addChild(button('SETTINGS', 6, 42, 148, 15, () => openSettings(this.g), { small: true }));
+    win.body.addChild(button('RETIRE…', 6, 60, 148, 15, () => { win.close(); confirm(this.g, 'Hang up the gloves for good?', () => this.legacy()); }, { small: true, fill: PAL.ember }));
+    win.body.addChild(button('QUIT TO TITLE', 6, 78, 148, 15, () => { this.g.autosave(); win.close(); void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g))); }, { small: true }));
   }
 
   private legacy(): void {
@@ -524,7 +577,9 @@ export class FMHubScene extends Scene {
     const by = (H - bh) / 2;
     frame.addChild(box(bw, bh, PAL.night, PAL.gold, { bevel: true })).position.set(bx, by);
     frame.addChild(text('WEIGH-INS', bx + 8, by + 6, { color: PAL.gold }));
-    frame.addChild(text(need <= 0 ? `You're on weight (${weightLimit(s)} lbs). Step on the scale and flex.` : `You walk around ${fm(s).walkWeight.toFixed(1)} lbs. The limit is ${weightLimit(s)}. You need to cut ${need.toFixed(1)} lbs. Risk of missing: ~${Math.round(risk * 100)}% (a nutritionist helps).`, bx + 8, by + 20, { small: true, width: bw - 16, color: PAL.bone }));
+    const lim = contractLimit(s);
+    const signed = lim !== weightLimit(s) ? ` (the weight YOU signed for; your division is ${weightLimit(s)})` : '';
+    frame.addChild(text(need <= 0 ? `You're on weight (${lim} lbs${signed}). Step on the scale and flex.` : `You walk around ${fm(s).walkWeight.toFixed(1)} lbs. The limit is ${lim}${signed}. You need to cut ${need.toFixed(1)} lbs. Risk of missing: ~${Math.round(risk * 100)}% (a nutritionist helps).`, bx + 8, by + 20, { small: true, width: bw - 16, color: PAL.bone }));
     const go = (c: 'easy' | 'hard' | 'miss') => {
       const r = this.rng();
       const res = doWeighIn(s, c, r);
@@ -585,6 +640,18 @@ export class FMHubScene extends Scene {
       mod('power', 5);
       mod('wrestling', 4);
     }
+    if (st.fight!.bare) {
+      // no gloves: everything cuts, hands break, chins matter
+      mod('power', 4);
+      mod('chin', -6);
+      f.skills.chin = Math.max(10, f.skills.chin - 6);
+      f.skills.power = Math.min(99, f.skills.power + 4);
+    }
+    if (st.fight!.rehydro) {
+      // fought dry: no gas, and a brain with no fluid around it
+      f.skills.cardio = Math.max(10, f.skills.cardio - 9);
+      f.skills.chin = Math.max(10, f.skills.chin - 4);
+    }
     if (st.partner?.leaking) mod('fightIQ', 8);
     if (st.partner?.fake) mod('fightIQ', -6);
     const restore = () => {
@@ -621,7 +688,7 @@ export class FMHubScene extends Scene {
           const B = s.fighters[bout.b];
           openLiveFight(this.g, {
             bout, A, B, skills: [A.skills, B.skills], player: side(bout) as 0 | 1, plan: st.plan, oppPlan: oppPlan(2), cutTier: st.staff.cutman, seed,
-            event: ev.name, judges: off.judges.map((j) => j.name), referee: off.referee.name, sponsors: eventSponsors(s, ev),
+            event: ev.name, judges: off.judges.map((j) => j.name), referee: off.referee.name, sponsors: eventSponsors(s, ev), canvas: eventCanvas(s, ev), bare: !!st.fight?.bare,
             done: (res) => {
               bout.result = res;
               done();

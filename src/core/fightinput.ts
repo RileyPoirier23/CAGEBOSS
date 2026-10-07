@@ -20,7 +20,7 @@ import type { Input, PadButton } from './input';
 // ------------------------------------------------------------ action table
 
 export type FightButton =
-  | 'lead' | 'rear' | 'kick' | 'block' | 'grab' | 'feint'
+  | 'lead' | 'rear' | 'kick' | 'block' | 'grab' | 'feint' | 'body'
   | 'evadeUp' | 'evadeDown' | 'evadeAway' | 'evadeToward'
   | 'getupLeft' | 'getupRight';
 
@@ -48,6 +48,8 @@ export const DEFAULT_FIGHT_BINDINGS: Record<FightButton, FightBinding> = {
   block: { pad: ['LB'], keys: ['ShiftLeft', 'KeyI'], touch: ['BLOCK'] },
   grab: { pad: ['B'], keys: ['Space'], touch: ['GRAB'] },
   feint: { pad: ['Y'], keys: ['KeyU'] },
+  // hold to send strikes to the body (the stick also works: down + punch)
+  body: { pad: ['LT'], keys: ['KeyO'] },
   // right-stick flicks are read from the stick; these are the digital equivalents
   evadeUp: { keys: ['ArrowUp'] },
   evadeDown: { keys: ['ArrowDown'] },
@@ -64,6 +66,7 @@ export const FIGHT_ACTIONS: Record<FightButton, FightActionInfo> = {
   block: { label: 'Block / parry', help: 'Hold to block, tap just before a punch lands to parry' },
   grab: { label: 'Clinch / shoot', help: 'Hold = clinch (stick toward = shoot a takedown). Tap while being shot = sprawl' },
   feint: { label: 'Feint', help: 'Fake a strike' },
+  body: { label: 'Body modifier', help: 'Hold with a punch to go to the body (jab, straight, hook)' },
   evadeUp: { label: 'Slip', help: 'Right stick flick up (or arrow)' },
   evadeDown: { label: 'Roll / duck', help: 'Right stick flick down' },
   evadeAway: { label: 'Pull', help: 'Right stick flick away from the opponent' },
@@ -93,6 +96,8 @@ export interface FightContext {
   /** +1 = opponent is to the right, -1 = to the left */
   facing: 1 | -1;
   grounded?: boolean;
+  /** tied up in the clinch: grab taps fight for position, kicks are knees */
+  clinch?: boolean;
   /** opponent is shooting a takedown on us (sprawl window) */
   beingShot?: boolean;
   submission?: 'attack' | 'defend' | null;
@@ -100,7 +105,9 @@ export interface FightContext {
 }
 
 export type Dir = 'neutral' | 'up' | 'down' | 'toward' | 'away';
-export type PunchType = 'jab' | 'straight' | 'hook' | 'uppercut' | 'overhand';
+export type PunchType = 'jab' | 'straight' | 'hook' | 'uppercut' | 'overhand' | 'bodyJab' | 'bodyStraight' | 'bodyHook' | 'spinBackfist';
+/** 8-way stick direction (relative to the opponent), for strike selection. */
+export type Dir8 = Dir | 'downToward' | 'upToward' | 'downAway' | 'upAway';
 export type Weight = 'light' | 'medium' | 'heavy';
 
 export type FightIntent =
@@ -108,13 +115,14 @@ export type FightIntent =
   | { type: 'parry' }
   | { type: 'block'; phase: 'start' | 'end' }
   | { type: 'evade'; kind: 'slip' | 'roll' | 'pull' | 'lean'; source: 'flick' | 'button' }
-  | { type: 'kick'; level: 'low' | 'body' | 'head' }
+  | { type: 'kick'; level: 'low' | 'body' | 'head' | 'front' | 'spin' }
   | { type: 'clinch' }
+  | { type: 'clinchMove'; move: 'plum' | 'under' | 'pummel' | 'trip' | 'break' }
   | { type: 'shoot' }
   | { type: 'sprawl' }
   | { type: 'feint' }
   | { type: 'ground'; move: 'advance' | 'reverse' | 'standup' | 'base' }
-  | { type: 'subAttempt' }
+  | { type: 'subAttempt'; dir: Dir }
   | { type: 'subTurn'; dir: 1 | -1; turns: number; role: 'attack' | 'defend' }
   | { type: 'mash'; rate: number; role: 'attack' | 'defend' }
   | { type: 'getup'; side: 'left' | 'right'; rhythm: number }
@@ -142,6 +150,35 @@ export function stickDir(v: { x: number; y: number }, facing: 1 | -1, threshold 
   if (Math.hypot(rx, v.y) < threshold) return 'neutral';
   if (Math.abs(v.y) >= Math.abs(rx)) return v.y < 0 ? 'up' : 'down';
   return rx > 0 ? 'toward' : 'away';
+}
+
+export function stickDir8(v: { x: number; y: number }, facing: 1 | -1, threshold = FIGHT_TUNING.dir): Dir8 {
+  const rx = v.x * facing;
+  if (Math.hypot(rx, v.y) < threshold) return 'neutral';
+  const diag = 0.38;
+  if (Math.abs(rx) > diag && Math.abs(v.y) > diag) {
+    if (v.y > 0) return rx > 0 ? 'downToward' : 'downAway';
+    return rx > 0 ? 'upToward' : 'upAway';
+  }
+  return stickDir(v, facing, threshold);
+}
+
+/**
+ * Directional strikes (UFC style): the stick when the button goes down picks the shot.
+ *   neutral: jab / straight      toward: lead hook / rear hook       up: lead hook / overhand
+ *   down: body jab / body straight      down+toward: uppercuts      away: pull-counter jab / spinning backfist
+ * Holding the body modifier sends jabs, straights and hooks downstairs.
+ */
+export function punchFor(hand: 'lead' | 'rear', d: Dir8, body: boolean): PunchType {
+  let p: PunchType;
+  if (d === 'downToward' || d === 'downAway') p = 'uppercut';
+  else if (d === 'down') p = hand === 'lead' ? 'bodyJab' : 'bodyStraight';
+  else if (d === 'toward' || d === 'upToward') p = 'hook';
+  else if (d === 'up') p = hand === 'lead' ? 'hook' : 'overhand';
+  else if (d === 'away' || d === 'upAway') p = hand === 'lead' ? 'jab' : 'spinBackfist';
+  else p = hand === 'lead' ? 'jab' : 'straight';
+  if (body) p = p === 'jab' ? 'bodyJab' : p === 'straight' ? 'bodyStraight' : p === 'hook' ? 'bodyHook' : p;
+  return p;
 }
 
 export function weightFor(hold: number): Weight {
@@ -199,6 +236,9 @@ export function sampleFight(inp: Input, binds: Record<FightButton, FightBinding>
 interface Press {
   t: number;
   dir: Dir;
+  dir8: Dir8;
+  /** body modifier held when the button went down */
+  body: boolean;
   pressure: number;
   analog: boolean;
   fired?: boolean;
@@ -271,7 +311,8 @@ export class FightInput {
     const up = (b: FightButton) => !s.held.has(b) && this.prevHeld.has(b);
 
     // track press starts (direction is read when the button goes down)
-    for (const b of s.held) if (!this.prevHeld.has(b)) this.presses.set(b, { t: this.t, dir: moveDir, pressure: s.pressure[b] ?? 1, analog: !!s.analog?.has(b) });
+    const dir8 = stickDir8(s.move, ctx.facing);
+    for (const b of s.held) if (!this.prevHeld.has(b)) this.presses.set(b, { t: this.t, dir: moveDir, dir8, body: s.held.has('body'), pressure: s.pressure[b] ?? 1, analog: !!s.analog?.has(b) });
     for (const b of s.held) {
       const p = this.presses.get(b);
       if (p) p.pressure = Math.max(p.pressure, s.pressure[b] ?? 1);
@@ -329,8 +370,7 @@ export class FightInput {
       const p = this.presses.get(hand);
       if (!p) continue;
       const hold = this.t - p.t;
-      const neutral: PunchType = hand === 'lead' ? 'jab' : 'straight';
-      const punch: PunchType = p.dir === 'toward' ? 'hook' : p.dir === 'down' ? 'uppercut' : p.dir === 'up' ? 'overhand' : neutral;
+      const punch = punchFor(hand, p.dir8, p.body);
       // a hard trigger squeeze bumps the weight one step
       let weight = weightFor(hold);
       if (p.analog && p.pressure >= 0.95 && hold >= T.tapMax * 0.6 && weight !== 'heavy') weight = weight === 'light' ? 'medium' : 'heavy';
@@ -356,9 +396,13 @@ export class FightInput {
         const move = moveDir === 'toward' ? 'advance' : moveDir === 'away' ? 'reverse' : moveDir === 'up' ? 'standup' : 'base';
         out.push({ type: 'ground', move });
       }
-      if (down('grab')) out.push({ type: 'subAttempt' });
-    } else {
+      if (down('grab')) out.push({ type: 'subAttempt', dir: moveDir });
+    } else if (ctx.clinch) {
+      // in the clinch: kicks are knees (up = to the head), grab taps fight for the tie-up
       if (down('kick')) out.push({ type: 'kick', level: moveDir === 'up' ? 'head' : moveDir === 'down' ? 'low' : 'body' });
+      if (down('grab')) out.push({ type: 'clinchMove', move: moveDir === 'up' ? 'plum' : moveDir === 'toward' ? 'under' : moveDir === 'down' ? 'trip' : moveDir === 'away' ? 'break' : 'pummel' });
+    } else {
+      if (down('kick')) out.push({ type: 'kick', level: moveDir === 'up' ? 'head' : moveDir === 'down' ? 'low' : moveDir === 'toward' ? 'front' : moveDir === 'away' ? 'spin' : 'body' });
 
       // clinch / shoot on hold, sprawl on a tap while being shot
       const g = this.presses.get('grab');

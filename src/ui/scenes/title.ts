@@ -9,6 +9,8 @@ import { W, H, text, button } from '../kit';
 import { sfx } from '../../audio/sfx';
 import type { PixelText } from '../text';
 import { openSettings } from './settings';
+import { openHelp } from '../help';
+import { maybeWhatsNew } from '../whatsnew';
 import { openLoad } from './loadmenu';
 import { NewGameScene } from './newgame';
 import { openCredits } from './credits';
@@ -88,20 +90,22 @@ export class TitleScene extends Scene {
     const menu = new Container();
     const items: [string, () => void][] = [
       ['NEW CAREER', () => this.g.goto(new NewGameScene(this.g, 'career'))],
-      ['FIGHTER MODE', () => this.g.goto(new FMCreateScene(this.g))],
+      ['ROAD TO CHAMPION', () => this.g.goto(new FMCreateScene(this.g))],
       ['SANDBOX', () => this.g.goto(new NewGameScene(this.g, 'sandbox'))],
       ['LOAD', () => openLoad(this.g)],
+      ['HELP', () => openHelp(this.g)],
       ['SETTINGS', () => openSettings(this.g)],
       ['CREDITS', () => openCredits(this.g)],
     ];
     if (desktop) items.push(['QUIT GAME', () => desktop!.quit()]);
     items.forEach(([label, fn], i) => {
-      menu.addChild(button(label, 0, i * 15, 96, 13, fn, { fill: PAL.night, border: PAL.ash }));
+      menu.addChild(button(label, 0, i * 15, 116, 13, fn, { fill: label === 'HELP' ? PAL.shadow : PAL.night, border: label === 'HELP' ? PAL.gold : PAL.ash }));
     });
-    menu.x = Math.floor((W - 96) / 2);
-    menu.y = desktop ? 132 : 138;
+    menu.x = Math.floor((W - 116) / 2);
+    menu.y = desktop ? 124 : 132;
     r.addChild(menu);
     r.addChild(text(`V${__APP_VERSION__}  •  M = MUTE  •  ALL CHARACTERS ARE FICTIONAL. ANY RESEMBLANCE IS A LAWSUIT WAITING TO HAPPEN.`, 0, H - 9, { small: true, width: W, align: 'center', color: PAL.grey }));
+    setTimeout(() => maybeWhatsNew(this.g), 400);
   }
 
   private drawFacade(): Container {

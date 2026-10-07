@@ -43,7 +43,8 @@ describe('fighter mode', () => {
     expect(fights).toBeGreaterThan(2);
     expect(fm(s).history.length).toBe(fights);
     const f = me(s);
-    expect(f.record.w + f.record.l + f.record.d + f.record.nc).toBe(fights);
+    const am = fm(s).amateur ?? { w: 0, l: 0, d: 0, nc: 0 };
+    expect(f.record.w + f.record.l + f.record.d + f.record.nc + am.w + am.l + am.d + am.nc).toBe(fights);
   });
 
   it('climbs local -> regional -> the Lounge (PFL) -> CBFC, does paperwork and bareknuckle', () => {

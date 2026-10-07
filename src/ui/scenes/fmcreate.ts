@@ -59,7 +59,7 @@ export class FMCreateScene extends Scene {
     const bg = new Graphics().rect(0, 0, W, H).fill(0x15121a);
     for (let y = 0; y < H; y += 6) bg.rect(0, y, W, 1).fill({ color: 0x000000, alpha: 0.25 });
     r.addChild(bg);
-    r.addChild(bigTitle('FIGHTER MODE', 6, PAL.gold));
+    r.addChild(bigTitle('ROAD TO CHAMPION', 6, PAL.gold));
     r.addChild(text('Build your fighter. Then go take somebody\'s spot.', 0, 26, { width: W, align: 'center', small: true, color: PAL.ash }));
 
     // left: identity

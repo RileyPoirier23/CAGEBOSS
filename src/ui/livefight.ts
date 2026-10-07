@@ -1,27 +1,28 @@
 /**
  * Hands-on fight (Fighter Mode): you control your fighter in real time, the opponent is
  * LiveAI. A full-screen overlay on top of the fight night card so the card scene keeps
- * its state. Arena on top, HUD below: heart rate (BPM), a body-damage outline, gas,
- * context-sensitive control prompts and a play-by-play line. Between rounds your cutman
- * works the face (the same corner mini game as the sim fights).
+ * its state. Arena on top, HUD below: heart rate (BPM), a body-damage outline, gas, where
+ * the fight is (clinch tie, ground position) and a play-by-play line. No control prompts on
+ * screen: HELP (pause menu) has the full move list. Between rounds your cutman works the face
+ * (the same corner mini game as the sim fights).
  *
- * Esc / MENU pauses: resume, autopilot (the AI fights for you), turn hands-on fights off.
+ * Esc / MENU pauses: resume, help, autopilot (the AI fights for you), turn hands-on fights off.
  */
 import { Container, Graphics, type Ticker } from 'pixi.js';
 import type { Game } from './app';
 import type { Bout, CornerReport, Fighter, FightResult, Skills } from '../core/types';
 import { PAL } from '../art/palette';
 import { W, H, text, button, box } from './kit';
-import { ArenaView, AH } from './arena';
+import { ArenaView, AH, type CanvasInfo } from './arena';
 import { input } from '../core/input';
 import { isTouchDevice } from '../core/platform';
 import { FightInput, sampleFight, rumbleForHit, type FightIntent } from '../core/fightinput';
 import { TouchFightPad } from './fightpad';
 import { setPadUiMode } from './controller';
-import { prompt } from './glyphs';
 import { fighterPortrait } from './sprites';
 import { sfx } from '../audio/sfx';
-import { LiveFight, LiveAI, type LiveEvent, type Side } from '../sim/live';
+import { LiveFight, LiveAI, GPOS_NAME, type LiveEvent, type Side } from '../sim/live';
+import { openHelp } from './help';
 import type { GamePlan } from '../sim/fight';
 import { openCorner } from './cutman';
 import { openFightLab } from './scenes/fightlab';
@@ -40,11 +41,24 @@ export interface LiveFightOpts {
   judges: string[];
   referee: string;
   sponsors?: { name: string; color: number }[];
+  canvas?: CanvasInfo;
+  /** bareknuckle rules (somebody signed without reading) */
+  bare?: boolean;
   done: (r: FightResult) => void;
 }
 
-const PUNCH_POSE: Record<string, string> = { jab: 'jab', cross: 'cross', hook: 'hook', uppercut: 'uppercut', overhand: 'cross', elbow: 'elbow', knee: 'knee', legkick: 'legkick', kick: 'bodykick', headkick: 'headkick' };
-const JOINT: Record<string, 'haF' | 'haB' | 'ftB' | 'knB' | 'elB'> = { jab: 'haF', cross: 'haB', hook: 'haF', uppercut: 'haB', overhand: 'haB', elbow: 'elB', knee: 'knB', legkick: 'ftB', kick: 'ftB', headkick: 'ftB', punch: 'haB' };
+/** Engine strike name -> arena pose. */
+const PUNCH_POSE: Record<string, string> = {
+  jab: 'jab', cross: 'cross', hook: 'hook', uppercut: 'uppercut', overhand: 'overhand', 'body jab': 'bodyJab', 'body shot': 'body', 'body hook': 'bodyHook',
+  'spinning backfist': 'spin', 'short hook': 'leadHook', elbow: 'elbow', knee: 'knee', legkick: 'legkick', kick: 'bodykick', headkick: 'headkick',
+  'front kick': 'frontKick', 'spinning back kick': 'spinKick',
+};
+const JOINT: Record<string, 'haF' | 'haB' | 'ftB' | 'knB' | 'elB'> = {
+  jab: 'haF', cross: 'haB', hook: 'haF', uppercut: 'haB', overhand: 'haB', 'body jab': 'haF', 'body shot': 'haB', 'body hook': 'haF', 'spinning backfist': 'haB', 'short hook': 'haF',
+  elbow: 'elB', knee: 'knB', legkick: 'ftB', kick: 'ftB', headkick: 'ftB', 'front kick': 'ftB', 'spinning back kick': 'ftB', punch: 'haB',
+};
+const poseFor = (name: string, hand?: 'lead' | 'rear'): string => (name === 'hook' && hand === 'lead' ? 'leadHook' : name === 'hook' && hand === 'rear' ? 'hook' : PUNCH_POSE[name] ?? 'jab');
+const TIE_NAME = { collar: 'COLLAR TIE', under: 'DOUBLE UNDERHOOKS', plum: 'THAI PLUM' };
 
 export function openLiveFight(g: Game, o: LiveFightOpts): void {
   const L = new LiveFight(o.A, o.B, o.skills[0], o.skills[1], o.bout.rounds, o.seed);
@@ -65,7 +79,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
 
   const root = new Container();
   root.addChild(new Graphics().rect(0, 0, W, H).fill(0x0c0a10));
-  const arena = new ArenaView(o.A, o.B, o.bout.rounds, { event: o.event, eventKey: o.bout.id, sponsors: o.sponsors });
+  const arena = new ArenaView(o.A, o.B, o.bout.rounds, { event: o.event, eventKey: o.bout.id, sponsors: o.sponsors, canvas: o.canvas, bare: o.bare });
   arena.manual = [L.F[0].x, L.F[1].x];
   arena.startFight();
   arena.manualRound();
@@ -138,19 +152,20 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     dyn.addChild(text(label, right ? x - 26 : x + w + 3, y - 2, { small: true, color: PAL.ash }));
   };
 
-  const prompts = (): [Parameters<typeof prompt>[0], string][] => {
-    const ctx = L.context(P);
-    if (ctx.knockedDown) return [[{ pad: 'LT', key: 'Q' }, 'THEN'], [{ pad: 'RT', key: 'E' }, 'IN RHYTHM TO GET UP']];
-    if (ctx.submission) return [[{ pad: 'B', key: 'Space' }, ctx.submission === 'attack' ? 'MASH TO CRANK IT' : 'MASH TO ESCAPE'], [{ pad: 'LStick', key: 'WASD' }, 'ROTATE']];
-    if (ctx.grounded) {
-      const top = L.top === P;
-      return top
-        ? [[{ pad: 'RB', key: 'J' }, 'PUNCH'], [{ pad: 'A', key: 'L' }, '+ TOWARD: PASS'], [{ pad: 'B', key: 'Space' }, 'SUBMISSION']]
-        : [[{ pad: 'A', key: 'L' }, '+ UP: STAND / AWAY: SWEEP'], [{ pad: 'LB', key: 'I' }, 'COVER UP'], [{ pad: 'B', key: 'Space' }, 'SUB']];
+  /** Where the fight is, in words: no button prompts (HELP has those), just the state. */
+  const situation = (): { text: string; color: number } | null => {
+    if (L.pos === 'clinch') {
+      const c = L.clinch;
+      const fence = c.fence === P ? '  (YOUR BACK ON THE FENCE)' : c.fence === O ? '  (HIM ON THE FENCE)' : '';
+      if (c.dom === -1) return { text: 'CLINCH: EVEN' + fence, color: PAL.bone };
+      return { text: (c.dom === P ? 'YOUR ' : 'HIS ') + TIE_NAME[c.tie] + fence, color: c.dom === P ? PAL.moss : PAL.ember };
     }
-    if (L.pos === 'clinch') return [[{ pad: 'RT', key: 'K' }, 'KNEE'], [{ pad: 'RB', key: 'J' }, 'ELBOW'], [{ pad: 'B', key: 'Space' }, 'HOLD: TRIP / BREAK']];
-    if (ctx.beingShot) return [[{ pad: 'B', key: 'Space' }, 'TAP: SPRAWL!']];
-    return [[{ pad: 'RB', key: 'J' }, 'LEAD'], [{ pad: 'RT', key: 'K' }, 'REAR'], [{ pad: 'A', key: 'L' }, 'KICK'], [{ pad: 'LB', key: 'I' }, 'BLOCK'], [{ pad: 'B', key: 'Space' }, 'CLINCH / SHOOT']];
+    if (L.pos === 'ground') {
+      const top = L.top === P;
+      const name = GPOS_NAME[L.gpos].toUpperCase();
+      return { text: (top ? 'ON TOP: ' : 'UNDERNEATH: ') + (L.gpos === 'back' && !top ? 'HE HAS YOUR BACK' : name), color: top ? PAL.moss : PAL.ember };
+    }
+    return null;
   };
 
   const drawHud = () => {
@@ -168,18 +183,13 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     // centre: clock + control prompts
     dyn.addChild(text(`ROUND ${L.round}/${L.rounds}   ${L.clockText()}`, 0, y0 + 3, { width: W, align: 'center', color: PAL.gold }));
     if (autopilot) dyn.addChild(text('AUTOPILOT (ESC to take over)', 0, y0 + 14, { width: W, align: 'center', small: true, color: PAL.ember }));
-    else {
-      let px = 150;
-      let py = y0 + 14;
-      for (const [spec, label] of prompts()) {
-        const c = prompt(spec, label, px, py);
-        if (px + c.width > W - 150) {
-          px = 150;
-          py += 10;
-          c.position.set(px, py);
-        }
-        dyn.addChild(c);
-        px += Math.ceil(c.width) + 6;
+    const sit = situation();
+    if (sit) {
+      dyn.addChild(text(sit.text, 150, y0 + (autopilot ? 25 : 16), { width: W - 300, align: 'center', small: true, color: sit.color, maxLines: 2 }));
+      // progress on the mat: your passing / escape work
+      if (L.pos === 'ground' && !L.sub) {
+        const v = Math.max(0, Math.min(1, L.top === P ? L.gprog : L.standProg));
+        hudG.rect(W / 2 - 40, y0 + 38, 80, 3).fill(PAL.night).rect(W / 2 - 40, y0 + 38, Math.round(80 * v), 3).fill(PAL.gold);
       }
     }
     // play-by-play
@@ -191,7 +201,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       dyn.addChild(text(`${L.countOf(i)}`, 0, 40, { width: W, align: 'center', color: PAL.bone, scale: 3, shadow: PAL.ink }));
       if (i === P && !autopilot) {
         hudG.rect(W / 2 - 60, 78, 120, 6).fill(PAL.night).rect(W / 2 - 59, 79, Math.round(118 * Math.min(1, L.F[i].getup)), 4).fill(PAL.gold);
-        dyn.addChild(text('ALTERNATE LT / RT (Q / E) TO BEAT THE COUNT', 0, 88, { width: W, align: 'center', small: true, color: PAL.gold, shadow: PAL.ink }));
+        dyn.addChild(text('GET UP!', 0, 88, { width: W, align: 'center', small: true, color: PAL.gold, shadow: PAL.ink }));
       }
     }
     if (L.sub) {
@@ -212,13 +222,17 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     const d = (1 - a) as Side;
     switch (e.type) {
       case 'punch':
-      case 'kick':
-        arena.play(a, PUNCH_POSE[e.name ?? 'jab'] ?? 'jab', e.type === 'kick' ? 0.4 : 0.26, 4);
+      case 'kick': {
+        const n = e.name ?? 'jab';
+        const kick = e.type === 'kick';
+        arena.play(a, poseFor(n, e.hand), /spinning/.test(n) ? 0.5 : kick ? 0.4 : 0.26, L.pos === 'clinch' ? 1 : 4);
+        if (/spinning/.test(n)) sfx('whoosh');
         break;
+      }
       case 'hit':
       case 'counter': {
-        if (e.name === 'knee' || e.name === 'elbow') arena.play(a, e.name, 0.3, 4);
-        arena.strike(a, JOINT[e.name ?? 'punch'] ?? 'haB', !!e.big, L.F[d].hp < 55 && Math.random() < 0.5);
+        if (e.name === 'knee' || e.name === 'elbow') arena.play(a, e.name, 0.3, L.pos === 'clinch' ? 1 : 4);
+        arena.strike(a, JOINT[e.name ?? 'punch'] ?? 'haB', !!e.big, L.F[d].hp < 55 && Math.random() < 0.5, e.target === 'body');
         sfx(e.name && /kick|knee/.test(e.name) ? 'kick' : 'punch');
         if (e.type === 'counter') arena.showCallout('COUNTER!');
         if (d === P) rumbleForHit(input, e.big ? 0.9 : 0.35);
@@ -264,6 +278,30 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       case 'clinch':
         sfx('thud');
         break;
+      case 'tie':
+        sfx('thud');
+        if (a === P) arena.showCallout(TIE_NAME[e.name as keyof typeof TIE_NAME] ?? 'TIE-UP');
+        break;
+      case 'pummel':
+        sfx('whoosh');
+        break;
+      case 'fence':
+        sfx('thud');
+        arena.shakeT = 0.1;
+        break;
+      case 'trip':
+        arena.takedown(a, 'trip');
+        arena.showCallout('TRIPPED!');
+        break;
+      case 'pass':
+        arena.transition('pass', a);
+        sfx('thud');
+        if (e.name === 'back' || e.name === 'mount') arena.showCallout(e.name === 'back' ? 'TAKES THE BACK!' : 'FULL MOUNT!');
+        break;
+      case 'scramble':
+        arena.transition('scramble', a);
+        arena.showCallout('SCRAMBLE!');
+        break;
       case 'break':
         break;
       case 'shoot':
@@ -275,8 +313,11 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         arena.showCallout('STUFFED!');
         break;
       case 'td':
-        arena.play(a, 'shoot', 0.3);
-        arena.play(d, 'lifted', 0.25);
+        if (e.name !== 'trip') {
+          arena.takedown(a, 'shoot');
+          arena.play(a, 'shoot', 0.3);
+          arena.play(d, 'lifted', 0.25);
+        }
         sfx('thud');
         arena.shakeT = 0.15;
         break;
@@ -287,10 +328,16 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         if (d === P) rumbleForHit(input, 0.4);
         break;
       case 'advance':
+        sfx('thud');
+        break;
       case 'sweep':
+        arena.transition('scramble', a);
+        arena.showCallout('SWEEP!');
         sfx('thud');
         break;
       case 'standup':
+        // the man underneath stands up in base (technical stand-up)
+        if (e.name === 'bottom') arena.play(a, 'techUp', 0.45);
         break;
       case 'sub':
         arena.showCallout('SUBMISSION ATTEMPT!');
@@ -412,7 +459,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     setPadUiMode('cursor');
     const fr = new Container();
     const bw = 200;
-    const bh = 130;
+    const bh = 148;
     const bx = (W - bw) / 2;
     const by = (H - bh) / 2;
     fr.addChild(box(bw, bh, PAL.night, PAL.gold, { bevel: true })).position.set(bx, by);
@@ -426,12 +473,14 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       primed = false;
     };
     fr.addChild(button('RESUME', bx + 10, by + 20, bw - 20, 14, resume, { small: true, fill: PAL.moss }));
-    fr.addChild(button(autopilot ? 'TAKE BACK CONTROL' : 'AUTOPILOT (AI FIGHTS FOR YOU)', bx + 10, by + 38, bw - 20, 14, () => {
+    fr.addChild(button('HELP: HOW TO FIGHT', bx + 10, by + 38, bw - 20, 14, () => openHelp(g, 'fight'), { small: true, fill: PAL.gold }));
+    const y2 = by + 18;
+    fr.addChild(button(autopilot ? 'TAKE BACK CONTROL' : 'AUTOPILOT (AI FIGHTS FOR YOU)', bx + 10, y2 + 38, bw - 20, 14, () => {
       autopilot = !autopilot;
       resume();
     }, { small: true, fill: PAL.steel }));
-    fr.addChild(button('CONTROLS', bx + 10, by + 56, bw - 20, 14, () => openFightLab(g), { small: true, fill: PAL.slate }));
-    fr.addChild(button('HANDS-ON FIGHTS: ' + (g.settings.handsOn === false ? 'OFF' : 'ON'), bx + 10, by + 74, bw - 20, 14, () => {
+    fr.addChild(button('CONTROLS', bx + 10, y2 + 56, bw - 20, 14, () => openFightLab(g), { small: true, fill: PAL.slate }));
+    fr.addChild(button('HANDS-ON FIGHTS: ' + (g.settings.handsOn === false ? 'OFF' : 'ON'), bx + 10, y2 + 74, bw - 20, 14, () => {
       g.settings.handsOn = g.settings.handsOn === false;
       g.applySettings();
       // switching off mid-fight: the AI finishes this one for you
@@ -439,11 +488,11 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       resume();
       g.toast(g.settings.handsOn === false ? 'Hands-on fights off: future fights use the sim. The AI finishes this one.' : 'Hands-on fights on.', PAL.gold, { small: true });
     }, { small: true, fill: PAL.shadow }));
-    fr.addChild(button('SIM THE REST OF THE FIGHT', bx + 10, by + 92, bw - 20, 14, () => {
+    fr.addChild(button('SIM THE REST OF THE FIGHT', bx + 10, y2 + 92, bw - 20, 14, () => {
       resume();
       simRest();
     }, { small: true, fill: PAL.blood }));
-    fr.addChild(text('Hands-on fights can also be turned off in Settings', bx + 6, by + 112, { width: bw - 12, align: 'center', small: true, color: PAL.ash }));
+    fr.addChild(text('Hands-on fights can also be turned off in Settings', bx + 6, y2 + 112, { width: bw - 12, align: 'center', small: true, color: PAL.ash }));
     pauseWrap = g.modal(fr, { dim: 0.6 });
     // however the menu goes away, the fight carries on
     pauseWrap.once('destroyed', () => {
@@ -510,6 +559,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     // mirror the engine into the arena
     const mid = (L.F[0].x + L.F[1].x) / 2;
     arena.manual = L.pos === 'clinch' ? [mid - 6, mid + 6] : [L.F[0].x, L.F[1].x];
+    arena.clinchTie = { dom: L.clinch.dom, tie: L.clinch.tie, fence: L.clinch.fence };
     arena.hp = [Math.max(0, L.F[0].hp), Math.max(0, L.F[1].hp)];
     arena.round = L.round;
     arena.sec = 300 - (L.clock / 75) * 300;
