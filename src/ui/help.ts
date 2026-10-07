@@ -47,17 +47,20 @@ const PAGES: Record<HelpTopic, Block[]> = {
   start: [
     { h: 'THREE WAYS TO PLAY' },
     { icon: 'money', p: 'CAREER: you are the promoter. Work the desk, build cards, sign fighters, keep the money, the fans and the Commission happy, and stay out of prison.' },
-    { icon: 'belt', p: 'ROAD TO CHAMPION: you are the fighter. Start on a garbage local circuit and fight your way up through regional shows and the Lounge to the CBFC title.' },
+    { icon: 'belt', p: "ROAD TO CHAMPION: you are the fighter, with a story. Uncle Ray's soup-kitchen gym is drowning in back rent, a trust-fund rival is always one league ahead, and the CBFC title is a long way off." },
+    { icon: 'glove', p: 'LEGACY MODE: the same fighter career with no script. Start in any league, more chaos, more bad decisions.' },
     { icon: 'cal', p: 'SANDBOX: career mode with the rules off. Edit fighters, money and meters, and book whatever you like.' },
     { h: 'MENUS & SAVING' },
-    { keys: [['A', 'Enter', 'Confirm / click'], ['B', 'Esc', 'Back / close'], ['Menu', 'Esc', 'Pause / menu'], ['LStick', null, 'Move the cursor (pad)']] },
-    { p: 'The game autosaves at the start of every week. Career mode also has three save slots (MENU). Ironman difficulty only keeps the autosave.' },
+    { keys: [['A', 'Enter', 'Confirm / click'], ['B', 'Esc', 'Back / close'], ['Menu', 'Esc', 'Pause / menu'], ['View', 'F1', 'This HELP screen'], ['LStick', null, 'Move the cursor (pad)']] },
+    { p: 'Every mode autosaves each week and has three save slots of its own (MENU > SAVE). LOAD has a tab per mode. CONTINUE on the title screen picks up your latest save. Ironman careers only keep the autosave.' },
+    { p: 'ACHIEVEMENTS (title screen and menus) tracks what you have unlocked across every save.' },
     { p: 'Settings has text speed, the swear bleep, fight speed, hands-on fights on/off, controller remapping (CONTROLS) and audio.' },
     { p: 'This page lives above SETTINGS in every menu and in the fight pause menu. When the game updates, WHAT\'S NEW tells you what changed.' },
   ],
   fight: [
     { h: 'THE BASICS' },
-    { p: 'Hands-on fights put you in the cage in Road To Champion (turn them off in Settings to sim instead). Your man is on the left in red unless the card says otherwise. Move with the left stick / A-D.' },
+    { p: 'Hands-on fights put you in the cage in Road To Champion and Legacy Mode (turn them off in Settings to sim instead). Move with the left stick / A-D. The full broadcast comes with it: tale of the tape, the Juiced Butler, the booth and Bleeter.' },
+    { keys: [['View', 'C', 'Change camera: side / TV / top-down'], ['Menu', 'Esc', 'Pause: HELP, autopilot, sim the rest']] },
     { keys: [['RB', 'J', 'Lead hand'], ['RT', 'K', 'Rear hand'], ['A', 'L', 'Kick'], ['LB', 'I', 'Block (tap = parry)'], ['B', 'Space', 'Grab: clinch / shoot / sprawl'], ['Y', 'U', 'Feint'], ['LT', 'O', 'Hold: strikes go to the body']] },
     { h: 'DIRECTIONAL STRIKES' },
     { p: 'Where the stick points when you PRESS the button picks the strike. How long you HOLD it picks the power: tap = light and fast, hold = medium, long hold = heavy (slow, big damage, big gas). On a pad a full trigger squeeze adds power.' },
@@ -119,6 +122,9 @@ const PAGES: Record<HelpTopic, Block[]> = {
     { p: 'Your cutman works the face (a quick mini game) and the coach picks the gameplan for the next round. Pause any time for AUTOPILOT, SIM THE REST, or this page.' },
   ],
   rtc: [
+    { h: 'THE STORY' },
+    { p: "Uncle Ray runs Ray's Boxing & Soup. The landlord wants $8,000. A slice of every purse goes to the rent until it's paid, and some story choices can pay it faster (or let Bradie pay it, with a clause). Tyler \"Trust Fund\" Vance holds the first belt you go for and keeps showing up a league ahead. Chapters unlock as you climb." },
+    { p: 'LEGACY MODE plays the same career without the story: pick your starting league, start with $10,000, and expect more chaos.' },
     { h: 'THE ROAD' },
     { p: 'Create your fighter, then climb: a scrappy LOCAL CIRCUIT, one or two REGIONAL PROMOTIONS, the PROFESSIONAL FIGHTERS\' LOUNGE (season, playoffs, final) and finally the CBFC. Win the belt where you are and the next promotion calls. In the CBFC the rankings follow the real ones.' },
     { p: 'As your rank and hype climb you move up the card: early prelims, prelims, main card, co-main, main event. Better slots pay better.' },
@@ -129,8 +135,12 @@ const PAGES: Record<HelpTopic, Block[]> = {
     { icon: 'paper', p: 'PAPERWORK: contracts, bout agreements and your opponent\'s medicals. Read them before you weigh in. Unread paperwork gets signed as-is.' },
     { h: 'BRADIE & THE BAREKNUCKLE STUFF' },
     { p: 'Bradie runs Only Fighters (a content site) and the bareknuckle circuit. His contracts come with odd clauses. Read every line. The money is real; so are the consequences.' },
+    { h: 'YOUR TEAM & THE PRESS' },
+    { p: 'Your coach, nutritionist, manager and cutman check in with real advice: scouting on your next opponent, your weight, your money, your face. Reporters want interviews before and after fights; the more famous you get, the more they ask. Humble, cocky or unhinged: it all moves your hype.' },
+    { h: 'MOVING UP' },
+    { p: 'Win a belt and the next promotion signs you: a proper contract signing, a new canvas, a new roster. Your amateur record is frozen when you turn pro. CAREER FILE (under your stats) has every fight, your rap sheet and every headline about you.' },
     { h: 'FIGHT WEEK' },
-    { p: 'Weigh in, pick a gameplan, then fight hands-on (or sim). Sponsors may pay you to plug them. After the fight: purse, rankings, Bleeter.' },
+    { p: 'Weigh in at the weight you SIGNED for, pick a gameplan, then fight hands-on (or sim). Sponsors may pay you to plug them. After the fight: purse, rankings, Bleeter.' },
   ],
   career: [
     { h: 'THE JOB' },
@@ -307,6 +317,7 @@ function renderPage(sb: ScrollBox, topic: HelpTopic): void {
 /** Open the help screen, optionally on a topic. */
 export function openHelp(g: Game, start: HelpTopic = 'start'): void {
   const win = openWindow(g, 'Help: how to be a pro', 464, 252, { dim: 0.7 });
+  (g.modals[g.modals.length - 1] as Container & { isHelp?: boolean }).isHelp = true;
   const sb = new ScrollBox(330, 226);
   sb.position.set(128, 4);
   win.body.addChild(sb);

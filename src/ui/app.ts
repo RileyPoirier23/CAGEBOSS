@@ -4,6 +4,8 @@
  */
 import { maybeTutorial } from './tutorial';
 import { checkAchievements } from './achievements';
+import { openHelp } from './help';
+import { input } from '../core/input';
 import { Application, Container, TextureStyle, Graphics, Ticker } from 'pixi.js';
 import type { GameState } from '../core/types';
 import { loadJSON, storeJSON, saveToSlot, autoSlot } from '../core/save';
@@ -299,8 +301,13 @@ export class Game {
     if (this.state) saveToSlot(this.state, autoSlot(this.state));
   }
 
+  /** a hands-on fight is running (View / F1 cycles its camera instead of opening HELP) */
+  inLiveFight = false;
+
   private tick(dt: number): void {
     this.tickNowPlaying(dt);
+    // View / F1 anywhere: the HELP screen
+    if (!this.inLiveFight && input.pressed('help') && !this.modals.some((m) => (m as Container & { isHelp?: boolean }).isHelp)) openHelp(this);
     if (this.loader && !this.loader.update(dt)) {
       this.loader.destroy({ children: true });
       this.loader = null;

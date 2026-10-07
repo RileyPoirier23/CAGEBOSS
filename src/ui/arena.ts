@@ -1445,7 +1445,8 @@ export class ArenaView extends Container {
     if (this.scene === 'fight') {
       // the action drifts around the cage; clinches end up on the fence; ground work stays put
       const targetCenter =
-        this.walkIn || this.touchT > 0 ? AW / 2
+        this.manual && !ground ? (this.manual[0] + this.manual[1]) / 2
+          : this.walkIn || this.touchT > 0 ? AW / 2
           : this.ground === 'clinch' ? (Math.sin(this.round * 1.7) > 0 ? CAGE_R - 40 : CAGE_L + 40)
             : ground ? this.groundX
               : AW / 2 + Math.sin(this.t * 0.35) * 70;

@@ -106,3 +106,25 @@ describe('fighter mode', () => {
     expect(round1(r2)).toBe(round1(r1));
   });
 });
+
+describe('road to champion story & legacy mode', () => {
+  const look = () => generateFighter(new Rng(1), content().names, { division: 'light', tier: 'prospect' }).look;
+  it('a new Road To Champion career has the story, the rival as local champ, and the first contract to sign', () => {
+    const s = createFighterGame({ seed: 31, first: 'Story', last: 'Mode', nick: 'Soup', gender: 'M', culture: 'mexico', division: 'light', archetype: 'striker', look: look() });
+    const st = fm(s);
+    expect(st.story?.rival).toBe('rival');
+    expect(st.ladder[0]).toBe('rival');
+    expect(st.moments?.[0]?.kind).toBe('signing');
+    expect(st.moments?.some((m) => m.kind === 'story')).toBe(true);
+    expect(st.legacy).toBeFalsy();
+  });
+  it('Legacy Mode skips the story and can start in the CBFC', () => {
+    const s = createFighterGame({ seed: 32, first: 'Legacy', last: 'Mode', nick: 'Chaos', gender: 'M', culture: 'mexico', division: 'light', archetype: 'wrestler', look: look(), legacy: true, startTier: 'of' });
+    const st = fm(s);
+    expect(st.legacy).toBe(true);
+    expect(st.tier).toBe('of');
+    expect(st.story).toBeUndefined();
+    expect(st.money).toBeGreaterThanOrEqual(10000);
+    expect(st.moments?.filter((m) => m.kind === 'signing').length).toBe(1);
+  });
+});

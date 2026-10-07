@@ -14,14 +14,14 @@ export const NOTES: { v: string; lines: string[] }[] = [
   {
     v: '1.6.0',
     lines: [
-      'FIGHTER MODE is now ROAD TO CHAMPION.',
-      'Directional strikes: body shots, overhands, front kicks, spinning stuff.',
-      'A real clinch: collar ties, Thai plum, underhooks, the fence, trips.',
-      'Ground game: half guard, passes, sweeps, scrambles, 16 submissions.',
-      'Amateur and pro records, plus a career file: fights, charges, articles.',
-      'Read your paperwork. A signed contract is a signed contract.',
+      'FIGHTER MODE is now ROAD TO CHAMPION, with a story (save the soup).',
+      'New LEGACY MODE: the fighter career, no script, more chaos.',
+      'Directional strikes, a real clinch, and a full ground game.',
+      'Hands-on fights get the whole broadcast. Change camera with C / View.',
+      'Contract signings, staff check-ins, interviews, a career file.',
+      'Read your paperwork: a signed contract is a signed contract.',
+      'Achievements, save slots per mode, CONTINUE, and a HELP screen.',
       'Every promotion has its own canvas. The full CBFC roster is in.',
-      'New HELP screen (above SETTINGS) with everything you need to know.',
     ],
   },
 ];

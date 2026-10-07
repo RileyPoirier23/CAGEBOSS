@@ -97,6 +97,15 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   arena.startFight();
   arena.manualRound();
   root.addChild(arena);
+  arena.setMode(g.settings.fightCam ?? 'side');
+  /** C / View: side -> TV -> top-down */
+  const cycleCam = () => {
+    const order = ['side', 'tv', 'top'] as const;
+    g.settings.fightCam = order[(order.indexOf(g.settings.fightCam ?? 'side') + 1) % 3];
+    g.applySettings();
+    arena.setMode(g.settings.fightCam);
+    g.toast(`Camera: ${g.settings.fightCam === 'tv' ? 'TV broadcast' : g.settings.fightCam === 'top' ? 'top-down' : 'side'}`, PAL.ash, { small: true });
+  };
   // ------------------------------------------------------------ broadcast: tape, Juiced Butler, booth, Bleeter
   const S = o.state;
   const EV = o.ev;
@@ -201,6 +210,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   hud.addChild(text((P === 1 ? 'YOU: ' : '') + o.B.last.toUpperCase(), W - 140, y0 + 3, { small: true, color: P === 1 ? PAL.gold : PAL.bone, width: 100, align: 'right' }));
 
   const wrap = g.modal(root, { dim: 0 });
+  g.inLiveFight = true;
   // first hands-on fight: the coach's three cards (the fight waits for them)
   setTimeout(() => liveTutorial(g), 50);
   setPadUiMode('game');
@@ -208,6 +218,10 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     if (e.type !== 'keydown') return true;
     if ((stage === 'tape' || stage === 'intro') && !paused) {
       if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') endIntro();
+      return true;
+    }
+    if ((e.key === 'c' || e.key === 'C') && !paused) {
+      cycleCam();
       return true;
     }
     if (e.key === 'Escape') {
@@ -595,7 +609,11 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       autopilot = !autopilot;
       resume();
     }, { small: true, fill: PAL.steel }));
-    fr.addChild(button('CONTROLS', bx + 10, y2 + 56, bw - 20, 14, () => openFightLab(g), { small: true, fill: PAL.slate }));
+    fr.addChild(button('CONTROLS', bx + 10, y2 + 56, (bw - 24) / 2, 14, () => openFightLab(g), { small: true, fill: PAL.slate }));
+    fr.addChild(button(`CAMERA: ${(g.settings.fightCam ?? 'side').toUpperCase()}`, bx + 14 + (bw - 24) / 2, y2 + 56, (bw - 24) / 2, 14, () => {
+      cycleCam();
+      resume();
+    }, { small: true, fill: PAL.slate }));
     fr.addChild(button('HANDS-ON FIGHTS: ' + (g.settings.handsOn === false ? 'OFF' : 'ON'), bx + 10, y2 + 74, bw - 20, 14, () => {
       g.settings.handsOn = g.settings.handsOn === false;
       g.applySettings();
@@ -625,6 +643,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     if (closed) return;
     const dt = Math.min(0.05, t.deltaMS / 1000);
     if (!paused && !resultShown && (input.buttonPressed('Menu') || input.buttonPressed('Start' as never)) && g.modals[g.modals.length - 1] === wrap) pause();
+    if (!paused && input.buttonPressed('View') && g.modals[g.modals.length - 1] === wrap) cycleCam();
     // a modal on top (corner, pause, controls): the fight waits
     const onTop = g.modals[g.modals.length - 1] === wrap;
     lineT -= dt;
@@ -754,6 +773,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   };
   g.app.ticker.add(tick);
   wrap.once('destroyed', () => {
+    g.inLiveFight = false;
     g.app.ticker.remove(tick);
     popKeys();
     setPadUiMode('cursor');

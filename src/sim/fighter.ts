@@ -359,6 +359,7 @@ export function createFighterGame(o: CreateOpts): GameState {
     const tmp: string[] = [];
     while (st.tier !== want && st.stage < st.circuit.length - 1) promote(s, rng, tmp);
     if (st.moments) st.moments = st.moments.slice(-1);
+    st.stats = undefined; // skipping ahead isn't winning belts
   } else {
     startStory(s, rng);
     pushMoment(s, signingMoment(s, rng));
