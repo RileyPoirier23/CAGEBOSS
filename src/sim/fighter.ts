@@ -16,7 +16,7 @@ import { content } from '../core/content';
 import { createNewGame } from './newgame';
 import { generateFighter } from './generate';
 import { DIVISION_LIMITS, divisionName } from './divisions';
-import { fullName, overall, computeStarPower } from './fighters';
+import { fullName, overall, computeStarPower, healWeek } from './fighters';
 import { computeRankings, rankOf, undisputed } from './rankings';
 import { makeBout, runBout, applyBout } from './events';
 import { heatUp, feudKey } from './feuds';
@@ -285,6 +285,7 @@ export function treat(s: GameState, part: BodyPart): string {
   if (st.money < cost) return `The clinic wants ${money(cost)}. You have ${money(st.money)}.`;
   st.money -= cost;
   st.body[part] = part === 'head' ? st.headCap : 100;
+  if (part === 'head' || part === 'jaw') me(s).wounds = { cuts: 0, blackEye: 0, swelling: 0, bandages: me(s).wounds.cuts ? 1 : 0, noseBleed: false };
   return `St. Cath's Sports Medicine patched up your ${BODY_PARTS.find((p) => p.id === part)!.name.toLowerCase()} (-${money(cost)}).`;
 }
 
@@ -593,6 +594,11 @@ export function endWeek(s: GameState, rng: Rng): string[] {
     f.age++;
     out.push(`Happy birthday. You're ${f.age}.`);
     if (f.age > 33) for (const k of ['striking', 'power', 'cardio', 'chin', 'durability'] as (keyof Skills)[]) f.skills[k] = clamp(f.skills[k] - rng.float(0.5, 2), 10, 99);
+  }
+  // faces heal (yours at the speed your cutman/clinic allows), injuries expire
+  for (const x of Object.values(s.fighters)) {
+    healWeek(x, rng);
+    if (x.injuries.length) x.injuries = x.injuries.filter((i) => i.until > s.week);
   }
   // the rest of the league fights
   out.push(...leagueWeek(s, rng));

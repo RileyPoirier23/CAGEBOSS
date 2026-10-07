@@ -101,6 +101,9 @@ const CX = 32;
  * dithering for lighting (key light from the upper left), dark outlines,
  * plenty of small facial detail, and everything a fight does to a face.
  */
+/** Where the features landed on the last portrait drawn for an id (64x64 space): used to place close-up damage. */
+export const FACE_ANCHORS = new Map<string, { eyeL: number; eyeR: number; eyeY: number; browY: number; noseY: number; mouthY: number; top: number; chinY: number }>();
+
 export function drawPortrait(inp: PortraitInput): PixelBuf {
   const b = new PixelBuf(P, P);
   const look = inp.look;
@@ -189,6 +192,7 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
   const spread = 6 + (rnd(49) % 3 === 0 ? 1 : 0) - (rnd(51) % 4 === 0 ? 1 : 0);
   const eyeL = CX - spread - 1; // left eye centre
   const eyeR = CX + spread;
+  FACE_ANCHORS.set(inp.id, { eyeL, eyeR, eyeY, browY, noseY, mouthY, top, chinY });
 
   // ------------------------------------------------------------ long hair behind the head
   const hs = look.hair;
