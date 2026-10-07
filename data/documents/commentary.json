@@ -232,6 +232,16 @@
    "stats": [
     "{x} has finished {fin} of {wins} wins. That's a finisher. That's a person who does not like the judges either.",
     "{y} has never been finished in professional competition. Never. It's a granite chin, or a very good insurance policy."
+   ],
+   "open_comain": [
+    "It's the co-main event here at {venue}. One more fight between us and the main event, and these two would like very much to steal its fucking thunder.",
+    "Our co-main event. {xf} and {yf}. The undercard is done, the stakes are up, and Blow has finished his second energy drink.",
+    "The co-main event of {event}. The fight before the fight, and frankly, Blow, sometimes the better one."
+   ],
+   "open_card": [
+    "We're on the main card now. The pay-per-view is live, the money is real, and so is the violence.",
+    "Main card action at {venue}. {xf} against {yf}. Wallets are open, so are the wounds.",
+    "Welcome to everyone just joining us for the main card. You missed some blood. Here's some more."
    ]
   },
   "blow": {
@@ -472,6 +482,14 @@
    "slap": [
     "I'll say it: slap fighting is free brain damage. I don't care who's paying. Free. Brain. Damage.",
     "He SLAPPED him! He slapped that man like a disappointed stepdad! That's the most disrespectful shit in the world!"
+   ],
+   "open_comain": [
+    "Co-main, baby! This is the one before the one, man. These dudes want the main event slot and they're gonna fucking fight for it!",
+    "I've been looking forward to this co-main all week, Lon. All week. I told my sauna about it."
+   ],
+   "open_card": [
+    "Main card, man! Now we're cooking! Everything before this was the appetizer. This is the fucking steak!",
+    "We're on the main card! Pay-per-view money! Somebody's getting knocked into a new tax bracket!"
    ]
   },
   "dc": {
@@ -630,6 +648,13 @@
    ],
    "injury": [
     "Oh no. Oh, that's bad. That's really bad. I had an injury like that. I iced it with a bag of frozen wings. Don't do that."
+   ],
+   "open_comain": [
+    "Co-main event, buddy! I'm so excited I put my sandwich down. Look. It's down. That's how serious this is.",
+    "{wn} texted me this morning: 'DC, co-main, let's go.' I said 'who is this?' Anyway, he's here."
+   ],
+   "open_card": [
+    "Main card, baby! I changed my shirt for this. Not because of the fights. I spilled sauce. But also the fights."
    ]
   },
   "braille": {
@@ -758,6 +783,16 @@
   "open_rematch": [
    "THEY'VE DONE IT BEFORE... AND THEY'RE GONNA DO IT AGAIN... THIS IS... {X} VERSUS {Y} {ROMAN}!",
    "UNFINISHED... BUSINESS! LADIES AND GENTLEMEN, PART {ROMAN}!"
+  ],
+  "open_comain": [
+   "LADIES AND GENTLEMEN... IT IS TIME... FOR YOUR... CO-MAIN EVENT!",
+   "THIS... IS... THE CO-MAIN EVENT OF THE EVENING! {VENUE}, MAKE SOME NOISE!",
+   "LADIES AND GENTLEMEN, YOUR CO-MAIN EVENT... SCHEDULED FOR THREE ROUNDS... IN THE {DIV} DIVISION!"
+  ],
+  "open_card": [
+   "LADIES AND GENTLEMEN... WELCOME... TO THE MAIN CARD!",
+   "Ladies and gentlemen, the following main card contest is scheduled for three rounds in the {div} division!",
+   "MAIN CARD ACTION, {VENUE}! THREE ROUNDS... OF {DIV} WARFARE!"
   ],
   "open_prelim": [
    "Ladies and gentlemen, the following contest is scheduled for three rounds in the {div} division.",

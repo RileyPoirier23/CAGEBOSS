@@ -303,7 +303,11 @@ export interface DeskDoc {
   meta: Record<string, string | number | boolean | null>;
   storylet?: string; // instance id if spawned by a storylet
   fine?: string; // fine print
+  /** desk inspection: typed claims + record values the rule checks read (src/sim/docs.ts) */
+  facts?: Record<string, DocFact>;
 }
+
+export type DocFact = string | number | boolean | null | string[] | number[];
 
 export interface Citation {
   week: number;
@@ -316,7 +320,7 @@ export interface DeskState {
   queue: DeskDoc[];
   citations: Citation[];
   minutes: number; // minutes since 9:00 this desk day
-  log: { week: number; docId: string; type: DocType; stamp: Stamp | 'expired'; correct: boolean; deliberate: boolean }[];
+  log: { week: number; docId: string; type: DocType; stamp: Stamp | 'expired'; correct: boolean; deliberate: boolean; caught?: boolean }[];
 }
 
 // ---------------------------------------------------------------- storylets
@@ -402,6 +406,14 @@ export interface StoryletState {
 }
 
 // ---------------------------------------------------------------- media
+
+export interface Feud {
+  a: string;
+  b: string;
+  heat: number; // 0..100
+  lastPost: number; // week
+  result?: { winner: string; loser: string; week: number };
+}
 
 export interface SocialPost {
   handle: string;
@@ -551,6 +563,7 @@ export interface SandboxOptions {
   noOwner: boolean;
   infinite: boolean;
   allLegends: boolean;
+  realRoster?: boolean; // every real-fighter parody starts signed to you
   dreamMatches: boolean;
   godMode: boolean;
 }
@@ -602,6 +615,8 @@ export interface GameState {
   };
   legal: { cases: LegalCase[] };
   rivals: Record<string, RivalState>;
+  /** fighter feuds: online beef between pairs, keyed 'idA|idB' (sorted) */
+  feuds?: Record<string, Feud>;
   owner: {
     name: string;
     target: number;

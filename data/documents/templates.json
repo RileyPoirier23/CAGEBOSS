@@ -925,6 +925,70 @@
    "I'm gonna say it: the refereeing was criminal tonight. Not literally. Lawyers are in the room. Figuratively criminal.",
    "Before we start: the judging tonight was dogshit. Absolute dogshit. I've seen better scorekeeping at a fucking bowling alley.",
    "I want to address the referee. Hey. Fuck you. Okay. Questions."
+  ],
+  "pre_open_hype": [
+   "This Saturday is the biggest card we've ever put on. I say that every week. This week I mean it.",
+   "Saturday. {event}. If you're not there, you're a fucking civilian.",
+   "We've got violence, we've got drama, we've got a guy who still owes me rent. Saturday.",
+   "Every fight on this card ends in a finish. I've been told I can't promise that. I'm promising it."
+  ],
+  "pre_open_respect": [
+   "Before we start: these athletes made sacrifices to be here. Respect that. Then buy the pay-per-view.",
+   "I want to thank the fighters, the commission, and the city. Mostly the fighters. A little the city.",
+   "Two great camps, two great athletes, one cage. Let's keep it classy. For about four minutes."
+  ],
+  "pre_open_trash": [
+   "Let me be clear: somebody on this stage is getting knocked the fuck out Saturday. I won't say who. I'll look at him though.",
+   "I've seen the camps. One of these guys trained. The other one posted about training.",
+   "Somebody here has been running his mouth all week. Saturday the mouth gets shut. Professionally."
+  ],
+  "pre_to_fighter": [
+   "{f}, how was camp?",
+   "{f}, {opp} says you're scared. Response?",
+   "{f}, what's the game plan for {opp}?",
+   "{f}, is this the biggest fight of your career?",
+   "{f}, any concerns about the weight cut?",
+   "{f}, {opp} is the betting favourite. Does that bother you?",
+   "{f}, how do you see this ending?"
+  ],
+  "pre_to_champ": [
+   "{f}, you've got the belt. Why should anyone believe {opp} takes it?",
+   "{f}, is this your last title defence before moving up?",
+   "{f}, what does {opp} have that the others didn't?"
+  ],
+  "pre_answer_trash": [
+   "{opp} is a bum with a good manager. Saturday the manager can't help him.",
+   "I'm gonna fuck {opp} up. Next question.",
+   "Ask {opp} how camp went. He'll lie. I'll tell the truth Saturday.",
+   "{opp} has a nice face. Enjoy it while it lasts, everybody.",
+   "He's scared. Look at him. He's sweating through a {pop_brand} hoodie.",
+   "I'm not saying I'll finish him in the first. I'm saying bring a stretcher early."
+  ],
+  "pre_answer_confident": [
+   "Camp was perfect. I'm ready for anything {opp} brings.",
+   "I respect {opp}, but I'm levels above. You'll see.",
+   "Five rounds, three rounds, doesn't matter. I'm winning.",
+   "The plan is simple: impose my will and go home.",
+   "I've never felt better. Weight's on point. Mind's on point.",
+   "I see it ending with my hand raised. The details are a surprise."
+  ],
+  "pre_answer_humble": [
+   "{opp} is a tough guy. I just want to put on a good fight for the fans.",
+   "I'm grateful to be here. God willing, I get the win.",
+   "Camp was hard. I'm just going to do my best and see what happens.",
+   "Win or lose, I'll leave everything in there. My mom's watching, so please no swearing."
+  ],
+  "pre_answer_champ": [
+   "This belt isn't going anywhere. {opp} can look at it Saturday. From the floor.",
+   "Everyone says the next guy is the one. I'm still here.",
+   "I've beaten better than {opp} on worse days."
+  ],
+  "pre_faceoff": [
+   "The face-off: {a} and {b} go nose to nose. Neither blinks. Security edges closer. {a} whispers something. {b} shoves him. CHAOS.",
+   "The face-off: {a} sticks his hand out. {b} slaps it away. The crowd ooohs like it's {pop_show}.",
+   "The face-off: {a} and {b} stare for a full forty seconds. A photographer faints. Nobody helps him.",
+   "The face-off: {b} pulls out a fake belt and puts it on. {a} laughs, then doesn't. Somebody gets restrained.",
+   "The face-off: totally respectful. Handshake, nod, done. The internet is furious about it."
   ]
  },
  "recap": {
@@ -990,6 +1054,479 @@
    "We'll be right back after this message from {pop_food}. They paid for this sentence.",
    "Goodnight, and remember: protect yourself at all times. Especially from me. I'm very loud.",
    "That's the show. Stay violent, stay hydrated, and for the love of God, stop texting me, Sandwich."
+  ]
+ },
+ "bleets": {
+  "open": {
+   "fighter": [
+    "Got popcorn. Got a beer. Got a bad feeling about {y}.",
+    "{x} by violence. Don't @ me.",
+    "If {y} wins this I'm retiring. Not really. Maybe.",
+    "Watching from the hotel. Room service is $40 for a burger. This sport owes me money.",
+    "Locked in for this one",
+    "Pick? Violence.",
+    "{x} by stoppage. Write it down.",
+    "Who y'all got?",
+    "If {y} gets taken down it's over",
+    "Need this one to go 3 rounds for my parlay",
+    "My coach said don't watch this one. Watching it.",
+    "This the fight I been waiting for",
+    "Fighter row is LOUD right now",
+    "Sitting next to {pop_celeb} on fighter row. Weird night."
+   ],
+   "media": [
+    "We're LIVE from {event}. {x} vs {y} up next.",
+    "SOURCES: both fighters are in the cage. More as it develops.",
+    "Line movement on {x} all day. Somebody knows something.",
+    "Main event lines: {x} slight favourite.",
+    "Fighters are in the cage. Here we go.",
+    "Tale of the tape heavily favours {x} on reach.",
+    "Juiced Butler is ready. Are you?",
+    "Walkouts done. Big energy in the building.",
+    "{x} walked out to {pop_musician}. Bold.",
+    "Doors open, arena near capacity for {event}."
+   ],
+   "fan": [
+    "{x} gonna fold this man like a lawn chair",
+    "I put my rent on {y}. Pray for me.",
+    "who the fuck is {y}",
+    "LETS GOOOOO",
+    "{promotion} better not fuck this one up",
+    "IT'S TIIIIIME",
+    "my heart rate is higher than the fighters'",
+    "need {x} to cook",
+    "{y} looking nervous ngl",
+    "bet my {pop_car} on this fight. pray",
+    "who let {pop_celeb} on fighter row lmao",
+    "watching this instead of {pop_show}. no regrets",
+    "{x} walkout song goes HARD",
+    "the octagon girl walked past the camera and chat went insane",
+    "ok but who's actually winning this"
+   ]
+  },
+  "knockdown": {
+   "fighter": [
+    "OHHHHH {y} IS DOWN",
+    "That's a grown man's punch right there",
+    "I felt that one from my couch. My couch felt it too.",
+    "{y} hit the floor like a fucking bag of laundry",
+    "OOF",
+    "That's a fight changer",
+    "Get up get up get up",
+    "He felt that in his ancestors",
+    "Big right hand. Nothing else to say.",
+    "FINISH HIM"
+   ],
+   "media": [
+    "KNOCKDOWN: {x} drops {y} at {event}.",
+    "{y} is down. Clip incoming.",
+    "{y} dropped by a {x} counter.",
+    "Massive knockdown in the round.",
+    "{x} drops {y} and pours it on."
+   ],
+   "fan": [
+    "DOWN GOES {Y}",
+    "HE'S DONE HE'S DONE HE'S",
+    "my whole bar just stood up",
+    "{y}'s soul just left his body lmao",
+    "BRO WHAT",
+    "OHHHH",
+    "HES HURT HES HURT",
+    "{y} just saw the light",
+    "bro got dropped like a {pop_app} update",
+    "SHOW ME THE REPLAY",
+    "i spilled my {pop_food} everywhere",
+    "the whole bar jumped",
+    "nah {y} is sleeping on his feet",
+    "SWING BABY SWING"
+   ]
+  },
+  "rocked": {
+   "fighter": [
+    "{y} is doing the noodle walk",
+    "Clinch up {y}. CLINCH UP.",
+    "Legs gone. Seen it a thousand times. Been it twice.",
+    "He's wobbled",
+    "Tie up. Tie UP.",
+    "Walk him down",
+    "That's the chin tested",
+    "Body is cooked, head's next"
+   ],
+   "media": [
+    "{y} is badly hurt.",
+    "{x} has {y} in serious trouble.",
+    "{y} on unsteady legs.",
+    "{x} sensing the finish."
+   ],
+   "fan": [
+    "{y} legs on roller skates",
+    "STOP IT REF",
+    "{y} looking for his car keys out there",
+    "{x} cooking rn",
+    "{y} doing the {pop_meme} walk",
+    "legs = jello",
+    "ref watch closely",
+    "{x} smells blood",
+    "he's out on his feet bro",
+    "someone get {y} a {pop_food}"
+   ]
+  },
+  "ko": {
+   "fighter": [
+    "GOODNIGHT. Holy shit. Somebody check on {y}.",
+    "{x} just put his whole name on the map",
+    "Call me next {x}. Actually don't.",
+    "That's the sickest KO of the year and it's not close",
+    "GOODNIGHT",
+    "Lights. Out.",
+    "Wow.",
+    "That's a bonus",
+    "Put that one in the museum",
+    "Nah that's diabolical",
+    "I need to see that again",
+    "Somebody check his pulse",
+    "50 grand right there",
+    "Call an ambulance. But not for me.",
+    "Instant replay worthy",
+    "Damn I'm glad that wasn't me"
+   ],
+   "media": [
+    "{x} def. {y} via KO at {event}. Stunning.",
+    "WOW. {x} finishes {y}. Replay is disgusting.",
+    "Clip of {x}'s knockout already at 2M views.",
+    "{x} finishes {y} by KO.",
+    "KO OF THE NIGHT CONTENDER: {x}.",
+    "{x} stops {y}. Huge result.",
+    "Doctors attending to {y}, who is now sitting up.",
+    "{x}'s first KO in the organisation.",
+    "That's a highlight reel finish from {x}."
+   ],
+   "fan": [
+    "SLEEEEEEEEP",
+    "{y} is in the shadow realm",
+    "SOMEBODY CALL HIS MOM",
+    "I CANNOT BREATHE",
+    "that's going on my ceiling",
+    "{y}'s mouthpiece is in a different timezone",
+    "SLEEEEP",
+    "THAT'S THE CLIP OF THE YEAR",
+    "{y} is in the {pop_movie} universe now",
+    "UNCONSCIOUS",
+    "my neighbours heard me scream",
+    "i've watched that 40 times already",
+    "they gotta give {x} a title shot",
+    "{y} got sent to {pop_game} loading screen",
+    "certified human highlight",
+    "THIS IS WHY WE WATCH",
+    "{x} hits like {pop_athlete} with a grudge",
+    "rip {y}'s phone notifications tonight",
+    "DOWN GOES {Y}"
+   ]
+  },
+  "sub": {
+   "fighter": [
+    "That's tight. That's fucking tight.",
+    "TAP {Y} TAP",
+    "Jiu-jitsu is the gentle art of making grown men scream politely",
+    "Sunk",
+    "That's deep",
+    "Fight it fight it fight it",
+    "Hand fight, hand fight!",
+    "Squeeze!"
+   ],
+   "media": [
+    "{x} locked in a submission on {y}.",
+    "{x} hunting the finish on the ground.",
+    "{x} hunting the finish.",
+    "Submission attempt from {x}."
+   ],
+   "fan": [
+    "TAP TAP TAP",
+    "ARM IS GONE BRO",
+    "{y} turning purple",
+    "Blow Hogan is gonna lose his mind",
+    "SQUEEEEZE",
+    "{y} face turning {pop_brand} red",
+    "jiu jitsu baby",
+    "he's not tapping he's not tapping",
+    "this is {pop_movie} levels of tension",
+    "{x} is a python with a mortgage"
+   ]
+  },
+  "tap": {
+   "fighter": [
+    "{x} with the sub. Absolute killer on the mat.",
+    "Smart tap. Live to fight another day.",
+    "That's what happens when you sleep on the grappling",
+    "Jiu jitsu stays undefeated",
+    "Beautiful sub",
+    "Respect for tapping. No shame.",
+    "Black belt shit",
+    "Wrestle him, they said."
+   ],
+   "media": [
+    "{x} def. {y} via submission at {event}.",
+    "{y} taps. {x} gets the finish.",
+    "{x} via submission.",
+    "{y} taps. {x} gets the win.",
+    "Submission of the night contender from {x}."
+   ],
+   "fan": [
+    "HE TAPPED LMAOOOO",
+    "{y} tapped faster than my wifi",
+    "jiu jitsu stays undefeated",
+    "{x} is a fucking python",
+    "TAPPEDDDD",
+    "{y} tapped like he was ordering on {pop_app}",
+    "the arm was GONE",
+    "{x} gonna get that performance bonus",
+    "jiu jitsu is magic"
+   ]
+  },
+  "takedown": {
+   "fighter": [
+    "Wrestling. Boring as shit. Wins fights.",
+    "{x} said 'lay down' and {y} listened",
+    "Level change was disgusting",
+    "Wrestling is a cheat code",
+    "Get up {y}",
+    "Ground and pound time"
+   ],
+   "media": [
+    "{x} with a big takedown.",
+    "{x} takes it to the mat.",
+    "{x} completes a takedown.",
+    "{x} drags it to the mat."
+   ],
+   "fan": [
+    "ugh not the lay and pray",
+    "STAND THEM UP",
+    "{x} took him down like he owed him money",
+    "wrestlers are cheat codes",
+    "LAY AND PRAY INCOMING",
+    "booo stand em up",
+    "{x} took him down like {pop_athlete}",
+    "wrestlers always do this smh",
+    "GET UP"
+   ]
+  },
+  "blood": {
+   "fighter": [
+    "That cut is fucking nasty",
+    "Somebody get the doc in there",
+    "{y}'s face looks like a crime scene",
+    "Cut looks bad",
+    "That's gonna need stitches",
+    "Doc's gonna look at that"
+   ],
+   "media": [
+    "{y} is bleeding badly.",
+    "Doctor watching {y}'s cut closely.",
+    "Nasty cut on {y}.",
+    "Doctor checks {y} between rounds."
+   ],
+   "fan": [
+    "the canvas looks like a horror movie",
+    "{y} leaking like a juice box",
+    "BLOOD MONEY BABY",
+    "the mat looks like a {pop_movie} set",
+    "that's a lot of blood bro",
+    "{y} bleeding like a broken {pop_brand} pen",
+    "THE BLOOD MONEY ERA"
+   ]
+  },
+  "round": {
+   "fighter": [
+    "10-9 {x}. Easy.",
+    "Close round. Judges gonna fuck it up somehow.",
+    "{y} needs to wake the fuck up",
+    "Close round",
+    "10-9 {x} for me",
+    "{y} needs to pick it up",
+    "Lot of fight left",
+    "Gas tanks are gonna tell the story",
+    "Feels like {x} is in control"
+   ],
+   "media": [
+    "Our scorecard: 10-9 {x}.",
+    "Round goes to {x} for us. Close.",
+    "Round to {x} on our card.",
+    "Close round. Could go either way.",
+    "Strikes about even through this round."
+   ],
+   "fan": [
+    "10-9 {x} if the judges have eyes (they don't)",
+    "this fight is so good",
+    "i'm sweating and i'm not even in it",
+    "{y} needs to throw something lmao",
+    "10-9 {x}",
+    "robbery incoming i can feel it",
+    "this is better than {pop_show}",
+    "{y} gotta stop headhunting",
+    "cardio check next round",
+    "great round",
+    "i'm stressed",
+    "corner better be screaming at {y}"
+   ]
+  },
+  "lull": {
+   "fighter": [
+    "Come on boys. Somebody throw something.",
+    "This is a chess match. A really slow chess match.",
+    "Somebody throw",
+    "Feeling out round",
+    "Too much respect in there",
+    "Patience. Big shot coming."
+   ],
+   "media": [
+    "Measured pace so far.",
+    "Feeling-out process in this one.",
+    "Slow pace in the opening minutes.",
+    "Both fighters measuring distance."
+   ],
+   "fan": [
+    "boooooring",
+    "wake me up when someone gets hit",
+    "I came here for violence not a staring contest",
+    "kiss already",
+    "Blow Hogan about to start talking about elk",
+    "this is putting me to sleep",
+    "i came to see violence not {pop_show}",
+    "throw a punch PLEASE",
+    "refreshing {pop_app} while they stare at each other",
+    "kiss already",
+    "{x} {y} staring contest champions"
+   ]
+  },
+  "decision": {
+   "fighter": [
+    "Going to the cards. God help us.",
+    "Whoever's judging this better have glasses on",
+    "Judges please do your job",
+    "I got {x}",
+    "Gonna be close",
+    "Never leave it to the judges"
+   ],
+   "media": [
+    "This one goes to the judges.",
+    "Scores incoming.",
+    "To the scorecards.",
+    "We'll go to the judges."
+   ],
+   "fan": [
+    "please don't rob {x}",
+    "judges about to ruin my night",
+    "I swear if they give it to {y}",
+    "oh no the judges",
+    "please don't do it to us again",
+    "{x} won that clearly",
+    "this better not be another robbery"
+   ]
+  },
+  "robbery": {
+   "fighter": [
+    "ROBBERY. Absolute robbery. Those judges need to be investigated.",
+    "What fight were they watching?",
+    "Disgraceful. {y} won that and everyone knows it.",
+    "What fight were they watching??",
+    "Judging is a joke",
+    "Robbery. I said it.",
+    "That's crazy. That's actually crazy."
+   ],
+   "media": [
+    "Controversial decision at {event}. Fans furious.",
+    "That scorecard is going to be talked about for a while.",
+    "Split decision sparks outrage online.",
+    "Fans react to a controversial result."
+   ],
+   "fan": [
+    "DAYLIGHT ROBBERY",
+    "the judges are on the payroll i'm calling it",
+    "{promotion} rigged confirmed",
+    "I want my $79.99 back",
+    "ROBBERY OF THE CENTURY",
+    "the judges must be on {pop_app} during rounds",
+    "{promotion} is rigged confirmed",
+    "who paid the judges",
+    "i want my money back"
+   ]
+  }
+ },
+ "banter": {
+  "spark_open": [
+   "Funny how {opp} only got 'injured' after I asked for the fight.",
+   "Ranked above {opp} and I've never even been in my prime. Think about that.",
+   "{opp} trains like a guy who's never been hit. That changes soon.",
+   "Somebody tell {opp} the gym has lights. He's been training in the dark apparently.",
+   "{opp}'s cardio is a rumor. I'd like to confirm it.",
+   "Watched {opp}'s last fight. Then I took a nap. Same experience."
+  ],
+  "spark_reply": [
+   "Who?",
+   "Get a win over somebody with a pulse and come back to me.",
+   "Lmao you're ranked by a website, relax.",
+   "I've got shoes older than your career, {opp}.",
+   "Tag me when your name is on a poster. A real one. Not your mom's fridge.",
+   "Cute. Do you write these yourself or does your manager?"
+  ],
+  "heated_open": [
+   "{opp}, you've been running for a year. Sign the fucking contract.",
+   "Every time I say {opp}'s name his management gets a migraine. Sign it, coward.",
+   "I'm gonna make {opp} famous. For the replay.",
+   "{opp} blocked me. Unblock me and fight me, you soft bastard.",
+   "Saw {opp} at the airport. He walked the other way. Literally.",
+   "I'll fight {opp} in a parking lot for free. In the cage I want double."
+  ],
+  "heated_reply": [
+   "Keep my name out your mouth unless you're signing something.",
+   "You've been begging for this fight longer than your marriage lasted, {opp}.",
+   "{president} sends the contract, I sign it. You're the one stalling, bitch.",
+   "Bro tweets like he fights. All volume, no damage.",
+   "I'm gonna retire you and then go to your retirement party.",
+   "I'll see you soon. Wear a cup. For your ego."
+  ],
+  "heated_clap": [
+   "Ratio + you're gonna get folded.",
+   "Screenshotting this for after.",
+   "Lmao look at him typing with his chin. Nice chin, by the way. Very breakable."
+  ],
+  "nuclear_open": [
+   "I'm going to hurt {opp}. Not beat. Hurt. There's a difference and he knows it.",
+   "{opp}, I hope your cornermen bring a stretcher. Two, actually. One for your career.",
+   "Everything {opp} says is a lie except his record, and I'm about to change that too.",
+   "When this is over {opp} is going to need a translator to understand his own name.",
+   "I don't hate many people. I hate {opp}. Write that down."
+  ],
+  "nuclear_reply": [
+   "Fuck you. See you in the cage. That's the post.",
+   "Every word of this is getting printed and taped to my bag. Every. Word.",
+   "You won't survive the first round and you know it. Your coach knows it. Your mom knows it.",
+   "Keep talking. I want you exhausted by fight night.",
+   "I'm going to make you famous for the wrong reasons, {opp}."
+  ],
+  "booked_open": [
+   "{weeks} weeks. {opp} has {weeks} weeks left of being undefeated in his own head.",
+   "{event}. Me and {opp}. Cancel your plans, he already cancelled his.",
+   "Camp is done. {opp} is done. See you at {event}.",
+   "{weeks} weeks till I take everything {opp} thinks he owns.",
+   "Weight is perfect. Mind is perfect. {opp}'s face is about to be less perfect."
+  ],
+  "booked_reply": [
+   "Count it down, {opp}. I'm counting it down too. Different reasons.",
+   "See you at {event}. Bring a mouthpiece. Bring two.",
+   "You'll get your fight. Then you'll get your hospital bill.",
+   "Hope your camp included a lot of laying down. You'll need the practice.",
+   "Talk now. On fight night it's just me and you and your excuses."
+  ],
+  "after_win": [
+   "Told you. Told everybody. {opp} can log off now.",
+   "{opp} said a lot of things. Then I said one thing with my right hand.",
+   "Respect to {opp}. Just kidding. Lmao."
+  ],
+  "after_loss": [
+   "Run it back. Same weight, same cage, different ending.",
+   "Bad night. It happens. {opp} knows it was close. Or he doesn't, he's concussed.",
+   "Rematch. Name the date, {opp}. I'm not done with you."
   ]
  }
 }

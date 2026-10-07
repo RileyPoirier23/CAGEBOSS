@@ -1,0 +1,646 @@
+{
+ "note": "Real UFC rankings snapshot used to seed the game's parody rankings (Fighter Mode league + career). Compiled from public reporting, early October 2026; approximate - edit freely. 'parody' = marquee fighter id, null = no parody yet (needs one). UFC replaced media-panel rankings with an Elo model in June 2026, so P4P lists here come from media outlets.",
+ "asOf": "2026-10-06",
+ "divisions": {
+  "heavy": {
+   "champion": {
+    "real": "Tom Aspinall",
+    "parody": "tom_aspinall"
+   },
+   "ranked": [
+    {
+     "real": "Ciryl Gane",
+     "parody": "ciryl_gain"
+    },
+    {
+     "real": "Alexander Volkov",
+     "parody": null
+    },
+    {
+     "real": "Sergei Pavlovich",
+     "parody": null
+    },
+    {
+     "real": "Josh Hokit",
+     "parody": null
+    },
+    {
+     "real": "Curtis Blaydes",
+     "parody": "curtis_blades"
+    },
+    {
+     "real": "Waldo Cortes Acosta",
+     "parody": null
+    },
+    {
+     "real": "Rizvan Kuniev",
+     "parody": null
+    },
+    {
+     "real": "Vitor Petrino",
+     "parody": null
+    },
+    {
+     "real": "Serghei Spivac",
+     "parody": null
+    },
+    {
+     "real": "Ante Delija",
+     "parody": null
+    }
+   ]
+  },
+  "lightheavy": {
+   "champion": {
+    "real": "Carlos Ulberg",
+    "parody": null
+   },
+   "ranked": [
+    {
+     "real": "Magomed Ankalaev",
+     "parody": "magomed_ankleayev"
+    },
+    {
+     "real": "Jiri Prochazka",
+     "parody": "jiri_prochazkaboom"
+    },
+    {
+     "real": "Alex Pereira",
+     "parody": "alex_pereirrah"
+    },
+    {
+     "real": "Khalil Rountree Jr.",
+     "parody": null
+    },
+    {
+     "real": "Navajo Stirling",
+     "parody": null
+    },
+    {
+     "real": "Paulo Costa",
+     "parody": null
+    },
+    {
+     "real": "Jamahal Hill",
+     "parody": null
+    },
+    {
+     "real": "Azamat Murzakanov",
+     "parody": null
+    },
+    {
+     "real": "Jan Blachowicz",
+     "parody": null
+    },
+    {
+     "real": "Dominick Reyes",
+     "parody": null
+    }
+   ]
+  },
+  "middle": {
+   "champion": {
+    "real": "Sean Strickland",
+    "parody": "sean_strictlyland"
+   },
+   "ranked": [
+    {
+     "real": "Khamzat Chimaev",
+     "parody": "khamzat_chimaye"
+    },
+    {
+     "real": "Dricus du Plessis",
+     "parody": "drickus_dupleasey"
+    },
+    {
+     "real": "Nassourdine Imavov",
+     "parody": null
+    },
+    {
+     "real": "Brendan Allen",
+     "parody": null
+    },
+    {
+     "real": "Caio Borralho",
+     "parody": null
+    },
+    {
+     "real": "Joe Pyfer",
+     "parody": null
+    },
+    {
+     "real": "Gregory Rodrigues",
+     "parody": null
+    },
+    {
+     "real": "Anthony Hernandez",
+     "parody": null
+    },
+    {
+     "real": "Israel Adesanya",
+     "parody": "izzy_adesanyuh"
+    },
+    {
+     "real": "Christian Leroy Duncan",
+     "parody": null
+    }
+   ]
+  },
+  "welter": {
+   "champion": {
+    "real": "Islam Makhachev",
+    "parody": "islam_makeacheck"
+   },
+   "ranked": [
+    {
+     "real": "Ian Machado Garry",
+     "parody": null
+    },
+    {
+     "real": "Carlos Prates",
+     "parody": null
+    },
+    {
+     "real": "Michael Morales",
+     "parody": null
+    },
+    {
+     "real": "Jack Della Maddalena",
+     "parody": "jack_dellamadeleine"
+    },
+    {
+     "real": "Gabriel Bonfim",
+     "parody": null
+    },
+    {
+     "real": "Sean Brady",
+     "parody": null
+    },
+    {
+     "real": "Belal Muhammad",
+     "parody": "belal_muhammadad"
+    },
+    {
+     "real": "Leon Edwards",
+     "parody": "leon_edwardz"
+    },
+    {
+     "real": "Kamaru Usman",
+     "parody": "kamaru_usmansplain"
+    },
+    {
+     "real": "Joaquin Buckley",
+     "parody": null
+    }
+   ]
+  },
+  "light": {
+   "champion": {
+    "real": "Justin Gaethje",
+    "parody": "justin_gatchy"
+   },
+   "ranked": [
+    {
+     "real": "Ilia Topuria",
+     "parody": "ilia_topuria"
+    },
+    {
+     "real": "Arman Tsarukyan",
+     "parody": "arman_tsaryoucant"
+    },
+    {
+     "real": "Charles Oliveira",
+     "parody": "charles_olivegarden"
+    },
+    {
+     "real": "Max Holloway",
+     "parody": "mack_hollowday"
+    },
+    {
+     "real": "Paddy Pimblett",
+     "parody": "paddy_pimpblett"
+    },
+    {
+     "real": "Benoit Saint Denis",
+     "parody": null
+    },
+    {
+     "real": "Quillan Salkilld",
+     "parody": null
+    },
+    {
+     "real": "Mauricio Ruffy",
+     "parody": null
+    },
+    {
+     "real": "Salahdine Parnasse",
+     "parody": null
+    },
+    {
+     "real": "Mateusz Gamrot",
+     "parody": null
+    }
+   ]
+  },
+  "feather": {
+   "champion": {
+    "real": "Alexander Volkanovski",
+    "parody": "alex_volkannoski"
+   },
+   "ranked": [
+    {
+     "real": "Movsar Evloev",
+     "parody": null
+    },
+    {
+     "real": "Diego Lopes",
+     "parody": null
+    },
+    {
+     "real": "Lerone Murphy",
+     "parody": null
+    },
+    {
+     "real": "Aljamain Sterling",
+     "parody": "aljamain_sterlingsilver"
+    },
+    {
+     "real": "Jean Silva",
+     "parody": null
+    },
+    {
+     "real": "Yair Rodriguez",
+     "parody": null
+    },
+    {
+     "real": "Arnold Allen",
+     "parody": null
+    },
+    {
+     "real": "Youssef Zalal",
+     "parody": null
+    },
+    {
+     "real": "Kevin Vallejos",
+     "parody": null
+    },
+    {
+     "real": "Steve Garcia",
+     "parody": null
+    }
+   ]
+  },
+  "bantam": {
+   "champion": {
+    "real": "Petr Yan",
+    "parody": "petr_yawn"
+   },
+   "ranked": [
+    {
+     "real": "Merab Dvalishvili",
+     "parody": "merab_dvalichill"
+    },
+    {
+     "real": "Sean O'Malley",
+     "parody": "shawn_omallard"
+    },
+    {
+     "real": "Song Yadong",
+     "parody": null
+    },
+    {
+     "real": "Mario Bautista",
+     "parody": null
+    },
+    {
+     "real": "Umar Nurmagomedov",
+     "parody": null
+    },
+    {
+     "real": "Cory Sandhagen",
+     "parody": null
+    },
+    {
+     "real": "Aiemann Zahabi",
+     "parody": null
+    },
+    {
+     "real": "David Martinez",
+     "parody": null
+    },
+    {
+     "real": "Deiveson Figueiredo",
+     "parody": null
+    },
+    {
+     "real": "Marlon Vera",
+     "parody": null
+    }
+   ]
+  },
+  "fly": {
+   "champion": {
+    "real": "Joshua Van",
+    "parody": null
+   },
+   "ranked": [
+    {
+     "real": "Alexandre Pantoja",
+     "parody": "alexandre_panterajoe"
+    },
+    {
+     "real": "Manel Kape",
+     "parody": null
+    },
+    {
+     "real": "Brandon Royval",
+     "parody": null
+    },
+    {
+     "real": "Tatsuro Taira",
+     "parody": null
+    },
+    {
+     "real": "Kyoji Horiguchi",
+     "parody": null
+    },
+    {
+     "real": "Lone'er Kavanagh",
+     "parody": null
+    },
+    {
+     "real": "Asu Almabayev",
+     "parody": null
+    },
+    {
+     "real": "Brandon Moreno",
+     "parody": "brandon_morenot"
+    },
+    {
+     "real": "Amir Albazi",
+     "parody": null
+    },
+    {
+     "real": "Ramazan Temirov",
+     "parody": null
+    }
+   ]
+  },
+  "wbantam": {
+   "champion": {
+    "real": "Kayla Harrison",
+    "parody": "kayla_harrowson"
+   },
+   "ranked": [
+    {
+     "real": "Joselyne Edwards",
+     "parody": null
+    },
+    {
+     "real": "Norma Dumont",
+     "parody": null
+    },
+    {
+     "real": "Luana Santos",
+     "parody": null
+    },
+    {
+     "real": "Ailin Perez",
+     "parody": null
+    },
+    {
+     "real": "Julianna Pena",
+     "parody": "julianna_painya"
+    },
+    {
+     "real": "Yana Santos",
+     "parody": null
+    },
+    {
+     "real": "Jacqueline Cavalcanti",
+     "parody": null
+    },
+    {
+     "real": "Michelle Montague",
+     "parody": null
+    },
+    {
+     "real": "Melissa Croden",
+     "parody": null
+    },
+    {
+     "real": "Karol Rosa",
+     "parody": null
+    }
+   ]
+  },
+  "wfly": {
+   "champion": {
+    "real": "Valentina Shevchenko",
+    "parody": "valentina_shevchenkont"
+   },
+   "ranked": [
+    {
+     "real": "Natalia Silva",
+     "parody": null
+    },
+    {
+     "real": "Manon Fiorot",
+     "parody": null
+    },
+    {
+     "real": "Alexa Grasso",
+     "parody": null
+    },
+    {
+     "real": "Erin Blanchfield",
+     "parody": null
+    },
+    {
+     "real": "Zhang Weili",
+     "parody": "zhang_weileap"
+    },
+    {
+     "real": "Wang Cong",
+     "parody": null
+    },
+    {
+     "real": "Jasmine Jasudavicius",
+     "parody": null
+    },
+    {
+     "real": "Rose Namajunas",
+     "parody": "rose_namastejunas"
+    },
+    {
+     "real": "Maycee Barber",
+     "parody": null
+    },
+    {
+     "real": "Tracy Cortez",
+     "parody": null
+    }
+   ]
+  },
+  "wstraw": {
+   "champion": {
+    "real": "Mackenzie Dern",
+    "parody": null
+   },
+   "ranked": [
+    {
+     "real": "Zhang Weili",
+     "parody": "zhang_weileap"
+    },
+    {
+     "real": "Virna Jandiroba",
+     "parody": null
+    },
+    {
+     "real": "Tatiana Suarez",
+     "parody": null
+    },
+    {
+     "real": "Gillian Robertson",
+     "parody": null
+    },
+    {
+     "real": "Yan Xiaonan",
+     "parody": null
+    },
+    {
+     "real": "Fatima Kline",
+     "parody": null
+    },
+    {
+     "real": "Piera Rodriguez",
+     "parody": null
+    },
+    {
+     "real": "Denise Gomes",
+     "parody": null
+    },
+    {
+     "real": "Mizuki",
+     "parody": null
+    },
+    {
+     "real": "Alexia Thainara",
+     "parody": null
+    }
+   ]
+  }
+ },
+ "p4p": {
+  "men": [
+   {
+    "real": "Islam Makhachev",
+    "parody": "islam_makeacheck"
+   },
+   {
+    "real": "Alexander Volkanovski",
+    "parody": "alex_volkannoski"
+   },
+   {
+    "real": "Petr Yan",
+    "parody": "petr_yawn"
+   },
+   {
+    "real": "Justin Gaethje",
+    "parody": "justin_gatchy"
+   },
+   {
+    "real": "Ilia Topuria",
+    "parody": "ilia_topuria"
+   },
+   {
+    "real": "Tom Aspinall",
+    "parody": "tom_aspinall"
+   },
+   {
+    "real": "Sean Strickland",
+    "parody": "sean_strictlyland"
+   },
+   {
+    "real": "Joshua Van",
+    "parody": null
+   },
+   {
+    "real": "Merab Dvalishvili",
+    "parody": "merab_dvalichill"
+   },
+   {
+    "real": "Alex Pereira",
+    "parody": "alex_pereirrah"
+   },
+   {
+    "real": "Ciryl Gane",
+    "parody": "ciryl_gain"
+   },
+   {
+    "real": "Khamzat Chimaev",
+    "parody": "khamzat_chimaye"
+   },
+   {
+    "real": "Carlos Ulberg",
+    "parody": null
+   },
+   {
+    "real": "Arman Tsarukyan",
+    "parody": "arman_tsaryoucant"
+   },
+   {
+    "real": "Charles Oliveira",
+    "parody": "charles_olivegarden"
+   }
+  ],
+  "women": [
+   {
+    "real": "Valentina Shevchenko",
+    "parody": "valentina_shevchenkont"
+   },
+   {
+    "real": "Kayla Harrison",
+    "parody": "kayla_harrowson"
+   },
+   {
+    "real": "Zhang Weili",
+    "parody": "zhang_weileap"
+   },
+   {
+    "real": "Natalia Silva",
+    "parody": null
+   },
+   {
+    "real": "Mackenzie Dern",
+    "parody": null
+   },
+   {
+    "real": "Alexa Grasso",
+    "parody": null
+   },
+   {
+    "real": "Manon Fiorot",
+    "parody": null
+   },
+   {
+    "real": "Erin Blanchfield",
+    "parody": null
+   },
+   {
+    "real": "Tatiana Suarez",
+    "parody": null
+   },
+   {
+    "real": "Julianna Pena",
+    "parody": "julianna_painya"
+   }
+  ]
+ },
+ "interim": {
+  "heavy": {
+   "real": "Ciryl Gane",
+   "parody": "ciryl_gain"
+  }
+ }
+}

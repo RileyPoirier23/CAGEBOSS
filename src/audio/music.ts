@@ -157,9 +157,9 @@ export function onTrackChange(fn: (t: Track) => void): void {
 
 /** Browsers block audio until the first click/key; call this from that handler. */
 export function unlockMusic(): void {
-  if (unlocked) return;
   unlocked = true;
-  if (current && enabled && !muted) current.el.play().catch(() => {});
+  // retried on each early gesture: on touch screens the first pointerdown doesn't count yet
+  if (current && enabled && !muted && current.el.paused) current.el.play().catch(() => {});
 }
 
 export function configureMusic(opts: { enabled: boolean; muted: boolean; volume: number }): void {

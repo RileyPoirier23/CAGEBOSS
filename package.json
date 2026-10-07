@@ -1,7 +1,7 @@
 {
   "name": "cage-boss",
   "private": true,
-  "version": "0.2.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "CAGE BOSS - a satirical MMA-promoter management sim",
   "scripts": {
@@ -20,6 +20,13 @@
     "dist:win:nowine": "tsc --noEmit && vite build && electron-builder --win dir --x64 -c.win.signAndEditExecutable=false && node tools/stamp-exe.mjs \"release/win-unpacked/CAGE BOSS.exe\" build/icon.ico && electron-builder --win portable --x64 --prepackaged release/win-unpacked -c.win.signAndEditExecutable=false --publish never"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/ios": "^8.5.2",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4",
     "@types/node": "^26.6.4",
     "electron": "^44.5.1",
     "electron-builder": "^26.15.3",

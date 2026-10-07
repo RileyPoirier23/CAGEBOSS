@@ -4,6 +4,27 @@ lines bound to {x}/{y} roast the fight and the persona, never accuse anyone of c
 
 
 def install(add):
+    # ---------------------------------------------------------------- card slots (so nobody calls the co-main "the main event")
+    add('lon', 'open_comain',
+        "It's the co-main event here at {venue}. One more fight between us and the main event, and these two would like very much to steal its fucking thunder.",
+        "Our co-main event. {xf} and {yf}. The undercard is done, the stakes are up, and Blow has finished his second energy drink.",
+        "The co-main event of {event}. The fight before the fight, and frankly, Blow, sometimes the better one.")
+    add('lon', 'open_card',
+        "We're on the main card now. The pay-per-view is live, the money is real, and so is the violence.",
+        "Main card action at {venue}. {xf} against {yf}. Wallets are open, so are the wounds.",
+        "Welcome to everyone just joining us for the main card. You missed some blood. Here's some more.")
+    add('blow', 'open_comain',
+        "Co-main, baby! This is the one before the one, man. These dudes want the main event slot and they're gonna fucking fight for it!",
+        "I've been looking forward to this co-main all week, Lon. All week. I told my sauna about it.")
+    add('blow', 'open_card',
+        "Main card, man! Now we're cooking! Everything before this was the appetizer. This is the fucking steak!",
+        "We're on the main card! Pay-per-view money! Somebody's getting knocked into a new tax bracket!")
+    add('dc', 'open_comain',
+        "Co-main event, buddy! I'm so excited I put my sandwich down. Look. It's down. That's how serious this is.",
+        "{wn} texted me this morning: 'DC, co-main, let's go.' I said 'who is this?' Anyway, he's here.")
+    add('dc', 'open_card',
+        "Main card, baby! I changed my shirt for this. Not because of the fights. I spilled sauce. But also the fights.")
+
     # ---------------------------------------------------------------- Blow Hogan: swears like a sailor on DMT
     add('blow', 'hurt',
         "OH MY FUCKING GOD! {x} just got his SOUL knocked out of his body! Jamie, pull that up! Pull it up in slow motion!",

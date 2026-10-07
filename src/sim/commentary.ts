@@ -239,18 +239,24 @@ function line(c: Ctx, base: TickerLine | null, sp: string, sit: string, xi: numb
   };
 }
 
+/** Where a bout sits on the card, as an opener key: matches the MAIN / CO-MAIN / MAIN CARD / PRELIM labels. */
+export function slotKey(b: Bout): 'open_main' | 'open_comain' | 'open_card' | 'open_prelim' {
+  return b.position === 0 ? 'open_main' : b.position === 1 ? 'open_comain' : b.position < 5 ? 'open_card' : 'open_prelim';
+}
+
 /** Booth lines before the opening bell. */
 export function boothOpen(s: GameState, ev: FightEvent, bout: Bout, seed: number): TickerLine[] {
   const A = s.fighters[bout.a];
   const B = s.fighters[bout.b];
   if (!A || !B) return [];
   const c: Ctx = { s, ev, bout, A, B, rng: new Rng(seed), used: new Set(), booth: boothFor(s, ev, bout) };
-  const kind = bout.title ? 'open_title' : (bout.meeting ?? 1) > 1 ? 'open_rematch' : bout.position === 0 ? 'open_main' : 'open_prelim';
+  const slot = slotKey(bout);
+  const kind = bout.title ? 'open_title' : (bout.meeting ?? 1) > 1 ? 'open_rematch' : slot;
   const out: (TickerLine | null)[] = [];
   out.push(line(c, null, 'lon', kind, 0, 1));
   const color = c.booth.filter((x) => x === 'blow' || x === 'dc' || x === 'biscuit');
   const cs = c.rng.pick(color);
-  out.push(line(c, null, cs, kind === 'open_rematch' ? 'open_main' : kind, c.rng.int(0, 1), 1));
+  out.push(line(c, null, cs, kind === 'open_rematch' ? slot : kind, c.rng.int(0, 1), 1));
   if (c.booth.includes('dc') && c.rng.chance(0.6)) out.push(line(c, null, 'dc', 'texted', c.rng.int(0, 1), 1));
   if (bout.position <= 1 && c.rng.chance(0.7)) out.push(line(c, null, 'lon', 'controversy', c.rng.int(0, 1), 1));
   if ((A.parody === undefined ? false : A.id === 'bro_bones') || B.id === 'bro_bones') if (c.booth.includes('dc')) out.push(line(c, null, 'dc', 'bones', 0, 1));
@@ -358,12 +364,14 @@ export function butlerIntro(s: GameState, ev: FightEvent, bout: Bout, seed: numb
     const l = bget('juiced');
     if (l.length) out.push({ text: r.pick(l), stage: true });
   };
+  // only the actual main event gets "IT'S TIME" and "THE MAIN EVENT OF THE EVENING"
+  const slot = slotKey(bout);
   if (big) {
     if (bout.position === 0) say('its_time');
     if (r.chance(0.6)) stage();
-    say(bout.title ? 'open_title' : 'open_main');
+    say(bout.title ? 'open_title' : slot);
     if ((bout.meeting ?? 1) > 1) say('open_rematch');
-  } else say((bout.meeting ?? 1) > 1 ? 'open_rematch' : 'open_prelim');
+  } else say((bout.meeting ?? 1) > 1 ? 'open_rematch' : slot);
 
   const intro = (f: Fighter, idx: 0 | 1, first: boolean) => {
     const v: Record<string, string> = {

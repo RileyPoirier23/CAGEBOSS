@@ -13,8 +13,11 @@ import { PAL, shade } from '../../art/palette';
 import { W, H, text, button, box, ScrollBox, paper, clickable } from '../kit';
 import { PixelText } from '../text';
 import { fighterPortrait, reporterPortrait } from '../sprites';
-import { ArenaView, cornerView, RingCardWalk, AW, AH } from '../arena';
-import { boothOpen, commentate, butlerIntro, butlerDecision, butlerFinish, type AnnounceLine } from '../../sim/commentary';
+import { ArenaView, cornerView, RingCardWalk, preloadRingCards, AW, AH } from '../arena';
+import { BleetFeed } from '../bleetfeed';
+import { TaleOfTape } from '../taleoftape';
+import { bleetSituation, makeBleet } from '../../sim/bleets';
+import { boothOpen, commentate, butlerIntro, butlerDecision, butlerFinish, weighInWeight, type AnnounceLine } from '../../sim/commentary';
 import { runBout, applyBout, finalizeEvent, defaultBonuses, bonusAmount, autoFixCard, boutLabel, boutTitle, rematchTag, cardDraw, cardProblems } from '../../sim/events';
 import { resolveCardProblems } from '../replace';
 import { fireCategory } from '../../storylets/engine';
@@ -76,10 +79,16 @@ export class FightNightScene extends Scene {
     intro: AnnounceLine[]; introIdx: number; cer: AnnounceLine[]; cerIdx: number; cerWinner: -1 | 0 | 1; raised: boolean;
   } | null = null;
   private subtitle: Container | null = null;
+  private bleetFeed: BleetFeed | null = null;
+  private tape: TaleOfTape | null = null;
+  private tapeShown = false;
+  private bleetQueue: { at: number; sit: string; actor: 0 | 1 }[] = [];
+  private bleetClock = 0;
   private tickerBox: Container | null = null;
   private ctrlBar: Container | null = null;
   private bonusSel = new Set<string>();
   private presserView: PostFightPresser | null = null;
+  private prePresser: PostFightPresser | null = null;
   private recapView: NewsRecap | null = null;
   private pressersDone = 0;
 
@@ -171,6 +180,18 @@ export class FightNightScene extends Scene {
   /** Raised hands: pick a reporter, answer their question. */
   private presser(post: boolean): void {
     const s = this.g.state!;
+    if (!post) {
+      // fight-week presser: the same stage as the post-fight one, main and co-main at the table
+      const view = new PostFightPresser(this.g, this.ev, this.finSafe(), [], () => {
+        view.destroy({ children: true });
+        this.prePresser = null;
+        this.pressersDone++;
+        this.refresh();
+      }, 'pre');
+      this.prePresser = view;
+      this.root.addChild(view);
+      return;
+    }
     const reps = content().reporters.filter((x) => !s.media.reporters[x.id]?.banned);
     if (!reps.length) return this.afterPresser(post);
     const rng = new Rng(s.rng);
@@ -282,6 +303,7 @@ export class FightNightScene extends Scene {
       intro, introIdx: 0, cer: [], cerIdx: 0, cerWinner: -1, raised: false,
     };
     this.step = 'watch';
+    this.tapeShown = false;
     // walkout music: the red corner's song for the intro, straight into the fight if there's no intro
     setMusicContext(intro.length ? 'walkout' : 'fight', walkoutFor(b.a));
     this.refresh();
@@ -293,19 +315,32 @@ export class FightNightScene extends Scene {
     const p = this.playing!;
     const A = s.fighters[p.bout.a];
     const B = s.fighters[p.bout.b];
-    this.arena = new ArenaView(A, B, p.bout.rounds, { event: this.ev.name });
+    const champ = (id: string) => Object.values(s.belts).some((bt) => bt.holder === id);
+    this.arena = new ArenaView(A, B, p.bout.rounds, { event: this.ev.name, eventKey: this.ev.id, champs: [champ(A.id), champ(B.id)] });
     this.arena.position.set(0, 0);
     r.addChild(this.arena);
     this.arena.setMode(this.g.settings.fightCam ?? 'side');
     if (p.phase === 'intro') this.arena.startIntro();
     if (p.phase === 'ceremony') this.arena.startCeremony();
     // replay lines already shown
-    for (let i = 0; i < p.idx; i++) this.arena.cue(p.lines[i]);
+    for (let i = 0; i < p.idx; i++) this.arena.cue(p.lines[i], true);
+    this.arena.settle();
     if (p.phase === 'ceremony' && p.raised) this.arena.raiseHand(p.cerWinner);
     const sub = new Container();
     sub.position.set(0, AH - 34);
     r.addChild(sub);
     this.subtitle = sub;
+    // tale of the tape before the walkouts (once per fight)
+    if (p.phase === 'intro' && p.introIdx === 0 && !this.tapeShown) {
+      this.tapeShown = true;
+      this.tape = new TaleOfTape(A, B, AW, boutLabel(s, p.bout), weighInWeight(A, p.bout, 1), weighInWeight(B, p.bout, 2));
+      r.addChild(this.tape);
+    } else this.tape = null;
+    if (this.g.settings.bleets !== false) {
+      this.bleetFeed = new BleetFeed();
+      this.bleetFeed.position.set(AW - 146, 36);
+      r.addChild(this.bleetFeed);
+    } else this.bleetFeed = null;
     const tb = new Container();
     tb.position.set(0, AH);
     r.addChild(tb);
@@ -324,7 +359,8 @@ export class FightNightScene extends Scene {
     }
     if (p.phase === 'ringcard') {
       p.ringcard = new RingCardWalk((p.lines[p.idx - 1]?.round ?? 1) + 1);
-      r.addChild(p.ringcard);
+      this.arena!.restInCorners();
+      this.arena!.addBackdrop(p.ringcard);
     }
   }
 
@@ -343,6 +379,39 @@ export class FightNightScene extends Scene {
     if (!line.stage) sub.addChild(text('JUICED BUTLER', 16, 30 - h - 9, { small: true, color: PAL.gold, shadow: PAL.ink }));
     t.position.set(20, 30 - h + 4);
     sub.addChild(t);
+  }
+
+  /** Queue a reaction from the timeline a beat after something happens (real people type slowly). */
+  private queueBleet(sit: string, actor: 0 | 1, delay = 0.8 + Math.random() * 1.4): void {
+    if (!this.bleetFeed || this.bleetQueue.length > 3) return;
+    this.bleetQueue.push({ at: this.bleetClock + delay, sit, actor });
+  }
+
+  private reactToLine(line: TickerLine): void {
+    const p = this.playing;
+    if (!p || !this.bleetFeed) return;
+    const sit = bleetSituation(line);
+    if (!sit || Math.random() > sit.chance) return;
+    let actor: 0 | 1 = line.side === 1 ? 1 : 0;
+    if (sit.sit === 'round' || sit.sit === 'lull') actor = line.hp[0] >= line.hp[1] ? 0 : 1;
+    const res = p.bout.result;
+    if ((sit.sit === 'decision' || sit.sit === 'robbery') && res?.winner) actor = res.winner === p.bout.a ? 0 : 1;
+    this.queueBleet(sit.sit, actor);
+    // the big moments get a pile-on
+    if (['ko', 'tap', 'robbery', 'knockdown'].includes(sit.sit) && Math.random() < 0.7) this.queueBleet(sit.sit, actor, 2.6 + Math.random() * 1.5);
+  }
+
+  private tickBleets(dt: number): void {
+    const p = this.playing;
+    if (!this.bleetFeed || this.bleetFeed.destroyed || !p) return;
+    this.bleetClock += dt;
+    this.bleetFeed.update(dt);
+    const due = this.bleetQueue.filter((q) => q.at <= this.bleetClock);
+    this.bleetQueue = this.bleetQueue.filter((q) => q.at > this.bleetClock);
+    for (const q of due) {
+      const b = makeBleet(this.g.state!, this.ev, p.bout, q.sit, q.actor, new Rng((Math.random() * 1e9) | 0));
+      if (b) this.bleetFeed.push(b);
+    }
   }
 
   /** The button strip under the fight. Redrawn in place: rebuilding the scene mid-fight would reset the arena. */
@@ -420,6 +489,7 @@ export class FightNightScene extends Scene {
     p.timer = 0.8;
     this.arena?.startFight();
     this.say(null);
+    this.queueBleet('open', 0, 1.2);
     setMusicContext('fight');
     sfx('bell');
     this.refresh();
@@ -459,12 +529,22 @@ export class FightNightScene extends Scene {
 
   update(dt: number): void {
     if (this.step === 'presser' && this.presserView && !this.presserView.destroyed) this.presserView.update(dt);
+    if (this.prePresser && !this.prePresser.destroyed) this.prePresser.update(dt);
     if (this.step === 'recap' && this.recapView && !this.recapView.destroyed) this.recapView.update(dt);
     const p = this.playing;
     if (this.step !== 'watch' || !p || !this.arena || this.arena.destroyed) return;
     const speed = [1, 0.6, 1, 2, 4][this.g.settings.fightSpeed] ?? 1;
+    this.arena.pace = Math.max(1, Math.min(2, speed));
     this.arena.update(dt);
+    if (!p.paused) this.tickBleets(dt * Math.min(2, speed));
     if (p.paused || this.g.modals.length) return;
+    if (this.tape && !this.tape.destroyed) {
+      // the tale of the tape holds the walkouts until it's done
+      if (!this.tape.update(dt)) {
+        this.tape.destroy({ children: true });
+        this.tape = null;
+      } else if (p.phase === 'intro') return;
+    }
     if (p.phase === 'intro') {
       p.timer -= dt * Math.min(2, speed);
       if (p.timer > 0) return;
@@ -507,7 +587,8 @@ export class FightNightScene extends Scene {
         p.corner = null;
         const nextRound = (p.lines[p.idx - 1]?.round ?? 1) + 1;
         p.ringcard = new RingCardWalk(nextRound);
-        this.root.addChild(p.ringcard);
+        this.arena.restInCorners();
+        this.arena.addBackdrop(p.ringcard);
         p.phase = 'ringcard';
       }
       return;
@@ -522,6 +603,8 @@ export class FightNightScene extends Scene {
       return;
     }
     if (p.phase === 'end') return;
+    // the arena holds the next line while the fighters walk out or close the distance for an exchange
+    if (this.arena.busy()) return;
     p.timer -= dt * speed;
     if (p.timer > 0) return;
     if (p.idx >= p.lines.length) {
@@ -533,6 +616,7 @@ export class FightNightScene extends Scene {
     }
     const line = p.lines[p.idx++];
     this.arena.cue(line);
+    this.reactToLine(line);
     this.drawTicker();
     p.timer = line.speaker ? 0.9 + line.text.length / 55 : line.intensity >= 3 ? 1.6 : line.act === 'bell' ? 0.9 : 0.95;
     // round ended: corners cutaway (after the booth has had its say)
@@ -544,7 +628,15 @@ export class FightNightScene extends Scene {
       this.drawTicker();
       const reps = (p.bout.result?.corners ?? []).filter((c) => c.round === line.round);
       if (reps.length) {
-        p.corner = cornerView(this.g.state!.fighters[p.bout.a], this.g.state!.fighters[p.bout.b], reps, line.round);
+        // round stats for the broadcast strip, counted from this round's action
+        const rl = p.lines.filter((l) => !l.speaker && l.round === line.round);
+        const count = (re: RegExp, side: 0 | 1) => rl.filter((l) => l.side === side && re.test(l.key ?? '')).length;
+        const stats = {
+          sig: [count(/^(land_|ko_|tko_|gnp|knockdown|rocked)/, 0), count(/^(land_|ko_|tko_|gnp|knockdown|rocked)/, 1)] as [number, number],
+          td: [count(/^takedown$/, 0), count(/^takedown$/, 1)] as [number, number],
+          kd: [count(/^knockdown$/, 0), count(/^knockdown$/, 1)] as [number, number],
+        };
+        p.corner = cornerView(this.g.state!.fighters[p.bout.a], this.g.state!.fighters[p.bout.b], reps, line.round, stats);
         this.root.addChild(p.corner);
         p.phase = 'corner';
         p.phaseT = 4.5;

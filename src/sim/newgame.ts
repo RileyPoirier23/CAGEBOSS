@@ -35,6 +35,7 @@ export const DEFAULT_SANDBOX: SandboxOptions = {
   noOwner: false,
   infinite: false,
   allLegends: false,
+  realRoster: true,
   dreamMatches: false,
   godMode: false,
 };
@@ -167,6 +168,14 @@ export function createNewGame(opts: NewGameOpts): GameState {
   // a couple of marquee characters start with us in act 1 (cheap & early in their arcs)
   const earlyMarquee = Object.values(s.fighters).filter((f) => f.marquee && f.status === 'free-agent' && ((f as any).startWith === 'us'));
   ours.push(...earlyMarquee);
+  // sandbox: every real-fighter parody on your roster (their divisions open with them)
+  if (sb?.realRoster) {
+    for (const f of Object.values(s.fighters)) {
+      if (!f.marquee || !f.parody || f.legend || (f.status !== 'free-agent' && f.status !== 'prospect') || ours.includes(f)) continue;
+      ours.push(f);
+      if (!s.divisionsOpen.includes(f.division)) s.divisionsOpen.push(f.division);
+    }
+  }
   for (const f of ours) {
     sign(s, f, makeContract(s, f, rng));
     f.scout = 1;

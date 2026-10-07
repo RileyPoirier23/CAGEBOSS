@@ -5,14 +5,15 @@
  * spotlights, sweat/blood/impact particles, HP bars and the round clock.
  * Also: the between-round corner cutaway and the ring-card walk.
  */
-import { Container, Graphics } from 'pixi.js';
+import { Assets, Container, Graphics, Sprite, type Texture } from 'pixi.js';
 import type { Fighter, TickerLine, CornerReport } from '../core/types';
 import { PAL, shade, lerpColor } from '../art/palette';
 import { text } from './kit';
 import { PixelText, pixelArtResolution } from './text';
 import { portrait } from './sprites';
 import { sfx } from '../audio/sfx';
-import { Rig, Pose, POSES, drawRig, lerpRig, lookFor, stanceGuard, Look2 } from './rig';
+import { heightStr } from '../core/format';
+import { Rig, Pose, POSES, drawRig, lerpRig, mirrorRig, lookFor, stanceGuard, Look2 } from './rig';
 
 export const AW = 480;
 export const AH = 150;
@@ -39,9 +40,70 @@ interface FState {
   lunge: number;
   recoil: number;
   facing: 1 | -1;
+  /** footwork: velocity, distance travelled (drives the stepping), preferred range offset */
+  v?: number;
+  dist?: number;
+  foot?: number;
+  footT?: number;
+  /** head snap after taking a shot (decays) */
+  snap?: number;
 }
 
+/** Blood on the canvas lasts the whole event; a new event gets a fresh mat. */
+const MAT = { key: '', stains: [] as { x: number; y: number; r: number; c: number }[] };
+
 export type CamMode = 'side' | 'tv' | 'top';
+
+/** Poses where the fighter is on his back, so his face points at the lights. */
+const SUPINE = new Set(['gBot', 'mBot', 'sBot', 'abVic', 'atriVic', 'kimVic', 'legVic', 'guilAtk', 'triAtk', 'abAtk', 'legAtk', 'bottom', 'bottomSub', 'ko', 'down']);
+
+type GroundSpot = 'guard' | 'mount' | 'side' | 'back';
+type SubKind = 'rnc' | 'guil' | 'tri' | 'ab' | 'atri' | 'kim' | 'leg';
+
+/** Pose pairs per position: [top/attacker, bottom/victim, punch variant, who is drawn last]. */
+const SPOTS: Record<GroundSpot, { a: Pose; d: Pose; punch: Pose; front: 'a' | 'd' }> = {
+  guard: { a: 'gTop', d: 'gBot', punch: 'gTopPunch', front: 'a' },
+  mount: { a: 'mTop', d: 'mBot', punch: 'mTopPunch', front: 'a' },
+  side: { a: 'sTop', d: 'sBot', punch: 'sTopPunch', front: 'a' },
+  back: { a: 'bkTop', d: 'bkBot', punch: 'bkTopPunch', front: 'd' },
+};
+const SUBS: Record<SubKind, { a: Pose; d: Pose; front: 'a' | 'd' }> = {
+  rnc: { a: 'rncAtk', d: 'rncVic', front: 'd' },
+  guil: { a: 'guilAtk', d: 'guilVic', front: 'a' },
+  tri: { a: 'triAtk', d: 'triVic', front: 'a' },
+  ab: { a: 'abAtk', d: 'abVic', front: 'a' },
+  atri: { a: 'atriAtk', d: 'atriVic', front: 'a' },
+  kim: { a: 'kimAtk', d: 'kimVic', front: 'a' },
+  leg: { a: 'legAtk', d: 'legVic', front: 'a' },
+};
+
+/** Read the hold out of the ticker line; fall back on what makes sense from where the attacker is. */
+function subKindFor(text: string, attackerOnTop: boolean): SubKind {
+  const t = text.toLowerCase();
+  if (/rear-naked|twister|von flue/.test(t)) return 'rnc';
+  if (/guillotine|anaconda|d'arce|ezekiel/.test(t)) return attackerOnTop ? 'atri' : 'guil';
+  if (/triangle choke|gogoplata/.test(t)) return 'tri';
+  if (/arm-triangle|north-south/.test(t)) return 'atri';
+  if (/armbar/.test(t)) return 'ab';
+  if (/kimura|americana/.test(t)) return 'kim';
+  if (/heel hook|kneebar|calf slicer|toe hold|banana split|suloev/.test(t)) return 'leg';
+  return attackerOnTop ? 'atri' : 'tri';
+}
+
+/** Where the TV info card sits during walkout intros (under the event name and LIVE bug). */
+const TV_TOP_Y = 36;
+/** Half the distance between the two when they touch gloves (lead arms out, gloves just meeting). */
+const TOUCH_GAP = 27;
+/** Corner stools (x) for each side. */
+const CORNERS = [CAGE_L + 26, CAGE_R - 26];
+/**
+ * Feet-to-feet distance an attack needs to land (guard pose reach + lunge into the man's face or body).
+ * Further apart than this and the attacker steps in before the line plays.
+ */
+const REACH: Record<string, number> = {
+  jab: 50, cross: 46, punch: 46, kd: 46, ko: 48, tko: 46, foul: 44, elbow: 38, knee: 36,
+  legkick: 48, kick: 50, headkick: 52, td: 46, sprawl: 46, clinch: 36, sub: 28,
+};
 type ArenaScene = 'intro' | 'fight' | 'ceremony';
 
 interface Actor {
@@ -57,11 +119,15 @@ interface Actor {
 
 const REF_LOOK: Look2 = {
   skin: 0x8d5a3b, hairStyle: 0, hairColor: 0x1a1412, beard: 2, build: 1, trunks: 0x111111, trim: 0x111111, glove: 0x2a5aa8,
-  stance: 'upright', female: false, tattoo: 0, outfit: { top: 0x1a1a1e, bottom: 0x22222a, bulk: 0 },
+  stance: 'upright', female: false, tattoo: 0,
+  // referee kit: black short-sleeve collared shirt, black slacks, blue exam gloves, plain badge
+  outfit: { top: 0x141418, bottom: 0x1c1c22, bulk: 0, shortSleeves: true, hands: 0x4a7ad8, patch: 0xd8d8d8 },
 };
 const BUTLER_LOOK: Look2 = {
-  skin: 0xe0b48c, hairStyle: 0, hairColor: 0x2a2020, beard: 0, build: 2, trunks: 0x111111, trim: 0x111111, glove: 0xe0b48c,
-  stance: 'upright', female: false, tattoo: 0, outfit: { top: 0x15151a, bottom: 0x15151a, shirt: 0xf2efe6, tie: 0x8e2f2f, bulk: 4, mic: true },
+  // the legend: deep tan, silver hair slicked back, black tux, black bow tie, built like a fridge
+  skin: 0xc98d5e, hairStyle: 2, hairColor: 0xc8c4bc, beard: 0, build: 3, trunks: 0x111111, trim: 0x111111, glove: 0xc98d5e,
+  stance: 'upright', female: false, tattoo: 0, brows: 1,
+  outfit: { top: 0x101014, bottom: 0x101014, shirt: 0xf6f3ea, tie: 0x0a0a0c, bulk: 4, mic: true },
 };
 
 // top-down octagon geometry
@@ -80,6 +146,10 @@ export class ArenaView extends Container {
   private front = new Graphics();
   private top = new Graphics();
   private topFx = new Graphics();
+  private topLogo = new Sprite();
+  private topStain = new Graphics();
+  private topLight = new Graphics();
+  private topStainsDrawn = -1;
   private topWorld = new Container();
   private hud = new Container();
   private hudG = new Graphics();
@@ -115,6 +185,39 @@ export class ArenaView extends Container {
   shakeT = 0;
   round = 1;
   sec = 0;
+  private lowerTop = false;
+  private tdT = 0;
+  private tdAtk: 0 | 1 = 0;
+  private stainG = new Graphics();
+  private stainsDrawn = -1;
+  private matLogo = new Sprite();
+  /** walking out of the corners to meet in the middle: no exchanges until they get there */
+  private walkIn = false;
+  private walkT = 0;
+  /** the bell went: both men walk back to their corners */
+  private roundOver = false;
+  /** before the opening bell: everyone stays where they are (corners, or the walkout spots) */
+  private prefight = true;
+  /** the referee is busy (separating, checking a downed man): he holds his spot */
+  private refHold = 0;
+  /** fight-speed setting (1 = normal): walk-outs, glove touches and the walk back to the corners hurry up with it */
+  pace = 1;
+  /** lines waiting for the fighters to be in range; the attacker steps in to close the gap first */
+  private held: TickerLine[] = [];
+  private engage: { atk: 0 | 1; reach: number; t: number } | null = null;
+  /** where the pair went down: ground work stays on that patch of canvas instead of sliding around */
+  private groundX = AW / 2;
+  private slowTag!: PixelText;
+  private touchT = 0; // round 1: ref brings them together, they touch gloves
+  private slowT = 0; // slow motion after knockdowns / knockouts
+  private clapped = new Set<number>();
+  private resting = false;
+  private drawPose: [string, string] = ['guard', 'guard'];
+  // grappling: which position we're in, and which submission is being cranked (attacker side)
+  private groundPos: GroundSpot = 'guard';
+  private subAnim: { kind: SubKind; atk: 0 | 1; t: number; tapped: boolean } | null = null;
+  private gnpT = 0;
+  private lowerCorner: 0 | 1 = 0;
   calloutT = 0;
   ground: 'stand' | 'clinch' | 'atop' | 'btop' = 'stand';
   winnerSide = -1;
@@ -124,19 +227,41 @@ export class ArenaView extends Container {
     public A: Fighter,
     public B: Fighter,
     public rounds: number,
-    private info: { network?: string; event?: string; promo?: string } = {},
+    private info: { network?: string; event?: string; promo?: string; champs?: [boolean, boolean]; eventKey?: string } = {},
   ) {
     super();
-    this.L = [lookFor(A, 0), lookFor(B, 1)];
+    const key = info.eventKey ?? info.event ?? '';
+    if (MAT.key !== key) {
+      MAT.key = key;
+      MAT.stains = [];
+    }
+    this.L = [lookFor(A, 0, info.champs?.[0]), lookFor(B, 1, info.champs?.[1])];
     this.F = [
-      { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: AW / 2 - 24, lunge: 0, recoil: 0, facing: 1 },
-      { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: AW / 2 + 24, lunge: 0, recoil: 0, facing: -1 },
+      { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: CORNERS[0], lunge: 0, recoil: 0, facing: 1 },
+      { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: CORNERS[1], lunge: 0, recoil: 0, facing: -1 },
     ];
     this.ref = { rig: { ...POSES.stand }, pose: 'stand', x: AW / 2 + 70, tx: AW / 2 + 70, facing: -1, look: REF_LOOK, visible: true, spin: 0 };
     this.butler = { rig: { ...POSES.mic }, pose: 'mic', x: AW / 2, tx: AW / 2, facing: 1, look: BUTLER_LOOK, visible: false, spin: 0 };
-    this.worldInner.addChild(this.bg, this.crowd, this.lights, this.fighters, this.fx, this.front);
+    this.worldInner.addChild(this.bg, this.matLogo, this.stainG, this.crowd, this.lights, this.fighters, this.fx, this.front);
+    // the promotion's logo painted on the canvas, squashed into the floor's perspective
+    Assets.load(`${import.meta.env.BASE_URL}mat-logo.png`).then((tex: Texture) => {
+      if (this.destroyed) return;
+      this.matLogo.texture = tex;
+      this.matLogo.anchor.set(0.5);
+      this.matLogo.scale.set(0.42, 0.075);
+      this.matLogo.position.set(AW / 2, FLOOR + 1);
+      this.matLogo.alpha = 0.8;
+    }).catch(() => {});
     this.world.addChild(this.worldInner);
-    this.topWorld.addChild(this.top, this.topFx);
+    this.topWorld.addChild(this.top, this.topLogo, this.topStain, this.topFx, this.topLight);
+    Assets.load(`${import.meta.env.BASE_URL}mat-logo.png`).then((tex: Texture) => {
+      if (this.destroyed) return;
+      this.topLogo.texture = tex;
+      this.topLogo.anchor.set(0.5);
+      this.topLogo.scale.set(0.2);
+      this.topLogo.position.set(TCX, TCY);
+      this.topLogo.alpha = 0.55;
+    }).catch(() => {});
     this.addChild(this.world, this.topWorld, this.topLabels, this.hudG, this.hud, this.tv);
     // pixel-art look: the arena renders into a low-res buffer (no anti-aliasing)
     const res = pixelArtResolution();
@@ -149,6 +274,9 @@ export class ArenaView extends Container {
     this.clock = text('R1 5:00', 0, 3, { width: AW, align: 'center', color: PAL.gold });
     this.callout = text('', 0, 46, { width: AW, align: 'center', color: PAL.gold, scale: 2, shadow: PAL.ink });
     this.hud.addChild(this.clock, this.callout);
+    this.slowTag = text('SLOW MO', AW - 58, AH - 8, { small: true, color: 0xffffff });
+    this.slowTag.visible = false;
+    this.hud.addChild(this.slowTag);
     // TV graphics
     this.tv.addChild(this.tvG);
     this.tvTag = text('● LIVE', AW - 50, 26, { small: true, color: 0xffffff });
@@ -185,28 +313,56 @@ export class ArenaView extends Container {
     }
     // big screens
     g.rect(150, 1, 60, 8).fill(0x0e1420).rect(270, 1, 60, 8).fill(0x0e1420);
-    // the canvas (mat) in perspective
-    g.poly([CAGE_L - 20, FLOOR + 14, CAGE_R + 20, FLOOR + 14, CAGE_R - 4, FLOOR - 10, CAGE_L + 4, FLOOR - 10]).fill(0xc9c3b6);
-    g.poly([CAGE_L - 20, FLOOR + 14, CAGE_R + 20, FLOOR + 14, AW, AH, 0, AH]).fill(0x1a1416);
-    // mat logo & centre circle
-    g.ellipse(AW / 2, FLOOR + 2, 70, 9).stroke({ color: 0xa83232, width: 2, alpha: 0.6 });
-    g.ellipse(AW / 2, FLOOR + 2, 40, 5).fill({ color: 0xa83232, alpha: 0.25 });
-    // sponsor decals on the mat
-    g.rect(80, FLOOR + 6, 40, 4).fill({ color: 0x2a4a86, alpha: 0.35 });
-    g.rect(360, FLOOR + 6, 40, 4).fill({ color: 0x2a4a86, alpha: 0.35 });
-    // back fence: posts + chain-link mesh
-    const top = 46;
-    g.rect(CAGE_L, top, CAGE_R - CAGE_L, 3).fill(0x2a2a30);
-    g.rect(CAGE_L, FLOOR - 12, CAGE_R - CAGE_L, 3).fill(0x1d1d22);
-    for (let x = CAGE_L; x <= CAGE_R; x += 82) {
-      g.rect(x - 2, top - 2, 5, FLOOR - top - 8).fill(0x111114);
-      g.rect(x - 3, top - 4, 7, 4).fill(0x3a3a42);
+    // ---- the octagon in perspective: canvas, apron, eight fence panels
+    const cx = AW / 2;
+    const cy = FLOOR + 1;
+    const oct = (R: number, r: number, lift = 0): [number, number][] =>
+      Array.from({ length: 8 }, (_, k) => {
+        const a = ((22.5 + k * 45) * Math.PI) / 180;
+        return [cx + Math.cos(a) * R, cy + Math.sin(a) * r - lift] as [number, number];
+      });
+    const floor = oct(232, 17);
+    const apron = oct(246, 22);
+    g.poly(apron.flat()).fill(0x141015);
+    g.poly(floor.flat()).fill(0xcfc8b9);
+    g.poly(floor.flat()).stroke({ color: 0x8a8274, width: 1 }); // canvas edge
+    // canvas wear and the centre logo
+    g.poly(oct(150, 10).flat()).fill({ color: 0xbdb5a5, alpha: 0.35 });
+    g.ellipse(cx, cy + 1, 70, 8).stroke({ color: 0xa83232, width: 2, alpha: 0.6 });
+    g.ellipse(cx, cy + 1, 40, 4.5).fill({ color: 0xa83232, alpha: 0.25 });
+    g.rect(cx - 150, cy + 6, 40, 3).fill({ color: 0x2a4a86, alpha: 0.35 });
+    g.rect(cx + 110, cy + 6, 40, 3).fill({ color: 0x2a4a86, alpha: 0.35 });
+    // fence: the back five panels, each rising from the floor edge
+    const H = 86;
+    const back = [3, 4, 5, 6, 7, 0].map((k) => floor[k]); // left-front .. back .. right-front, round the far side
+    for (let k = 0; k < back.length - 1; k++) {
+      const [x0, y0] = back[k];
+      const [x1, y1] = back[k + 1];
+      if (y0 > cy + 6 && y1 > cy + 6) continue; // front panels are drawn over the fighters
+      const far = 1 - Math.min(1, Math.max(0, (Math.min(y0, y1) - (cy - 17)) / 34)); // further panels are darker
+      const panel: number[] = [x0, y0 - 10, x1, y1 - 10, x1, y1 - H, x0, y0 - H];
+      // alternate the facets' tone so the eight sides read as an octagon
+      const facet = k % 2 === 0 ? 0x221f2a : 0x15131a;
+      g.poly(panel).fill({ color: lerpColor(facet, 0x0d0b10, far * 0.5), alpha: 0.96 });
+      // chain-link diamonds
+      const steps = Math.max(2, Math.round(Math.abs(x1 - x0) / 4));
+      for (let yy = 0; yy < H - 12; yy += 4) {
+        for (let i = 0; i < steps; i++) {
+          const t = (i + (yy % 8 ? 0.5 : 0)) / steps;
+          const px = x0 + (x1 - x0) * t;
+          const py = y0 + (y1 - y0) * t - 12 - yy;
+          g.rect(Math.round(px), Math.round(py), 1, 1).fill(far > 0.5 ? 0x34343c : 0x4a4a54);
+        }
+      }
+      g.moveTo(x0, y0 - H).lineTo(x1, y1 - H).stroke({ color: 0x8a1e1e, width: 3 }); // padded top rail
+      g.moveTo(x0, y0 - 10).lineTo(x1, y1 - 10).stroke({ color: 0x1d1d22, width: 3 }); // bottom pad
     }
-    for (let y = top + 3; y < FLOOR - 12; y += 4) {
-      for (let x = CAGE_L + ((y >> 2) % 2) * 2; x < CAGE_R; x += 4) g.rect(x, y, 1, 1).fill(0x44444e);
+    // posts at the corners of the back panels
+    for (const [x, y] of back) {
+      if (y > cy + 6) continue;
+      g.rect(x - 2, y - H - 3, 5, H - 6).fill(0x0e0e11);
+      g.rect(x - 3, y - H - 5, 7, 4).fill(0x3a3a42);
     }
-    // padding on top rail
-    g.rect(CAGE_L, top - 1, CAGE_R - CAGE_L, 2).fill(0x8a1e1e);
   }
 
   private drawCrowd(): void {
@@ -236,6 +392,26 @@ export class ArenaView extends Container {
     const l = this.lights;
     l.clear();
     l.poly([AW / 2 - 30, 16, AW / 2 + 30, 16, AW / 2 + 150, FLOOR, AW / 2 - 150, FLOOR]).fill({ color: 0xfff2d0, alpha: 0.05 + this.intensity * 0.01 });
+    // moving heads: four coloured beams sweeping the cage, wilder for walkouts and big moments
+    const hype = this.scene === 'intro' ? 1 : this.intensity >= 3 ? 0.8 : this.scene === 'ceremony' ? 0.7 : 0.25;
+    const beamCols = [0x3a7aff, 0xff3a4a, 0xffffff, 0xb04aff];
+    for (let b = 0; b < 4; b++) {
+      const ox = 60 + b * 120;
+      const sweep = Math.sin(this.t * (0.7 + b * 0.23) + b * 1.7) * (90 + hype * 60);
+      const tx = ox + sweep;
+      const col = this.scene === 'intro' ? beamCols[(b + Math.floor(this.t * 1.5)) % 4] : beamCols[b];
+      l.poly([ox - 2, 14, ox + 2, 14, tx + 22, FLOOR + 6, tx - 22, FLOOR + 6]).fill({ color: col, alpha: 0.035 + hype * 0.05 });
+      l.ellipse(tx, FLOOR + 4, 22, 3).fill({ color: col, alpha: 0.05 + hype * 0.07 });
+    }
+    // LED strip along the top of the back fence: a chase that speeds up with the crowd
+    const rail = 236;
+    for (let i = 0; i < 46; i++) {
+      const x = AW / 2 - rail + 22 + i * 9.8;
+      const on = (i + Math.floor(this.t * (4 + this.intensity * 3))) % 6 < 2;
+      l.rect(Math.round(x), FLOOR - 88 + Math.round(Math.abs(x - AW / 2) / 30), 3, 1).fill({ color: on ? (this.intensity >= 3 ? 0xff4040 : 0xffd27a) : 0x3a2a20, alpha: on ? 0.9 : 0.5 });
+    }
+    // strobe on knockdowns and finishes
+    if (this.flash > 0.05) l.rect(0, 0, AW, AH).fill({ color: 0xffffff, alpha: Math.min(0.18, this.flash * 0.6) });
     l.ellipse(AW / 2 + this.drift, FLOOR + 1, 110, 10).fill({ color: 0xfff2d0, alpha: 0.08 });
     if (this.scene === 'intro') {
       const fx = this.introFocus < 0 ? this.butler.x : this.F[this.introFocus as 0 | 1].x;
@@ -337,6 +513,7 @@ export class ArenaView extends Container {
     if (b.facing !== want) b.spin = 0.35;
     b.facing = want as 1 | -1;
     this.setActor(b, /!!!$/.test(line) ? 'point' : 'mic');
+    if (this.introFocus !== corner && this.mode === 'tv') this.lowerThird(corner);
     this.introFocus = corner;
     if (/!!!$/.test(line)) {
       this.F[corner].pose = 'taunt';
@@ -397,15 +574,32 @@ export class ArenaView extends Container {
     if (this.mode === 'tv') this.lowerThird(w, 'WINNER');
   }
 
+  /** Send the referee somewhere with a job to do (he stops circling for a moment). */
+  private refTo(x: number, hold = 1.6): void {
+    this.ref.tx = x;
+    this.refHold = hold;
+  }
+
   private setActor(a: Actor, p: Pose): void {
     a.pose = p;
   }
 
   private lowerThird(i: 0 | 1, tag?: string): void {
     const f = i === 0 ? this.A : this.B;
+    this.lowerCorner = i;
+    // during the walkout intros the card sits at the top so it never fights the subtitles
+    const top = this.scene === 'intro';
+    const y = top ? TV_TOP_Y : AH - 30;
+    this.tvLower.position.set(18, y + 3);
+    this.tvLower2.position.set(18, y + 14);
     this.tvLower.setText(`${tag ? tag + ': ' : ''}${f.first} ${f.nick ? `"${f.nick}" ` : ''}${f.last}`.toUpperCase());
-    this.tvLower2.setText(`${f.record.w}-${f.record.l}${f.record.d ? '-' + f.record.d : ''}  •  ${f.hometown.split('|')[0]}, ${f.country}  •  ${f.gym}`);
-    this.lowerT = 3.2;
+    this.tvLower2.setText(
+      top
+        ? `${f.record.w}-${f.record.l}${f.record.d ? '-' + f.record.d : ''}  •  ${heightStr(f.height)}  •  ${f.hometown.split('|')[0]}, ${f.country}  •  ${f.gym}`
+        : `${f.record.w}-${f.record.l}${f.record.d ? '-' + f.record.d : ''}  •  ${f.hometown.split('|')[0]}, ${f.country}  •  ${f.gym}`,
+    );
+    this.lowerTop = top;
+    this.lowerT = top ? 4.5 : 3.2;
   }
 
   // ------------------------------------------------------------ cues
@@ -432,6 +626,19 @@ export class ArenaView extends Container {
     const def = (1 - attacker) as 0 | 1;
     this.F[attacker].lunge = 7;
     this.F[def].recoil = big ? 9 : 5;
+    // the man who got hit reacts: head snaps, he's knocked back a step, body shots fold him,
+    // big ones buckle the knees
+    const D = this.F[def];
+    const head = joint !== 'ftB' && joint !== 'knB';
+    if (head) D.snap = big ? 1.6 : 0.8;
+    if (this.ground === 'stand' || this.ground === 'clinch') {
+      D.v = (D.v ?? 0) - D.facing * (big ? 120 : 60);
+      if (D.poseT <= 0 || D.pose === 'guard') {
+        if (joint === 'knB' || (!head && big)) this.setPose(def, 'doubled', 0.4); // folded over
+        else if (big) this.setPose(def, 'rocked', 0.45);
+        else if (Math.random() < 0.5) this.setPose(def, 'hurt', 0.2);
+      }
+    }
     const [x, y] = this.handPos(attacker, joint);
     this.burst(x, y, big ? 16 : 7, big ? PAL.gold : 0xffffff, big ? 110 : 60, 0.3, big ? 2 : 1);
     this.burst(x, y, 4, 0xbfe0ff, 40, 0.5, 1, 120); // sweat
@@ -444,24 +651,126 @@ export class ArenaView extends Container {
     if (big && this.mode === 'tv') this.cutTo('close', 0.25);
   }
 
-  cue(line: TickerLine): void {
+  /**
+   * Feed a ticker line. Anything that needs contact (strikes, clinch entries, shots) waits until
+   * the attacker has stepped into range, so nobody ever lands a punch on air from across the cage.
+   * `instant` applies the line on the spot (rebuilding the view mid-fight).
+   */
+  cue(line: TickerLine, instant = false): void {
+    if (instant) return this.apply(line);
+    this.held.push(line);
+    this.pumpHeld(0);
+  }
+
+  /** True while the arena is still acting something out that the next line must not interrupt. */
+  busy(): boolean {
+    if (this.scene !== 'fight' || this.finished) return false;
+    return this.held.length > 0 || this.walkIn || this.touchT > 0 || (this.roundOver && this.walkT < 2.5 && !this.atCorners());
+  }
+
+  /** Rebuilt mid-fight (lines replayed instantly): put everyone where the last line left them. */
+  settle(): void {
+    for (const l of this.held.splice(0)) this.apply(l);
+    this.engage = null;
+    this.walkIn = false;
+    this.touchT = 0;
+    const ground = this.ground === 'atop' || this.ground === 'btop';
+    this.F.forEach((f, i) => {
+      f.v = 0;
+      if (!this.prefight) f.x = this.resting || this.roundOver ? CORNERS[i] : ground ? this.groundX : this.center + (i === 0 ? -23 : 23);
+    });
+  }
+
+  private atCorners(): boolean {
+    return this.F.every((f, i) => Math.abs(f.x - CORNERS[i]) < 6);
+  }
+
+  /** How close (feet to feet) the attacker must be for this line to connect; 0 = no range needed. */
+  private reachFor(line: TickerLine): number {
+    if (line.speaker || line.side < 0 || this.scene !== 'fight' || this.finished) return 0;
+    if (this.ground !== 'stand' && this.ground !== 'clinch') return 0; // tangled up on the mat already
+    const r = REACH[line.act] ?? 0;
+    return r && /^miss_/.test(line.key ?? '') ? r + 8 : r;
+  }
+
+  /** Release held lines once their attacker is in range (or after a beat, so a fight can never stall). */
+  private pumpHeld(dt: number): void {
+    while (this.held.length) {
+      const line = this.held[0];
+      const reach = this.reachFor(line);
+      if (reach) {
+        // nobody throws at a man who is still picking himself up off the canvas
+        const floored = this.F.some((f) => f.pose === 'down' && f.poseT > 0);
+        const ready = !this.walkIn && this.touchT <= 0 && !this.resting && !this.roundOver && !this.prefight && !floored;
+        const d = Math.abs(this.F[1].x - this.F[0].x);
+        if (!ready || d > reach + 2) {
+          if (!this.engage) this.engage = { atk: (line.act === 'sprawl' ? 1 - line.side : line.side) as 0 | 1, reach, t: 0 };
+          this.engage.t += dt;
+          if (this.engage.t < (ready ? 1.2 : 8)) return;
+        }
+      }
+      this.held.shift();
+      this.engage = null;
+      // (if we gave up waiting, the downed man is back on his feet for it)
+      if (reach) for (const i of [0, 1] as const) if (this.F[i].pose === 'down' && this.F[i].poseT > 0 && this.F[i].poseT < 9000) this.setPose(i, 'guard', 0);
+      this.apply(line);
+    }
+  }
+
+  private apply(line: TickerLine): void {
     if (line.speaker) return; // booth chatter doesn't move anybody
     this.round = line.round;
     this.sec = line.t;
     this.hp = [line.hp[0], line.hp[1]];
     this.intensity = Math.max(1, line.intensity);
+    // a new round: out of the corners and into the middle (nothing lands until they meet)
+    if (line.key === 'opening' || line.key === 'round_start') this.walkOut(line.key === 'opening');
     const prevGround = this.ground;
     this.ground = line.pos;
-    if (prevGround !== this.ground && (this.ground === 'stand')) {
+    if (line.act === 'bell') this.ground = 'stand'; // the bell breaks up whatever they were doing
+    const wasDown = prevGround === 'atop' || prevGround === 'btop';
+    const isDown = this.ground === 'atop' || this.ground === 'btop';
+    if (isDown && !wasDown) {
+      // hit the mat: most takedowns land in guard, good ones in side control or mount
+      const r = Math.random();
+      this.groundPos = r < 0.45 ? 'guard' : r < 0.72 ? 'side' : r < 0.88 ? 'mount' : 'back';
+      // the ground work happens where they fell: no sliding across the canvas
+      this.groundX = Math.max(CAGE_L + 60, Math.min(CAGE_R - 60, (this.F[0].x + this.F[1].x) / 2));
+      this.center = this.groundX;
+    } else if (isDown && wasDown && prevGround !== this.ground) {
+      this.groundPos = Math.random() < 0.6 ? 'guard' : 'mount'; // reversal
+      this.subAnim = null;
+    } else if (isDown && Math.random() < 0.12 && !this.subAnim) {
+      // the top man advances now and then
+      this.groundPos = this.groundPos === 'guard' ? 'side' : this.groundPos === 'side' ? (Math.random() < 0.5 ? 'mount' : 'back') : this.groundPos;
+    }
+    if (!isDown) this.subAnim = null;
+    if (prevGround !== this.ground && this.ground === 'stand') {
       this.setPose(0, 'guard', 0);
       this.setPose(1, 'guard', 0);
     }
+    if (!isDown && (wasDown || (prevGround === 'clinch' && this.ground === 'stand'))) {
+      // back to the feet / clinch broken: they push off each other and reset to range
+      this.center = (this.F[0].x + this.F[1].x) / 2;
+      this.F[0].v = -110;
+      this.F[1].v = 110;
+    }
     const a = line.side;
     if (a < 0) {
-      if (line.act === 'bell') sfx('bell');
+      if (line.act === 'bell') {
+        sfx('bell');
+        if (line.round >= this.rounds) this.finished = true; // final bell: it's over, the cards decide
+        else if (!this.finished) {
+          // end of the round: back to the corners
+          this.roundOver = true;
+          this.walkT = 0;
+          this.tdT = 0;
+          this.refTo(this.center);
+        }
+      }
       if (line.act === 'standup') {
         this.showCallout('STAND UP!');
-        this.ref.tx = this.center;
+        this.refTo(this.center);
       }
       return;
     }
@@ -470,6 +779,27 @@ export class ArenaView extends Container {
     const ground = this.ground === 'atop' || this.ground === 'btop';
     const bloody = this.hp[D] < 55 && Math.random() < 0.5;
     const sig = (A === 0 ? this.A : this.B).anim?.signature ?? [];
+    // an exchange on the feet: re-centre on the pair so they don't drift straight back out of range
+    if (!ground && REACH[line.act]) this.center = (this.F[0].x + this.F[1].x) / 2;
+    // a whiff: the shot is thrown for real, the other man slips or steps back, nothing connects
+    if (/^miss_/.test(line.key ?? '')) {
+      const kick = line.act === 'kick';
+      this.setPose(A, kick ? (Math.random() < 0.5 ? 'bodykick' : 'legkick') : Math.random() < 0.5 ? 'jab' : Math.random() < 0.5 ? 'cross' : 'hook', kick ? 0.38 : 0.26);
+      this.F[A].lunge = 5;
+      this.setPose(D, kick ? 'block' : Math.random() < 0.6 ? 'slip' : 'block', 0.3);
+      this.F[D].v = (this.F[D].v ?? 0) - this.F[D].facing * 70;
+      sfx('whoosh');
+      return;
+    }
+    // a feint: half a jab, a stamp, the other man flinches
+    if (line.act === 'idle') {
+      if (!ground) {
+        this.setPose(A, Math.random() < 0.6 ? 'jab' : 'slip', 0.1);
+        this.F[A].lunge = 3;
+        if (Math.random() < 0.6) this.setPose(D, 'block', 0.25);
+      }
+      return;
+    }
     switch (line.act) {
       case 'jab':
         this.setPose(A, 'jab', 0.22);
@@ -477,8 +807,9 @@ export class ArenaView extends Container {
         this.impact(A, 'haF', false, false);
         sfx('punch');
         break;
+      case 'cross': // a counter
       case 'punch': {
-        const p: Pose = Math.random() < 0.35 ? 'hook' : Math.random() < 0.25 ? 'uppercut' : Math.random() < 0.2 ? 'body' : 'cross';
+        const p: Pose = line.act === 'cross' ? 'cross' : Math.random() < 0.35 ? 'hook' : Math.random() < 0.25 ? 'uppercut' : Math.random() < 0.2 ? 'body' : 'cross';
         if (ground) {
           this.setPose(A, 'topPunch', 0.25);
           this.impact(A, 'haB', false, bloody);
@@ -521,7 +852,7 @@ export class ArenaView extends Container {
         break;
       case 'rocked':
         this.setPose(D, 'rocked', 0.9);
-        this.ref.tx = this.center + (D === 0 ? -30 : 30);
+        this.refTo(this.center + (D === 0 ? -30 : 30));
         sfx('crowd');
         break;
       case 'kd':
@@ -530,7 +861,8 @@ export class ArenaView extends Container {
         this.impact(A, 'haB', true, true);
         this.flash = 0.25;
         this.showCallout('KNOCKDOWN!');
-        this.ref.tx = this.center;
+        this.slowT = 1.1;
+        this.refTo(this.center);
         if (this.mode === 'tv') this.cutTo('close', 0.6, true);
         sfx('roar');
         break;
@@ -543,7 +875,8 @@ export class ArenaView extends Container {
         this.winnerSide = A;
         this.finished = true;
         this.showCallout('KNOCKOUT!');
-        this.ref.tx = this.F[D].x;
+        this.slowT = 1.6;
+        this.refTo(this.F[D].x - this.F[D].facing * 12, 3);
         if (this.mode === 'tv') this.cutTo('close', 1.5, true);
         sfx('roar');
         break;
@@ -553,15 +886,19 @@ export class ArenaView extends Container {
         this.winnerSide = A;
         this.finished = true;
         this.showCallout("IT'S STOPPED!");
-        this.ref.tx = this.center;
+        this.refTo(this.center);
         sfx('roar');
         break;
       case 'gnp':
         this.setPose(A, 'topPunch', 0.25);
+        this.gnpT = 0.28;
         this.impact(A, 'haB', false, bloody);
         sfx('punch');
         break;
       case 'td':
+        // shoot, lift, dump: the poses play out before the ground position takes over
+        this.tdT = 0.95;
+        this.tdAtk = A;
         this.setPose(A, 'shoot', 0.3);
         this.setPose(D, 'lifted', 0.25);
         this.burst(this.center, FLOOR, 10, 0xd8d0c0, 50, 0.4, 2, 60); // mat dust
@@ -574,15 +911,20 @@ export class ArenaView extends Container {
         this.setPose(A, 'sprawl', 0.5);
         break;
       case 'sub':
-        this.setPose(A, ground ? (this.isTop(A) ? 'top' : 'bottomSub') : 'clinch', 0.8);
+        if (ground) {
+          const kind = subKindFor(line.text, this.isTop(A));
+          this.subAnim = { kind, atk: A, t: 2.2, tapped: false };
+          if (kind === 'rnc') this.groundPos = 'back';
+        } else this.setPose(A, 'clinch', 0.8);
         if (this.mode === 'tv') this.cutTo('close', 0.2);
         break;
       case 'tap':
-        this.setPose(A, this.isTop(A) ? 'top' : 'bottomSub', 9999);
+        this.subAnim = { kind: subKindFor(line.text, ground && this.isTop(A)), atk: A, t: 2.4, tapped: true };
+        this.setPose(A, this.isTop(A) ? 'top' : 'bottomSub', 2.4);
         this.winnerSide = A;
         this.finished = true;
         this.showCallout('TAP! TAP! TAP!');
-        this.ref.tx = this.center;
+        this.refTo(this.center);
         sfx('roar');
         break;
       case 'sweep':
@@ -605,7 +947,7 @@ export class ArenaView extends Container {
       case 'foul':
         this.showCallout('FOUL!');
         this.setPose(D, 'hurt', 0.8);
-        this.ref.tx = this.center;
+        this.refTo(this.center);
         break;
       case 'stool':
         this.showCallout('RETIRED ON THE STOOL');
@@ -614,8 +956,13 @@ export class ArenaView extends Container {
       case 'stop':
         this.finished = true;
         break;
-      case 'escape':
       case 'getup':
+        // back up off the canvas after a knockdown
+        if (this.F[A].pose === 'down' && this.F[A].poseT < 9000) this.setPose(A, 'guard', 0);
+        this.subAnim = null;
+        break;
+      case 'escape':
+        this.subAnim = null;
         break;
     }
     if (sig.length && ['punch', 'kick', 'headkick', 'knee', 'elbow'].includes(line.act) && line.intensity >= 2 && Math.random() < 0.35) {
@@ -623,7 +970,150 @@ export class ArenaView extends Container {
       if (name === 'spinningElbow' || name === 'spinningBackfist') this.setPose(A, 'spin', 0.4);
       this.showCallout(name.replace(/([A-Z])/g, ' $1').toUpperCase() + '!');
     }
-    if (line.act === 'bell' || /round_start/.test(line.key ?? '')) this.ref.tx = this.center + 60;
+    if (line.t >= 288 && !this.clapped.has(line.round) && this.scene === 'fight') {
+      // the timekeeper's clapper: ten seconds left in the round
+      this.clapped.add(line.round);
+      this.showCallout('10 SECONDS!');
+      sfx('click');
+    }
+  }
+
+  /** The winner's party piece, based on who they are. */
+  private celebration(i: 0 | 1, base: Rig): Rig {
+    const who = i === 0 ? this.A : this.B;
+    const style = who.anim?.celebration ?? ['jump', 'flex', 'point', 'jump', 'strut'][(who.id.length + who.last.length) % 5];
+    const t = this.t;
+    const shift = (r: Rig, dx: number, dy: number): Rig => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, [v[0] + dx, v[1] + dy]])) as Rig;
+    switch (style) {
+      case 'gunShow':
+      case 'flex':
+        return Math.floor(t * 1.2) % 2 ? POSES.flex : POSES.celebrate;
+      case 'prays':
+        return { ...POSES.stool, hip: [0, -18], knF: [10, -2], ftF: [-2, 0], knB: [4, -2], ftB: [-8, 0], haF: [6, -52], haB: [4, -52], elF: [10, -42], elB: [6, -42], head: [4, -54], neck: [2, -46] };
+      case 'point':
+        return Math.floor(t * 0.8) % 2 ? POSES.point : POSES.celebrate;
+      case 'strut':
+      case 'billyWalk':
+        return Math.floor(t * 5) % 2 ? POSES.walk1 : POSES.walk2;
+      case 'dances':
+        return shift(Math.floor(t * 4) % 2 ? POSES.taunt : POSES.celebrate, Math.sin(t * 8) * 3, 0);
+      case 'backflip':
+      case 'jump':
+      default: {
+        const up = Math.abs(Math.sin(t * 5)) * 9;
+        return shift({ ...base, knF: [base.knF[0] + 4, base.knF[1] + up * 0.3], knB: [base.knB[0] - 4, base.knB[1] + up * 0.3] }, 0, -up);
+      }
+    }
+  }
+
+  /** Feet actually step while a fighter moves: alternating lifts, a little hip bob. */
+  private stepped(f: FState): Rig {
+    const speed = Math.abs(f.v ?? 0);
+    const snap = f.snap ?? 0;
+    if (this.ground !== 'stand' && this.ground !== 'clinch') {
+      // on the mat: nobody is ever still, legs and hands keep working
+      const w = Math.sin(this.t * 2.4 + f.x * 0.1);
+      return { ...f.rig, ftF: [f.rig.ftF[0] + w * 1.2, f.rig.ftF[1]], ftB: [f.rig.ftB[0] - w, f.rig.ftB[1]], haB: [f.rig.haB[0], f.rig.haB[1] + w * 0.8] };
+    }
+    if (speed < 6) {
+      // bouncing on the balls of the feet, weight shifting, head snapping back when tagged
+      const r: Rig = { ...f.rig };
+      const b = Math.sin(this.t * 6.2 + f.x * 0.05);
+      const shiftW = Math.sin(this.t * 1.7 + f.x * 0.03) * 1.5;
+      r.ftF = [r.ftF[0] + shiftW, r.ftF[1] - Math.max(0, b) * 1.2];
+      r.ftB = [r.ftB[0] + shiftW * 0.6, r.ftB[1] - Math.max(0, -b) * 1.2];
+      r.knF = [r.knF[0] + shiftW * 0.6, r.knF[1] - Math.max(0, b) * 0.8];
+      r.knB = [r.knB[0] + shiftW * 0.4, r.knB[1] - Math.max(0, -b) * 0.8];
+      if (snap > 0.02) {
+        r.head = [r.head[0] - snap * 6, r.head[1] + snap * 1.5];
+        r.neck = [r.neck[0] - snap * 2.5, r.neck[1]];
+      }
+      return r;
+    }
+    const amp = Math.min(1, speed / 55);
+    const ph = (f.dist ?? 0) * 0.2;
+    const sF = Math.sin(ph);
+    const back = Math.sign(f.v ?? 0) * f.facing < 0; // retreating: the back foot leads
+    const r: Rig = { ...f.rig };
+    const mv = (j: keyof Rig, dx: number, dy: number) => (r[j] = [r[j][0] + dx, r[j][1] + dy]);
+    mv('ftF', sF * 4 * amp * (back ? -1 : 1), -Math.max(0, sF) * 3 * amp);
+    mv('knF', sF * 2 * amp * (back ? -1 : 1), -Math.max(0, sF) * 2 * amp);
+    mv('ftB', -sF * 4 * amp * (back ? -1 : 1), -Math.max(0, -sF) * 3 * amp);
+    mv('knB', -sF * 2 * amp * (back ? -1 : 1), -Math.max(0, -sF) * 2 * amp);
+    const bob = -Math.abs(sF) * 1.4 * amp;
+    for (const j of ['hip', 'neck', 'head', 'shF', 'shB', 'elF', 'elB', 'haF', 'haB'] as const) mv(j, 0, bob);
+    return r;
+  }
+
+  /** Between rounds: fighters sit on their stools in the corners. */
+  restInCorners(): void {
+    // anything still waiting plays out now (it's behind the corner cutaway)
+    for (const l of this.held.splice(0)) this.apply(l);
+    this.engage = null;
+    this.resting = true;
+    this.roundOver = false;
+    this.walkIn = false;
+    this.touchT = 0;
+    this.tdT = 0;
+    this.gnpT = 0;
+    this.ground = 'stand';
+    this.subAnim = null;
+    this.center = AW / 2;
+    this.F.forEach((f, i) => {
+      f.x = CORNERS[i];
+      f.v = 0;
+      f.lunge = 0;
+      f.recoil = 0;
+      f.snap = 0;
+      f.pose = 'stool';
+      f.poseT = 9999;
+      f.facing = i === 0 ? 1 : -1;
+      f.rig = { ...POSES.stool }; // a cut, not a move: no tween from wherever they were
+    });
+    // the ref waits by the fence while the card girl does her lap
+    this.ref.x = this.ref.tx = AW / 2 + 96;
+    this.ref.facing = -1;
+    this.ref.rig = { ...POSES.stand };
+  }
+
+  /** Something that walks behind the fighters (the ring card girl), drawn into the arena's far side. */
+  addBackdrop(c: Container): void {
+    const i = this.worldInner.getChildIndex(this.fighters);
+    this.worldInner.addChildAt(c, i);
+  }
+
+  /** New round: both fighters get off their stools and walk out to meet in the middle. */
+  walkOut(firstRound = false): void {
+    this.resting = false;
+    this.roundOver = false;
+    this.prefight = false;
+    // round one: they meet in the middle and touch gloves first
+    this.touchT = firstRound ? 2.4 : 0;
+    this.ground = 'stand';
+    this.subAnim = null;
+    this.tdT = 0;
+    this.center = AW / 2;
+    this.walkIn = true;
+    this.walkT = 0;
+    this.F.forEach((f) => {
+      f.v = 0;
+      f.pose = 'guard';
+      f.poseT = 0;
+      f.foot = 0;
+      f.footT = 1.6;
+    });
+    this.ref.tx = AW / 2 + 70;
+  }
+
+  /** Which pose pair the ground fighters use right now, and who plays the attacker/top role. */
+  private groundLayout(): { aIdx: 0 | 1; a: Pose; d: Pose; front: 'a' | 'd' } {
+    if (this.subAnim) {
+      const sp = SUBS[this.subAnim.kind];
+      return { aIdx: this.subAnim.atk, a: sp.a, d: sp.d, front: sp.front };
+    }
+    const spot = SPOTS[this.groundPos];
+    const aIdx: 0 | 1 = this.ground === 'btop' ? 1 : 0;
+    return { aIdx, a: this.gnpT > 0 ? spot.punch : spot.a, d: spot.d, front: spot.front };
   }
 
   private isTop(i: 0 | 1): boolean {
@@ -675,7 +1165,10 @@ export class ArenaView extends Container {
     if (this.mode !== 'tv') return;
     const s = this.shot;
     s.hold -= dt;
-    if (s.hold <= 0) {
+    // walking to / sitting in / coming out of the corners: they're far apart, stay on the wide shot
+    const apart = this.scene === 'fight' && (this.roundOver || this.resting || this.walkIn || this.prefight);
+    if (apart && s.z > 1.01) this.cutTo('wide', 1.5);
+    else if (s.hold <= 0) {
       // director: alternate shots, tighter when the action heats up
       const r = Math.random();
       const kind = this.scene === 'ceremony' ? 'medium' : this.ground !== 'stand' ? (r < 0.6 ? 'close' : 'medium') : r < 0.45 ? 'medium' : r < 0.8 ? 'close' : 'wide';
@@ -693,32 +1186,114 @@ export class ArenaView extends Container {
   // ------------------------------------------------------------ frame
 
   update(dt: number): void {
+    const real = dt;
+    if (this.slowT > 0) {
+      this.slowT -= real;
+      dt *= 0.3;
+    }
+    if (!this.walkIn) this.touchT -= dt * this.pace;
     this.t += dt;
     this.drawCrowd();
     const ground = this.ground === 'atop' || this.ground === 'btop';
     if (this.scene === 'fight') {
-      // the action drifts around the cage; clinches end up on the fence
+      // the action drifts around the cage; clinches end up on the fence; ground work stays put
       const targetCenter =
-        this.ground === 'clinch' ? (Math.sin(this.round * 1.7) > 0 ? CAGE_R - 40 : CAGE_L + 40) : ground ? AW / 2 + Math.sin(this.round * 2.3) * 60 : AW / 2 + Math.sin(this.t * 0.35) * 70;
-      this.center += (targetCenter - this.center) * Math.min(1, dt * 1.5);
+        this.walkIn || this.touchT > 0 ? AW / 2
+          : this.ground === 'clinch' ? (Math.sin(this.round * 1.7) > 0 ? CAGE_R - 40 : CAGE_L + 40)
+            : ground ? this.groundX
+              : AW / 2 + Math.sin(this.t * 0.35) * 70;
+      this.center += (targetCenter - this.center) * Math.min(1, dt * (ground ? 4 : 1.5));
     } else this.center += (AW / 2 - this.center) * Math.min(1, dt * 2);
     this.drift = this.center - AW / 2;
     const gap = this.ground === 'clinch' ? 12 : ground ? 0 : 23 + Math.sin(this.t * 1.3) * 3;
+    this.gnpT -= dt;
+    this.tdT -= dt;
+    this.walkT += dt;
+    if (this.subAnim && !this.subAnim.tapped) {
+      this.subAnim.t -= dt;
+      if (this.subAnim.t <= 0) this.subAnim = null;
+    }
+    const lay = this.groundLayout();
+    // the frame every ground pair is drawn in faces the way the man on top faces; a bottom man
+    // attacking from guard (triangle, guillotine, armbar) keeps that frame so nobody flips over
+    const topDir: 1 | -1 = this.ground === 'btop' ? -1 : 1;
+    const sk = this.subAnim?.kind;
+    const groundDir: 1 | -1 = sk && ['tri', 'guil', 'ab'].includes(sk) ? topDir : lay.aIdx === 0 ? 1 : -1;
+    const fightOn = this.scene === 'fight' && !this.resting;
     for (const i of [0, 1] as const) {
       const f = this.F[i];
+      const o = this.F[1 - i];
       const side = i === 0 ? -1 : 1;
       let tx = this.center + side * gap;
+      let facing: 1 | -1 = i === 0 ? 1 : -1;
+      let maxV = 150;
+      // a finish on the mat: once the winner celebrates he gets up and walks off the man underneath
+      const upAndAway = ground && fightOn && this.finished && this.winnerSide === i && (f.poseT <= 0 || f.pose === 'celebrate');
       if (this.scene === 'intro') tx = i === 0 ? CAGE_L + 60 : CAGE_R - 60;
       else if (this.scene === 'ceremony') tx = AW / 2 + side * 26;
-      else if (ground) {
-        const top = this.isTop(i);
-        const topIdx = this.ground === 'atop' ? 0 : 1;
-        f.facing = (top ? (topIdx === 0 ? 1 : -1) : topIdx === 0 ? -1 : 1) as 1 | -1;
-        tx = top ? this.center - 18 * f.facing : this.center - 22 * f.facing;
+      else if (this.resting) tx = CORNERS[i];
+      else if (this.prefight) tx = f.x;
+      else if (this.roundOver) {
+        tx = CORNERS[i];
+        maxV = 70 * this.pace;
+      } else if (upAndAway) {
+        tx = this.groundX + (this.groundX < AW / 2 ? 1 : -1) * 58;
+        maxV = 90;
+      } else if (ground) {
+        // both fighters share the pose pair's frame: same x
+        facing = groundDir;
+        tx = this.groundX;
+      } else if (this.walkIn) {
+        // out of the corners at a walk, to touching distance in round one
+        tx = this.center + side * (this.touchT > 0 ? TOUCH_GAP : gap);
+        maxV = 80 * this.pace;
+      } else if (this.touchT > 0 && this.ground === 'stand') {
+        tx = this.center + side * TOUCH_GAP;
+        if (this.touchT < 1.6 && this.touchT > 0.9 && f.poseT <= 0) this.setPose(i, 'touch', 0.5);
+        this.ref.tx = this.center + (this.touchT > 0.9 ? 0 : 60);
       }
-      if (!ground || this.scene !== 'fight') f.facing = i === 0 ? 1 : -1;
-      if (this.scene === 'fight' && this.F[1 - i].pose === 'ko' && f.pose === 'celebrate') tx = this.center + side * 40;
-      f.x += (tx - f.x) * Math.min(1, dt * (this.scene === 'fight' ? 8 : 3));
+      // footwork on the feet: step in, step out to make space, circle; feint now and then
+      const standing = fightOn && this.ground === 'stand' && !this.finished && !this.roundOver && !this.prefight && !this.walkIn && this.touchT <= 0;
+      if (standing && !this.engage) {
+        f.footT = (f.footT ?? 0) - dt;
+        if (f.footT <= 0) {
+          const r = Math.random();
+          f.foot = r < 0.3 ? 9 + Math.random() * 8 : r < 0.55 ? -6 : r < 0.75 ? 3 : 0;
+          f.footT = 0.5 + Math.random() * 1.2;
+        }
+        tx += side * (f.foot ?? 0);
+        if (f.poseT <= 0 && f.pose === 'guard' && Math.random() < dt * 0.55) {
+          // feint, slip or a pawing jab that never arrives
+          const fk = Math.random();
+          this.setPose(i, fk < 0.45 ? 'jab' : fk < 0.75 ? 'slip' : 'block', fk < 0.45 ? 0.09 : 0.22);
+          if (fk < 0.45) f.lunge = 3;
+        }
+      }
+      if (standing && this.engage) {
+        // closing the distance for the next exchange: the attacker steps in, the other man plants his feet
+        if (i === this.engage.atk) {
+          tx = o.x + side * (this.engage.reach - 6);
+          maxV = 170;
+        } else tx = f.x;
+        f.foot = 0;
+      }
+      if (this.scene === 'fight' && this.finished && this.winnerSide === i && (o.pose === 'ko' || o.pose === 'down') && !ground) {
+        // walk off and celebrate away from the man on the canvas
+        tx = o.x + (f.x < o.x ? -1 : 1) * 56;
+        maxV = 90;
+      }
+      if (this.scene !== 'fight' || (ground && fightOn && !upAndAway)) {
+        f.x += (tx - f.x) * Math.min(1, dt * (this.scene === 'fight' ? 8 : 3));
+        f.v = 0;
+      } else {
+        // a spring with damping: fighters accelerate, step and settle instead of gliding
+        const v0 = f.v ?? 0;
+        let v = v0 + ((tx - f.x) * 70 - v0 * 15) * dt;
+        v = Math.max(-maxV, Math.min(maxV, v));
+        f.v = v;
+        f.x += v * dt;
+        f.dist = (f.dist ?? 0) + Math.abs(v * dt);
+      }
       f.lunge *= Math.pow(0.001, dt);
       f.recoil *= Math.pow(0.003, dt);
       if (f.poseT > 0) {
@@ -727,22 +1302,48 @@ export class ArenaView extends Container {
       }
       let pose = f.pose;
       if (this.scene === 'fight') {
-        if (ground && !['ko', 'tap', 'celebrate', 'topPunch', 'bottomSub', 'top'].includes(pose)) pose = this.isTop(i) ? 'top' : 'bottom';
-        if (ground && pose === 'bottomSub' && this.isTop(i)) pose = 'top';
+        if (ground && pose !== 'ko' && pose !== 'celebrate') pose = i === lay.aIdx ? lay.a : lay.d;
         if (this.ground === 'clinch' && pose === 'guard') pose = 'clinch';
+        if (this.tdT > 0.3 && ground && pose !== 'ko') {
+          const ph = 1 - this.tdT / 0.95;
+          pose = i === this.tdAtk ? (ph < 0.45 ? 'shoot' : 'sprawl') : ph < 0.4 ? 'lifted' : 'down';
+        }
         if (this.winnerSide === i && this.finished && f.poseT <= 0) pose = 'celebrate';
       }
-      const walking = Math.abs(tx - f.x) > 3 && this.scene !== 'fight';
+      // walking (not fighting): turn and walk where you're going
+      const walking = Math.abs(tx - f.x) > 3 && (this.scene !== 'fight' || this.roundOver) && pose !== 'ko' && pose !== 'down';
+      if (walking) facing = tx > f.x ? 1 : -1;
+      if (facing !== f.facing) {
+        // turning round: mirror the current joints so the body doesn't jump, then tween from there
+        f.rig = mirrorRig(f.rig);
+        f.facing = facing;
+      }
+      this.drawPose[i] = walking ? 'walk' : pose;
       const target = walking ? (Math.floor(this.t * 6) % 2 ? POSES.walk1 : POSES.walk2) : pose === 'guard' ? stanceGuard(this.L[i], this.t + i * 1.3) : POSES[pose as Pose] ?? POSES.guard;
-      f.rig = lerpRig(f.rig, target, Math.min(1, dt * (f.poseT > 0 ? 22 : 12)));
+      const rate = ground && this.scene === 'fight' ? (this.tdT > 0 ? 9 : 5.5) : f.poseT > 0 ? 22 : 12;
+      f.rig = lerpRig(f.rig, pose === 'celebrate' && this.finished && !walking ? this.celebration(i, target) : target, Math.min(1, dt * rate));
+      f.snap = (f.snap ?? 0) * Math.exp(-dt * 7);
+      // long hair swings with movement and with shots to the head
+      this.L[i].sway = Math.max(-4, Math.min(4, ((f.v ?? 0) * f.facing) / 30 + (f.snap ?? 0) * 4 + Math.sin(this.t * 3 + i) * 0.5));
     }
+    if (this.walkIn && this.walkT > 0.3 && this.F.every((f, i) => Math.abs(f.x - (this.center + (i === 0 ? -1 : 1) * (this.touchT > 0 ? TOUCH_GAP : gap))) < 5 && Math.abs(f.v ?? 0) < 25)) this.walkIn = false;
+    if (this.walkIn && this.walkT > 6) this.walkIn = false;
+    this.pumpHeld(dt);
     // referee & announcer
     for (const a of [this.ref, this.butler]) {
       if (!a.visible) continue;
       if (a === this.ref && this.scene === 'fight') {
-        // the ref circles the action, keeping a sightline
-        if (Math.abs(a.tx - this.center) > 70 || Math.random() < dt * 0.3) a.tx = this.center + (Math.random() < 0.5 ? -1 : 1) * (48 + Math.random() * 20);
-        a.facing = a.x < this.center ? 1 : -1;
+        // the ref circles the action at a distance, keeping a sightline; now and then he
+        // crosses to the other side (behind the fighters)
+        this.refHold -= dt;
+        const job = this.refHold > 0 || this.touchT > 0 || this.finished || this.resting || this.roundOver || this.prefight;
+        const off = a.tx - this.center;
+        if (!job && (Math.abs(off) > 104 || Math.abs(off) < 62 || Math.random() < dt * 0.05)) {
+          const keep = Math.abs(off) >= 62 && Math.random() < 0.6;
+          a.tx = this.center + (keep ? Math.sign(off) : Math.sign(off) ? -Math.sign(off) : 1) * (72 + Math.random() * 20);
+          a.tx = Math.max(CAGE_L + 14, Math.min(CAGE_R - 14, a.tx));
+        }
+        if (!this.resting) a.facing = a.x < this.center ? 1 : -1;
       }
       const moving = Math.abs(a.tx - a.x) > 2;
       a.x += (a.tx - a.x) * Math.min(1, dt * 4);
@@ -754,7 +1355,12 @@ export class ArenaView extends Container {
       a.rig = lerpRig(a.rig, tgt, Math.min(1, dt * 10));
     }
     this.updateCam(dt);
-    if (this.mode === 'top' && this.scene === 'fight') {
+    // between rounds the overhead camera cuts back to the side so you see the card girl's lap
+    const topNow = this.mode === 'top' && this.scene === 'fight' && !this.resting;
+    this.world.visible = !topNow;
+    this.topWorld.visible = topNow;
+    this.topLabels.visible = topNow;
+    if (topNow) {
       this.drawTop(dt);
       this.topWorld.updateCacheTexture();
     } else {
@@ -778,11 +1384,24 @@ export class ArenaView extends Container {
       drawRig(g, a.rig, Math.round(a.x), fy, a.facing, a.look, sc);
     }
     for (const f of this.F) g.ellipse(f.x, FLOOR + 1, 16, 3).fill({ color: 0x000000, alpha: 0.35 });
-    const order: (0 | 1)[] = ground ? (this.isTop(0) ? [1, 0] : [0, 1]) : this.F[0].poseT > this.F[1].poseT ? [1, 0] : [0, 1];
+    // corner stools between rounds
+    this.F.forEach((f, i) => {
+      if (this.drawPose[i] !== 'stool') return;
+      const sx = Math.round(f.x - 2 * f.facing);
+      g.rect(sx - 8, FLOOR - 25, 16, 4).fill(0x0c0c0e).rect(sx - 7, FLOOR - 24, 14, 2).fill(0x3a3a42);
+      for (const lx of [-6, 5]) g.rect(sx + lx, FLOOR - 21, 2, 21).fill(0x1c1c22);
+      g.rect(sx - 5, FLOOR - 9, 11, 1).fill(0x1c1c22);
+    });
+    const lay = this.groundLayout();
+    const last = lay.front === 'a' ? lay.aIdx : ((1 - lay.aIdx) as 0 | 1);
+    const order: (0 | 1)[] = ground ? (last === 0 ? [1, 0] : [0, 1]) : this.F[0].poseT > this.F[1].poseT ? [1, 0] : [0, 1];
     for (const i of order) {
       const f = this.F[i];
+      // the tapping man's free hand slaps the mat
       const x = f.x + (f.lunge - f.recoil) * f.facing + shake;
-      drawRig(g, f.rig, Math.round(x), FLOOR, f.facing, this.L[i]);
+      if (ground && this.subAnim?.tapped && i !== this.subAnim.atk && Math.floor(this.t * 8) % 2 === 0) f.rig = { ...f.rig, haB: [f.rig.haB[0], Math.min(0, f.rig.haB[1] + 4)] };
+      this.L[i].faceUp = SUPINE.has(this.drawPose[i]);
+      drawRig(g, this.stepped(f), Math.round(x), FLOOR, f.facing, this.L[i]);
     }
     // particles
     const p = this.fx;
@@ -792,18 +1411,41 @@ export class ArenaView extends Container {
       s.x += s.vx * dt;
       s.y += s.vy * dt;
       s.vy += s.grav * dt;
-      if (s.y > FLOOR + 6 && s.c === 0xa01818) {
+      if (s.y > FLOOR + 2 && s.c === 0xa01818 && s.grav !== 0) {
         s.vy = 0;
         s.vx = 0;
         s.grav = 0;
+        if (MAT.stains.length < 400) MAT.stains.push({ x: Math.round(s.x), y: Math.round(Math.min(FLOOR + 14, s.y)), r: s.s + (Math.random() < 0.3 ? 1 : 0), c: Math.random() < 0.5 ? 0x7a1010 : 0x5a0c0c });
       }
       p.rect(Math.round(s.x), Math.round(s.y), s.s, s.s).fill(s.c);
+    }
+    // dried blood on the canvas
+    if (this.stainsDrawn !== MAT.stains.length) {
+      this.stainsDrawn = MAT.stains.length;
+      const sg = this.stainG;
+      sg.clear();
+      for (const st of MAT.stains) sg.rect(st.x, st.y, st.r + 1, Math.max(1, st.r - 1)).fill({ color: st.c, alpha: 0.75 });
     }
     // front fence posts
     const fr = this.front;
     fr.clear();
-    fr.rect(CAGE_L - 6, 40, 6, FLOOR - 26).fill({ color: 0x0c0c0e, alpha: 0.9 });
-    fr.rect(CAGE_R, 40, 6, FLOOR - 26).fill({ color: 0x0c0c0e, alpha: 0.9 });
+    // the near side of the octagon: corner posts, a faint mesh and the bottom pad, in front of everyone
+    const ox = AW / 2;
+    const fl = (k: number): [number, number] => {
+      const a = ((22.5 + k * 45) * Math.PI) / 180;
+      return [ox + Math.cos(a) * 232, FLOOR + 1 + Math.sin(a) * 17];
+    };
+    const near = [fl(0), fl(1), fl(2), fl(3)];
+    for (let k = 0; k < 3; k++) {
+      const [x0, y0] = near[k];
+      const [x1, y1] = near[k + 1];
+      fr.poly([x0, y0, x1, y1, x1, y1 - 70, x0, y0 - 70]).fill({ color: 0x0a0a0e, alpha: 0.06 });
+      fr.moveTo(x0, y0 - 2).lineTo(x1, y1 - 2).stroke({ color: 0x141418, width: 4, alpha: 0.85 });
+    }
+    for (const [x, y] of [near[0], near[3]]) {
+      fr.rect(x - 3, y - 92, 6, 92).fill({ color: 0x0c0c0e, alpha: 0.92 });
+      fr.rect(x - 4, y - 95, 8, 4).fill(0x3a3a42);
+    }
   }
 
   // ------------------------------------------------------------ top-down
@@ -822,12 +1464,50 @@ export class ArenaView extends Container {
     const f = this.F[i];
     const push = (f.lunge - f.recoil) * 0.8;
     const ang = c.ang + (i === 0 ? 0 : Math.PI);
-    const x = c.x + Math.cos(c.ang) * (dir * d / 2) + Math.cos(ang) * push;
-    const y = c.y + Math.sin(c.ang) * (dir * d / 2) + Math.sin(ang) * push;
+    let x = c.x + Math.cos(c.ang) * (dir * d / 2) + Math.cos(ang) * push;
+    let y = c.y + Math.sin(c.ang) * (dir * d / 2) + Math.sin(ang) * push;
+    if (this.scene === 'fight' && (this.roundOver || this.walkIn || this.prefight || this.resting)) {
+      // out of / back to the corner: follow the side view's walk between the stool and the middle
+      const k = Math.max(0, Math.min(1, (f.x - CORNERS[i]) / (AW / 2 + dir * 23 - CORNERS[i])));
+      const ca = ((i === 0 ? 247.5 : 67.5) * Math.PI) / 180;
+      const cx = TCX + Math.cos(ca) * (TR - 12);
+      const cy = TCY + Math.sin(ca) * (TR - 12);
+      x = cx + (x - cx) * k;
+      y = cy + (y - cy) * k;
+      if (k < 0.98) {
+        const walking = Math.abs(f.v ?? 0) > 8;
+        const to = this.roundOver && walking ? [cx, cy] : [c.x, c.y];
+        return { x, y, ang: Math.atan2(to[1] - y, to[0] - x) };
+      }
+    }
     return { x, y, ang };
   }
 
+  /** Overhead extras: blood on the canvas (same stains as the side view), roaming spots, vignette. */
+  private drawTopExtras(): void {
+    if (this.topStainsDrawn !== MAT.stains.length) {
+      this.topStainsDrawn = MAT.stains.length;
+      const sg = this.topStain;
+      sg.clear();
+      for (const st of MAT.stains) {
+        const x = TCX + ((st.x - AW / 2) / 232) * TR;
+        const y = TCY + ((st.y - FLOOR) / 17) * TR * 0.9;
+        sg.circle(x, y, 0.8 + st.r * 0.5).fill({ color: st.c, alpha: 0.7 });
+      }
+    }
+    const l = this.topLight;
+    l.clear();
+    const hype = this.intensity >= 3 ? 0.08 : 0.04;
+    for (let b = 0; b < 3; b++) {
+      const a = this.t * (0.4 + b * 0.17) + b * 2.1;
+      l.circle(TCX + Math.cos(a) * TR * 0.6, TCY + Math.sin(a * 1.3) * TR * 0.5, 22).fill({ color: [0x3a7aff, 0xff3a4a, 0xffffff][b], alpha: hype });
+    }
+    // darker edges so the octagon is the stage
+    for (let k = 0; k < 6; k++) l.rect(k * 6, 0, 6, AH).fill({ color: 0x000000, alpha: 0.25 - k * 0.04 }).rect(AW - (k + 1) * 6, 0, 6, AH).fill({ color: 0x000000, alpha: 0.25 - k * 0.04 });
+  }
+
   private drawTop(dt: number): void {
+    this.drawTopExtras();
     // action centre wanders; clinches drift to the fence
     const c = this.tc;
     const ground = this.ground === 'atop' || this.ground === 'btop';
@@ -983,8 +1663,14 @@ export class ArenaView extends Container {
     if (this.scene === 'fight') {
       h.rect(4, 13, 140, 6).fill(PAL.ink).rect(5, 14, Math.round((138 * this.hp[0]) / 100), 4).fill(this.hp[0] > 40 ? PAL.moss : PAL.blood);
       h.rect(AW - 144, 13, 140, 6).fill(PAL.ink).rect(AW - 5 - Math.round((138 * this.hp[1]) / 100), 14, Math.round((138 * this.hp[1]) / 100), 4).fill(this.hp[1] > 40 ? PAL.moss : PAL.blood);
-      h.rect(4, 20, 10, 2).fill(this.L[0].trunks).rect(AW - 14, 20, 10, 2).fill(this.L[1].trunks);
+      h.rect(4, 20, 10, 2).fill(this.L[0].glove).rect(AW - 14, 20, 10, 2).fill(this.L[1].glove);
     }
+    if (this.slowT > 0) {
+      // broadcast slow motion: letterbox bars and a tag
+      h.rect(0, 0, AW, 10).fill({ color: 0x000000, alpha: 0.85 }).rect(0, AH - 10, AW, 10).fill({ color: 0x000000, alpha: 0.85 });
+      h.rect(AW - 60, AH - 9, 54, 8).fill(0xa01818);
+    }
+    this.slowTag.visible = this.slowT > 0;
     if (this.flash > 0) {
       h.rect(0, 0, AW, AH).fill({ color: 0xffffff, alpha: Math.min(0.5, this.flash) });
       this.flash -= dt;
@@ -1003,7 +1689,10 @@ export class ArenaView extends Container {
       if (this.lowerT > 0) {
         this.lowerT -= dt;
         const a = Math.min(1, this.lowerT * 3);
-        t.rect(12, AH - 30, 320, 24).fill({ color: 0x0a0a10, alpha: 0.82 * a }).rect(12, AH - 30, 4, 24).fill({ color: PAL.gold, alpha: a });
+        const ly = this.lowerTop ? TV_TOP_Y : AH - 30;
+        const bar = this.lowerCorner === 0 ? 0xa01818 : 0x1e3a8a;
+        t.rect(12, ly, 320, 24).fill({ color: 0x0a0a10, alpha: 0.85 * a }).rect(12, ly, 4, 24).fill({ color: this.lowerTop ? bar : PAL.gold, alpha: a });
+        if (this.lowerTop) t.rect(12, ly + 23, 320, 1).fill({ color: PAL.gold, alpha: a });
         this.tvLower.alpha = a;
         this.tvLower2.alpha = a;
       } else {
@@ -1016,7 +1705,7 @@ export class ArenaView extends Container {
 }
 
 /** Corner cutaway between rounds: split screen of both corners. */
-export function cornerView(A: Fighter, B: Fighter, reports: CornerReport[], round: number): Container {
+export function cornerView(A: Fighter, B: Fighter, reports: CornerReport[], round: number, stats?: { sig: [number, number]; td: [number, number]; kd: [number, number] }): Container {
   const c = new Container();
   const g = new Graphics();
   g.rect(0, 0, AW, AH).fill(0x18141a);
@@ -1047,7 +1736,12 @@ export function cornerView(A: Fighter, B: Fighter, reports: CornerReport[], roun
     st.rect(ox + 140, 92, 26, 4).fill(0x3a3030);
     st.rect(ox + 144, 96, 3, 10).fill(0x2a2020).rect(ox + 159, 96, 3, 10).fill(0x2a2020);
     drawRig(st, POSES.stool, ox + 152, 108, i === 0 ? 1 : -1, L, 0.85);
-    const cut: Look2 = { ...L, trunks: 0x2a2a2a, trim: 0x444444, glove: 0xe0e0e0, hairStyle: 0, beard: 3, build: 2, skin: 0xc08e64 };
+    // cutman in the team tee, black latex gloves, Vaseline on standby; head coach behind him in a team polo
+    const cut: Look2 = { ...L, trunks: 0x2a2a2a, trim: 0x444444, glove: 0x1a1a1a, hairStyle: 0, beard: 3, build: 2, skin: 0xc08e64, tattoo: 0,
+      outfit: { top: 0x16161a, bottom: 0x2a2a30, shortSleeves: true, hands: 0x1a1a1a, patch: L.trunks, bulk: 1 } };
+    const coach: Look2 = { ...L, hairStyle: 1, hairColor: 0x2a2018, beard: 2, build: 1, skin: 0xb07a52, tattoo: 0,
+      outfit: { top: L.trunks, bottom: 0x22222a, shortSleeves: true, patch: L.trim, bulk: 1 } };
+    drawRig(st, POSES.stand, ox + (i === 0 ? 112 : 192), 108, i === 0 ? 1 : -1, coach, 0.62);
     drawRig(st, POSES.clinch, ox + (i === 0 ? 186 : 118), 108, i === 0 ? -1 : 1, cut, 0.7);
     c.addChild(st);
     st.cacheAsTexture({ resolution: pixelArtResolution(), antialias: false });
@@ -1057,21 +1751,37 @@ export function cornerView(A: Fighter, B: Fighter, reports: CornerReport[], roun
     c.addChild(text(`CUTMAN ${f.cutman.name.toUpperCase()} (${f.cutman.rating}): ${rep?.cutman ?? ''}`, ox + 10, 128, { small: true, width: AW / 2 - 20, color: PAL.ash, maxLines: 3 }));
     if (rep?.quit) c.addChild(text('NOT COMING OUT!', ox + 88, 40, { color: PAL.blood }));
   });
+  if (stats) {
+    // broadcast stat strip: significant strikes, takedowns, knockdowns this round
+    const row = `SIG. STRIKES ${stats.sig[0]} - ${stats.sig[1]}    TAKEDOWNS ${stats.td[0]} - ${stats.td[1]}${stats.kd[0] + stats.kd[1] ? `    KNOCKDOWNS ${stats.kd[0]} - ${stats.kd[1]}` : ''}`;
+    const strip = new Graphics().rect(AW / 2 - 120, 10, 240, 8).fill({ color: 0x0a0a10, alpha: 0.95 }).rect(AW / 2 - 120, 17, 240, 1).fill(PAL.gold);
+    c.addChild(strip);
+    c.addChild(text(row, 0, 12, { small: true, width: AW, align: "center", color: PAL.bone }));
+  }
   return c;
 }
 
 /** Ring-card walk between rounds. */
+const RING_CARD_URL = (n: number) => `${import.meta.env.BASE_URL}ringcards/round-${Math.max(1, Math.min(5, n))}.png`;
+
+/** Load the ring-card art early so the card is there the moment she walks out. */
+export function preloadRingCards(): void {
+  for (let n = 1; n <= 5; n++) Assets.load(RING_CARD_URL(n)).catch(() => {});
+}
+
 export class RingCardWalk extends Container {
   private g = new Graphics();
-  private cardLabel: PixelText;
+  private card = new Sprite();
   t = 0;
   private L: Look2 = { skin: 0xdcae88, hairStyle: 5, hairColor: 0x6b4527, beard: 0, build: 0, trunks: 0x1a1a1a, trim: 0xc4a04a, glove: 0xdcae88, stance: 'upright', female: true, tattoo: 0 };
   constructor(round: number) {
     super();
-    this.addChild(this.g);
+    this.addChild(this.g, this.card);
     this.g.cacheAsTexture({ resolution: pixelArtResolution(), antialias: false });
-    this.cardLabel = text(`ROUND ${round}`, 0, 0, { color: PAL.ink });
-    this.addChild(this.cardLabel);
+    // the card is its own piece of pixel art, so the number always fits
+    Assets.load(RING_CARD_URL(round)).then((tex: Texture) => {
+      if (!this.destroyed) this.card.texture = tex;
+    }).catch(() => {});
   }
   update(dt: number): boolean {
     this.t += dt;
@@ -1080,10 +1790,14 @@ export class RingCardWalk extends Container {
     g.clear();
     const step = Math.floor(this.t * 6) % 2 === 0 ? POSES.walk1 : POSES.walk2;
     const rig: Rig = { ...step, haB: [2, -96], elB: [0, -82], haF: [8, -96], elF: [8, -82] };
-    g.ellipse(x, FLOOR + 1, 12, 2).fill({ color: 0, alpha: 0.35 });
-    drawRig(g, rig, Math.round(x), FLOOR, 1, this.L);
-    g.rect(Math.round(x - 14), FLOOR - 112, 36, 15).fill(0xf0eadc).stroke({ color: PAL.ink, width: 1 });
-    this.cardLabel.position.set(Math.round(x - 11), FLOOR - 108);
+    // she walks the far side of the octagon, behind the fighters, a touch smaller with distance
+    const fy = FLOOR - 14;
+    const sc = 0.82;
+    g.ellipse(x, fy + 1, 10, 2).fill({ color: 0, alpha: 0.35 });
+    drawRig(g, rig, Math.round(x), fy, 1, this.L, sc);
+    const bob = Math.floor(this.t * 6) % 2;
+    this.card.scale.set(sc);
+    this.card.position.set(Math.round(x - 17 * sc), Math.round(fy - 126 * sc + bob));
     g.updateCacheTexture();
     return x < AW + 40;
   }

@@ -20,6 +20,7 @@ import { playStorylet } from './dialog';
 import { expandPop } from '../sim/popculture';
 import { adjustMeter } from '../sim/econ';
 import { sfx } from '../audio/sfx';
+import { heatUp } from '../sim/feuds';
 
 interface Seat {
   who: 'president' | Fighter;
@@ -42,6 +43,8 @@ export class PostFightPresser extends Container {
     private fin: EventFinancials,
     private bonusIds: string[],
     private onDone: () => void,
+    /** 'pre' = fight-week presser: same stage, the main and co-main fighters, trash talk instead of results */
+    private mode: 'pre' | 'post' = 'post',
   ) {
     super();
     const s = g.state!;
@@ -79,17 +82,23 @@ export class PostFightPresser extends Container {
     // seats: president in the middle, winners either side
     const live = this.ev.card.filter((b) => b.status === 'done' && b.result).sort((a, b) => a.position - b.position);
     const guests: { f: Fighter; b: Bout }[] = [];
-    for (const b of live.slice(0, 3)) {
+    if (this.mode === 'pre') {
+      // fight week: the main event and co-main fighters, sat with their opponents
+      const top = this.ev.card.filter((b) => b.status === 'scheduled' || b.status === 'done').sort((a, b) => a.position - b.position).slice(0, 2);
+      for (const b of top) for (const id of [b.a, b.b]) if (s.fighters[id]) guests.push({ f: s.fighters[id], b });
+    }
+    for (const b of this.mode === 'pre' ? [] : live.slice(0, 3)) {
       const r = b.result!;
       const w = r.winner ? s.fighters[r.winner] : null;
       if (w && guests.length < 3) guests.push({ f: w, b });
       if (b.position === 0 && r.robbery && r.loser && s.fighters[r.loser] && guests.length < 4) guests.push({ f: s.fighters[r.loser], b });
     }
     if (!guests.length && live[0]) guests.push({ f: s.fighters[live[0].a], b: live[0] });
+    if (guests.length > 4) guests.length = 4;
     const order: Seat['who'][] = [];
     guests.forEach((gst, i) => (i % 2 === 0 ? order.push(gst.f) : order.unshift(gst.f)));
     order.splice(Math.floor(order.length / 2), 0, 'president');
-    const step = 76;
+    const step = order.length > 4 ? 88 : 76;
     const x0 = Math.round(W / 2 - (order.length * step) / 2);
     order.forEach((who, i) => {
       const x = x0 + i * step + 6;
@@ -120,7 +129,7 @@ export class PostFightPresser extends Container {
       this.addChild(plac);
       this.addChild(text(name.split(' ').slice(-1)[0].toUpperCase(), seat.x + 4, 120, { small: true, width: 56, align: 'center', color: PAL.ink, maxLines: 1 }));
     });
-    this.addChild(text(`${this.ev.name.toUpperCase()}  •  POST-FIGHT PRESS CONFERENCE`, 0, 132, { width: W, align: 'center', small: true, color: PAL.gold }));
+    this.addChild(text(`${this.ev.name.toUpperCase()}  •  ${this.mode === 'pre' ? 'FIGHT WEEK' : 'POST-FIGHT'} PRESS CONFERENCE`, 0, 132, { width: W, align: 'center', small: true, color: PAL.gold }));
     // the press pit: backs of heads, cameras
     const pit = new Graphics();
     pit.rect(0, 147, W, 25).fill(0x0c0a0e);
@@ -168,6 +177,12 @@ export class PostFightPresser extends Container {
 
   private intro(): void {
     const s = this.g.state!;
+    if (this.mode === 'pre') {
+      const main = this.ev.card.slice().sort((a, b) => a.position - b.position)[0];
+      const line = main ? `Thanks for coming. Saturday: ${boutTitle(s, main)}, live at ${content().venues.find((v) => v.id === this.ev.venue)?.name ?? 'the arena'}. Tickets are moving. Fighters are ready. Let's go.` : 'Thanks for coming. Saturday, violence. Questions.';
+      this.presLine(line, [{ label: 'OPENING STATEMENT →', fn: () => this.opening() }]);
+      return;
+    }
     const live = this.ev.card.filter((b) => b.status === 'done' && b.result);
     const fotn = live.slice().sort((a, b) => b.result!.fotn - a.result!.fotn)[0];
     const bonusNames = this.bonusIds.map((id) => s.fighters[id]?.last).filter(Boolean);
@@ -181,7 +196,16 @@ export class PostFightPresser extends Container {
 
   private opening(): void {
     const q = content().templates.presserQ ?? {};
-    const pick = (k: string) => expandPop(this.rng.pick(q[k] ?? ['Thanks for coming.']));
+    const pick = (k: string) => expandPop(this.rng.pick(q[k] ?? ['Thanks for coming.'])).replace(/\{event\}/g, this.ev.name);
+    if (this.mode === 'pre') {
+      const go = (k: string, fx: () => void) => () => { fx(); this.presLine(pick(k), [{ label: 'TAKE QUESTIONS →', fn: () => this.hands() }]); };
+      this.presLine('How do you want to sell it?', [
+        { label: 'HYPE IT UP', fn: go('pre_open_hype', () => adjustMeter(this.g.state!, 'fans', 1)) },
+        { label: 'KEEP IT CLASSY', fn: go('pre_open_respect', () => { adjustMeter(this.g.state!, 'fighters', 1); adjustMeter(this.g.state!, 'commission', 1); }) },
+        { label: 'STIR THE POT', fn: go('pre_open_trash', () => { adjustMeter(this.g.state!, 'media', 2); adjustMeter(this.g.state!, 'commission', -1); }) },
+      ]);
+      return;
+    }
     this.presLine('How do you want to open?', [
       { label: 'HYPE IT UP', fn: () => { adjustMeter(this.g.state!, 'fans', 1); this.presLine(pick('open_hype'), [{ label: 'TAKE QUESTIONS →', fn: () => this.hands() }]); } },
       { label: 'THANK THE FIGHTERS', fn: () => { adjustMeter(this.g.state!, 'fighters', 1); this.presLine(pick('open_thanks'), [{ label: 'TAKE QUESTIONS →', fn: () => this.hands() }]); } },
@@ -192,7 +216,7 @@ export class PostFightPresser extends Container {
   /** Raised hands: three reporters to pick from, or wrap it up. */
   private hands(): void {
     const s = this.g.state!;
-    if (this.qas >= 4) return this.closing();
+    if (this.qas >= (this.mode === 'pre' ? 3 : 4)) return this.mode === 'pre' ? this.faceoff() : this.closing();
     // the occasional bit of chaos between questions
     if (this.qas > 0 && this.rng.chance(0.35)) {
       const fs = this.seats.filter((x) => x.who !== 'president').map((x) => x.who as Fighter);
@@ -214,7 +238,7 @@ export class PostFightPresser extends Container {
     const p = this.panel;
     p.removeChildren().forEach((c) => c.destroy({ children: true }));
     p.addChild(box(W - 8, H - 176, PAL.night, PAL.ash, { bevel: true })).position.set(4, 174);
-    p.addChild(text(`Hands go up. Who do you call on? (${4 - this.qas} questions left)`, 12, 179, { small: true, color: PAL.ash }));
+    p.addChild(text(`Hands go up. Who do you call on? (${(this.mode === 'pre' ? 3 : 4) - this.qas} questions left)`, 12, 179, { small: true, color: PAL.ash }));
     const hands = this.rng.sample(reps, Math.min(3, reps.length));
     hands.forEach((rep, i) => {
       const c = clickable(new Container(), () => this.question(rep.id));
@@ -229,7 +253,7 @@ export class PostFightPresser extends Container {
       c.position.set(10 + i * 146, 189);
       p.addChild(c);
     });
-    p.addChild(button('WRAP IT UP', W - 86, H - 22, 74, 14, () => this.closing(), { small: true, fill: PAL.blood }));
+    p.addChild(button(this.mode === 'pre' ? 'FACE-OFF' : 'WRAP IT UP', W - 86, H - 22, 74, 14, () => (this.mode === 'pre' ? this.faceoff() : this.closing()), { small: true, fill: PAL.blood }));
     this.flash(4);
   }
 
@@ -241,7 +265,7 @@ export class PostFightPresser extends Container {
     // half the time the reporter goes after a fighter; otherwise it's on you
     if (fighters.length && this.rng.chance(0.5)) return this.fighterQuestion(rep.id, this.rng.pick(fighters));
     const rng2 = new Rng(s.rng);
-    const inst = fireCategory(s, 'presser', rng2, { postFight: true, eventName: this.ev.name }, { reporter: rep.id }, this.ev.id);
+    const inst = fireCategory(s, 'presser', rng2, { postFight: this.mode === 'post', eventName: this.ev.name }, { reporter: rep.id }, this.ev.id);
     s.rng = rng2.state;
     if (!inst) return this.fighterQuestion(rep.id, fighters[0] ?? this.seats[0]);
     playStorylet(this.g, inst, () => this.hands());
@@ -253,6 +277,7 @@ export class PostFightPresser extends Container {
     const f = seat.who;
     const rep = content().reporters.find((r) => r.id === repId)!;
     const q = content().templates.presserQ ?? {};
+    if (this.mode === 'pre') return this.preQuestion(rep, f, seat);
     const r = seat.bout?.result;
     const champ = Object.values(s.belts).some((bl) => bl.holder === f.id && !bl.retired);
     const won = r?.winner === f.id;
@@ -278,8 +303,55 @@ export class PostFightPresser extends Container {
     }]);
   }
 
+  /** Fight-week Q&A: confident, humble or trash depending on who's holding the mic. */
+  private preQuestion(rep: ReturnType<typeof content>['reporters'][number], f: Fighter, seat: Seat): void {
+    const s = this.g.state!;
+    const q = content().templates.presserQ ?? {};
+    const b = seat.bout;
+    const oppId = b ? (b.a === f.id ? b.b : b.a) : undefined;
+    const opp = oppId ? s.fighters[oppId] : undefined;
+    const champ = Object.values(s.belts).some((bl) => bl.holder === f.id && !bl.retired);
+    const fill = (t: string) => expandPop(pronounize(t.replace(/\{f\}/g, f.first).replace(/\{opp\}/g, opp?.last ?? 'him').replace(/\{president\}/g, s.president.name.split(' ').slice(-1)[0]), f));
+    const qk = champ && this.rng.chance(0.6) ? 'pre_to_champ' : 'pre_to_fighter';
+    const loud = f.traits.includes('Trash Talker') || f.traits.includes('Hothead') || f.traits.includes('Showman');
+    const ak = champ && this.rng.chance(0.5) ? 'pre_answer_champ' : loud ? 'pre_answer_trash' : f.traits.includes('Wholesome') || f.traits.includes('Shy') || f.traits.includes('Devout') ? 'pre_answer_humble' : 'pre_answer_confident';
+    const question = fill(this.rng.pick(q[qk] ?? ['How was camp?']));
+    const answer = fill(this.rng.pick(q[ak] ?? ['Ready.']));
+    this.say(rep.name, reporterPortrait(rep, 32), question, [{
+      label: `${f.last.toUpperCase()} ANSWERS →`, fn: () => {
+        this.say(fullName(f), fighterPortrait(f, 32), answer, [{ label: 'NEXT QUESTION →', fn: () => this.hands() }]);
+        f.hype = Math.min(100, f.hype + (ak === 'pre_answer_trash' ? 4 : 2));
+        if (opp && ak === 'pre_answer_trash') heatUp(s, f.id, opp.id, 8);
+      },
+    }]);
+  }
+
+  /** The staredown at the end of fight-week pressers. */
+  private faceoff(): void {
+    const s = this.g.state!;
+    const main = this.ev.card.slice().sort((a, b) => a.position - b.position)[0];
+    const A = main ? s.fighters[main.a] : undefined;
+    const B = main ? s.fighters[main.b] : undefined;
+    if (!A || !B) return this.closing();
+    const line = expandPop(this.rng.pick(content().templates.presserQ?.pre_faceoff ?? ['The face-off. Nobody blinks.']).replace(/\{a\}/g, A.last).replace(/\{b\}/g, B.last));
+    if (/CHAOS|shoves|restrained|slaps/.test(line)) {
+      heatUp(s, A.id, B.id, 10);
+      adjustMeter(s, 'fans', 1);
+      A.hype = Math.min(100, A.hype + 3);
+      B.hype = Math.min(100, B.hype + 3);
+    }
+    this.flash(10);
+    sfx('crowd');
+    this.say('FACE-OFF', fighterPortrait(A, 32), line, [{ label: 'WRAP IT UP →', fn: () => this.closing() }]);
+  }
+
   private closing(): void {
     const s = this.g.state!;
+    if (this.mode === 'pre') {
+      const lines = ['That\'s it. Weigh-ins Friday. Fights Saturday. Bail Sunday. Thanks everybody.', 'Get out of here. Buy the pay-per-view. Don\'t pirate it, we know who you are.', 'See you Saturday. Hydrate. They won\'t.'];
+      this.presLine(this.rng.pick(lines), [{ label: 'BACK TO FIGHT WEEK →', fn: () => this.onDone(), color: PAL.blood }]);
+      return;
+    }
     const lines = [
       'Thanks everybody. Drive safe. Don\'t sue us.',
       'That\'s it. Go home. Tip your bartenders. Tip your cutmen. Especially your cutmen.',
