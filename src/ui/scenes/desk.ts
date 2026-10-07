@@ -31,7 +31,7 @@ import { content } from '../../core/content';
 import { sfx } from '../../audio/sfx';
 import { eventThisWeek, upcomingEvents } from '../../sim/events';
 import { routePhase } from '../flow';
-import { confirm } from '../widgets';
+import { confirm, alertBox } from '../widgets';
 import { openBailOffice } from './bailoffice';
 import { openNegotiation } from './negotiation';
 import { openRoster } from './roster';
@@ -944,19 +944,24 @@ export class DeskScene extends Scene {
   private drawSlip(): Container {
     const sl = this.slip!;
     const c = clickable(new Container(), () => {
+      const full = this.slip;
       this.slip = null;
       this.refresh();
-    }, 'Click to file it under "things I will think about later".');
+      // read the whole thing
+      if (full) alertBox(this.g, 'M.O.A. CITATION', `PROTOCOL VIOLATION\n\n${full.reason}\n\n${full.warning ? 'WARNING. Next time it comes out of your pay.' : `PENALTY: -${money(full.fine, false)} from your pay.`}\n\nAll your citations are in the INBOX.`);
+    }, 'Click to read the whole citation.');
     const w = 150;
     const body = text(sl.reason, 6, 22, { small: true, width: w - 12, color: PAL.ink, maxLines: 4 });
+    const more = text('CLICK TO READ IT ALL', 6, 0, { small: true, color: PAL.slate });
     const foot = text(sl.warning ? 'WARNING. Next time it comes out of your pay.' : `PENALTY: -${money(sl.fine, false)} from your pay`, 6, 0, { small: true, color: sl.warning ? PAL.slate : PAL.blood, width: w - 12 });
-    const h = 30 + body.textHeight + foot.textHeight;
-    foot.y = h - foot.textHeight - 5;
+    const h = 40 + body.textHeight + foot.textHeight;
+    foot.y = h - foot.textHeight - 14;
+    more.y = h - 11;
     c.addChild(paper(w, h, 'pink', 77));
     c.addChild(box(w, 10, PAL.blood));
     c.addChild(text('M.O.A. CITATION', 4, 2, { small: true, color: PAL.bone }));
     c.addChild(text('PROTOCOL VIOLATION', 6, 13, { small: true, color: PAL.blood }));
-    c.addChild(body, foot);
+    c.addChild(body, foot, more);
     c.position.set(DOC_X + (DOC_W - w) / 2, this.slipY(h) + Math.round(Math.max(0, 1 - sl.t * 4) * (h + 24)));
     c.rotation = 0.015;
     sl.node = c;

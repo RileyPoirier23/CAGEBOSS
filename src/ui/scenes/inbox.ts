@@ -5,7 +5,7 @@ import { Container } from 'pixi.js';
 import type { Game } from '../app';
 import { PAL } from '../../art/palette';
 import { W, H, text, button, box, ScrollBox, clickable, paper } from '../kit';
-import { openWindow } from '../widgets';
+import { openWindow, alertBox } from '../widgets';
 import { content } from '../../core/content';
 import { money } from '../../core/format';
 import { fmtDate } from '../../core/time';
@@ -56,7 +56,14 @@ export function openInbox(g: Game, onClose: () => void): void {
     } else if (tab === 'citations') {
       const cs = s.desk.citations.slice().reverse().slice(0, 40);
       if (!cs.length) add(text('No citations. Teacher\'s pet.', 0, 0, { color: PAL.ash }), 10);
-      for (const c of cs) add(text(`${fmtDate(c.week)}  ${c.warning ? 'WARNING' : '-' + money(c.fine)}  ${c.reason}`, 0, 0, { small: true, color: c.warning ? PAL.ash : PAL.blood, width: W - 60 }), 8);
+      for (const c of cs) {
+        const t = text(`${fmtDate(c.week)}  ${c.warning ? 'WARNING' : '-' + money(c.fine)}  ${c.reason}`, 0, 0, { small: true, color: c.warning ? PAL.ash : PAL.blood, width: W - 60 });
+        // click a citation to read it in full
+        t.eventMode = 'static';
+        t.cursor = 'pointer';
+        t.on('pointertap', () => alertBox(g, 'M.O.A. CITATION', `${fmtDate(c.week)}\n\n${c.reason}\n\n${c.warning ? 'WARNING (no fine this time).' : `PENALTY: -${money(c.fine)}`}`));
+        add(t, t.textHeight);
+      }
     } else {
       for (const l of s.log.slice().reverse().slice(0, 80)) add(text(`${fmtDate(l.week)}  ${l.text}`, 0, 0, { small: true, color: PAL.bone, width: W - 60 }), 8);
     }

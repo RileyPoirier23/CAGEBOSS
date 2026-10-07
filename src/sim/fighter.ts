@@ -22,6 +22,7 @@ import { makeBout, runBout, applyBout } from './events';
 import { heatUp, feudKey } from './feuds';
 import type { GamePlan } from './fight';
 import { money } from '../core/format';
+import { sigOf } from './docs';
 
 export type BodyPart = 'head' | 'jaw' | 'body' | 'larm' | 'rarm' | 'lhand' | 'rhand' | 'legs';
 export const BODY_PARTS: { id: BodyPart; name: string; effect: string }[] = [
@@ -43,7 +44,7 @@ export const TIER_NAME: Record<Tier, string> = { amateur: 'Amateur circuit', reg
 /** Bradie also owns the bareknuckle circuit. "It's for the culture, bro." */
 export const BKB_NAME = "Bradie's Biggest Bird Bareknuckle";
 export interface StaffCandidate { role: StaffId; name: string; tier: number; quirk: string; shady: boolean }
-export interface DocField { label: string; value: string; bad?: boolean }
+export interface DocField { label: string; value: string; bad?: boolean; kind?: 'text' | 'sig' }
 export interface FMDoc {
   id: string;
   kind: 'bout' | 'statement' | 'medical' | 'sponsor' | 'ofdeal' | 'bkdeal';
@@ -952,6 +953,161 @@ const EVENTS = {
   },
 };
 
+// ---------------------------------------------------------------- fight night (your night, your prompts)
+
+const PRESS_Q = {
+  win: [
+    "{rep}: \"{you}, walk us through the finish. When did you know {opp} was done?\"",
+    "{rep}: \"That's a statement win. Who's next for {you}?\"",
+    "{rep}: \"{you}, the crowd was chanting your name. Did you hear it in there?\"",
+    "{rep}: \"Some people had you as the underdog tonight. Anything to say to them?\"",
+    "{rep}: \"{you}, how much money did that performance just make you, roughly?\"",
+    "{rep}: \"What did your corner tell you between rounds? Because something changed.\"",
+    "{rep}: \"{you}, is it fair to say {opp} underestimated you?\"",
+    "{rep}: \"Your mom was cageside. What did she say after?\"",
+    "{rep}: \"Are you calling anyone out tonight, or are we being humble?\"",
+    "{rep}: \"{you}, what's the first thing you're eating?\"",
+  ],
+  loss: [
+    "{rep}: \"{you}, tough night. What went wrong out there?\"",
+    "{rep}: \"Do you want the rematch with {opp}?\"",
+    "{rep}: \"Was the weight cut a factor tonight?\"",
+    "{rep}: \"Some fans are saying you're not ready for this level. Your response?\"",
+    "{rep}: \"What's next for {you} after this?\"",
+    "{rep}: \"Did you agree with the referee tonight?\"",
+    "{rep}: \"{you}, how's the face? Honestly. It looks bad from here.\"",
+    "{rep}: \"Are you thinking about changing camps?\"",
+  ],
+};
+const PRESS_A: Record<string, string[]> = {
+  humble: ["You thank God, your coach, your mom and the cleaning staff. In that order.", "\"Credit to {opp}. Tough guy. Back to the gym Monday.\" Nobody can clip it. That's the point.", "You keep it classy. Your sponsors love it. Bleeter is bored.", "\"I'm just a kid from {home} who works hard.\" A grandma in the third row cries."],
+  trash: ["\"{opp} hits like a wet sandwich.\" The room explodes.", "You call {opp}'s cardio 'a rumour'. It's on every highlight show by midnight.", "\"I'd fight {opp} again for free. Actually, he should pay me.\"", "You say {opp}'s camp should be investigated for 'crimes against wrestling'."],
+  callout: ["You look into the camera and name the man you want next. The arena gasps on cue.", "\"There's one guy I want. He knows who he is. It's {target}.\" {target}'s phone starts buzzing.", "You call out {target} and demand the main event. Somebody in matchmaking writes it down.", "\"{target}, I'm coming for that spot. Stop hiding behind your nutritionist.\""],
+  joke: ["You answer every question with a cooking tip. The clip does 3 million views.", "\"I'm going to Disneyland.\" You are not going to Disneyland. You're going to the hospital, for a check.", "You ask the reporter a question back. He doesn't have an answer. Nobody does.", "You do the whole presser in a sombrero someone threw in. 1ton approves."],
+  excuse: ["\"I had the flu, a hamstring, and a bad feeling.\" Nobody buys it.", "You blame the judges, the lights, and the canvas. The canvas has no comment.", "\"I was off tonight. Mentally. Physically. Spiritually. Financially.\"", "You say you broke your hand in round one. The X-ray says you didn't."],
+};
+const REPORTERS = ['Ariel Hell-Wani', 'The Pathetic Fight Desk', 'Cageside Carl', 'MMA Junkie-ish', 'Chisel Rudolph', 'Big Hen'];
+const ONE_TON_Q = {
+  mex: [
+    "1ton, Lucha Lowdown! {you}, Mexico is SCREAMING right now. Who do you dedicate this to? It's Mexico. Say Mexico.",
+    "1ton. {you}. I have cried four times tonight. When do you headline in Mexico City?",
+    "1ton here! {you}, my mother wants to adopt you. She's serious. Answer carefully.",
+    "1ton. {you}, are you the greatest Mexican fighter alive? I'm asking for 130 million people. And me.",
+  ],
+  non: [
+    "1ton. {you}, quick question: do you have any Mexican blood? A grandma? A favourite taco? Anything?",
+    "1ton, Lucha Lowdown. {you}, why aren't you Mexican? Have you considered it?",
+    "1ton here. {you}, would you fight a Mexican fighter next? Because I have a list. It's long. It's laminated.",
+    "1ton. Not a question for {you}. A question for the room: where are the Mexicans? Okay, {you}, you can answer.",
+  ],
+};
+
+/** After your fight: press scrum (and sometimes something else happens). Pushes events to answer back at the hub. */
+export function fightNightEvents(s: GameState, ev: FightEvent, rng: Rng): void {
+  const st = fm(s);
+  const f = me(s);
+  const b = ev.card.find((x) => x.a === f.id || x.b === f.id);
+  const r = b?.result;
+  if (!b || !r) return;
+  const won = r.winner === f.id;
+  const opp = s.fighters[b.a === f.id ? b.b : b.a];
+  const mex = f.country === 'Mexico';
+  // 1ton shows up at your scrum now and then (always, if you're Mexican)
+  if (mex || rng.chance(0.3)) {
+    const q = rng.pick(ONE_TON_Q[mex ? 'mex' : 'non']).replace(/\{you\}/g, f.last);
+    st.pending.push({
+      id: 'fn1ton', title: '1TON HAS HIS HAND UP', text: q, portrait: 'rep:oneton',
+      choices: mex
+        ? [{ id: 'viva', label: '"VIVA MEXICO!"' }, { id: 'humble', label: 'Thank him, stay humble' }, { id: 'joke', label: 'Make a joke' }]
+        : [{ id: 'abuela', label: 'Claim a Mexican grandma' }, { id: 'no', label: '"No. Next question."' }, { id: 'taco', label: 'Name your favourite taco' }, { id: 'joke', label: 'Make a joke' }],
+    });
+  }
+  const target = calloutTargets(s)[0];
+  const q = rng.pick(PRESS_Q[won ? 'win' : 'loss']).replace(/\{rep\}/g, rng.pick(REPORTERS)).replace(/\{you\}/g, f.last).replace(/\{opp\}/g, opp.last);
+  st.pending.push({
+    id: 'fnpress', title: won ? 'POST-FIGHT PRESSER' : 'POST-FIGHT SCRUM', text: q, data: { opp: opp.id, target: target?.id ?? '' },
+    choices: won
+      ? [{ id: 'humble', label: 'Stay humble' }, { id: 'trash', label: `Trash ${opp.last}` }, ...(target ? [{ id: 'callout', label: `Call out ${target.last}` }] : []), { id: 'joke', label: 'Make a joke' }]
+      : [{ id: 'humble', label: 'Give him credit' }, { id: 'excuse', label: 'Make excuses' }, { id: 'trash', label: 'Demand a rematch' }, { id: 'joke', label: 'Make a joke' }],
+  });
+  // something else happens on the night
+  const extra = rng.next();
+  if (extra < 0.15) st.pending.push({
+    id: 'fnbottle', title: 'INCOMING WATER BOTTLE', data: { opp: opp.id },
+    text: `On your way out, somebody from ${opp.last}'s corner throws a water bottle at your head. It misses. Mostly. The cameras are still rolling.`,
+    choices: [{ id: 'throw', label: 'Throw it back' }, { id: 'point', label: 'Point at the scoreboard' }, { id: 'walk', label: 'Keep walking' }],
+  });
+  else if (extra < 0.3) st.pending.push({
+    id: 'fnbradie', title: 'BRADIE IS IN THE TUNNEL', portrait: 'npc:bradie_taylor',
+    text: `Bradie "Biggest Bird" Taylor, wearing sunglasses at night, holding a phone on a selfie stick: "BRO. Only Fighters live. Right now. You and me. Ten minutes. Bring the blood."`,
+    choices: [{ id: 'live', label: 'Go live with Bradie' }, { id: 'no', label: '"Not tonight, Bradie"' }],
+  });
+  else if (extra < 0.42) st.pending.push({
+    id: 'fnfan', title: 'A FAN JUMPED THE BARRIER',
+    text: 'A man in a homemade shirt with your face on it gets past security and bear-hugs you in the tunnel. Security is coming. He is crying.',
+    choices: [{ id: 'hug', label: 'Hug him back' }, { id: 'selfie', label: 'Take a selfie with him' }, { id: 'security', label: 'Let security handle it' }],
+  });
+  else if (extra < 0.52 && !won) st.pending.push({
+    id: 'fndoc', title: 'COMMISSION DOCTOR',
+    text: "The commission doctor shines a light in your eyes and frowns. \"I'm recommending a 30-day medical suspension. Or you could sign this saying you feel great.\"",
+    choices: [{ id: 'rest', label: 'Take the suspension' }, { id: 'sign', label: 'Sign it. You feel great.' }],
+  });
+}
+
+/** Resolve a fight-night event (press answers etc.). Returns null if it isn't one. */
+function resolveFightNight(s: GameState, ev: FMEvent, choice: string, rng: Rng): string | null {
+  const st = fm(s);
+  const f = me(s);
+  const hype = (n: number) => (f.hype = clamp(f.hype + n, 0, 100));
+  const mor = (n: number) => (st.morale = clamp(st.morale + n, 0, 100));
+  const opp = s.fighters[String(ev.data?.opp ?? '')];
+  const fill = (t: string) => t.replace(/\{opp\}/g, opp?.last ?? 'him').replace(/\{you\}/g, f.last).replace(/\{home\}/g, f.hometown.split('|')[0]).replace(/\{target\}/g, s.fighters[String(ev.data?.target ?? '')]?.last ?? 'the champ');
+  if (ev.id === 'fnpress') {
+    const out = fill(rng.pick(PRESS_A[choice] ?? PRESS_A.humble));
+    if (choice === 'humble') { mor(4); hype(1); }
+    if (choice === 'trash') { hype(4); if (opp) heatUp(s, f.id, opp.id, 15); }
+    if (choice === 'joke') { hype(2); mor(2); }
+    if (choice === 'excuse') { hype(-3); mor(1); }
+    if (choice === 'callout') {
+      const t = s.fighters[String(ev.data?.target ?? '')];
+      hype(6);
+      if (t) {
+        heatUp(s, f.id, t.id, 20);
+        post(s, '@' + t.last.toLowerCase(), rng.pick(['saw that. sign the paper then.', 'lmao who', 'Be careful what you ask for.', 'Get in line, kid.']));
+        if (!st.fight && rng.chance(0.4)) st.offers.unshift(offerVs(s, t, rng, 'Your callout at the presser landed. The matchmaker wants it.'));
+      }
+    }
+    return out;
+  }
+  if (ev.id === 'fn1ton') {
+    switch (choice) {
+      case 'viva': hype(8); post(s, '@1ton', `${f.last.toUpperCase()} SAID VIVA MEXICO AT THE PRESSER. I AM ON THE FLOOR. SOMEONE CALL MY MOTHER.`); return '"VIVA MEXICO!" 1ton stands on his chair. Security lets him. Nobody can stop it.';
+      case 'humble': hype(3); mor(3); return '1ton nods, deeply moved. "Humble. Mexican. Perfect." He writes "PERFECT" in his notebook.';
+      case 'abuela':
+        hype(4);
+        if (rng.chance(0.4)) { hype(-6); post(s, '@1ton', `I CHECKED. ${f.last.toUpperCase()}'S GRANDMA IS FROM OHIO. I HAVE NEVER BEEN SO BETRAYED.`); return '1ton investigates. Your grandma is from Ohio. He bleets about it for a week.'; }
+        post(s, '@1ton', `${f.last.toUpperCase()} HAS A MEXICAN ABUELA. I KNEW IT. I ALWAYS KNEW IT.`);
+        return '1ton gasps. "I KNEW IT." You are now, as far as 1ton is concerned, Mexican.';
+      case 'no': hype(-1); post(s, '@1ton', `asked ${f.last.toLowerCase()} one simple question. got "no". boring man. boring fight. 3/10.`); return '1ton lowers his hand, slowly, and writes your name on a list.';
+      case 'taco': hype(2); return rng.pick(['"Al pastor." 1ton nods. "Acceptable."', '"Fish taco." 1ton stares. "That\'s a Baja answer. I\'ll allow it."', '"Taco Bell." The room goes silent. 1ton leaves.']);
+      default: hype(2); return '1ton does not laugh. His beard laughs a little.';
+    }
+  }
+  switch (ev.id + ':' + choice) {
+    case 'fnbottle:throw': hype(6); if (opp) heatUp(s, f.id, opp.id, 20); if (rng.chance(0.4)) { st.money -= 1000; return 'Direct hit. The Commission fines you $1,000. The clip is everywhere. Worth it.'; } return 'You miss, hit a cameraman, apologise to the cameraman. The beef is very real now.';
+    case 'fnbottle:point': hype(3); if (opp) heatUp(s, f.id, opp.id, 10); return 'You point at the scoreboard. Somebody makes it a meme within minutes.';
+    case 'fnbottle:walk': mor(2); return 'You keep walking. Classy. Your coach is proud. The internet is bored.';
+    case 'fnbradie:live': st.ofa.subs += 250 + f.hype * 4; hype(3); mor(-2); return `Ten minutes became forty. Bradie asked you to rate his afro (you gave it an 8). ${st.ofa.joined ? '+subscribers on Only Fighters.' : 'You aren\'t even on Only Fighters. He signed you up "as a guest".'}`;
+    case 'fnbradie:no': return 'Bradie: "respect. respect. next time." He goes live with the cleaning staff instead.';
+    case 'fnfan:hug': hype(3); mor(4); return 'You hug him back. Security waits. He says you changed his life. It goes viral (the good kind).';
+    case 'fnfan:selfie': hype(4); return 'The selfie is incredible. He posts it with 40 fire emojis.';
+    case 'fnfan:security': hype(-1); return 'Security drags him off. He is still waving. You feel a bit bad.';
+    case 'fndoc:rest': st.suspendedUntil = Math.max(st.suspendedUntil, s.week + 4); for (const p of BODY_PARTS) st.body[p.id] = clamp(st.body[p.id] + 8, 0, p.id === 'head' ? st.headCap : 100); return 'Four weeks on the shelf. Your brain thanks you.';
+    case 'fndoc:sign': st.headCap = Math.max(55, st.headCap - 2); return 'You sign. You feel great. Your brain files a quiet complaint (head ceiling -2).';
+  }
+  return null;
+}
+
 /** Fighter Mode cageside: you watched somebody else's fight on your card. */
 export function cagesideReact(s: GameState, winner: string, loser: string, choice: 'stare' | 'clap' | 'mock' | 'ignore', rng: Rng): string {
   const st = fm(s);
@@ -986,6 +1142,8 @@ export function resolveEvent(s: GameState, choice: string, rng: Rng): string {
   const f = me(s);
   const ev = st.pending.shift();
   if (!ev) return '';
+  const night = resolveFightNight(s, ev, choice, rng);
+  if (night !== null) return night;
   const hype = (n: number) => (f.hype = clamp(f.hype + n, 0, 100));
   const mor = (n: number) => (st.morale = clamp(st.morale + n, 0, 100));
   switch (ev.id + ':' + choice) {
@@ -1074,16 +1232,18 @@ export function boutDoc(s: GameState, rng: Rng, o: FMOffer): FMDoc {
     { label: 'Weight limit', value: `${lim} lbs` },
     { label: 'Purse', value: money(o.purse) },
     { label: 'Win bonus', value: money(o.win) },
+    { label: 'Fighter signature', value: sigOf(me(s)), kind: 'sig' },
   ];
-  const ref = { title: 'WHAT YOU AGREED (offer)', lines: fields.map((x) => ({ ...x })) };
+  const ref = { title: 'WHAT YOU AGREED (offer + your file)', lines: fields.map((x) => ({ ...x })) };
   let fault: string | null = null;
-  if (rng.chance(0.4)) {
-    fault = rng.pick(['Purse', 'Win bonus', 'Rounds', 'Weight limit']);
+  if (rng.chance(0.42)) {
+    fault = rng.pick(['Purse', 'Win bonus', 'Rounds', 'Weight limit', ...(fm(s).staff.manager > 0 ? ['Fighter signature'] : [])]);
     const f = fields.find((x) => x.label === fault)!;
     if (fault === 'Purse') f.value = money(Math.round(o.purse * 0.6 / 50) * 50);
     if (fault === 'Win bonus') f.value = money(0);
     if (fault === 'Rounds') f.value = '5';
     if (fault === 'Weight limit') f.value = `${lim + 8} lbs (catchweight)`;
+    if (fault === 'Fighter signature') f.value = sigOf(me(s), 2);
     f.bad = true;
   }
   return { id: docId(s, rng), kind: 'bout', title: 'BOUT AGREEMENT', from: fm(s).tier === 'of' ? 'CBFC matchmaking' : TIER_NAME[fm(s).tier], fields, ref, fault, week: s.week };
@@ -1290,6 +1450,48 @@ function ofWeek(s: GameState, rng: Rng, out: string[]): void {
 
 /** Jimmy Quavo turns up (fighter mode). */
 export const JIMMY = { name: 'Jimmy Quavo', portrait: 'npc:jimmy_quavo' };
+
+/** The reference line a bad document line has to be compared with, and what's wrong (shown on a match). */
+const PAIRS: Record<string, Record<string, [string, string]>> = {
+  bout: {
+    Purse: ['Purse', 'The purse is lower than the one you agreed.'],
+    'Win bonus': ['Win bonus', 'The win bonus is not what you agreed.'],
+    Rounds: ['Rounds', 'They added rounds you never agreed to.'],
+    'Weight limit': ['Weight limit', "It's a catchweight. He gets to come in heavy."],
+    'Fighter signature': ['Fighter signature', "That's not your signature. Somebody signed for you."],
+  },
+  statement: {
+    'Manager fee': ['Manager rate', "The fee doesn't match the rate in his contract."],
+    Expenses: ['Allowed expenses', "That expense isn't allowed under his contract."],
+    'Manager rate': ['Manager rate', 'He changed his own percentage.'],
+  },
+  medical: {
+    Age: ['Age', "The age doesn't match the fighter's file."],
+    'Exam date': ['Rule', 'The exam is older than 26 weeks.'],
+    Signed: ['Licensed docs', "That doctor isn't licensed by the Commission."],
+  },
+  sponsor: {
+    Ingredients: ['Banned list', 'It contains a banned substance.'],
+    Payment: ['Payment', "That's not money. That's MoonPup tokens."],
+    'Paid on': ['Paid on', "You'd get paid after your 12th title defence. So, never."],
+  },
+  ofdeal: {
+    'Revenue split': ['Split', "That's not the split Bradie promised. It's backwards."],
+    Likeness: ['Likeness', 'He owns your face and takes a cut of your purses. Forever.'],
+    'Content quota': ['Posting', "There's a posting quota with a fine. He said post whenever."],
+  },
+  bkdeal: {
+    Purse: ['Money', "Half the purse is in Only Fighters credits, not cash."],
+    Availability: ['Fights', "You'd have to fight his cousin Dale whenever Dale is upset."],
+  },
+};
+
+/** Compare a document line with a reference line: the problem, if those two lines are the bad pair. */
+export function comparePair(d: FMDoc, docLabel: string, refLabel: string): string | null {
+  if (!d.fault || docLabel !== d.fault) return null;
+  const p = PAIRS[d.kind]?.[d.fault];
+  return p && p[0] === refLabel ? p[1] : null;
+}
 
 /** Sign the document as is, or dispute the fields you flagged. */
 export function resolveDoc(s: GameState, id: string, action: 'sign' | 'dispute', flagged: string[], rng: Rng): { text: string; good: boolean } {
@@ -1676,6 +1878,8 @@ export function afterFight(s: GameState, ev: FightEvent, rng: Rng): string[] {
   st.cornerAid = {};
   computeRankings(s);
   st.oppFlagged = false;
+  // your night isn't over: presser, 1ton, whatever else happened in the tunnel
+  fightNightEvents(s, ev, rng);
   if (st.tier === 'of') {
     const rk = rankOf(s, f.id);
     out.push(rk === null ? 'Still unranked.' : rk === 0 ? 'Champion.' : `Ranked #${rk}.`);

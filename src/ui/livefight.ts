@@ -383,13 +383,35 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     o.done(r);
   };
 
+  /** Let both AIs finish it in an instant (your corner does the cutman work at an average level). */
+  const simRest = () => {
+    if (resultShown || L.phase === 'over') return;
+    auto.plan = o.plan;
+    let steps = 0;
+    while ((L.phase as string) !== 'over' && steps < 200000) {
+      if (L.phase === 'break') L.nextRound([0.55, 0.5]);
+      const a = auto.update(L, 1 / 30);
+      const b = ai.update(L, 1 / 30);
+      const intents: [FightIntent[], FightIntent[]] = P === 0 ? [a.intents, b.intents] : [b.intents, a.intents];
+      const moves: [number, number] = P === 0 ? [a.move, b.move] : [b.move, a.move];
+      L.update(1 / 30, intents, moves);
+      L.events.length = 0;
+      steps++;
+    }
+    const w = L.result?.winner ?? -1;
+    if (L.result && (L.result.method === 'KO' || L.result.method === 'TKO') && w >= 0) arena.floor((1 - w) as Side, 'ko');
+    arena.over(w as Side | -1);
+    freeze = 0;
+    endT = 99;
+  };
+
   let pauseWrap: Container | null = null;
   const pause = () => {
     paused = true;
     setPadUiMode('cursor');
     const fr = new Container();
     const bw = 200;
-    const bh = 112;
+    const bh = 130;
     const bx = (W - bw) / 2;
     const by = (H - bh) / 2;
     fr.addChild(box(bw, bh, PAL.night, PAL.gold, { bevel: true })).position.set(bx, by);
@@ -416,7 +438,11 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       resume();
       g.toast(g.settings.handsOn === false ? 'Hands-on fights off: future fights use the sim. The AI finishes this one.' : 'Hands-on fights on.', PAL.gold, { small: true });
     }, { small: true, fill: PAL.shadow }));
-    fr.addChild(text('Also in Settings', bx, by + 94, { width: bw, align: 'center', small: true, color: PAL.ash }));
+    fr.addChild(button('SIM THE REST OF THE FIGHT', bx + 10, by + 92, bw - 20, 14, () => {
+      resume();
+      simRest();
+    }, { small: true, fill: PAL.blood }));
+    fr.addChild(text('Hands-on fights can also be turned off in Settings', bx + 6, by + 112, { width: bw - 12, align: 'center', small: true, color: PAL.ash }));
     pauseWrap = g.modal(fr, { dim: 0.6 });
     // however the menu goes away, the fight carries on
     pauseWrap.once('destroyed', () => {

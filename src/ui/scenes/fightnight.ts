@@ -119,7 +119,9 @@ export class FightNightScene extends Scene {
     this.settleStep();
     super.enter();
     // late withdrawals: the boss picks the short-notice replacements
-    if (fresh && cardProblems(s, this.ev).length) {
+    // Fighter Mode: you're not the promoter; the matchmaker sorts out withdrawals
+    if (fresh && this.opts.fm && cardProblems(s, this.ev).length) autoFixCard(s, this.ev);
+    else if (fresh && cardProblems(s, this.ev).length) {
       resolveCardProblems(this.g, this.ev, () => {
         this.settleStep();
         this.refresh();
@@ -781,7 +783,9 @@ export class FightNightScene extends Scene {
     frame.addChild(text(`"${quote}"`, x0 + 72, 98, { color: PAL.bone, width: bw - 90 }));
     frame.addChild(button('CONTINUE', (W + bw) / 2 - 76, 188, 68, 14, () => {
       this.g.closeModal(wrap);
-      this.fightNightChaos(b);
+      // Fighter Mode: the promoter's fight-night drama isn't yours (your own prompts come after your fight)
+      if (this.opts.fm) this.refresh();
+      else this.fightNightChaos(b);
     }, { fill: PAL.moss }));
   }
 

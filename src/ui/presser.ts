@@ -159,9 +159,15 @@ export class PostFightPresser extends Container {
     const t = text('', tx, 190, { width: W - tx - 14, color: PAL.bone });
     p.addChild(t);
     this.typing = { node: t, full: line, shown: 0 };
-    const bw = Math.min(140, Math.floor((W - 20) / Math.max(1, after.length)) - 4);
+    // more than three answers: two rows
+    const perRow = after.length > 3 ? Math.ceil(after.length / 2) : after.length;
+    const bw = Math.min(140, Math.floor((W - 20) / Math.max(1, perRow)) - 4);
     after.forEach((a, i) => {
-      p.addChild(button(a.label, W - 12 - (after.length - i) * (bw + 4), H - 22, bw, 14, () => {
+      const row = Math.floor(i / perRow);
+      const inRow = Math.min(perRow, after.length - row * perRow);
+      const col = i - row * perRow;
+      const rows = Math.ceil(after.length / perRow);
+      p.addChild(button(a.label, W - 12 - (inRow - col) * (bw + 4), H - 22 - (rows - 1 - row) * 17, bw, 14, () => {
         sfx('click');
         a.fn();
       }, { small: true, fill: a.color ?? PAL.steel }));
@@ -290,10 +296,16 @@ export class PostFightPresser extends Container {
         label: 'CONTINUE →', fn: () => this.say(rep.name, reporterPortrait(rep, 32), react, [{ label: 'NEXT QUESTION →', fn: () => this.hands() }]),
       }]);
     };
+    const promise = q.kind === 'ask_card' ? 'PROMISE A TITLE RUN'
+      : q.kind === 'ask_roster' ? 'PROMISE HIM A FIGHT'
+        : q.kind === 'ask_other' ? "SAY YOU'LL SIGN HIM"
+          : q.kind === 'ask_broken' ? 'PROMISE AGAIN' : 'PROMISE A MAIN EVENT';
     this.say(rep.name, reporterPortrait(rep, 32), q.text, [
-      { label: 'PROMISE HIM A MEXICAN CARD', fn: pick('promise') },
+      { label: promise, fn: pick('promise') },
+      { label: 'TELL HIM THE TRUTH', fn: pick('honest') },
       { label: 'DEFLECT', fn: pick('deflect') },
       { label: 'MAKE A JOKE', fn: pick('joke') },
+      { label: 'ROAST HIM', fn: pick('roast') },
     ]);
   }
 

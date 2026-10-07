@@ -21,16 +21,18 @@ import {
   fm, me, BODY_PARTS, STAFF_ROLES, PLANS, doAction, treat, clinicCost, weeklyStaffCost, calloutTargets, callOut, humblePost,
   startPeds, stopPeds, bareknuckle, gamble, acceptOffer, resolveEvent, endWeek, fightThisWeek, weighInInfo, doWeighIn, fightEvent,
   afterFight, postFightCallout, weightLimit, fightReadySkills, type ActionId, type StaffId, type BodyPart,
-  ensureFM, condition, trainSkill, cutWeight, hire, fire, resolveDoc, fightWeekPaperwork, cagesideReact, bkNext, bkPurse, bkSpot,
-  ladderSpot, TIER_NAME, BKB_NAME, BRADIE, bradieOnYou, askOnlyFighters, postContent, cardSlot, SLOT_NAME, type CutMethod, type FMDoc,
+  ensureFM, condition, trainSkill, cutWeight, hire, fire, fightWeekPaperwork, cagesideReact, bkNext, bkPurse, bkSpot,
+  ladderSpot, TIER_NAME, BKB_NAME, BRADIE, bradieOnYou, askOnlyFighters, postContent, cardSlot, SLOT_NAME, type CutMethod,
 } from '../../sim/fighter';
 import { FightNightScene } from './fightnight';
 import { openCorner } from '../cutman';
 import type { GamePlan } from '../../sim/fight';
 import { openLiveFight } from '../livefight';
+import { openFMDesk } from '../fmdesk';
 import { openJumpRope, openTyreChop } from '../minigames';
 import { officialsFor } from '../../sim/events';
-import { portrait, namedPortrait } from '../sprites';
+import { portrait, namedPortrait, reporterPortrait } from '../sprites';
+import { content } from '../../core/content';
 
 const bar = (w: number, v: number, color: number): Graphics => {
   const g = new Graphics();
@@ -50,14 +52,17 @@ export class FMHubScene extends Scene {
     this.g.state!.rng = r.state;
   }
 
+  /** set while the post-fight chain (results, Bradie, the mic) plays; popups wait for it */
+  static holdPopups = false;
+
   enter(): void {
     if (this.g.state) ensureFM(this.g.state);
     super.enter();
-    setTimeout(() => this.popups(), 300);
+    if (!FMHubScene.holdPopups) setTimeout(() => this.popups(), 300);
   }
 
   /** Week report, then any controversy waiting for a decision. */
-  private popups(): void {
+  popups(): void {
     const s = this.g.state;
     if (!s?.fm || this.g.modals.length) return;
     const st = fm(s);
@@ -77,7 +82,8 @@ export class FMHubScene extends Scene {
     const bx = (W - bw) / 2;
     const by = (H - bh) / 2;
     frame.addChild(box(bw, bh, PAL.night, PAL.blood, { bevel: true })).position.set(bx, by);
-    const face = ev.portrait?.startsWith('npc:') ? namedPortrait(ev.portrait.slice(4), 32) : null;
+    const repDef = ev.portrait?.startsWith('rep:') ? content().reporters.find((x) => x.id === ev.portrait!.slice(4)) : null;
+    const face = ev.portrait?.startsWith('npc:') ? namedPortrait(ev.portrait.slice(4), 32) : repDef ? reporterPortrait(repDef, 32) : null;
     const tx = face ? bx + 46 : bx + 8;
     if (face) {
       face.position.set(bx + 8, by + 8);
@@ -417,81 +423,12 @@ export class FMHubScene extends Scene {
 
   // ---------------------------------------------------------------- paperwork
 
+  /** Same inspection as the career desk, at your kitchen table. */
   private paperwork(): void {
-    const s = this.g.state!;
-    const st = fm(s);
-    const win = openWindow(this.g, 'Paperwork', 280, 150);
-    if (!st.inbox.length) {
-      win.body.addChild(text('Nothing to sign. Enjoy it while it lasts.', 6, 6, { small: true, color: PAL.ash }));
-      return;
-    }
-    win.body.addChild(text('Read before you sign. Unread paperwork gets signed as-is after two weeks (or at the weigh-in).', 6, 2, { small: true, width: 268, color: PAL.ash }));
-    st.inbox.slice(0, 7).forEach((d, i) => {
-      win.body.addChild(button(`${d.title}  •  ${d.from}`, 6, 22 + i * 17, 268, 14, () => { win.close(); this.openDoc(d); }, { small: true, fill: d.kind === 'medical' ? PAL.blood : PAL.steel }));
+    openFMDesk(this.g, () => {
+      this.refresh();
+      setTimeout(() => this.popups(), 200);
     });
-  }
-
-  /** Papers-please style: compare the document to the reference card, flag what's wrong, then sign or dispute. */
-  private openDoc(d: FMDoc): void {
-    const s = this.g.state!;
-    const frame = new Container();
-    const wrap = this.g.modal(frame, { dim: 0.8 });
-    const flagged = new Set<string>();
-    const draw = () => {
-      frame.removeChildren().forEach((c) => c.destroy({ children: true }));
-      // the document (paper)
-      const dx = 20;
-      const dy = 16;
-      const dw = 250;
-      const dh = 230;
-      frame.addChild(new Graphics().rect(dx + 3, dy + 3, dw, dh).fill({ color: 0x000000, alpha: 0.4 }).rect(dx, dy, dw, dh).fill(0xe8e0cc).rect(dx, dy, dw, 18).fill(0xd4c8ac));
-      frame.addChild(text(d.title, dx + 6, dy + 5, { color: 0x2a2018 }));
-      frame.addChild(text(`From: ${d.from}`, dx + 6, dy + 22, { small: true, color: 0x5a4a38, width: dw - 12 }));
-      d.fields.forEach((fl, i) => {
-        const y = dy + 36 + i * 22;
-        const on = flagged.has(fl.label);
-        const row = new Container();
-        row.addChild(new Graphics().rect(0, 0, dw - 12, 19).fill(on ? 0xf0b0a0 : 0xf4eedf).stroke({ color: on ? 0xa01818 : 0xc8bca0, width: 1 }));
-        row.addChild(text(fl.label.toUpperCase(), 4, 2, { small: true, color: 0x7a6a50 }));
-        row.addChild(text(fl.value, 4, 10, { small: true, color: 0x1a1410, width: dw - 20, maxLines: 1 }));
-        row.position.set(dx + 6, y);
-        row.eventMode = 'static';
-        row.cursor = 'pointer';
-        row.on('pointertap', () => {
-          if (on) flagged.delete(fl.label);
-          else flagged.add(fl.label);
-          sfx('click');
-          draw();
-        });
-        frame.addChild(row);
-      });
-      frame.addChild(text('Click a line to flag it.', dx + 6, dy + dh - 12, { small: true, color: 0x7a6a50 }));
-      // the reference card
-      const rx = 284;
-      const rw = 182;
-      frame.addChild(box(rw, 150, PAL.night, PAL.gold, { bevel: true })).position.set(rx, dy);
-      frame.addChild(text(d.ref.title, rx + 6, dy + 6, { small: true, color: PAL.gold, width: rw - 12 }));
-      d.ref.lines.forEach((l, i) => {
-        frame.addChild(text(l.label.toUpperCase(), rx + 6, dy + 20 + i * 22, { small: true, color: PAL.ash }));
-        frame.addChild(text(l.value, rx + 6, dy + 28 + i * 22, { small: true, color: PAL.bone, width: rw - 12, maxLines: 2 }));
-      });
-      const done = (action: 'sign' | 'dispute') => {
-        const r = this.rng();
-        const res = resolveDoc(s, d.id, action, [...flagged], r);
-        this.save(r);
-        this.g.closeModal(wrap);
-        sfx(res.good ? 'stamp' : 'bad');
-        this.msg = res.text;
-        this.refresh();
-        this.g.autosave();
-        alertBox(this.g, res.good ? 'FILED' : 'HMM', res.text);
-      };
-      frame.addChild(button('SIGN IT', rx, dy + 160, 86, 18, () => done('sign'), { fill: PAL.moss }));
-      frame.addChild(button(d.kind === 'sponsor' ? 'TURN IT DOWN' : 'DISPUTE', rx + 96, dy + 160, 86, 18, () => done('dispute'), { fill: PAL.blood, disabled: d.kind !== 'sponsor' && !flagged.size }));
-      frame.addChild(button('LATER', rx, dy + 184, 182, 14, () => this.g.closeModal(wrap), { small: true }));
-      frame.addChild(text(d.kind === 'sponsor' ? 'Turning a deal down needs a flagged line to count as a catch.' : 'Dispute = send back the flagged lines.', rx, dy + 204, { small: true, width: 182, color: PAL.ash }));
-    };
-    draw();
   }
 
   private rankingsMenu(): void {
@@ -694,11 +631,18 @@ export class FMHubScene extends Scene {
         const quote = bradieOnYou(s, won, r2);
         this.save(r2);
         this.g.autosave();
+        FMHubScene.holdPopups = true;
         this.g.goto(new FMHubScene(this.g));
+        const release = () => {
+          FMHubScene.holdPopups = false;
+          const sc = this.g.scene;
+          if (sc instanceof FMHubScene) setTimeout(() => sc.popups(), 250);
+        };
         setTimeout(() => {
           alertBox(this.g, won ? 'VICTORY' : 'FIGHT OVER', lines.join('\n'), () => {
             this.bradieSays(quote, () => {
-              if (won) this.micMoment();
+              if (won) this.micMoment(release);
+              else release();
             });
           });
         }, 400);
@@ -752,7 +696,7 @@ export class FMHubScene extends Scene {
     opts.forEach(([c, label, fill], i) => frame.addChild(button(label, bx + 8 + (i % 2) * 144, by + 50 + Math.floor(i / 2) * 20, 140, 15, () => pick(c), { small: true, fill })));
   }
 
-  private micMoment(): void {
+  private micMoment(then?: () => void): void {
     const s = this.g.state!;
     const frame = new Container();
     const wrap = this.g.modal(frame, { dim: 0.7 });
@@ -768,7 +712,10 @@ export class FMHubScene extends Scene {
       const out = postFightCallout(s, id, r);
       this.save(r);
       this.g.closeModal(wrap);
-      alertBox(this.g, 'THE MIC', out, () => this.refreshScene());
+      alertBox(this.g, 'THE MIC', out, () => {
+        this.refreshScene();
+        then?.();
+      });
     };
     targets.forEach((t, i) => frame.addChild(button(`CALL OUT ${t.last.toUpperCase()} (${rankLabel(s, t.id)})`, bx + 8, by + 22 + i * 18, bw - 16, 15, () => pick(t.id), { small: true, fill: PAL.blood })));
     frame.addChild(button('THANK EVERYONE', bx + 8, by + bh - 22, bw - 16, 15, () => pick(null), { small: true, fill: PAL.steel }));
