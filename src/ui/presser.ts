@@ -21,6 +21,7 @@ import { expandPop } from '../sim/popculture';
 import { adjustMeter } from '../sim/econ';
 import { sfx } from '../audio/sfx';
 import { heatUp } from '../sim/feuds';
+import { ONETON, onetonQuestion, answerOneton, type OnetonAnswer } from '../sim/oneton';
 
 interface Seat {
   who: 'president' | Fighter;
@@ -239,7 +240,10 @@ export class PostFightPresser extends Container {
     p.removeChildren().forEach((c) => c.destroy({ children: true }));
     p.addChild(box(W - 8, H - 176, PAL.night, PAL.ash, { bevel: true })).position.set(4, 174);
     p.addChild(text(`Hands go up. Who do you call on? (${(this.mode === 'pre' ? 3 : 4) - this.qas} questions left)`, 12, 179, { small: true, color: PAL.ash }));
-    const hands = this.rng.sample(reps, Math.min(3, reps.length));
+    const hands = this.rng.sample(reps.filter((x) => x.id !== ONETON), Math.min(3, reps.length));
+    // 1ton's hand is up more often than not
+    const one = reps.find((x) => x.id === ONETON);
+    if (one && hands.length && this.rng.chance(0.55)) hands[this.rng.int(0, hands.length - 1)] = one;
     hands.forEach((rep, i) => {
       const c = clickable(new Container(), () => this.question(rep.id));
       c.addChild(box(140, 52, 0x2a2630, PAL.shadow));
@@ -261,6 +265,7 @@ export class PostFightPresser extends Container {
     const s = this.g.state!;
     this.qas++;
     const rep = content().reporters.find((r) => r.id === repId)!;
+    if (repId === ONETON) return this.onetonQ(rep);
     const fighters = this.seats.filter((x) => x.who !== 'president');
     // half the time the reporter goes after a fighter; otherwise it's on you
     if (fighters.length && this.rng.chance(0.5)) return this.fighterQuestion(rep.id, this.rng.pick(fighters));
@@ -269,6 +274,27 @@ export class PostFightPresser extends Container {
     s.rng = rng2.state;
     if (!inst) return this.fighterQuestion(rep.id, fighters[0] ?? this.seats[0]);
     playStorylet(this.g, inst, () => this.hands());
+  }
+
+  /** 1ton only ever asks about Mexican fighters. */
+  private onetonQ(rep: ReturnType<typeof content>['reporters'][number]): void {
+    const s = this.g.state!;
+    const rng = new Rng(s.rng);
+    const q = onetonQuestion(s, this.ev, rng);
+    s.rng = rng.state;
+    const pick = (a: OnetonAnswer) => () => {
+      const r2 = new Rng(s.rng);
+      const [said, react] = answerOneton(s, q, a, r2);
+      s.rng = r2.state;
+      this.say(s.president.name, npcPortrait('president:' + s.president.name, 'exec', 32), said, [{
+        label: 'CONTINUE →', fn: () => this.say(rep.name, reporterPortrait(rep, 32), react, [{ label: 'NEXT QUESTION →', fn: () => this.hands() }]),
+      }]);
+    };
+    this.say(rep.name, reporterPortrait(rep, 32), q.text, [
+      { label: 'PROMISE HIM A MEXICAN CARD', fn: pick('promise') },
+      { label: 'DEFLECT', fn: pick('deflect') },
+      { label: 'MAKE A JOKE', fn: pick('joke') },
+    ]);
   }
 
   private fighterQuestion(repId: string, seat: Seat): void {

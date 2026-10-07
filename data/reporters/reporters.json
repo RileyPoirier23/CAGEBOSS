@@ -1116,5 +1116,36 @@
    "glasses": 0
   },
   "catchphrase": ""
+ },
+ {
+  "id": "oneton",
+  "name": "1ton",
+  "outlet": "lucha_lowdown",
+  "gender": "M",
+  "personality": "@1ton. Enormous man, enormous beard, enormous widow's peak, one subject. He only ever asks about Mexican fighters. If there are none, he asks why.",
+  "traits": [
+   "Single-Minded",
+   "Podcaster",
+   "Showman"
+  ],
+  "nemesis": false,
+  "look": {
+   "head": 3,
+   "skin": 3,
+   "hair": 2,
+   "hairColor": 0,
+   "beard": 3,
+   "brows": 2,
+   "eyes": 0,
+   "nose": 1,
+   "ears": 0,
+   "scar": 0,
+   "tattoo": 0,
+   "build": 2,
+   "glasses": 0,
+   "widow": 1
+  },
+  "catchphrase": "Okay, but what about the Mexican fighters?",
+  "age": 31
  }
 ]

@@ -75,7 +75,7 @@ export function fighterPortrait(f: Fighter, size: 64 | 32 | 24 = 64, variant: Po
 }
 
 export function reporterPortrait(r: ReporterDef, size: 64 | 32 | 24 = 64): Container {
-  return portrait({ id: r.id, look: r.look, gender: r.gender, age: 40, variant: 'reporter', attire: 'suit' }, size);
+  return portrait({ id: r.id, look: r.look, gender: r.gender, age: (r as { age?: number }).age ?? 40, variant: 'reporter', attire: 'suit' }, size);
 }
 
 export function signatureSprite(seed: string): Sprite {
@@ -98,4 +98,23 @@ export function npcPortrait(seed: string, kind: 'cop' | 'exec' | 'manager' | 'la
   const attire = kind === 'cop' ? 'jersey' : kind === 'fan' ? 'hoodie' : kind === 'doctor' ? 'shirt' : 'suit';
   const accent = kind === 'cop' ? 0x2c3a5a : kind === 'exec' ? PAL.steel : kind === 'lawyer' ? PAL.plum : undefined;
   return portrait({ id: seed, look, gender: (h >> 23) % 4 === 0 ? 'W' : 'M', age: 30 + ((h >> 4) % 30), variant: kind === 'cop' ? 'mugshot' : 'reporter', attire, accent }, size);
+}
+
+/** Recurring named characters (storylets use portrait: 'npc:<key>'). */
+export const NAMED_NPCS: Record<string, Omit<PortraitInput, 'id'>> = {
+  // Jimmy Quavo: the steroid guy. Abibas tracksuit, beanie, eyes that never blink.
+  jimmy_quavo: {
+    look: { head: 0, skin: 2, hair: 0, hairColor: 0, beard: 1, brows: 2, eyes: 1, nose: 1, ears: 1, scar: 1, tattoo: 0, build: 1, beanie: 1, glasses: 0 },
+    gender: 'M', age: 34, variant: 'reporter', attire: 'tracksuit',
+  },
+  // Bradie "Biggest Bird" Taylor: Only Fighters CEO, curly mess, permanently stoned.
+  bradie_taylor: {
+    look: { head: 1, skin: 1, hair: 8, hairColor: 3, beard: 1, brows: 0, eyes: 2, nose: 2, ears: 2, scar: 1, tattoo: 0, build: 1, stoned: 1 },
+    gender: 'M', age: 41, variant: 'reporter', attire: 'hoodie', accent: 0x2aa0d8,
+  },
+};
+
+export function namedPortrait(key: string, size: 64 | 32 | 24 = 64): Container | null {
+  const n = NAMED_NPCS[key];
+  return n ? portrait({ id: 'npc_' + key, ...n }, size) : null;
 }

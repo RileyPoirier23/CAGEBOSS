@@ -9,10 +9,15 @@ import { fmtDateLong } from '../../core/time';
 import { sfx } from '../../audio/sfx';
 import { routePhase } from '../flow';
 import { compact } from '../../core/format';
+import { ensureCareer, TIERS, nextUnlock, contenderEvent, hasUnlock } from '../../sim/career';
+import { ContenderScene } from './contender';
+import { showOwnerCheckIn, playUnlockQueue, openCareerPanel, cloutBar } from '../career';
 
 export class PaperScene extends Scene {
+  tutorialKey = 'paper';
   private sheet: Container | null = null;
   private t = 0;
+  private careerShown = false;
 
   build(): void {
     const s = this.g.state!;
@@ -97,13 +102,38 @@ export class PaperScene extends Scene {
     const side = new Container();
     side.x = W - 96;
     side.y = 20;
-    side.addChild(text(s.promotion.name.toUpperCase(), 0, 0, { small: true, width: 92, color: PAL.gold }));
-    side.addChild(text(`ACT ${s.act}`, 0, 20, { color: PAL.bone }));
-    side.addChild(text('Grab a coffee.\nThe desk is waiting.', 0, 34, { width: 92, color: PAL.ash, small: true }));
+    side.addChild(text(s.promotion.name.toUpperCase(), 0, 0, { small: true, width: 92, color: PAL.gold, maxLines: 2 }));
+    side.addChild(text(`ACT ${s.act}`, 0, 16, { color: PAL.bone }));
+    // career: tier, clout toward the next unlock, the owner's open objectives
+    const c = ensureCareer(s);
+    side.addChild(text(TIERS[c.tier].name.toUpperCase(), 0, 28, { small: true, width: 92, color: 0x6fd8a0, maxLines: 2 }));
+    const bar = cloutBar(this.g, 90);
+    bar.position.set(0, 44);
+    side.addChild(bar);
+    const nu = nextUnlock(s);
+    side.addChild(text(nu ? `CLOUT ${Math.floor(c.clout)}/${nu.clout}\nNEXT: ${nu.name}` : `CLOUT ${Math.floor(c.clout)}`, 0, 52, { small: true, width: 92, color: PAL.ash, maxLines: 3 }));
+    let sy = 76;
+    const open = c.owner.objectives.filter((o) => o.status === 'open');
+    if (open.length) {
+      side.addChild(text("OWNER WANTS:", 0, sy, { small: true, color: PAL.gold }));
+      sy += 9;
+      for (const o of open.slice(0, 3)) {
+        const t = text('• ' + o.text, 0, sy, { small: true, width: 92, color: PAL.fog, maxLines: 4 });
+        side.addChild(t);
+        sy += t.textHeight + 3;
+        if (sy > 180) break;
+      }
+    }
+    if (contenderEvent(s)) side.addChild(text('TUESDAY NIGHT: CONTENDER SERIES', 0, Math.max(sy + 2, 188), { small: true, width: 92, color: PAL.sky, maxLines: 2 }));
+    else if (!open.length) side.addChild(text('Grab a coffee.\nThe desk is waiting.', 0, sy, { width: 92, color: PAL.ash, small: true }));
     r.addChild(side);
+    if (s.mode === 'career' || hasUnlock(s, 'contender_series') || c.clout > 0) r.addChild(button('CAREER', W - 96, H - 50, 88, 16, () => openCareerPanel(this.g), { fill: PAL.plum }));
+    if (contenderEvent(s)) r.addChild(button('CONTENDER SERIES', W - 96, H - 72, 88, 16, () => this.g.goto(new ContenderScene(this.g)), { fill: PAL.sky }));
     r.addChild(button('TO THE DESK →', W - 96, H - 28, 88, 18, () => this.next(), { fill: PAL.blood }));
-    this.t = 0;
-    sfx('paper');
+    if (!this.careerShown) {
+      this.t = 0;
+      sfx('paper');
+    } else this.t = 1;
   }
 
   update(dt: number): void {
@@ -112,9 +142,17 @@ export class PaperScene extends Scene {
     const e = 1 - Math.pow(1 - this.t, 3);
     this.sheet.rotation = (1 - e) * Math.PI * 4 * (this.g.settings.reduceShake ? 0 : 1);
     this.sheet.scale.set(0.1 + 0.9 * e);
+    // once the paper lands: the owner's check-in, then any UNLOCKED moments
+    if (this.t >= 1 && !this.careerShown) {
+      this.careerShown = true;
+      const s = this.g.state!;
+      const c = ensureCareer(s);
+      if (c.owner.visit || c.unlockQueue.length) showOwnerCheckIn(this.g, () => playUnlockQueue(this.g, () => this.refresh()));
+    }
   }
 
   onKey(e: KeyboardEvent): boolean {
+    if (this.g.modals.length) return false;
     if (e.key === 'Enter' || e.key === ' ') {
       this.next();
       return true;

@@ -30,6 +30,7 @@ export function describeIntent(i: FightIntent): string {
     case 'subTurn': return `sub ${i.role}: turn ${i.dir > 0 ? 'cw' : 'ccw'} (${i.turns})`;
     case 'mash': return `sub ${i.role}: mash ${i.rate.toFixed(1)}/s`;
     case 'getup': return `get up ${i.side} rhythm ${Math.round(i.rhythm * 100)}%`;
+    case 'subAttempt': return 'submission attempt';
     case 'getupFumble': return 'get up FUMBLE (same trigger twice)';
     default: return i.type;
   }

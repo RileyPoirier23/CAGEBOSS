@@ -114,6 +114,7 @@ export type FightIntent =
   | { type: 'sprawl' }
   | { type: 'feint' }
   | { type: 'ground'; move: 'advance' | 'reverse' | 'standup' | 'base' }
+  | { type: 'subAttempt' }
   | { type: 'subTurn'; dir: 1 | -1; turns: number; role: 'attack' | 'defend' }
   | { type: 'mash'; rate: number; role: 'attack' | 'defend' }
   | { type: 'getup'; side: 'left' | 'right'; rhythm: number }
@@ -354,6 +355,7 @@ export class FightInput {
         const move = moveDir === 'toward' ? 'advance' : moveDir === 'away' ? 'reverse' : moveDir === 'up' ? 'standup' : 'base';
         out.push({ type: 'ground', move });
       }
+      if (down('grab')) out.push({ type: 'subAttempt' });
     } else {
       if (down('kick')) out.push({ type: 'kick', level: moveDir === 'up' ? 'head' : moveDir === 'down' ? 'low' : 'body' });
 

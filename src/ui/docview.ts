@@ -1,14 +1,16 @@
 /**
- * Renders desk documents, file cards and rulebook entries as paper with
- * inspectable fields. Fields register their positions with an Inspector so
- * the desk can draw the "red string" between compared fields.
+ * Renders desk documents, file cards, fighter licence cards and rulebook
+ * entries as paper with inspectable fields. Fields register their positions
+ * with an Inspector so the desk can draw the "red string" between compared
+ * fields.
  */
 import { Container, Graphics, FederatedPointerEvent } from 'pixi.js';
-import type { DeskDoc, DocType } from '../core/types';
+import type { DeskDoc, DocType, Fighter, GameState } from '../core/types';
 import { PAL, shade } from '../art/palette';
 import { text, paper, PaperKind, box } from './kit';
-import { signatureSprite, barcodeSprite, reporterPortrait } from './sprites';
+import { signatureSprite, barcodeSprite, reporterPortrait, portrait, portraitInputForFighter } from './sprites';
 import { content } from '../core/content';
+import { ruleActive } from '../sim/rules';
 
 export interface FieldSpot {
   key: string;
@@ -112,17 +114,45 @@ export function fieldNode(
   return { node: c, h };
 }
 
+/** Receipts stapled to a camp expense report (each one inspectable). */
+function receiptStrip(d: DeskDoc, w: number, ins: Inspector | null): Container {
+  const c = new Container();
+  const keys = Object.keys(d.refs).filter((k) => k.startsWith('doc.rcpt')).sort();
+  c.addChild(text('RECEIPTS', 2, 5, { small: true, color: PAL.slate }));
+  const sw = Math.min(40, Math.floor((w - 40) / Math.max(1, keys.length)) - 2);
+  keys.forEach((k, i) => {
+    const r = new Container();
+    r.addChild(paper(sw, 19, 'white', 30 + i));
+    r.addChild(new Graphics().rect(0, 0, sw, 1).fill(shade(PAL.paper, -0.25)));
+    r.addChild(text(`RCPT ${i + 1}`, 2, 2, { small: true, color: PAL.grey }));
+    r.addChild(text(d.refs[k], 2, 10, { small: true, color: PAL.ink, width: sw - 3, maxLines: 1 }));
+    r.rotation = ((i % 2) - 0.5) * 0.04;
+    r.position.set(38 + i * (sw + 2), 0);
+    r.addChildAt(new Graphics().rect(0, 0, sw, 19).fill({ color: 0xffffff, alpha: 0.001 }), 0);
+    if (ins) ins.register({ key: k, label: `Receipt ${i + 1}`, node: r, w: sw, h: 19 });
+    c.addChild(r);
+  });
+  return c;
+}
+
 export function renderDoc(d: DeskDoc, w: number, ins: Inspector | null, seed = 1): Container {
   const c = new Container();
   const inner = new Container();
   let y = 16;
   const rows: Container[] = [];
   for (const fd of d.fields) {
-    const { node, h } = fieldNode(fd.key, fd.label, fd.value, w - 10, ins, { kind: fd.kind, labelW: d.type === 'memo' ? 30 : 64 });
+    const item = d.type === 'expense' && (fd.key.startsWith('doc.item') || fd.key === 'doc.total');
+    const { node, h } = fieldNode(fd.key, fd.label, fd.value, w - 10, ins, { kind: fd.kind, labelW: d.type === 'memo' ? 30 : item ? 150 : 64, small: d.type === 'memo' });
     node.x = 5;
     node.y = y;
     rows.push(node);
     y += h + 2;
+  }
+  if (d.type === 'expense') {
+    const rs = receiptStrip(d, w - 10, ins);
+    rs.position.set(5, y + 1);
+    rows.push(rs);
+    y += 24;
   }
   if (d.fine) {
     const fine = text(d.fine, 5, y + 4, { small: true, width: w - 10, color: shade(PAL.grey, 0.1) });
@@ -134,31 +164,71 @@ export function renderDoc(d: DeskDoc, w: number, ins: Inspector | null, seed = 1
     rows.push(od);
     y += 10;
   }
-  const h = Math.max(120, y + 6);
+  const h = Math.max(d.type === 'memo' ? 90 : 120, y + 6);
   c.addChild(paper(w, h, PAPER_FOR[d.type] ?? 'cream', seed));
-  c.addChild(box(w, 12, HEADER_FOR[d.type] ?? PAL.ink));
+  c.addChild(box(w, 12, d.meta.bulletin ? PAL.blood : (HEADER_FOR[d.type] ?? PAL.ink)));
   c.addChild(text(d.title, 4, 3, { small: true, color: PAL.bone }));
-  if (d.type === 'drug') c.addChild(text('LAB #44-B  CHAIN OF CUSTODY: SORTA', w - 100, 3, { small: true, color: PAL.bone }));
+  if (d.type === 'drug') c.addChild(text('LAB #44-B', w - 44, 3, { small: true, color: PAL.bone }));
   for (const r of rows) inner.addChild(r);
   c.addChild(inner);
   return c;
 }
 
+/** A licence-card photo: the fighter's real portrait, subtly altered on fakes. */
+export function idPhoto(f: Fighter, variant: number, size: 32 | 24 = 32): Container {
+  const inp = portraitInputForFighter(f, 'plain');
+  const look = { ...inp.look };
+  switch (variant) {
+    case 1: look.hairColor = (look.hairColor + 3) % 8; break;
+    case 2: look.beard = look.beard ? 0 : 2; break;
+    case 3: look.scar = look.scar ? 0 : 2; look.nose = look.nose === 2 ? 0 : 2; break;
+    case 4: look.hair = look.hair === 0 ? 3 : (look.hair % 7) + 1; break;
+    case 5: look.eyes = (look.eyes + 1) % 3; look.brows = (look.brows + 1) % 3; look.head = (look.head + 1) % 4; break;
+  }
+  return portrait({ ...inp, id: inp.id + (variant ? ':fake' + variant : ''), look, wounds: undefined, damage: 0, attire: 'shirt' }, size);
+}
+
+/** The fighter licence card stapled to a bout agreement. */
+export function renderIdCard(d: DeskDoc, ft: Fighter | null, w: number, ins: Inspector | null): Container | null {
+  if (!d.refs['id.number']) return null;
+  const c = new Container();
+  const h = 50;
+  c.addChild(new Graphics().roundRect(2, 2, w, h, 3).fill({ color: 0x000000, alpha: 0.35 }));
+  c.addChild(new Graphics().roundRect(0, 0, w, h, 3).fill(0xc9d6cf).stroke({ color: PAL.ink, width: 1 }));
+  c.addChild(new Graphics().rect(0, 0, w, 9).fill(PAL.teal));
+  c.addChild(text('COMMISSION FIGHTER LICENCE', 3, 2, { small: true, color: PAL.bone, maxLines: 1, width: w - 4 }));
+  // photo
+  const ph = new Container();
+  if (ft) ph.addChild(idPhoto(ft, Number(d.refs['id.photo']?.split(':')[1] ?? 0) || 0, 32));
+  ph.position.set(4, 13);
+  ph.addChildAt(new Graphics().rect(-1, -1, 34, 34).fill({ color: 0xffffff, alpha: 0.001 }), 0);
+  if (ins) ins.register({ key: 'id.photo', label: 'Licence photo', node: ph, w: 32, h: 32 });
+  c.addChild(ph);
+  let y = 12;
+  for (const [k, label] of [['id.name', 'Name'], ['id.number', 'Lic #'], ['id.expires', 'Exp.']] as const) {
+    const { node, h: fh } = fieldNode(k, label, d.refs[k] ?? '', w - 40, k === 'id.name' ? null : ins, { labelW: 26, small: true });
+    node.position.set(39, y);
+    c.addChild(node);
+    y += Math.min(fh, 12) + 1;
+  }
+  return c;
+}
+
 const FILE_LABELS: Record<string, string> = {
-  'file.name': 'Name', 'file.division': 'Division', 'file.limit': 'Limit', 'file.purse': 'Agreed purse', 'file.sig': 'Signature',
-  'file.manager': 'Manager', 'file.suspension': 'Med. susp.', 'file.court': 'Court date', 'file.arrests': 'Record', 'file.country': 'Country',
+  'file.name': 'Name', 'file.division': 'Division', 'file.limit': 'Limit', 'file.purse': 'Purse', 'file.bonus': 'Bonus', 'file.sig': 'Sig.',
+  'file.manager': 'Manager', 'file.suspension': 'Susp.', 'file.court': 'Court', 'file.arrests': 'Record', 'file.country': 'Country',
   'file.fight': 'Next fight', 'file.sponsor': 'Sponsors', 'file.photo': 'Visitor', 'cal.fight': 'Fight night', 'cal.event': 'Event date',
 };
 
 /** The manila file card (what's on record for the doc's subject + calendar). */
-export function renderFileCard(d: DeskDoc | null, w: number, ins: Inspector | null): Container {
+export function renderFileCard(d: DeskDoc | null, w: number, ins: Inspector | null, s?: GameState): Container {
   const c = new Container();
   const rows: Container[] = [];
   let y = 14;
   if (d) {
     const keys = Object.keys(d.refs).filter((k) => k.startsWith('file.') || k.startsWith('cal.'));
-    // keep it relevant: show keys referenced by the doc type
-    const wanted = relevantFileKeys(d.type).filter((k) => keys.includes(k));
+    // keep it relevant: show keys referenced by the doc type (and rules in force)
+    const wanted = relevantFileKeys(d.type, s).filter((k) => keys.includes(k));
     for (const k of wanted) {
       const v = d.refs[k];
       const { node, h } = fieldNode(k, FILE_LABELS[k] ?? k, v, w - 6, ins, { kind: k === 'file.sig' ? 'sig' : k === 'file.photo' ? 'photo' : undefined, labelW: 40, small: true });
@@ -168,45 +238,62 @@ export function renderFileCard(d: DeskDoc | null, w: number, ins: Inspector | nu
       y += h + 1;
     }
   }
-  c.addChild(paper(w, Math.max(60, y + 4), 'manila', 7));
+  c.addChild(paper(w, Math.max(40, y + 4), 'manila', 7));
   c.addChild(box(w, 11, PAL.woodDark));
   c.addChild(text(d?.subject || d?.type === 'press' ? 'ON FILE' : 'NO FILE', 3, 3, { small: true, color: PAL.bone }));
   rows.forEach((r) => c.addChild(r));
   return c;
 }
 
-export function relevantFileKeys(t: DocType): string[] {
+export function relevantFileKeys(t: DocType, s?: GameState): string[] {
+  const on = (id: string) => !s || ruleActive(s, id);
   switch (t) {
-    case 'bout': return ['file.name', 'file.division', 'file.purse', 'file.sig', 'file.manager', 'file.suspension', 'file.court'];
-    case 'medical': return ['file.name', 'file.suspension', 'cal.fight'];
-    case 'drug': return ['file.name'];
+    case 'bout': return ['file.name', 'file.division', 'file.purse', 'file.bonus', 'file.sig', ...(on('ko_suspension') ? ['file.suspension'] : []), ...(on('court_dates') ? ['file.court'] : [])];
+    case 'medical': return ['file.name', ...(on('ko_suspension') ? ['file.suspension'] : []), 'cal.fight'];
+    case 'drug': return ['file.name', 'cal.fight'];
     case 'visa': return ['file.name', 'file.country', 'file.arrests', 'cal.event'];
     case 'weighin': return ['file.limit'];
     case 'sponsor': return ['file.name', 'file.sponsor'];
     case 'police': return ['file.name', 'file.fight'];
     case 'expense': return ['file.name', 'file.manager'];
-    case 'press': return ['file.photo', 'file.name'];
+    case 'press': return ['file.name'];
     default: return [];
   }
 }
 
 const RULE_LABELS: Record<string, string> = {
   'rule.registry': 'Licensed reps', 'rule.exclusive': 'Exclusivity', 'rule.doctors': 'Physician registry', 'rule.scans': 'Required scans',
-  'rule.validity': 'Medical validity', 'rule.tolerance': 'Weight tolerance', 'rule.banned': 'Banned list', 'rule.picogram': 'Picogram limit',
+  'rule.validity': 'Exam window', 'rule.tolerance': 'Weight tolerance', 'rule.banned': 'Banned list', 'rule.picogram': 'Picogram limit',
+  'rule.panel': 'Required panel', 'rule.drugdays': 'Sample window',
   'rule.strikes': 'Whereabouts', 'rule.bannedCats': 'Banned sponsors', 'rule.cap': 'Expense cap', 'rule.bannedReporters': 'Banned reporters',
-  'rule.outlets': 'Accredited outlets', 'rule.court': 'Court dates', 'rule.visa': 'Visa rule',
+  'rule.outlets': 'Accredited outlets', 'rule.court': 'Court dates', 'rule.visa': 'Visa rule', 'rule.licence': 'Licence card',
 };
 
 export const PAGE_RULE_KEYS: Record<string, string[]> = {
   'Bout Agreements': ['rule.registry', 'rule.exclusive'],
+  Licences: ['rule.licence'],
   Medicals: ['rule.doctors', 'rule.scans', 'rule.validity'],
   'Weigh-Ins': ['rule.tolerance'],
   Sponsors: ['rule.bannedCats'],
   Expenses: ['rule.cap'],
-  'Anti-Doping': ['rule.banned', 'rule.picogram', 'rule.strikes'],
+  'Anti-Doping': ['rule.panel', 'rule.drugdays', 'rule.banned', 'rule.picogram', 'rule.strikes'],
   Media: ['rule.bannedReporters', 'rule.outlets'],
   Legal: ['rule.court'],
   Travel: ['rule.visa'],
+};
+
+/** Which rule puts a rulebook reference on the page (hidden until that rule is in force). */
+export const RULE_KEY_RULE: Record<string, string> = {
+  'rule.registry': 'manager_license', 'rule.exclusive': 'exclusivity', 'rule.doctors': 'medical_basic', 'rule.scans': 'medical_basic',
+  'rule.validity': 'medical_basic', 'rule.tolerance': 'weigh_tolerance', 'rule.banned': 'drug_program', 'rule.picogram': 'drug_program',
+  'rule.panel': 'drug_program', 'rule.drugdays': 'drug_program', 'rule.strikes': 'whereabouts', 'rule.cap': 'expense_cap',
+  'rule.bannedReporters': 'press_creds', 'rule.outlets': 'press_creds', 'rule.court': 'court_dates', 'rule.visa': 'visa_rules', 'rule.licence': 'fighter_license',
+};
+
+/** Rulebook page that covers a document type. */
+export const PAGE_FOR_TYPE: Partial<Record<DocType, string>> = {
+  bout: 'Bout Agreements', medical: 'Medicals', weighin: 'Weigh-Ins', sponsor: 'Sponsors', expense: 'Expenses', drug: 'Anti-Doping',
+  press: 'Media', police: 'Legal', visa: 'Travel',
 };
 
 export function ruleField(key: string, value: string, w: number, ins: Inspector | null): { node: Container; h: number } {

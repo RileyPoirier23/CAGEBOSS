@@ -348,14 +348,14 @@ export function installController(g: Game, hooks: ControllerHooks = {}): Virtual
   }, undefined, UPDATE_PRIORITY.HIGH);
 
   input.on('connect', (e) => {
-    g.toast(`${Input.padName(e.button)} connected. VIEW = controls`, PAL.gold);
+    g.toast(`${Input.padName(e.button)} connected. VIEW = controls`, PAL.gold, { background: true });
     if (input.lastDevice !== 'gamepad') {
       // treat plugging in as intent to use it
       vc.x = W / 2;
       vc.y = H / 2;
     }
   });
-  input.on('disconnect', () => g.toast('Controller disconnected', PAL.ember));
+  input.on('disconnect', () => g.toast('Controller disconnected', PAL.ember, { background: true }));
 
   // big screen shakes become rumble
   const shake = g.shake.bind(g);

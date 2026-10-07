@@ -1,6 +1,7 @@
 /**
  * Routes a loaded / new GameState to the right scene for its phase.
  */
+import { FMHubScene } from './scenes/fmhub';
 import type { Game } from './app';
 import type { GameState } from '../core/types';
 import { PaperScene } from './scenes/paper';
@@ -21,6 +22,7 @@ export function routePhase(g: Game, direct = false): void {
   if (!direct && (s.phase === 'fightnight' || s.phase === 'ledger')) {
     return g.loading(s.phase === 'fightnight' ? 'Fight night' : 'Closing the books', () => routePhase(g, true), 0.8);
   }
+  if (s.mode === 'fighter') return g.goto(new FMHubScene(g));
   if (s.ending) return g.goto(new EndingScene(g));
   switch (s.phase) {
     case 'paper':

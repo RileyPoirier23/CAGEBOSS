@@ -21,7 +21,7 @@ export interface PortraitInput {
   damage?: number; // career damage 0..100 (cauliflower, nose)
   wounds?: Wounds;
   variant?: PortraitVariant;
-  attire?: 'shirtless' | 'shirt' | 'suit' | 'hoodie' | 'jersey';
+  attire?: 'shirtless' | 'shirt' | 'suit' | 'hoodie' | 'jersey' | 'tracksuit';
   accent?: number; // jersey / background accent colour
 }
 
@@ -101,6 +101,9 @@ const CX = 32;
  * dithering for lighting (key light from the upper left), dark outlines,
  * plenty of small facial detail, and everything a fight does to a face.
  */
+/** Where the features landed on the last portrait drawn for an id (64x64 space): used to place close-up damage. */
+export const FACE_ANCHORS = new Map<string, { eyeL: number; eyeR: number; eyeY: number; browY: number; noseY: number; mouthY: number; top: number; chinY: number }>();
+
 export function drawPortrait(inp: PortraitInput): PixelBuf {
   const b = new PixelBuf(P, P);
   const look = inp.look;
@@ -189,6 +192,7 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
   const spread = 6 + (rnd(49) % 3 === 0 ? 1 : 0) - (rnd(51) % 4 === 0 ? 1 : 0);
   const eyeL = CX - spread - 1; // left eye centre
   const eyeR = CX + spread;
+  FACE_ANCHORS.set(inp.id, { eyeL, eyeR, eyeY, browY, noseY, mouthY, top, chinY });
 
   // ------------------------------------------------------------ long hair behind the head
   const hs = look.hair;
@@ -219,6 +223,7 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
       else if (attire === 'suit') c = ramp([0x16161c, 0x20202a, 0x2c2c38], v, x, y);
       else if (attire === 'shirt') c = ramp([0xa8a296, 0xc8c2b4, 0xe2ddd0], v, x, y);
       else if (attire === 'hoodie') c = ramp([shade(accent, -0.45), shade(accent, -0.25), accent], v, x, y);
+      else if (attire === 'tracksuit') c = ramp([0x101014, 0x1a1a22, 0x262632], v, x, y);
       else c = ramp([shade(accent, -0.4), shade(accent, -0.2), accent, shade(accent, 0.15)], v, x, y); // jersey
       b.set(x, y, c);
     }
@@ -277,6 +282,19 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
     for (let y = shoulderY - 4; y < shoulderY + 1; y++) b.hline(CX - neckW - 3, CX + neckW + 2, y, shade(accent, -0.35)); // hood bunched
     b.rect(CX - 4, shoulderY + 2, 1, 7, 0xe0dccf);
     b.rect(CX + 3, shoulderY + 2, 1, 7, 0xe0dccf);
+  } else if (attire === 'tracksuit') {
+    // Abibas: three white stripes down each shoulder, zip and a high collar
+    for (let k = 0; k < 3; k++) {
+      for (let y = shoulderY - 1; y < P; y++) {
+        const off = Math.round((y - shoulderY) * 0.35);
+        b.set(CX - 17 - k * 2 - off, y, 0xe8e8ee);
+        b.set(CX + 16 + k * 2 + off, y, 0xe8e8ee);
+      }
+    }
+    b.hline(CX - neckW - 1, CX + neckW, shoulderY - 4, 0x26262e);
+    b.hline(CX - neckW - 1, CX + neckW, shoulderY - 3, 0x26262e);
+    for (let y = shoulderY - 4; y < P; y++) b.set(CX, y, 0x8a8a94); // zip
+    b.rect(CX - 10, shoulderY + 4, 4, 2, 0xe8e8ee); // the little logo
   } else if (attire === 'jersey') {
     b.rect(CX - 3, shoulderY + 3, 6, 6, shade(accent, 0.35));
     b.hline(CX - neckW, CX + neckW - 1, shoulderY - 3, shade(accent, 0.3));
@@ -360,6 +378,7 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
         const dx = Math.abs(x - CX + 0.5);
         const r = y - top;
         let hairline = rows - (dx < 3 + rec * 2 ? rec * 2 : 0) - (dx > inner - 4 ? -2 : 0);
+        if (look.widow) hairline += dx < 1.5 ? 4 : dx < 3 ? 2 : dx < 7 ? -2 : 0; // sharp widow's peak, deep temples
         if (sideburns && dx > inner - 3 && y < eyeY - 2) hairline = 99; // temples & sideburns
         if (r >= hairline) continue;
         if (y >= top && r >= rows && !(sideburns && dx > inner - 3)) continue;
@@ -427,6 +446,29 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
       }
       if (female) for (let y = top + 6; y < 60; y++) b.set(CX + hwAt(Math.min(y, chinY)) + 1, y, y % 2 ? HR[2] : HR[0]);
       break;
+    case 8: { // curly mess / white-guy afro: a big uneven cloud of ringlets
+      const R = 15;
+      const cy = top + 2;
+      for (let y = cy - R - 2; y < eyeY - 1; y++) for (let x = CX - R - 4; x < CX + R + 4; x++) {
+        const nx = (x - CX + 0.5) / (R + 3);
+        const ny = (y - cy) / (R - 1);
+        const wob = ((rnd((x * 7 + y * 13) & 63) % 5) - 2) / 18;
+        if (nx * nx + ny * ny > 1 + wob) continue;
+        // keep the face clear below the hairline
+        if (y >= top + 5 && Math.abs(x - CX + 0.5) < hwAt(Math.min(chinY, y)) - 1 && y > top + 4) continue;
+        const curl = ((x + y * 2) % 4 === 0 || (x * 3 + y) % 5 === 0) ? 0.25 : 0;
+        b.set(x, y, ramp(HR, 0.55 - nx * 0.3 - ny * 0.15 + curl - ((x ^ y) & 1) * 0.08, x, y));
+      }
+      // ringlet highlights and dark gaps
+      for (let i = 0; i < 40; i++) {
+        const x = CX - R + (rnd(i + 200) % (R * 2));
+        const y = cy - R + (rnd(i + 260) % (R + 4));
+        if (b.get(x, y) !== -1 && y < top + 5) b.set(x, y, i % 3 ? HR[2] : shade(HR[0], -0.3));
+      }
+      // stray bits over the forehead
+      for (let x = CX - 6; x < CX + 6; x += 2) b.set(x, top + 5 + ((x + rnd(x & 15)) % 2), HR[1]);
+      break;
+    }
     case 7: // man bun / ponytail
       capRows(6, 0, 2);
       for (let y = top - 7; y < top - 1; y++) for (let x = CX - 3; x < CX + 4; x++) if (Math.hypot(x - CX, y - (top - 4)) < 3.6) b.set(x, y, ramp(HR, 0.6 - (x - CX) / 8, x, y));
@@ -436,6 +478,23 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
   if (grey > 0.3 && hs !== 0) for (let y = eyeY - 6; y < eyeY; y++) {
     b.set(CX - hwAt(y), y, 0xb8b5ae);
     b.set(CX + hwAt(y) - 1, y, 0xb8b5ae);
+  }
+
+  if (look.beanie) {
+    // knit beanie pulled down to just above the brows, folded cuff, a bit of slouch
+    const knit = [0x1c1c22, 0x2a2a32, 0x3a3a44];
+    const cuff = top + 11;
+    for (let y = top - 4; y <= cuff + 2; y++) {
+      const hw = Math.max(hwAt(Math.max(top, y)) + 2, y < top ? 9 + (y - top + 4) * 2 : 0);
+      for (let x = CX - hw; x < CX + hw; x++) {
+        const v = 0.7 - (x - CX) / (hw * 3) - (y - top) / 60 + ((x + y) % 3 === 0 ? 0.12 : 0);
+        b.set(x, y, ramp(knit, y >= cuff ? v + 0.15 : v, x, y));
+      }
+      b.set(CX - hw - 1, y, 0x08080a);
+      b.set(CX + hw, y, 0x08080a);
+    }
+    b.hline(CX - hwAt(cuff) - 2, CX + hwAt(cuff) + 1, cuff - 1, 0x101014);
+    b.rect(CX + 5, cuff, 4, 2, 0xd8d8de); // tag
   }
 
   // ------------------------------------------------------------ brows
@@ -485,8 +544,17 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
     }
   };
   const tired = variant === 'corner';
-  drawEye(eyeL, false, look.eyes === 1 || tired);
-  drawEye(eyeR, swell >= 3, look.eyes === 1 || tired);
+  drawEye(eyeL, false, look.eyes === 1 || tired || !!look.stoned);
+  drawEye(eyeR, swell >= 3, look.eyes === 1 || tired || !!look.stoned);
+  if (look.stoned) {
+    // bloodshot, half-shut, very relaxed
+    for (const cx of [eyeL, eyeR]) {
+      b.set(cx - 2, eyeY, 0xd88a84);
+      b.set(cx + 2, eyeY, 0xd88a84);
+      for (let i = -3; i <= 3; i++) b.set(cx + i, eyeY - 1, SK[2]);
+      for (let i = -2; i <= 2; i++) b.set(cx + i, eyeY + 1, lerpColor(SK[1], 0x8a5a6a, 0.35));
+    }
+  }
   if (look.eyes === 2) {
     // heavy-lidded / sleepy
     for (let i = -2; i <= 2; i++) {

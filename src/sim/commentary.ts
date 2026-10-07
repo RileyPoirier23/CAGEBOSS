@@ -6,6 +6,7 @@
  * All text lives in data/documents/commentary.json (tools/commentary_src.py).
  * Parody fighters only ever get "safe" controversy material.
  */
+import { rankPhrase } from './rankings';
 import type { Bout, FightEvent, Fighter, GameState, TickerLine } from '../core/types';
 import { content } from '../core/content';
 import { Rng } from '../core/rng';
@@ -386,6 +387,8 @@ export function butlerIntro(s: GameState, ev: FightEvent, bout: Bout, seed: numb
     lines.push(fl(r.pick(bget('height'))) + ' ' + fl(r.pick(bget('weight'))).replace(/^./, (ch) => ch.toLowerCase()));
     if (big || r.chance(0.5)) lines.push(fl(r.pick(bget('origin'))) + ' ' + fl(r.pick(bget('gym'))).replace(/^./, (ch) => ch.toLowerCase()));
     lines.push(fl(r.pick(bget('record'))));
+    const rp = rankPhrase(s, f.id);
+    if (rp && !champ(f)) lines.push(sentenceCase(`Fighting as ${rp.replace(/^the /, 'THE ').toUpperCase()}!`));
     if (big || r.chance(0.35)) {
       const facts = funFacts(s, f);
       const fact = r.pick(facts);

@@ -6,6 +6,7 @@ import { content } from '../core/content';
 import { Rng } from '../core/rng';
 import { hydrateFighter, generateFighter } from './generate';
 import { overall, computeStarPower, marketPurse } from './fighters';
+import { applyRealRankings } from './realrank';
 import { computeRankings, ensureDivisionBelts, awardBelt, undisputed, rankScore } from './rankings';
 import { scheduleEvents } from './events';
 import { DIVISION_ORDER } from './divisions';
@@ -168,6 +169,8 @@ export function createNewGame(opts: NewGameOpts): GameState {
   // a couple of marquee characters start with us in act 1 (cheap & early in their arcs)
   const earlyMarquee = Object.values(s.fighters).filter((f) => f.marquee && f.status === 'free-agent' && ((f as any).startWith === 'us'));
   ours.push(...earlyMarquee);
+  // parodies move into the divisions their real counterparts fight in today
+  const realChamps = applyRealRankings(s);
   // sandbox: every real-fighter parody on your roster (their divisions open with them)
   if (sb?.realRoster) {
     for (const f of Object.values(s.fighters)) {
@@ -210,7 +213,8 @@ export function createNewGame(opts: NewGameOpts): GameState {
   // belts: crown the best fighter in each division as the inherited champion
   ensureDivisionBelts(s);
   for (const div of s.divisionsOpen) {
-    const best = ours.filter((f) => f.division === div).sort((a, b) => rankScore(s, b) - rankScore(s, a))[0];
+    const real = realChamps[div] ? ours.find((f) => f.id === realChamps[div]) : undefined;
+    const best = real ?? ours.filter((f) => f.division === div).sort((a, b) => rankScore(s, b) - rankScore(s, a))[0];
     const belt = undisputed(s, div);
     if (best && belt && rng.chance(scenario === 'tiny' ? 0.75 : 1)) awardBelt(s, belt, best.id);
   }

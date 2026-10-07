@@ -174,7 +174,8 @@ function candidatesFor(s: GameState, type: string, viewCache: Map<string, Record
     case 'legend':
       return Object.values(s.fighters).filter((f) => f.status === 'retired').map(fv);
     case 'reporter':
-      return content().reporters.map((r) => ({ id: r.id, view: reporterView(s, r.id)! }));
+      // 1ton only ever asks about Mexican fighters: he has his own scripted questions, never generic storylets
+      return content().reporters.filter((r) => r.id !== 'oneton').map((r) => ({ id: r.id, view: reporterView(s, r.id)! }));
     case 'rival':
       return Object.keys(s.rivals).filter((id) => s.rivals[id].alive).map((id) => ({ id, view: rivalView(s, id)! }));
     case 'sponsor':
@@ -440,6 +441,11 @@ export function fireCategory(
   const base = { ...globalEnv(s, rng), ...extraEnv };
   const viewCache = new Map<string, Record<string, any>>();
   const cands: { d: StoryletDef; roles: Record<string, string>; w: number }[] = [];
+  if (preset.reporter === 'oneton') {
+    // 1ton never asks a generic question; somebody else gets the mic
+    preset = { ...preset };
+    delete preset.reporter;
+  }
   for (const d of content().storylets) {
     if (d.category !== category || d.followupOnly || exclude.includes(d.id)) continue;
     if (!actOk(s, d) || onCooldown(s, d)) continue;

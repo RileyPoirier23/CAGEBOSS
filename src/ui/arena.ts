@@ -532,6 +532,89 @@ export class ArenaView extends Container {
     this.setMode(this.mode);
   }
 
+  // ------------------------------------------------------------ hands-on fights
+  /** Hands-on fights: feet positions come from the live engine instead of the AI footwork. */
+  manual: [number, number] | null = null;
+
+  /** Start of a hands-on round: no walk-out, no glove touch, straight into it. */
+  manualRound(): void {
+    this.scene = 'fight';
+    this.prefight = false;
+    this.walkIn = false;
+    this.touchT = 0;
+    this.resting = false;
+    this.roundOver = false;
+    this.finished = false;
+    this.winnerSide = -1;
+    this.held = [];
+    this.engage = null;
+    this.ground = 'stand';
+    this.subAnim = null;
+    this.F.forEach((f, i) => {
+      f.pose = 'guard';
+      f.poseT = 0;
+      f.v = 0;
+      f.facing = i === 0 ? 1 : -1;
+      if (this.manual) f.x = this.manual[i];
+    });
+  }
+
+  /** Play a pose on one fighter (hands-on fights). */
+  play(i: 0 | 1, pose: string, dur = 0.3, lunge = 0): void {
+    this.setPose(i, (POSES as Record<string, unknown>)[pose] ? (pose as Pose) : 'guard', dur);
+    if (lunge) this.F[i].lunge = lunge;
+  }
+
+  /** A strike connects (hands-on fights). */
+  strike(atk: 0 | 1, joint: 'haF' | 'haB' | 'ftB' | 'knB' | 'elB', big: boolean, bloody: boolean): void {
+    this.impact(atk, joint, big, bloody);
+  }
+
+  /** Mirror the engine's position on the mat. */
+  setMat(ground: 'stand' | 'clinch' | 'atop' | 'btop', spot: GroundSpot = 'guard', sub: { name: string; atk: 0 | 1 } | null = null): void {
+    const was = this.ground === 'atop' || this.ground === 'btop';
+    const now = ground === 'atop' || ground === 'btop';
+    if (now && !was) {
+      this.groundX = Math.max(CAGE_L + 60, Math.min(CAGE_R - 60, (this.F[0].x + this.F[1].x) / 2));
+      this.center = this.groundX;
+    }
+    if (!now && was) for (const i of [0, 1] as const) this.setPose(i, 'guard', 0);
+    this.ground = ground;
+    this.groundPos = spot;
+    if (sub && now) {
+      const kind = subKindFor(sub.name, this.isTop(sub.atk));
+      if (!this.subAnim || this.subAnim.kind !== kind || this.subAnim.tapped) this.subAnim = { kind, atk: sub.atk, t: 99, tapped: false };
+      else this.subAnim.t = 99;
+    } else if (this.subAnim && !this.subAnim.tapped) this.subAnim = null;
+  }
+
+  /** Ground and pound flash on the top man. */
+  gnp(): void {
+    this.gnpT = 0.28;
+  }
+
+  /** Knocked down / back up / out cold (hands-on fights). */
+  floor(i: 0 | 1, state: 'down' | 'up' | 'ko'): void {
+    if (state === 'up') this.setPose(i, 'guard', 0);
+    else this.setPose(i, state, 9999);
+    if (state === 'ko') {
+      this.F[i].recoil = 22;
+      this.finished = true;
+      this.winnerSide = 1 - i;
+    }
+  }
+
+  /** The fight is over: winner celebrates. */
+  over(winner: 0 | 1 | -1, tapped?: { name: string; atk: 0 | 1 }): void {
+    this.finished = true;
+    this.winnerSide = winner;
+    if (tapped && (this.ground === 'atop' || this.ground === 'btop')) this.subAnim = { kind: subKindFor(tapped.name, this.isTop(tapped.atk)), atk: tapped.atk, t: 2.4, tapped: true };
+  }
+
+  slowMo(t: number): void {
+    this.slowT = t;
+  }
+
   /** Both fighters to the centre, referee between them holding their wrists. */
   startCeremony(): void {
     this.scene = 'ceremony';
@@ -1254,7 +1337,11 @@ export class ArenaView extends Container {
       }
       // footwork on the feet: step in, step out to make space, circle; feint now and then
       const standing = fightOn && this.ground === 'stand' && !this.finished && !this.roundOver && !this.prefight && !this.walkIn && this.touchT <= 0;
-      if (standing && !this.engage) {
+      if (this.manual && fightOn && !this.roundOver && (this.ground === 'stand' || this.ground === 'clinch')) {
+        // hands-on: the engine says where the feet are
+        tx = this.manual[i];
+        maxV = 400;
+      } else if (standing && !this.engage) {
         f.footT = (f.footT ?? 0) - dt;
         if (f.footT <= 0) {
           const r = Math.random();

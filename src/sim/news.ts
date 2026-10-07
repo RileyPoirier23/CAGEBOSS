@@ -9,6 +9,8 @@ import type { GameState, NewsItem, Newspaper, SocialPost, Story } from '../core/
 import { content, type HeadlineDef, type OutletDef } from '../core/content';
 import { Rng } from '../core/rng';
 import { fullName } from './fighters';
+import { frontPage } from './headlines';
+import { onetonPost } from './oneton';
 
 export function addNews(s: GameState, item: Omit<NewsItem, 'week'> & { week?: number }): void {
   s.media.news.push({ week: s.week, ...item });
@@ -61,16 +63,22 @@ export function genericBody(s: GameState, item: NewsItem, rng: Rng): string {
 }
 
 export function buildPaper(s: GameState, rng: Rng): Newspaper {
-  const items = s.media.news.filter((n) => n.week >= s.week - 1);
+  let items = s.media.news.filter((n) => n.week >= s.week - 1);
   items.sort((a, b) => b.weight - a.weight || a.tags[0].localeCompare(b.tags[0]));
   const stories: Story[] = [];
+  // the front page: a fresh headline every week (memes + your roster's week)
+  const fp = frontPage(s, items, rng);
+  if (fp) {
+    stories.push(fp.story);
+    if (fp.replaces) items = items.filter((n) => n !== fp.replaces);
+  }
   const notices: string[] = [];
   for (const it of items) {
     if (it.tags.includes('notice')) {
       notices.push(fillTemplate(it.text ?? '', it.vars));
       continue;
     }
-    if (stories.length >= 6) continue;
+    if (stories.length >= 7) continue;
     const outlet = chooseOutlet(s, it, rng);
     const h = headlineFor(s, it, outlet, rng);
     stories.push({ outlet: outlet.name, headline: h.headline, body: h.body || genericBody(s, it, rng) });
@@ -119,6 +127,11 @@ export function buildFeed(s: GameState, items: NewsItem[], rng: Rng): SocialPost
       likes: Math.round(f.social.followers * rng.float(0.01, 0.08)),
       fighter: f.id,
     });
+  }
+  // @1ton chimes in now and then (always about Mexican fighters)
+  if (rng.chance(0.3)) {
+    const p = onetonPost(s, rng);
+    if (p) posts.push(p);
   }
   const fanList = bank.fans ?? [];
   for (let i = 0; i < 3 && fanList.length; i++) {

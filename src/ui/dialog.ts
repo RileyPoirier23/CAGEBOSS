@@ -10,7 +10,7 @@ import { PAL, shade } from '../art/palette';
 import { W, H, text, button, box, paper } from './kit';
 import { PixelText } from './text';
 import { def, renderText, availableChoices, resolveStorylet } from '../storylets/engine';
-import { fighterPortrait, reporterPortrait, npcPortrait } from './sprites';
+import { fighterPortrait, reporterPortrait, npcPortrait, namedPortrait } from './sprites';
 import { content } from '../core/content';
 import { Rng } from '../core/rng';
 import { sfx } from '../audio/sfx';
@@ -28,6 +28,10 @@ const TONE_COLOR: Record<string, number> = {
 export function scenePortrait(g: Game, inst: StoryletInstance, sc: SceneDef): Container | null {
   const s = g.state!;
   const d = def(inst.id);
+  if (sc.portrait?.startsWith('npc:')) {
+    const named = namedPortrait(sc.portrait.slice(4), 64);
+    if (named) return named;
+  }
   const role = sc.portrait ?? (d?.roles ? Object.keys(d.roles)[0] : undefined);
   if (role && inst.roles[role]) {
     const type = d?.roles?.[role]?.type ?? 'fighter';

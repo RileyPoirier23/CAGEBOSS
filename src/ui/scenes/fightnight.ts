@@ -3,6 +3,7 @@
  * sim each bout) -> post-fight interviews & fight-night chaos -> performance
  * bonuses -> post-fight presser -> ledger.
  */
+import type { FightOpts } from '../../sim/fight';
 import { Container, Graphics } from 'pixi.js';
 import { Scene, Game, fullBg } from '../app';
 import type { Bout, FightEvent, TickerLine, EventFinancials } from '../../core/types';
@@ -67,13 +68,26 @@ const INTERVIEW: Record<string, string[]> = {
 
 const CAM_NAMES: Record<string, string> = { side: 'WIDE', tv: 'TV', top: 'TOP-DOWN' };
 
+/** Fighter Mode hooks: your gameplan/corner feed the sim; the corner break is played by you. */
+export interface FightNightFM {
+  player: string;
+  extra: () => Partial<FightOpts>;
+  corner: (round: number, bout: Bout, done: () => void) => void;
+  /** hands-on: play the player's bout yourself; call done once bout.result is set */
+  live?: (bout: Bout, done: () => void) => void;
+  /** another bout on the card finished (cageside reactions) */
+  after?: (bout: Bout) => void;
+}
+
 export class FightNightScene extends Scene {
+  tutorialKey = 'fightnight';
   music = 'fightnight' as const;
   private step: Step = 'intro';
   private ev: FightEvent;
   private arena: ArenaView | null = null;
   private playing: {
     bout: Bout; lines: TickerLine[]; idx: number; timer: number; paused: boolean;
+    simRng: number; seed: number; fmDone: number[];
     phase: 'intro' | 'fight' | 'corner' | 'ringcard' | 'end' | 'ceremony'; phaseT: number;
     ringcard: RingCardWalk | null; corner: Container | null;
     intro: AnnounceLine[]; introIdx: number; cer: AnnounceLine[]; cerIdx: number; cerWinner: -1 | 0 | 1; raised: boolean;
@@ -92,15 +106,16 @@ export class FightNightScene extends Scene {
   private recapView: NewsRecap | null = null;
   private pressersDone = 0;
 
-  constructor(g: Game, evId: string) {
+  /** opts.event: an event that isn't in state.events (Contender Series); opts.onWrap replaces bonuses/presser/ledger. */
+  constructor(g: Game, evId: string, private opts: { event?: FightEvent; onWrap?: () => void; fm?: FightNightFM } = {}) {
     super(g);
-    this.ev = g.state!.events.find((e) => e.id === evId)!;
+    this.ev = opts.event ?? g.state!.events.find((e) => e.id === evId)!;
   }
 
   enter(): void {
     const s = this.g.state!;
     const fresh = !this.ev.notes.includes('started');
-    if (!fresh) autoFixCard(s, this.ev);
+    if (!fresh && !this.opts.onWrap) autoFixCard(s, this.ev);
     this.settleStep();
     super.enter();
     // late withdrawals: the boss picks the short-notice replacements
@@ -120,6 +135,11 @@ export class FightNightScene extends Scene {
   build(): void {
     const r = this.root;
     r.addChild(fullBg(0x120e14));
+    if (this.opts.onWrap && (this.step === 'bonus' || this.step === 'presser' || this.step === 'recap' || this.step === 'done')) {
+      const done = this.opts.onWrap;
+      this.opts.onWrap = undefined;
+      return void setTimeout(done, 0);
+    }
     switch (this.step) {
       case 'intro': return this.buildIntro();
       case 'card': return this.buildCard();
@@ -255,6 +275,8 @@ export class FightNightScene extends Scene {
         const w = res.winner ? s.fighters[res.winner] : null;
         row.addChild(text(w ? `${w.last} by ${res.method} (${res.detail}) R${res.round} ${res.time}` : `${res.detail}`, 300, 7, { small: true, color: PAL.moss, width: W - 330 }));
       } else {
+        const fmb = this.fmFor(b);
+        if (fmb?.live && this.g.settings.handsOn !== false) row.addChild(button('FIGHT!', W - 130, 4, 36, 14, () => this.liveFight(b), { small: true, fill: PAL.gold }));
         row.addChild(button('WATCH', W - 92, 4, 34, 14, () => this.watch(b), { small: true, fill: PAL.blood }));
         row.addChild(button('SIM', W - 56, 4, 30, 14, () => this.simBout(b), { small: true, fill: PAL.slate }));
       }
@@ -273,26 +295,52 @@ export class FightNightScene extends Scene {
       remaining.sort((a, b) => b.position - a.position).forEach((b) => this.simBout(b, true));
       this.refresh();
     }, { small: true, disabled: !remaining.length }));
-    if (!remaining.length) r.addChild(button('BONUSES & WRAP UP →', W - 150, H - 26, 142, 18, () => { this.step = 'bonus'; this.refresh(); }, { fill: PAL.blood }));
+    if (!remaining.length) r.addChild(button(this.opts.onWrap ? 'CONTRACT TIME →' : 'BONUSES & WRAP UP →', W - 150, H - 26, 142, 18, () => { this.step = 'bonus'; this.refresh(); }, { fill: PAL.blood }));
     else r.addChild(text('Watch a fight, or sim it. Prelims run first, main event last.', 220, H - 21, { small: true, color: PAL.ash }));
   }
 
   private simBout(b: Bout, quiet = false): void {
     const s = this.g.state!;
     const rng = new Rng(s.rng);
-    runBout(s, this.ev, b, rng, false);
+    runBout(s, this.ev, b, rng, false, this.fmFor(b)?.extra() ?? {});
     applyBout(s, this.ev, b, rng);
     s.rng = rng.state;
     if (!quiet) {
       this.postBout(b, false);
+      this.afterOther(b);
     }
+  }
+
+  /** Hands-on: the player fights this one. */
+  private liveFight(b: Bout): void {
+    const fm = this.fmFor(b);
+    if (!fm?.live) return;
+    fm.live(b, () => {
+      const s = this.g.state!;
+      const rng = new Rng(s.rng);
+      b.status = 'done';
+      applyBout(s, this.ev, b, rng);
+      s.rng = rng.state;
+      this.step = 'card';
+      this.refresh();
+      this.postBout(b, true);
+    });
+  }
+
+  /** Fighter Mode: you were cageside for somebody else's fight. */
+  private afterOther(b: Bout): void {
+    const fm = this.opts.fm;
+    if (!fm?.after || b.a === fm.player || b.b === fm.player || !b.result) return;
+    const go = () => (this.g.modals.length ? setTimeout(go, 300) : fm.after!(b));
+    setTimeout(go, 300);
   }
 
   // ------------------------------------------------------------ watch
   private watch(b: Bout): void {
     const s = this.g.state!;
+    const simRng = s.rng;
     const rng = new Rng(s.rng);
-    runBout(s, this.ev, b, rng, true);
+    runBout(s, this.ev, b, rng, true, this.fmFor(b)?.extra() ?? {});
     s.rng = rng.state;
     const seed = rng.int(1, 1e9);
     const base = b.result!.ticker ?? [];
@@ -300,7 +348,7 @@ export class FightNightScene extends Scene {
     const intro = this.g.settings.intros === false ? [] : butlerIntro(s, this.ev, b, seed);
     this.playing = {
       bout: b, lines, idx: 0, timer: 0.8, paused: false, phase: intro.length ? 'intro' : 'fight', phaseT: 0, ringcard: null, corner: null,
-      intro, introIdx: 0, cer: [], cerIdx: 0, cerWinner: -1, raised: false,
+      intro, introIdx: 0, cer: [], cerIdx: 0, cerWinner: -1, raised: false, simRng, seed, fmDone: [],
     };
     this.step = 'watch';
     this.tapeShown = false;
@@ -333,7 +381,7 @@ export class FightNightScene extends Scene {
     // tale of the tape before the walkouts (once per fight)
     if (p.phase === 'intro' && p.introIdx === 0 && !this.tapeShown) {
       this.tapeShown = true;
-      this.tape = new TaleOfTape(A, B, AW, boutLabel(s, p.bout), weighInWeight(A, p.bout, 1), weighInWeight(B, p.bout, 2));
+      this.tape = new TaleOfTape(A, B, AW, boutLabel(s, p.bout), weighInWeight(A, p.bout, 1), weighInWeight(B, p.bout, 2), [rankLabel(s, A.id), rankLabel(s, B.id)]);
       r.addChild(this.tape);
     } else this.tape = null;
     if (this.g.settings.bleets !== false) {
@@ -582,6 +630,14 @@ export class FightNightScene extends Scene {
     }
     if (p.phase === 'corner') {
       p.phaseT -= dt * speed;
+      // Fighter Mode: you work the corner, then the rest of the fight re-runs with your choices
+      const fm = this.fmFor(p.bout);
+      const rnd = p.lines[p.idx - 1]?.round ?? 1;
+      if (p.phaseT <= 0 && fm && !p.fmDone.includes(rnd)) {
+        p.fmDone.push(rnd);
+        fm.corner(rnd, p.bout, () => this.fmResim(rnd));
+        return;
+      }
       if (p.phaseT <= 0) {
         p.corner?.destroy({ children: true });
         p.corner = null;
@@ -644,6 +700,30 @@ export class FightNightScene extends Scene {
     }
   }
 
+  private fmFor(b: Bout): FightNightFM | null {
+    const fm = this.opts.fm;
+    return fm && (b.a === fm.player || b.b === fm.player) ? fm : null;
+  }
+
+  /** Re-simulate from the same seed: everything already shown is identical, the rest follows the new plan & corner. */
+  private fmResim(round: number): void {
+    const p = this.playing;
+    const fm = p && this.fmFor(p.bout);
+    if (!p || !fm) return;
+    const s = this.g.state!;
+    const rng = new Rng(p.simRng);
+    runBout(s, this.ev, p.bout, rng, true, fm.extra());
+    const base = p.bout.result!.ticker ?? [];
+    const lines = [...boothOpen(s, this.ev, p.bout, p.seed), ...commentate(s, this.ev, p.bout, base, p.seed)];
+    let at = lines.findIndex((l) => !l.speaker && l.act === 'bell' && l.round === round);
+    if (at >= 0) {
+      at++;
+      while (lines[at]?.speaker && lines[at].round === round) at++;
+      p.lines = lines;
+      p.idx = at;
+    }
+  }
+
   private endWatch(): void {
     const p = this.playing;
     if (!p || (p as { done?: boolean }).done) return;
@@ -659,6 +739,7 @@ export class FightNightScene extends Scene {
     this.step = 'card';
     this.refresh();
     this.postBout(p.bout, true);
+    this.afterOther(p.bout);
   }
 
   /** Result card + post-fight interview, then maybe fight-night chaos. */
