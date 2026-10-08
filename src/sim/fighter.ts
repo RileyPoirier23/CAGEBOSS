@@ -105,6 +105,8 @@ export interface FMState {
   energy: number;
   morale: number;
   walkWeight: number;
+  /** sparring points waiting to be put into skills */
+  sparPoints?: number;
   ap: number;
   body: Record<BodyPart, number>;
   /** max head health: knockouts lower it permanently */
@@ -606,6 +608,22 @@ const gain = (s: GameState, base: number) => {
   return base * (1 + st.staff.coach * 0.4) * (st.ped.on ? 1.6 : 1) * condition(s).mult * Math.min(1.5, room) * gymTrainBonus(s);
 };
 
+/** What a normal training session of this skill should add (the middle of the range), and the knock-on skill. */
+export function trainPreview(s: GameState, k: keyof Skills): { gain: number; buddy: keyof Skills | null; buddyGain: number } {
+  const g = gain(s, 2.2);
+  const b2 = TRAIN_BUDDY[k] ?? null;
+  return { gain: Math.round(g * 10) / 10, buddy: b2, buddyGain: Math.round(g * 2.5) / 10 };
+}
+const TRAIN_BUDDY: Partial<Record<keyof Skills, keyof Skills>> = { striking: 'fightIQ', power: 'striking', wrestling: 'cardio', grappling: 'fightIQ', cardio: 'heart', chin: 'durability', durability: 'heart', fightIQ: 'striking' };
+
+/** Dedicated weight cutting is for the last two weeks of camp. Before that, it just comes back. */
+export function cutWindow(s: GameState): { open: boolean; weeksOut: number | null } {
+  const st = fm(s);
+  if (!st.fight) return { open: false, weeksOut: null };
+  const w = st.fight.week - s.week;
+  return { open: w <= 2, weeksOut: w };
+}
+
 /** Burn weight (training, roadwork). Returns pounds lost. */
 const burn = (s: GameState, lbs: number) => {
   const st = fm(s);
@@ -626,11 +644,11 @@ export function trainSkill(s: GameState, k: keyof Skills, rng: Rng, score: numbe
   const g = gain(s, rng.float(1.6, 2.8)) * perf;
   f.skills[k] = clamp(Math.round((f.skills[k] + g) * 10) / 10, 10, 99);
   // a little carries over to the neighbours
-  const buddy: Partial<Record<keyof Skills, keyof Skills>> = { striking: 'fightIQ', power: 'striking', wrestling: 'cardio', grappling: 'fightIQ', cardio: 'heart', chin: 'durability', durability: 'heart', fightIQ: 'striking' };
-  const b2 = buddy[k];
+  const b2 = TRAIN_BUDDY[k];
   if (b2) f.skills[b2] = clamp(Math.round((f.skills[b2] + g * 0.25) * 10) / 10, 10, 99);
   st.energy = clamp(st.energy - 15, 0, 100);
-  const lost = burn(s, (k === 'cardio' ? 1.3 : k === 'wrestling' || k === 'grappling' ? 0.9 : 0.6) * (score === null ? 1 : 0.7 + score * 0.6));
+  // training burns a little; the real cutting happens in the last two weeks of camp
+  const lost = burn(s, (k === 'cardio' ? 0.8 : k === 'wrestling' || k === 'grappling' ? 0.55 : 0.35) * (score === null ? 1 : 0.7 + score * 0.6));
   const tag = cond.label === 'PEAK CONDITION' ? ' PEAK CONDITION bonus!' : cond.label === 'WRECKED' ? ' (You trained wrecked: barely stuck.)' : '';
   if (rng.chance(0.04 + (st.energy < 25 ? 0.12 : 0))) {
     const part = rng.pick(['legs', 'body', 'lhand', 'rhand', 'larm', 'rarm'] as BodyPart[]);
@@ -645,9 +663,11 @@ export function cutWeight(s: GameState, m: CutMethod): string {
   const st = fm(s);
   const f = me(s);
   if (st.ap <= 0) return 'No time left this week.';
+  const win = cutWindow(s);
+  if (!win.open) return win.weeksOut === null ? 'No fight booked: nothing to cut for. Train, and keep the diet clean.' : `Too early: the fight is ${win.weeksOut} weeks out. Cut now and it all comes back. The dedicated cut starts two weeks out.`;
   st.ap--;
   if (m === 'roadwork') {
-    const lost = burn(s, 2.2 + st.staff.nutrition * 0.3);
+    const lost = burn(s, 2.8 + st.staff.nutrition * 0.4);
     st.energy = clamp(st.energy - 14, 0, 100);
     f.skills.cardio = clamp(f.skills.cardio + 0.4, 10, 99);
     return `Roadwork in a trash-bag hoodie at 5 a.m.: -${lost} lbs, cardio +0.4.`;
@@ -659,10 +679,27 @@ export function cutWeight(s: GameState, m: CutMethod): string {
     st.body.body = clamp(st.body.body - 4, 0, 100);
     return `Sat in the sauna until you saw God: -${lost} lbs. Most of it is water and comes back unless you weigh in this week.`;
   }
-  const lost = burn(s, 1.6 + st.staff.nutrition * 0.4);
+  const lost = burn(s, 2.2 + st.staff.nutrition * 0.5);
   st.morale = clamp(st.morale - 5, 0, 100);
   st.energy = clamp(st.energy - 5, 0, 100);
   return `Strict meal prep: chicken, rice, sadness. -${lost} lbs.`;
+}
+
+/** Put sparring points into skills (one point = +1). */
+export function allocateSpar(s: GameState, alloc: Partial<Record<keyof Skills, number>>): string {
+  const st = fm(s);
+  const f = me(s);
+  let left = st.sparPoints ?? 0;
+  const done: string[] = [];
+  for (const [k, n] of Object.entries(alloc) as [keyof Skills, number][]) {
+    const use = Math.min(left, Math.max(0, Math.floor(n)));
+    if (!use || k === 'weightCut') continue;
+    f.skills[k] = clamp(Math.round((f.skills[k] + use) * 10) / 10, 10, 99);
+    left -= use;
+    done.push(`${k} +${use}`);
+  }
+  st.sparPoints = left;
+  return done.length ? `Sparring paid off: ${done.join(', ')}.` : 'No points spent.';
 }
 
 /** Returns a short line describing what happened. */
@@ -680,13 +717,14 @@ export function doAction(s: GameState, a: ActionId, focus: keyof Skills | 'cheap
       const cheap = focus === 'cheap';
       const partner = focus === 'partner' && st.partner;
       const g = gain(s, rng.float(1.6, 2.8)) * (partner ? 1.2 : 1);
-      f.skills.fightIQ = clamp(f.skills.fightIQ + g * 0.6, 10, 99);
-      f.skills.striking = clamp(f.skills.striking + g * 0.5, 10, 99);
-      f.skills.wrestling = clamp(f.skills.wrestling + g * 0.3, 10, 99);
+      // sparring earns points you put where you want them: you choose what the camp works on
+      const pts = clamp(Math.round(g * 1.6), 2, 7);
+      st.sparPoints = (st.sparPoints ?? 0) + pts;
+      f.skills.fightIQ = clamp(f.skills.fightIQ + g * 0.2, 10, 99);
       st.energy = clamp(st.energy - 22, 0, 100);
       burn(s, 0.8);
       if (focus === 'pro') st.money -= 150;
-      if (partner) return sparPartner(s, rng, g);
+      if (partner) return sparPartner(s, rng, g) + ` (+${pts} skill points to spend.)`;
       // the gym rat who wants to be your regular partner
       if (cheap && !st.partner && !st.flagsPartner && rng.chance(0.5)) {
         st.flagsPartner = true;
@@ -701,7 +739,7 @@ export function doAction(s: GameState, a: ActionId, focus: keyof Skills | 'cheap
         extra = cheap ? ` Your "partner" went 100% and hurt your ${BODY_PARTS.find((p) => p.id === part)!.name.toLowerCase()}.` : ` Took a bad one to the ${BODY_PARTS.find((p) => p.id === part)!.name.toLowerCase()}.`;
       }
       if (cheap && rng.chance(0.12)) st.pending.push(EVENTS.leak(s, rng));
-      return `Sparred ${cheap ? 'with whoever showed up' : 'with paid pros (-$150)'}: fight IQ & striking up.` + extra;
+      return `Sparred ${cheap ? 'with whoever showed up' : 'with paid pros (-$150)'}: ${pts} skill points to spend.` + extra;
     }
     case 'work': {
       const pay = rng.int(320, 620);

@@ -31,7 +31,7 @@ import {
   fm, me, BODY_PARTS, STAFF_ROLES, PLANS, doAction, treat, clinicCost, weeklyStaffCost, calloutTargets, callOut, humblePost,
   startPeds, stopPeds, bareknuckle, gamble, acceptOffer, resolveEvent, endWeek, fightThisWeek, weighInInfo, doWeighIn, fightEvent,
   afterFight, postFightCallout, weightLimit, contractLimit, fightReadySkills, type ActionId, type StaffId, type BodyPart,
-  ensureFM, condition, trainSkill, cutWeight, hire, fire, fightWeekPaperwork, cagesideReact, bkNext, bkPurse, bkSpot,
+  ensureFM, condition, trainSkill, trainPreview, cutWindow, allocateSpar, cutWeight, hire, fire, fightWeekPaperwork, cagesideReact, bkNext, bkPurse, bkSpot,
   ladderSpot, stage, BKB_NAME, BRADIE, bradieOnYou, askOnlyFighters, postContent, cardSlot, SLOT_NAME, type CutMethod,
 } from '../../sim/fighter';
 import { FightNightScene } from './fightnight';
@@ -196,11 +196,14 @@ export class FMHubScene extends Scene {
       this.save(r2);
       sfx('click');
       this.refresh();
-      setTimeout(() => this.popups(), 100);
+      // sparring earns points: spend them now
+      if (a === 'spar' && (st.sparPoints ?? 0) > 0) setTimeout(() => this.sparAllocate(), 120);
+      else setTimeout(() => this.popups(), 100);
     };
     act('TRAIN…', 17, () => this.trainMenu(), { tip: 'Pick a skill to drill. Peak condition = bigger gains' });
     act('SPAR…', 32, () => this.sparMenu(run), { tip: 'Big gains, real risk' });
-    act('CUT WEIGHT…', 47, () => this.cutMenu(), { fill: PAL.ember, tip: 'Roadwork, sauna or a strict diet' });
+    const cw = cutWindow(s);
+    act(cw.open ? 'CUT WEIGHT…' : 'CUT WEIGHT (FINAL 2 WKS)', 47, () => this.cutMenu(), { fill: cw.open ? PAL.ember : PAL.shadow, tip: cw.open ? 'Roadwork, sauna or a strict diet' : 'The dedicated cut opens two weeks before the fight' });
     act('WORK A SHIFT', 62, () => run('work'), { tip: 'Money, but it drains you' });
     act('REST & RECOVER', 77, () => run('rest'));
     act('GO OUT TONIGHT', 92, () => run('party'), { fill: PAL.plum, tip: 'Morale up. What could go wrong?' });
@@ -212,7 +215,9 @@ export class FMHubScene extends Scene {
     free('STAFF', 156, () => this.staffMenu());
     free(`${stage(s).short} ROSTER & RANKINGS`, 171, () => this.rankingsMenu());
     if (st.undergroundOpen) free('THE UNDERGROUND', 186, () => this.undergroundMenu(), 0x1d3a22);
-    if (this.msg) M.addChild(text(this.msg, 6, 202, { small: true, width: 148, color: PAL.bone, maxLines: 3 }));
+    if ((st.sparPoints ?? 0) > 0) M.addChild(button(`SPEND ${st.sparPoints} SPARRING POINTS`, 6, 186 + (st.undergroundOpen ? 15 : 0), 148, 14, () => this.sparAllocate(), { small: true, fill: PAL.gold }));
+    const extraRows = (st.undergroundOpen ? 1 : 0) + ((st.sparPoints ?? 0) > 0 ? 1 : 0);
+    if (this.msg) M.addChild(text(this.msg, 6, 187 + extraRows * 15, { small: true, width: 148, color: PAL.bone, maxLines: extraRows >= 2 ? 1 : extraRows ? 2 : 3 }));
 
     // ------------------------------------------------ right: fights & feed
     const R = new Container();
@@ -274,7 +279,7 @@ export class FMHubScene extends Scene {
 
   private trainMenu(): void {
     const s = this.g.state!;
-    const win = openWindow(this.g, 'Train', 240, 150);
+    const win = openWindow(this.g, 'Train', 320, 206);
     const f = me(s);
     const cond = condition(s);
     const after = (k: keyof Skills, score: number | null) => {
@@ -285,12 +290,64 @@ export class FMHubScene extends Scene {
       this.refresh();
       setTimeout(() => this.popups(), 100);
     };
+    const keys: [keyof Skills, string][] = [['striking', 'Striking'], ['power', 'Power'], ['wrestling', 'Wrestling'], ['grappling', 'Jiu-jitsu'], ['cardio', 'Cardio'], ['fightIQ', 'Fight IQ'], ['chin', 'Neck & chin'], ['durability', 'Conditioning'], ['heart', 'Heart']];
+    const NAME: Partial<Record<keyof Skills, string>> = { ...Object.fromEntries(keys), chin: 'Chin', durability: 'Cond.', grappling: 'BJJ' };
+    win.body.addChild(text('SKILL', 6, 2, { small: true, color: PAL.ash }));
+    win.body.addChild(text('NOW', 150, 2, { small: true, color: PAL.ash }));
+    win.body.addChild(text('AFTER A SESSION', 176, 2, { small: true, color: PAL.ash }));
+    keys.forEach(([k, label], i) => {
+      const y = 12 + i * 14;
+      const v = f.skills[k];
+      const pv = trainPreview(s, k);
+      const trainable = k !== 'heart';
+      win.body.addChild(text(label, 6, y + 3, { small: true, color: PAL.bone }));
+      // the bar: what you have, and (gold) what one session adds
+      const bar = new Graphics().rect(60, y + 3, 86, 6).fill(0x1a1820).rect(60, y + 3, Math.round(86 * v / 100), 6).fill(PAL.steel);
+      if (trainable) bar.rect(60 + Math.round(86 * v / 100), y + 3, Math.max(1, Math.round(86 * pv.gain / 100)), 6).fill(PAL.gold);
+      win.body.addChild(bar);
+      win.body.addChild(text(String(Math.round(v)), 150, y + 3, { small: true, color: PAL.bone }));
+      win.body.addChild(text(trainable ? `${(v + pv.gain).toFixed(1)}  (+${pv.gain}${pv.buddy ? `, ${NAME[pv.buddy] ?? pv.buddy} +${pv.buddyGain}` : ''})` : 'comes from real fights', 176, y + 3, { small: true, color: trainable ? PAL.gold : PAL.ash, width: 98, maxLines: 1 }));
+      if (trainable) win.body.addChild(button('TRAIN', 276, y, 38, 12, () => { win.close(); after(k, null); }, { small: true, fill: PAL.steel, disabled: fm(s).ap <= 0 }));
+    });
+    const my = 12 + keys.length * 14 + 2;
+    win.body.addChild(text('MINI GAMES (a good score beats a normal session):', 6, my, { small: true, color: PAL.gold }));
+    win.body.addChild(button('JUMP ROPE: cardio', 6, my + 10, 150, 13, () => { win.close(); openJumpRope(this.g, (sc) => after('cardio', sc)); }, { small: true, fill: PAL.moss }));
+    win.body.addChild(button('TYRE CHOP: power', 162, my + 10, 150, 13, () => { win.close(); openTyreChop(this.g, (sc) => after('power', sc)); }, { small: true, fill: PAL.moss }));
+    win.body.addChild(text(`Condition: ${cond.label} (x${cond.mult} gains). Training burns a little weight; the real cut is the last two weeks of camp.`, 6, my + 26, { small: true, width: 306, color: cond.label === 'PEAK CONDITION' ? PAL.gold : PAL.ash, maxLines: 2 }));
+  }
+
+  /** Sparring points: put them where your camp needs them. */
+  private sparAllocate(): void {
+    const s = this.g.state!;
+    const st = fm(s);
+    const f = me(s);
+    const total = st.sparPoints ?? 0;
+    if (total <= 0) return;
+    const alloc: Partial<Record<keyof Skills, number>> = {};
     const keys: [keyof Skills, string][] = [['striking', 'Striking'], ['power', 'Power'], ['wrestling', 'Wrestling'], ['grappling', 'Jiu-jitsu'], ['cardio', 'Cardio'], ['fightIQ', 'Fight IQ'], ['chin', 'Neck & chin'], ['durability', 'Conditioning']];
-    keys.forEach(([k, label], i) => win.body.addChild(button(`${label} (${Math.round(f.skills[k])})`, 6 + (i % 2) * 116, 6 + Math.floor(i / 2) * 17, 112, 14, () => { win.close(); after(k, null); }, { small: true, fill: PAL.steel })));
-    win.body.addChild(text('MINI GAMES (score boosts the gains):', 6, 76, { small: true, color: PAL.gold }));
-    win.body.addChild(button('JUMP ROPE: cardio', 6, 86, 112, 14, () => { win.close(); openJumpRope(this.g, (sc) => after('cardio', sc)); }, { small: true, fill: PAL.moss }));
-    win.body.addChild(button('TYRE CHOP: power', 122, 86, 112, 14, () => { win.close(); openTyreChop(this.g, (sc) => after('power', sc)); }, { small: true, fill: PAL.moss }));
-    win.body.addChild(text(`Condition: ${cond.label} (x${cond.mult} gains). Training burns weight. Coach, energy, morale and health all count.`, 6, 106, { small: true, width: 226, color: cond.label === 'PEAK CONDITION' ? PAL.gold : PAL.ash, maxLines: 3 }));
+    const win = openWindow(this.g, 'Sparring: spend your points', 250, 164, { onClose: () => this.refresh() });
+    const draw = () => {
+      win.body.removeChildren().forEach((c) => c.destroy({ children: true }));
+      const used = Object.values(alloc).reduce((a, b) => a + (b ?? 0), 0);
+      const left = total - used;
+      win.body.addChild(text(`${left} of ${total} point${total > 1 ? 's' : ''} left. One point = +1.`, 6, 2, { small: true, color: left ? PAL.gold : PAL.moss }));
+      keys.forEach(([k, label], i) => {
+        const y = 12 + i * 14;
+        const n = alloc[k] ?? 0;
+        win.body.addChild(text(label, 6, y + 3, { small: true, color: PAL.bone }));
+        win.body.addChild(text(`${Math.round(f.skills[k])}${n ? `  ->  ${Math.round(f.skills[k] + n)}` : ''}`, 80, y + 3, { small: true, color: n ? PAL.gold : PAL.ash }));
+        win.body.addChild(button('-', 160, y, 16, 12, () => { if (n > 0) { alloc[k] = n - 1; draw(); } }, { small: true, fill: PAL.shadow, disabled: n <= 0 }));
+        win.body.addChild(text(String(n), 180, y + 3, { small: true, color: PAL.bone, width: 14, align: 'center' }));
+        win.body.addChild(button('+', 196, y, 16, 12, () => { if (left > 0) { alloc[k] = n + 1; draw(); } }, { small: true, fill: PAL.steel, disabled: left <= 0 }));
+      });
+      win.body.addChild(button(left ? 'SAVE THE REST FOR LATER' : 'DONE', 6, 128, 236, 14, () => {
+        this.msg = allocateSpar(s, alloc);
+        sfx('good');
+        win.close();
+        this.refresh();
+      }, { small: true, fill: left ? PAL.steel : PAL.moss }));
+    };
+    draw();
   }
 
   private cutMenu(): void {
@@ -298,7 +355,13 @@ export class FMHubScene extends Scene {
     const st = fm(s);
     const win = openWindow(this.g, 'Cut weight', 250, 128);
     const lim = contractLimit(s);
+    const cw = cutWindow(s);
     win.body.addChild(text(`You walk around ${st.walkWeight.toFixed(1)} lbs. ${lim !== weightLimit(s) ? 'Contracted' : 'Limit'} ${lim}. ${st.water > 0 ? `(${st.water.toFixed(1)} lbs is sauna water.)` : ''}`, 6, 4, { small: true, width: 238, color: PAL.bone }));
+    if (!cw.open) {
+      // too early: the cut is the last two weeks of camp
+      win.body.addChild(text(cw.weeksOut === null ? 'No fight booked. There is nothing to cut for yet: train (it burns a little) and keep the diet clean.' : `The fight is ${cw.weeksOut} weeks out. Cut now and it all comes back. The dedicated cut opens in the last two weeks of camp. Until then, training burns a little.`, 6, 26, { small: true, width: 238, color: PAL.ash, maxLines: 6 }));
+      return;
+    }
     const go = (m: CutMethod) => {
       win.close();
       this.msg = cutWeight(s, m);
@@ -306,8 +369,8 @@ export class FMHubScene extends Scene {
       this.refresh();
     };
     const opts: [CutMethod, string, string][] = [
-      ['roadwork', 'ROADWORK', '-2 lbs and some cardio. Tiring.'],
-      ['diet', 'STRICT DIET', '-1.5 lbs. Morale takes a hit. Nutritionist helps.'],
+      ['roadwork', 'ROADWORK', '-3 lbs and some cardio. Tiring.'],
+      ['diet', 'STRICT DIET', '-2 lbs. Morale takes a hit. Nutritionist helps.'],
       ['sauna', 'SAUNA', '-4 lbs fast, but water comes back unless you weigh in this week. Hurts the body.'],
     ];
     opts.forEach(([m, label, blurb], i) => {
