@@ -307,6 +307,23 @@ export function storyScene(s: GameState, id: string): Cutscene | null {
           ]),
         ],
       };
+    case 'c1_gloves':
+      return {
+        shots: [
+          { ...shot('gym', [ray(330, -1), you(272, 1)], [
+            { who: null, text: 'Four o\'clock. The soup is on. So is the TV above the counter, the way it is every day at four.' },
+            { who: 'ray', text: 'Here. Golden Gloves, 1987. Lost the final to a guy called Butch with a mullet you could hide a cat in.' },
+            { who: null, text: 'A pair of gloves older than you. Cracked leather, new laces.' },
+            { who: 'ray', text: 'Marie started the soup, you know. My wife. Said a gym should feed people, not just hit them.' },
+          ]), onTv: 'judge' },
+          shot('tv', [ray(440, -1)], [
+            { who: null, text: 'On the TV, a judge with a bob and a lace collar leans over her bench at a man who took a soup kitchen to small claims court.' },
+            { who: 'ray', text: "Judge Judgy. Marie never missed her. Four o'clock, soup on, Judgy on. Family Feudin' after, if the gym was quiet." },
+            { who: 'ray', text: "She'd yell the answers at the TV. Got them wrong on purpose, so I'd laugh." },
+            { who: 'ray', text: "Eleven years she's been gone. I still make the soup her way. And I leave her shows on." },
+          ], "FOUR O'CLOCK", 'judge'),
+        ],
+      };
     case 'c1_rival':
       return {
         shots: [
@@ -405,7 +422,7 @@ export function storyScene(s: GameState, id: string): Cutscene | null {
       return {
         title: 'THE ULTIMATUM',
         shots: [
-          shot('landlord', [you(140, 1), npc('gordon', 'Gordon Vance', 330, -1)], [
+          shot('landlord', [you(108, 1), npc('gordon', 'Gordon Vance', 300, -1)], [
             { who: null, text: 'Photos of every building he owns. One of a building he knocked down, framed like a trophy.' },
             { who: 'gordon', text: "You've made my son look ordinary. I don't forgive that." },
             { who: 'gordon', text: 'Everything you owe. Before your first CBFC fight. Or the bulldozer comes on fight night.', sfx: 'thud' },

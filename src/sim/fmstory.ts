@@ -266,7 +266,7 @@ const BEATS: Beat[] = [
   },
   {
     id: 'c1_gloves', chapter: C1, when: (s) => s.week >= 3, title: "RAY'S OLD GLOVES", who: 'Uncle Ray',
-    text: () => '"Here." Ray hands you a pair of gloves older than you. Cracked leather, new laces. "Golden Gloves, 1987. Lost the final to a guy called Butch with a mullet you could hide a cat in." He looks at the soup pot. "Marie started the soup, you know. My wife. Said a gym should feed people, not just hit them. She\'s been gone eleven years. I still make it her way." (Morale up.)',
+    text: () => '"Here." Ray hands you a pair of gloves older than you. Cracked leather, new laces. "Golden Gloves, 1987. Lost the final to a guy called Butch with a mullet you could hide a cat in." He looks at the soup pot. "Marie started the soup, you know. My wife. Said a gym should feed people, not just hit them. She\'s been gone eleven years. I still make it her way." Above the counter, the TV is on Judge Judgy, like it is every day at four. "Her shows," Ray says. "I leave them on." (Morale up.)',
     effect: (s) => { fm(s).morale = clamp(fm(s).morale + 6, 0, 100); },
   },
   {
