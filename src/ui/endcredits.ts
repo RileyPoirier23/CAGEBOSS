@@ -5,9 +5,9 @@
  *   In Memoriam: Yvette Collette (August 20th 1953 - October 7th 2026).
  *   Grandmother, Wife and Mother.
  *
- * The portrait is her real photo with the background removed, in black and white, reduced to
- * pixels and set in a headshot medallion to sit in the game's style (public/memorial/memere.png).
- * Nothing in it is redrawn or generated.
+ * The portrait is her real photo, in black and white and reduced to pixels to sit in the game's
+ * style, in front of a soft pixel backdrop (public/memorial/memere_portrait.png). Her photo is
+ * not redrawn or generated; only the room behind her is.
  */
 import { Assets, Container, Graphics, Sprite, type Texture, type Ticker } from 'pixi.js';
 import type { Game } from './app';
@@ -131,27 +131,34 @@ export function openEndCredits(g: Game, done: () => void): void {
 export function buildMemorial(g: Game, close: () => void, waitSec = 0): Container {
   const c = new Container();
   c.addChild(new Graphics().rect(0, 0, W, H).fill(0x060508));
-  // her headshot medallion, centred at the top
-  const size = 104;
+  // her portrait, framed like a photo on the left
+  const px = 32;
+  const py = 42;
+  const pw = 129;
+  const ph = 140;
+  c.addChild(new Graphics().rect(px, py, pw, ph).fill(0x0c0b0e).rect(px, py, pw, ph).stroke({ color: 0x8a8478, width: 1, alignment: 1 }));
   const photo = new Sprite();
-  photo.position.set(Math.round((W - size) / 2), 10);
+  photo.position.set(px + 2, py + 2);
   c.addChild(photo);
-  Assets.load(`${import.meta.env.BASE_URL}memorial/memere.png`).then((tex: Texture) => {
+  Assets.load(`${import.meta.env.BASE_URL}memorial/memere_portrait.png`).then((tex: Texture) => {
     if (photo.destroyed) return;
     tex.source.scaleMode = 'nearest';
     photo.texture = tex;
   }).catch(() => {});
-  const col = (s: string, y: number, color: number, o: { scale?: number; small?: boolean; maxLines?: number; x?: number; w?: number } = {}) =>
-    c.addChild(text(s, o.x ?? 0, y, { width: o.w ?? W, align: 'center', color, scale: o.scale, small: o.small, maxLines: o.maxLines }));
-  col('IN MEMORIAM', 120, 0x8a8478, { small: true });
-  col('YVETTE COLLETTE', 130, 0xeee8dc, { scale: 2 });
-  col('August 20th 1953  -  October 7th 2026', 152, 0xb8b2a6);
-  col('Grandmother, Wife and Mother.', 165, 0xeee8dc);
-  c.addChild(new Graphics().rect(W / 2 - 30, 180, 60, 1).fill(0x5a5650));
-  col('John 14:27', 186, 0x8a8478, { small: true });
-  col('"Peace I leave with you; my peace I give to you. Not as the world gives do I give to you. Let not your hearts be troubled, neither let them be afraid."', 196, 0xd8d2c6, { x: 50, w: W - 100, maxLines: 4 });
-  col("I love you memere, I'll keep making you proud", 236, PAL.gold);
-  const btn = button('CONTINUE', W / 2 - 40, H - 18, 80, 13, close, { small: true, fill: 0x2a262c });
+  // the words, on the right
+  const tx = 182;
+  const tw = W - tx - 24;
+  const line = (s: string, y: number, color: number, o: { scale?: number; small?: boolean; maxLines?: number } = {}) =>
+    c.addChild(text(s, tx, y, { width: tw, color, scale: o.scale, small: o.small, maxLines: o.maxLines }));
+  line('IN MEMORIAM', 30, 0x8a8478, { small: true });
+  line('YVETTE COLLETTE', 41, 0xeee8dc, { scale: 2 });
+  line('August 20th 1953  -  October 7th 2026', 64, 0xb8b2a6);
+  line('Grandmother, Wife and Mother.', 80, 0xeee8dc);
+  c.addChild(new Graphics().rect(tx, 96, 60, 1).fill(0x5a5650));
+  line('John 14:27', 104, 0x8a8478, { small: true });
+  line('"Peace I leave with you; my peace I give to you. Not as the world gives do I give to you. Let not your hearts be troubled, neither let them be afraid."', 114, 0xd8d2c6, { maxLines: 5 });
+  line("I love you memere, I'll keep making you proud", 190, PAL.gold);
+  const btn = button('CONTINUE', W / 2 - 40, H - 26, 80, 13, close, { small: true, fill: 0x2a262c });
   btn.visible = waitSec <= 0;
   c.addChild(btn);
   if (waitSec > 0) {
