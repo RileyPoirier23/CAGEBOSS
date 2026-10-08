@@ -9,6 +9,7 @@
  * Esc / MENU pauses: resume, help, autopilot (the AI fights for you), turn hands-on fights off.
  */
 import { Container, Graphics, type Ticker } from 'pixi.js';
+import { hint } from './hints';
 import type { Game } from './app';
 import type { Bout, CornerReport, Fighter, FightEvent, FightResult, GameState, Skills, TickerLine } from '../core/types';
 import { content } from '../core/content';
@@ -304,7 +305,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     }
     // centre: clock + control prompts
     dyn.addChild(text(`ROUND ${L.round}/${L.rounds}   ${L.clockText()}`, 0, y0 + 3, { width: W, align: 'center', color: PAL.gold }));
-    if (autopilot) dyn.addChild(text('AUTOPILOT (ESC to take over)', 0, y0 + 14, { width: W, align: 'center', small: true, color: PAL.ember }));
+    if (autopilot) dyn.addChild(text(hint('AUTOPILOT (ESC to take over)', 'AUTOPILOT ({Menu} to take over)'), 0, y0 + 14, { width: W, align: 'center', small: true, color: PAL.ember }));
     const sit = situation();
     if (sit) {
       dyn.addChild(text(sit.text, 150, y0 + (autopilot ? 25 : 16), { width: W - 300, align: 'center', small: true, color: sit.color, maxLines: 2 }));
@@ -315,7 +316,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       }
     }
     // the booth and the play-by-play, newest at the bottom
-    if (stage === 'tape' || stage === 'intro') dyn.addChild(text('ENTER / A: SKIP THE INTROS', 0, H - 11, { small: true, color: PAL.grey, width: W, align: 'center' }));
+    if (stage === 'tape' || stage === 'intro') dyn.addChild(text(hint('ENTER / A: SKIP THE INTROS', '{A}: SKIP THE INTROS'), 0, H - 11, { small: true, color: PAL.grey, width: W, align: 'center' }));
     else {
       const speakers = content().commentary.speakers;
       const rows: { t: string; c: number }[] = booth.slice(-3).map((l) => ({ t: `{#${speakers[l.speaker!]?.color ?? 'c4a04a'}}${speakers[l.speaker!]?.short ?? l.speaker!.toUpperCase()}:{/} ${l.text}`, c: PAL.fog }));

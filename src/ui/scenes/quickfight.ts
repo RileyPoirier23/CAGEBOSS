@@ -4,6 +4,7 @@
  * keyboard, or both of you on one keyboard). Nothing is saved; nobody's career is touched.
  */
 import { Graphics } from 'pixi.js';
+import { isConsole } from '../../core/platform';
 import { Scene } from '../app';
 import type { Bout, FightEvent, Fighter, GameState } from '../../core/types';
 import { PAL } from '../../art/palette';
@@ -121,6 +122,7 @@ export class QuickFightScene extends Scene {
     if (this.mode === 'cpu') return 'You fight in the red corner with your usual controls. HELP has the full move list.';
     const n = input.padList().length;
     if (n >= 2) return 'P1: controller 1.\nP2: controller 2.\nPlug in a third and nobody cares.';
+    if (isConsole) return n >= 2 ? 'P1: controller 1.\nP2: controller 2.' : 'Connect a second controller for two players.';
     if (n === 1) return 'P1: keyboard.\nP2: the controller.\n(Plug in a second controller to give P1 one too.)';
     return 'One keyboard, two people.\nP1: WASD move, J K L punch/kick, I block, Space grab.\nP2: arrows move, , . / punch/kick, R-Shift block, Enter grab.';
   }

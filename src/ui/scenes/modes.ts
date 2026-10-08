@@ -4,6 +4,7 @@
  * sandbox with a very small octagon in it.
  */
 import { Container, Graphics } from 'pixi.js';
+import { hint } from '../hints';
 import { Scene, fullBg } from '../app';
 import { PAL } from '../../art/palette';
 import { W, H, text, button, box } from '../kit';
@@ -127,7 +128,7 @@ export class ModesScene extends Scene {
     ];
     const x0 = Math.round((W - (modes.length * CW + (modes.length - 1) * 6)) / 2);
     modes.forEach((m, i) => r.addChild(this.card(m, x0 + i * (CW + 6), 46)));
-    r.addChild(text('ESC = BACK', 0, H - 10, { small: true, width: W, align: 'center', color: PAL.grey }));
+    r.addChild(text(hint('ESC = BACK', '{B} = BACK'), 0, H - 10, { small: true, width: W, align: 'center', color: PAL.grey }));
   }
 
   private card(m: Mode, x: number, y: number): Container {

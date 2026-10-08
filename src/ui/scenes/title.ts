@@ -3,6 +3,7 @@
  * the logo, and a short menu. MODES opens the walkout tunnel; TROPHY CASE the achievements.
  */
 import { Container, Graphics } from 'pixi.js';
+import { hint } from '../hints';
 import { Scene, fullBg } from '../app';
 import { PAL } from '../../art/palette';
 import { W, H, text, button } from '../kit';
@@ -82,7 +83,7 @@ export class TitleScene extends Scene {
     });
     menu.position.set(14, 92);
     r.addChild(menu);
-    r.addChild(text(`V${__APP_VERSION__}  •  M = MUTE  •  FICTIONAL, EXCEPT THE FRIENDS IN THE CREDITS.`, 14, H - 10, { small: true, color: PAL.grey }));
+    r.addChild(text(`V${__APP_VERSION__}${hint('  •  M = MUTE', '')}  •  FICTIONAL, EXCEPT THE FRIENDS IN THE CREDITS.`, 14, H - 10, { small: true, color: PAL.grey }));
     // a solo dev: the support screen (desktop and web builds only)
     if (supportAvailable()) r.addChild(button('SUPPORT THE DEV', W - 96, H - 20, 90, 13, () => openSupport(this.g), { small: true, fill: PAL.blood, border: PAL.gold }));
     setTimeout(() => maybeWhatsNew(this.g), 400);

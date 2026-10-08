@@ -6,6 +6,7 @@
  * resets it for the current save.
  */
 import { Container, Graphics } from 'pixi.js';
+import { hint } from './hints';
 import type { Game } from './app';
 import { PAL } from '../art/palette';
 import { W, H, text, box, button } from './kit';
@@ -22,10 +23,10 @@ const STEPS: Record<string, Step[]> = {
     { title: 'TO THE DESK', text: "When you're done reading, head to the desk. That's where the actual work (and the actual lying) happens." },
   ],
   desk: [
-    { title: 'THE INBOX', text: 'Paperwork lands here: bout agreements, medicals, expenses, licences. Click one to open it.', rect: [366, 84, 108, 108] },
+    { title: 'THE INBOX', text: `Paperwork lands here: bout agreements, medicals, expenses, licences. ${hint('Click', 'Select')} one to open it.`, rect: [366, 84, 108, 108] },
     { title: 'THE DOCUMENT', text: 'Read it carefully. Names, weights, purses, dates and signatures all have to line up with the file card and the rulebook.', rect: [120, 84, 256, 130] },
     { title: 'THE FILE CARD', text: "The fighter's file: what you actually agreed to. Forgers and 'creative' managers count on you not checking it.", rect: [2, 84, 118, 62] },
-    { title: 'RULEBOOK & INSPECT', text: "The RULEBOOK lists every rule in force (new ones arrive by Commission bulletin). Press INSPECT (I), click a field, then the field it should match. Catch a mismatch and you can question the fighter about it.", rect: [4, 226, 116, 40] },
+    { title: 'RULEBOOK & INSPECT', text: `The RULEBOOK lists every rule in force (new ones arrive by Commission bulletin). Press INSPECT${hint(' (I)', '')}, ${hint('click', 'select')} a field, then the field it should match. Catch a mismatch and you can question the fighter about it.`, rect: [4, 226, 116, 40] },
     { title: 'STAMP IT', text: "Decide: FILE it if it's clean, SHRED it if it's bad, send it to LEGAL or BURY it. Approve something that breaks a rule and the Commission sends a citation, and the first two are warnings.", rect: [368, 198, 108, 68] },
     { title: 'RUN THE COMPANY', text: 'ROSTER = your fighters and free agents. CARDS = build fight cards. RANKS = the rankings. When the inbox is done, END DAY. On fight week that takes you to fight night.', rect: [394, 2, 86, 72] },
   ],
@@ -54,9 +55,9 @@ const STEPS: Record<string, Step[]> = {
     { title: 'YOUR CORNER', text: 'Between rounds your cutman works the face and your coach changes the plan. After the fight: the purse, the rankings and the internet.' },
   ],
   fm_live: [
-    { title: 'YOUR FIRST FIGHT', text: 'Move with the left stick / A-D. RB (J) lead hand, RT (K) rear hand, A (L) kick, LB (I) block, B (Space) grab. The stick direction picks the strike: hooks, uppercuts, body shots, overhands.' },
+    { title: 'YOUR FIRST FIGHT', text: hint('Move with the left stick / A-D. RB (J) lead hand, RT (K) rear hand, A (L) kick, LB (I) block, B (Space) grab. The stick direction picks the strike: hooks, uppercuts, body shots, overhands.', 'Move with the left stick. {RB} lead hand, {RT} rear hand, {A} kick, {LB} block, {B} grab, {X} taunt. The stick direction picks the strike: hooks, uppercuts, body shots, overhands.') },
     { title: 'CLINCH & GROUND', text: 'Hold grab to clinch (stick toward = shoot). In the clinch, tap grab + stick to fight for the plum or underhooks, trip, or break. On the mat, kick + stick passes, sweeps and stands up; grab + stick goes for a submission.' },
-    { title: 'PAUSE = HELP', text: "There are no button prompts on screen. Pause (ESC / MENU) for HELP with the full move list, AUTOPILOT, or SIM THE REST. Now go hurt somebody (legally)." },
+    { title: 'PAUSE = HELP', text: `There are no button prompts on screen. Pause (${hint('ESC / MENU', '{Menu}')}) for HELP with the full move list, AUTOPILOT, or SIM THE REST. Now go hurt somebody (legally).` },
   ],
 };
 
