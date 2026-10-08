@@ -12,6 +12,10 @@ import { openWindow, confirm, alertBox, selector } from '../widgets';
 import { openHelp } from '../help';
 import { openSettings } from './settings';
 import { showMoment } from '../moments';
+import { divisionMoves, changeDivision, gym, openGym, upgradeGym, GYM_COST, GYM_UPGRADE } from '../../sim/legacy';
+import { createNewGame } from '../../sim/newgame';
+import { startWeek } from '../../sim/week';
+import { routePhase } from '../flow';
 import { openAchievements, checkAchievements } from '../achievements';
 import { openSaveSlots, openLoad } from './loadmenu';
 import { familyOf } from '../../core/save';
@@ -260,7 +264,8 @@ export class FMHubScene extends Scene {
     if (fightThisWeek(s)) r.addChild(button('FIGHT WEEK: WEIGH-IN →', W - 170, H - 19, 164, 16, () => this.weighIn(), { fill: PAL.blood }));
     else r.addChild(button('END WEEK →', W - 110, H - 19, 104, 16, () => this.endTheWeek(), { fill: PAL.blood }));
     r.addChild(button('MENU', 6, H - 19, 50, 16, () => this.menu(), { small: true }));
-    r.addChild(text(`Staff ${money(weeklyStaffCost(s))}/wk`, 62, H - 14, { small: true, color: PAL.ash }));
+    if (st.legacy) r.addChild(button('LEGACY…', 60, H - 19, 60, 16, () => this.legacyMenu(), { small: true, fill: PAL.plum }));
+    r.addChild(text(`Staff ${money(weeklyStaffCost(s))}/wk`, st.legacy ? 126 : 62, H - 14, { small: true, color: PAL.ash }));
   }
 
   // ---------------------------------------------------------------- menus
@@ -541,6 +546,28 @@ export class FMHubScene extends Scene {
     win.body.addChild(button('QUIT TO TITLE', 6, 96, 148, 15, () => { this.g.autosave(); win.close(); void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g))); }, { small: true }));
   }
 
+  /** Legacy Mode: weight classes, your own gym. */
+  private legacyMenu(): void {
+    const s = this.g.state!;
+    const f = me(s);
+    const win = openWindow(this.g, 'Legacy', 280, 168);
+    const b = win.body;
+    b.addChild(text('WEIGHT CLASS', 6, 4, { color: PAL.gold }));
+    b.addChild(text(`You fight at ${divisionName(f.division)}. Moving up: more power, easier cut. Moving down: faster, hungrier, miserable cut.`, 6, 15, { small: true, width: 266, color: PAL.ash, maxLines: 2 }));
+    divisionMoves(s).forEach((d, i) => b.addChild(button(`MOVE TO ${divisionName(d).toUpperCase()}`, 6 + i * 136, 34, 130, 14, () => confirm(this.g, `Move to ${divisionName(d)}? You start at the bottom of that ladder.`, () => { this.msg = changeDivision(s, d); win.close(); this.g.autosave(); this.refresh(); }), { small: true, fill: PAL.steel })));
+    b.addChild(text('YOUR OWN GYM', 6, 58, { color: PAL.gold }));
+    const gy = gym(s);
+    if (!gy) {
+      b.addChild(text(`Open your own gym for ${money(GYM_COST)}. Members pay dues every week, and training in your own place makes you better.`, 6, 69, { small: true, width: 266, color: PAL.ash, maxLines: 3 }));
+      b.addChild(button(`OPEN ${f.last.toUpperCase()} MMA (${money(GYM_COST)})`, 6, 92, 266, 14, () => { this.msg = openGym(s); sfx('cash'); win.close(); this.g.autosave(); this.refresh(); }, { small: true, fill: PAL.moss }));
+    } else {
+      b.addChild(text(`${gy.name}  •  level ${gy.level}  •  ${gy.members} members  •  training +${Math.round(gy.level * 6)}%`, 6, 69, { small: true, width: 266, color: PAL.bone, maxLines: 2 }));
+      if (gy.level < 4) b.addChild(button(`UPGRADE (${money(GYM_UPGRADE(gy.level))})`, 6, 92, 266, 14, () => { this.msg = upgradeGym(s); win.close(); this.g.autosave(); this.refresh(); }, { small: true, fill: PAL.moss }));
+    }
+    b.addChild(text('WHEN YOU HANG THEM UP', 6, 114, { color: PAL.gold }));
+    b.addChild(text('Retire (MENU > RETIRE) and you can start a promoter career with your name on the door and your savings in the bank.', 6, 125, { small: true, width: 266, color: PAL.ash, maxLines: 3 }));
+  }
+
   private legacy(): void {
     const s = this.g.state!;
     const st = fm(s);
@@ -551,7 +578,17 @@ export class FMHubScene extends Scene {
     const verdict = wasChamp ? 'A champion. They will put you in the hall of fame and spell your name wrong.' : f.record.w > f.record.l * 2 ? 'A real one. Fans will remember your fights; promoters will remember your invoices.' : 'A journeyman with stories. Great at barbecues.';
     alertBox(this.g, 'LEGACY', `${fullName(f)} retires at ${f.age} with a record of ${record(f.record)}.\n${titles} wins under the ${s.promotion.name} banner. ${st.ped.caught ? `${st.ped.caught} failed drug test${st.ped.caught > 1 ? 's' : ''}. ` : ''}\n\n${verdict}`, () => {
       this.g.autosave();
-      void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g)));
+      const toTitle = () => void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g)));
+      if (!st.legacy) return toTitle();
+      // Legacy Mode: the gloves come off, the suit goes on
+      confirm(this.g, `Become a promoter? A new career: ${f.last.toUpperCase()} FIGHTING CHAMPIONSHIP, with ${money(Math.max(0, st.money))} of your savings on top of the usual budget.`, () => {
+        const ns = createNewGame({ seed: (s.seed ^ 0x51ed) >>> 0, mode: 'career', difficulty: 'normal', promotionName: `${f.last} Fighting Championship`, presidentName: fullName(f) });
+        ns.promotion.cash += Math.max(0, st.money);
+        startWeek(ns);
+        this.g.state = ns;
+        routePhase(this.g, true);
+        this.g.autosave();
+      }, 'SUIT UP', 'NO, TITLE');
     });
   }
 

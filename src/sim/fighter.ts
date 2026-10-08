@@ -25,6 +25,7 @@ import { money } from '../core/format';
 import { sigOf } from './docs';
 import { LOCAL_SPONSORS, REGIONAL_SPONSORS } from './sponsorship';
 import type { FMMoment, StoryState, FMStats } from './fmstory';
+import { gymWeek, gymTrainBonus } from './legacy';
 import { pushMoment, signingMoment, storyPromote, storyWeek, startStory, staffCheckin, interviewMoment, storyPurse, stats, isLegacy } from './fmstory';
 
 export type BodyPart = 'head' | 'jaw' | 'body' | 'larm' | 'rarm' | 'lhand' | 'rhand' | 'legs';
@@ -589,7 +590,7 @@ const gain = (s: GameState, base: number) => {
   const st = fm(s);
   const f = me(s);
   const room = Math.max(0.2, (f.potential + (st.ped.on ? 8 : 0) - overall(f.skills)) / 35);
-  return base * (1 + st.staff.coach * 0.4) * (st.ped.on ? 1.6 : 1) * condition(s).mult * Math.min(1.5, room);
+  return base * (1 + st.staff.coach * 0.4) * (st.ped.on ? 1.6 : 1) * condition(s).mult * Math.min(1.5, room) * gymTrainBonus(s);
 };
 
 /** Burn weight (training, roadwork). Returns pounds lost. */
@@ -1887,6 +1888,9 @@ export function endWeek(s: GameState, rng: Rng): string[] {
   if (before !== after) out.push(after === null ? 'You dropped out of the rankings.' : before === null ? `You're ranked! #${after} at ${divisionName(f.division)}.` : after < before ? `You moved up to #${after}.` : `You slipped to #${after}.`);
   s.week++;
   st.ap = 3;
+  // your own gym (Legacy Mode)
+  const gl = gymWeek(s);
+  if (gl) out.push(gl);
   // the story, your team, the press
   storyWeek(s);
   const chk = staffCheckin(s, rng);

@@ -48,7 +48,8 @@ const PAGES: Record<HelpTopic, Block[]> = {
     { h: 'THREE WAYS TO PLAY' },
     { icon: 'money', p: 'CAREER: you are the promoter. Work the desk, build cards, sign fighters, keep the money, the fans and the Commission happy, and stay out of prison.' },
     { icon: 'belt', p: "ROAD TO CHAMPION: you are the fighter, with a story. Uncle Ray's soup-kitchen gym is drowning in back rent, a trust-fund rival is always one league ahead, and the CBFC title is a long way off." },
-    { icon: 'glove', p: 'LEGACY MODE: the same fighter career with no script. Start in any league, more chaos, more bad decisions.' },
+    { icon: 'glove', p: 'LEGACY MODE (unlocks when you finish Road To Champion): the fighter career with no script. Start in any league, change weight class, open your own gym, then retire and run your own promotion.' },
+    { icon: 'glove', p: 'QUICK FIGHT: any two fighters from the roster, hands-on. Against the CPU or a friend (two controllers, a controller and the keyboard, or one shared keyboard).' },
     { icon: 'cal', p: 'SANDBOX: career mode with the rules off. Edit fighters, money and meters, and book whatever you like.' },
     { h: 'MENUS & SAVING' },
     { keys: [['A', 'Enter', 'Confirm / click'], ['B', 'Esc', 'Back / close'], ['Menu', 'Esc', 'Pause / menu'], ['View', 'F1', 'This HELP screen'], ['LStick', null, 'Move the cursor (pad)']] },
@@ -124,7 +125,7 @@ const PAGES: Record<HelpTopic, Block[]> = {
   rtc: [
     { h: 'THE STORY' },
     { p: "Uncle Ray runs Ray's Boxing & Soup. The landlord wants $8,000. A slice of every purse goes to the rent until it's paid, and some story choices can pay it faster (or let Bradie pay it, with a clause). Tyler \"Trust Fund\" Vance holds the first belt you go for and keeps showing up a league ahead. Chapters unlock as you climb." },
-    { p: 'LEGACY MODE plays the same career without the story: pick your starting league, start with $10,000, and expect more chaos.' },
+    { p: 'LEGACY MODE (unlocked by finishing the story) plays the same career without a script: pick your starting league, start with $10,000, move up or down a weight class, open your own gym (dues every week, better training), and when you retire, start a promoter career with your name on the door.' },
     { h: 'THE ROAD' },
     { p: 'Create your fighter, then climb: a scrappy LOCAL CIRCUIT, one or two REGIONAL PROMOTIONS, the PROFESSIONAL FIGHTERS\' LOUNGE (season, playoffs, final) and finally the CBFC. Win the belt where you are and the next promotion calls. In the CBFC the rankings follow the real ones.' },
     { p: 'As your rank and hype climb you move up the card: early prelims, prelims, main card, co-main, main event. Better slots pay better.' },

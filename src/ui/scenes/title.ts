@@ -11,7 +11,8 @@ import type { PixelText } from '../text';
 import { openSettings } from './settings';
 import { openHelp } from '../help';
 import { QuickFightScene } from './quickfight';
-import { openAchievements } from '../achievements';
+import { openAchievements, hasAchievement } from '../achievements';
+import { alertBox } from '../widgets';
 import { maybeWhatsNew } from '../whatsnew';
 import { openLoad, latestSave, continueLatest } from './loadmenu';
 import { NewGameScene } from './newgame';
@@ -95,7 +96,7 @@ export class TitleScene extends Scene {
       ...(last ? [['CONTINUE', () => continueLatest(this.g)] as [string, () => void]] : []),
       ['NEW CAREER', () => this.g.goto(new NewGameScene(this.g, 'career'))],
       ['ROAD TO CHAMPION', () => this.g.goto(new FMCreateScene(this.g))],
-      ['LEGACY MODE', () => this.g.goto(new FMCreateScene(this.g, true))],
+      [hasAchievement('rtc_epilogue') ? 'LEGACY MODE' : 'LEGACY MODE (LOCKED)', () => (hasAchievement('rtc_epilogue') ? this.g.goto(new FMCreateScene(this.g, true)) : alertBox(this.g, 'Legacy Mode', 'Finish Road To Champion to unlock Legacy Mode: the fighter career with the script torn up.'))],
       ['QUICK FIGHT', () => this.g.goto(new QuickFightScene(this.g))],
       ['SANDBOX', () => this.g.goto(new NewGameScene(this.g, 'sandbox'))],
       ['LOAD', () => openLoad(this.g)],
