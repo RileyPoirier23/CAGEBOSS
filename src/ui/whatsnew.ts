@@ -12,6 +12,19 @@ import { openHelp } from './help';
 /** Newest first. Keep each version to a few lines. */
 export const NOTES: { v: string; lines: string[] }[] = [
   {
+    v: '1.7.0',
+    lines: [
+      'Road To Champion: a much longer story, with cutscenes.',
+      'The landlord, Mateo, the parking lot, the grudge match, the rematch.',
+      'Press conferences and weigh-in face-offs for your own fights.',
+      'Live fights: fouls, point deductions, injuries, doctor stoppages.',
+      'QUICK FIGHT: any two fighters, vs the CPU or a friend (local 2P).',
+      'Legacy Mode unlocks after the road: change weight, open a gym, promote.',
+      'Grappling sounds, story portraits, a BODY button on touch.',
+      'Mac and Linux builds. Saves are files now (Steam Cloud ready).',
+    ],
+  },
+  {
     v: '1.6.0',
     lines: [
       'FIGHTER MODE is now ROAD TO CHAMPION, with a story (save the soup).',

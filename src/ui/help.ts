@@ -142,6 +142,10 @@ const PAGES: Record<HelpTopic, Block[]> = {
     { p: 'Win a belt and the next promotion signs you: a proper contract signing, a new canvas, a new roster. Your amateur record is frozen when you turn pro. CAREER FILE (under your stats) has every fight, your rap sheet and every headline about you.' },
     { h: 'FIGHT WEEK' },
     { p: 'Weigh in at the weight you SIGNED for, pick a gameplan, then fight hands-on (or sim). Sponsors may pay you to plug them. After the fight: purse, rankings, Bleeter.' },
+    { p: 'Bigger fights come with a PRESS CONFERENCE (a reporter\'s question, three answers) and a FACE-OFF at the weigh-in: stare him down, talk back, shove him (and pay the fine) or touch fists. Title fights always get both.' },
+    { icon: 'heart', p: 'In the cage: eye pokes, low blows and fence grabs happen, and can cost a point. Bad cuts bring the doctor in. Hands break, ribs crack, legs get checked: injuries follow you out of the fight.' },
+    { h: 'THE STORY' },
+    { p: 'Road To Champion is four chapters and an epilogue. The big moments play as cutscenes (click, Enter or A to move on; SKIP jumps to the choice). Your choices stick: what you tell the landlord, what you do in the parking lot, who you call when the rent comes due. Story fights (the grudge match, the title shot, the rematch) are offered to you when it\'s time.' },
   ],
   career: [
     { h: 'THE JOB' },
