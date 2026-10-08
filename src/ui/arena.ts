@@ -13,7 +13,7 @@ import { PixelText, pixelArtResolution } from './text';
 import { portrait } from './sprites';
 import { sfx } from '../audio/sfx';
 import { heightStr } from '../core/format';
-import { Rig, Pose, POSES, drawRig, lerpRig, mirrorRig, lookFor, stanceGuard, Look2 } from './rig';
+import { Rig, Pose, POSES, drawRig, lerpRig, mirrorRig, lookFor, stanceGuard, tauntRig, TAUNT_CALL, Look2 } from './rig';
 
 export const AW = 480;
 export const AH = 150;
@@ -764,6 +764,11 @@ export class ArenaView extends Container {
   }
 
   /** Play a pose on one fighter (hands-on fights). */
+  /** The broadcast's line for this fighter's taunt. */
+  tauntCall(i: 0 | 1): string {
+    return TAUNT_CALL[this.L[i].taunt ?? 'arms'];
+  }
+
   play(i: 0 | 1, pose: string, dur = 0.3, lunge = 0): void {
     this.setPose(i, (POSES as Record<string, unknown>)[pose] ? (pose as Pose) : 'guard', dur);
     if (lunge) this.F[i].lunge = lunge;
@@ -1654,7 +1659,9 @@ export class ArenaView extends Container {
         f.facing = facing;
       }
       this.drawPose[i] = walking ? 'walk' : pose;
-      const target = walking ? (Math.floor(this.t * 6) % 2 ? POSES.walk1 : POSES.walk2) : pose === 'guard' ? stanceGuard(this.L[i], this.t + i * 1.3) : POSES[pose as Pose] ?? POSES.guard;
+      // his own taunt (the bird gets a finger)
+      this.L[i].bird = pose === 'taunt' && this.L[i].taunt === 'flipoff' && !walking;
+      const target = walking ? (Math.floor(this.t * 6) % 2 ? POSES.walk1 : POSES.walk2) : pose === 'guard' ? stanceGuard(this.L[i], this.t + i * 1.3) : pose === 'taunt' ? tauntRig(this.L[i], this.t) : POSES[pose as Pose] ?? POSES.guard;
       const rate = ground && this.scene === 'fight' ? (this.tdT > 0 ? 9 : 5.5) : f.poseT > 0 ? 22 : 12;
       f.rig = lerpRig(f.rig, pose === 'celebrate' && this.finished && !walking ? this.celebration(i, target) : target, Math.min(1, dt * rate));
       f.snap = (f.snap ?? 0) * Math.exp(-dt * 7);

@@ -27,7 +27,7 @@ export interface LiveEvent {
     | 'kd' | 'getup' | 'pounce' | 'ko' | 'tko' | 'clinch' | 'break' | 'knee' | 'shoot' | 'sprawl' | 'td'
     | 'gnp' | 'advance' | 'sweep' | 'standup' | 'sub' | 'tap' | 'escape' | 'bell' | 'rocked' | 'cut'
     | 'tie' | 'pummel' | 'fence' | 'trip' | 'pass' | 'scramble'
-    | 'foul' | 'deduction' | 'injury' | 'doctor';
+    | 'foul' | 'deduction' | 'injury' | 'doctor' | 'taunt';
   side: Side;
   /** strike name (jab, hook, headkick...) */
   name?: string;
@@ -73,6 +73,8 @@ export interface LiveFighter {
   stun: number;
   /** >0 while on the canvas: seconds of the count elapsed */
   down: number;
+  /** seconds left of being wound up by a taunt (comes forward reckless) */
+  tilt?: number;
   getup: number;
   kdsRound: number;
   counterT: number;
@@ -326,6 +328,7 @@ export class LiveFight {
     f.parryT = Math.max(0, f.parryT - dt);
     f.grip = Math.max(0, f.grip - dt);
     f.stun = Math.max(0, f.stun - dt);
+    if (f.tilt) f.tilt = Math.max(0, f.tilt - dt);
     f.counterT = Math.max(0, f.counterT - dt);
     f.sinceHit += dt;
     if (f.evade) {
@@ -432,6 +435,15 @@ export class LiveFight {
           f.counterT = 0.45;
         }
         this.ev({ type: 'feint', side: i });
+        return;
+      case 'taunt':
+        // showboating: hands down for a beat, a breath back, and it gets in his head
+        if (this.pos !== 'stand' || this.dist < 46) return;
+        this.startAct(f, { kind: 'feint', name: 'taunt', wind: 0.55, rec: 0.45, dmg: 0, reach: 0, target: 'head', heavy: false }, 0);
+        f.block = false;
+        f.gas = Math.min(100, f.gas + 4);
+        o.tilt = 3 + this.rng.float(0, 1.5) - o.sk.fightIQ / 60;
+        this.ev({ type: 'taunt', side: i });
         return;
       case 'evade':
         if (this.pos !== 'stand') return;
@@ -1421,7 +1433,7 @@ export class LiveAI {
     }
     // reactive defence: read the other man's strike while it winds up
     if (op.act && !op.act.done && op.act.kind !== 'feint' && op.act.kind !== 'shoot' && op.act.t > 0.04) {
-      if (!this.blockT && this.rng.chance(dt * 9 * (0.25 + iq * 0.7))) {
+      if (!this.blockT && this.rng.chance(dt * 9 * (0.25 + iq * 0.7) * ((me.tilt ?? 0) > 0 ? 0.6 : 1))) {
         const r = this.rng.next();
         if (L.pos === 'stand' && r < 0.25 + iq * 0.15) out.push({ type: 'evade', kind: op.act.name === 'hook' ? 'roll' : op.act.name === 'legkick' ? 'pull' : 'slip', source: 'button' });
         else if (r < 0.35 + iq * 0.2) out.push({ type: 'parry' });
@@ -1520,6 +1532,9 @@ export class LiveAI {
     const pressure = this.plan === 'pressure';
     const survive = this.plan === 'survive' || me.hp < 25;
     this.want = survive ? 75 : pressure ? 40 : this.plan === 'counter' ? 58 : wrestle ? 52 : 50;
+    // wound up by a taunt: walks straight in swinging
+    const tilted = (me.tilt ?? 0) > 0 && !survive;
+    if (tilted) this.want = 38;
     const d = L.dist;
     let move = 0;
     if (me.stun <= 0.2) {
@@ -1531,6 +1546,7 @@ export class LiveAI {
     this.think -= dt;
     if (this.think <= 0 && !me.act && me.stun <= 0) {
       this.think = this.rng.float(0.18, 0.55) * (this.plan === 'counter' ? 1.4 : pressure ? 0.8 : 1) * (1.25 - iq * 0.4) * (me.gas < 25 ? 1.6 : 1);
+      if (tilted) this.think *= 0.7;
       const r = this.rng.next();
       const opening = me.counterT > 0 || op.stun > 0;
       if (wrestle && d < 66 && r < 0.12 + sk.wrestling / 500) out.push({ type: 'shoot' });
@@ -1554,7 +1570,8 @@ export class LiveAI {
           const lead = punch === 'jab' || punch === 'bodyJab' || (punch === 'hook' && this.rng.chance(0.6)) || (punch === 'bodyHook' && this.rng.chance(0.5));
           out.push({ type: 'punch', hand: lead ? 'lead' : 'rear', punch, weight, hold: 0.2, pressure: 1, grounded: false });
         }
-      } else if (r > 0.92) out.push({ type: 'feint' });
+      } else if (r > 0.985 && d > 64 && me.hp > op.hp + 20 && me.gas > 40) out.push({ type: 'taunt' });
+      else if (r > 0.92) out.push({ type: 'feint' });
     }
     return { intents: out, move };
   }

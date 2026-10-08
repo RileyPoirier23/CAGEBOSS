@@ -396,9 +396,10 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
 
   // ------------------------------------------------------------ hair (front)
   /** Hair cap: the head silhouette pushed up by `vol` px, down to a hairline `rows` below the crown. */
-  const capRows = (rows: number, rec = recede, vol = 3, sideburns = true, pattern = 0) => {
+  const capRows = (rows: number, rec = recede, vol = 3, sideburns = true, pattern = 0, side = 1) => {
     for (let y = top - vol; y < browY + 1; y++) {
-      const outer = hwAt(Math.min(chinY, Math.max(top, y + vol))) + 1;
+      // hair has body at the sides too: it stands off the skull above the ears
+      const outer = hwAt(Math.min(chinY, Math.max(top, y + vol))) + 1 + (y > top && y < eyeY - 3 ? side : 0);
       const inner = hwAt(Math.max(top, y));
       for (let x = CX - outer; x < CX + outer; x++) {
         const dx = Math.abs(x - CX + 0.5);
@@ -408,10 +409,14 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
         if (sideburns && dx > inner - 3 && y < eyeY - 2) hairline = 99; // temples & sideburns
         if (r >= hairline) continue;
         if (y >= top && r >= rows && !(sideburns && dx > inner - 3)) continue;
-        if (pattern === 1 && (x + y) % 2 === 1 && y > top) continue; // buzz fuzz
+        if (pattern === 1 && ((Math.imul(x * 73856093 ^ y * 19349663, 2654435761) >>> 0) % 5) === 0 && y > top) continue; // buzz fuzz: scalp showing through
+        if (pattern === 1 && dx > inner && y > top) continue; // a buzz cut has no volume
         const nx = (x - CX) / outer;
-        const strand = ((x * 7 + Math.floor(y / 2) * 3 + (rnd(x & 15) & 3)) % 6 === 0) ? 0.12 : 0;
-        b.set(x, y, ramp(HR, 0.5 - nx * 0.3 + strand - (y - (top - vol)) / 120, x, y));
+        const strand = ((x * 7 + Math.floor(y / 2) * 3 + (rnd(x & 15) & 3)) % 6 === 0) ? 0.12 : ((x * 5 + y * 3 + (rnd(y & 15) & 3)) % 9 === 0 ? -0.14 : 0);
+        // the key light catches the crown on the left
+        const shine = y < top + 2 && nx < -0.1 && nx > -0.7 ? 0.14 : 0;
+        const hcol = ramp(HR, 0.5 - nx * 0.3 + strand + shine - (y - (top - vol)) / 120, x, y);
+        b.set(x, y, pattern === 1 ? lerpColor(hcol, SKL[0], 0.3) : hcol);
       }
       // dark outline on the hair silhouette above the head
       if (y < top) {
@@ -420,7 +425,7 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
       }
     }
     // crown outline
-    for (let x = CX - hwAt(top + 1) - 1; x <= CX + hwAt(top + 1); x++) if (b.get(x, top - vol - 1) !== -1) b.set(x, top - vol - 1, shade(HR[0], -0.4));
+    for (let x = CX - hwAt(top) - 1; x <= CX + hwAt(top); x++) b.set(x, top - vol - 1, shade(HR[0], -0.4));
   };
   switch (hs) {
     case 0: // bald: shine + stubble shadow
@@ -430,13 +435,13 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
       b.set(CX - 6, top + 3, SK[4]);
       break;
     case 1: // buzz cut: dithered fuzz
-      capRows(6, Math.floor(recede / 2), 1, true, 1);
+      capRows(6, Math.floor(recede / 2), 1, true, 1, 0);
       break;
     case 2: // short
       capRows(7);
       break;
     case 3: // swept / quiff
-      capRows(7, recede, 4);
+      capRows(7, recede, 4, true, 0, 2);
       for (let x = CX - 9; x < CX + 8; x++) for (let y = top - 4; y < top - 1; y++) if (y > top - 4 || x > CX - 5) b.set(x, y, ramp(HR, 0.6 - (x - CX) / 20, x, y));
       for (let y = top; y < top + 5; y++) b.set(CX + 7 + Math.floor((y - top) / 2), y, HR[1]);
       break;
@@ -449,7 +454,7 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
       for (let y = top; y < top + 6; y++) for (let x = CX - hwAt(y); x < CX + hwAt(y); x++) if (Math.abs(x - CX) > 3 && (x + y) % 3 === 0) b.set(x, y, HR[0]);
       break;
     case 5: // long
-      capRows(8, female ? 0 : recede, 3);
+      capRows(8, female ? 0 : recede, 3, true, 0, 2);
       for (let y = top + 6; y < top + 26; y++) {
         const hw = hwAt(Math.min(chinY, y));
         b.set(CX - hw, y, HR[1]);

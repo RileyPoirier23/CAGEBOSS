@@ -62,7 +62,7 @@ const PAGES: Record<HelpTopic, Block[]> = {
     { h: 'THE BASICS' },
     { p: 'Hands-on fights put you in the cage in Road To Champion and Legacy Mode (turn them off in Settings to sim instead). Move with the left stick / A-D. The full broadcast comes with it: tale of the tape, the Juiced Butler, the booth and Bleeter.' },
     { keys: [['View', 'C', 'Change camera: side / TV / top-down'], ['Menu', 'Esc', 'Pause: HELP, autopilot, sim the rest']] },
-    { keys: [['RB', 'J', 'Lead hand'], ['RT', 'K', 'Rear hand'], ['A', 'L', 'Kick'], ['LB', 'I', 'Block (tap = parry)'], ['B', 'Space', 'Grab: clinch / shoot / sprawl'], ['Y', 'U', 'Feint'], ['LT', 'O', 'Hold: strikes go to the body']] },
+    { keys: [['RB', 'J', 'Lead hand'], ['RT', 'K', 'Rear hand'], ['A', 'L', 'Kick'], ['LB', 'I', 'Block (tap = parry)'], ['B', 'Space', 'Grab: clinch / shoot / sprawl'], ['Y', 'U', 'Feint'], ['X', 'T', 'Taunt (everybody has his own)'], ['LT', 'O', 'Hold: strikes go to the body']] },
     { h: 'DIRECTIONAL STRIKES' },
     { p: 'Where the stick points when you PRESS the button picks the strike. How long you HOLD it picks the power: tap = light and fast, hold = medium, long hold = heavy (slow, big damage, big gas). On a pad a full trigger squeeze adds power.' },
     { keys: [[null, null, 'NEUTRAL: jab (lead) / straight (rear)'], [null, null, 'TOWARD: hooks'], [null, null, 'UP: lead hook / OVERHAND (rear)'], [null, null, 'DOWN: body jab / body straight'], [null, null, 'DOWN + TOWARD: uppercuts'], [null, null, 'AWAY: pull-counter jab / SPINNING BACKFIST (rear)']] },
@@ -74,6 +74,7 @@ const PAGES: Record<HelpTopic, Block[]> = {
     { h: 'COMBOS & COUNTERS' },
     { p: 'Land something and the next strike comes out faster for a moment: chain jab, straight, hook. Press the next strike while one is still out and it is buffered, never lost.' },
     { p: 'Make him miss (slip, roll, pull, parry) and your next shot is a COUNTER: 1.5x damage. A good feint makes him flinch and also opens a counter.' },
+    { p: 'TAUNT from range to get a breath back and get in his head: he comes forward reckless for a few seconds and stops reading your shots. Your hands are down while you do it, and some fighters flip him off.' },
   ],
   clinch: [
     { h: 'GETTING IN' },

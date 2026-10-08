@@ -59,7 +59,7 @@ export function openFightLab(g: Game): void {
   const tbl = new Container();
   tbl.position.set(150, 16);
   root.addChild(tbl);
-  const rows: FightButton[] = ['lead', 'rear', 'kick', 'block', 'grab', 'body', 'feint', 'evadeUp', 'getupLeft'];
+  const rows: FightButton[] = ['lead', 'rear', 'kick', 'block', 'grab', 'body', 'feint', 'taunt', 'evadeUp', 'getupLeft'];
   rows.forEach((b, i) => {
     const y = i * 11;
     const bind = fi.bindings[b];

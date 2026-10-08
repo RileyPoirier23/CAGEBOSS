@@ -406,6 +406,11 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       case 'feint':
         arena.play(a, 'jab', 0.1, 3);
         break;
+      case 'taunt':
+        arena.play(a, 'taunt', 1.0);
+        if (a === P || Math.random() < 0.5) arena.showCallout(arena.tauntCall(a));
+        sfx('crowd');
+        break;
       case 'rocked':
         arena.play(a, 'rocked', 0.9);
         arena.showCallout('ROCKED!');

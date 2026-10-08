@@ -11,7 +11,7 @@ import type { Game } from './app';
 import type { Fighter } from '../core/types';
 import { PAL } from '../art/palette';
 import { W, H, text, button, box } from './kit';
-import { POSES, drawRig, lookFor, type Look2, type Pose } from './rig';
+import { POSES, drawRig, lookFor, tauntRig, type Look2, type Pose } from './rig';
 import { input } from '../core/input';
 import { sfx } from '../audio/sfx';
 import { drawShow, showLabels, type TvShow } from './tvshows';
@@ -675,7 +675,8 @@ export function playCutscene(g: Game, scene: Cutscene, done: (choice: string | n
       a.cx += (a.x - a.cx) * Math.min(1, dt * 3);
       const walking = Math.abs(a.x - a.cx) > 2;
       const talking = ln?.who === a.id && shown < (ln?.text.length ?? 0);
-      const rig = walking ? (Math.floor(t * 6) % 2 ? POSES.walk1 : POSES.walk2) : POSES[a.pose ?? 'stand'];
+      const rig = walking ? (Math.floor(t * 6) % 2 ? POSES.walk1 : POSES.walk2) : a.pose === 'taunt' ? tauntRig(a.look2, t) : POSES[a.pose ?? 'stand'];
+      a.look2.bird = !walking && a.pose === 'taunt' && a.look2.taunt === 'flipoff';
       const bob = talking ? Math.round(Math.sin(t * 14)) : 0;
       actorsG.ellipse(a.cx, FLOOR + 1, 16 * (a.scale ?? 1.3), 3).fill({ color: 0, alpha: 0.35 });
       drawRig(actorsG, rig, Math.round(a.cx), FLOOR + bob, walking ? (a.x > a.cx ? 1 : -1) : a.facing, a.look2, a.scale ?? 1.3);
