@@ -80,7 +80,8 @@ const TIE_NAME = { collar: 'COLLAR TIE', under: 'DOUBLE UNDERHOOKS', plum: 'THAI
 
 export function openLiveFight(g: Game, o: LiveFightOpts): void {
   const L = new LiveFight(o.A, o.B, o.skills[0], o.skills[1], o.bout.rounds, o.seed);
-  if (o.rules) L.rules = { referee: o.referee, ...o.rules };
+  // knockdown rules follow the promotion: bareknuckle and amateur smokers give a count, MMA doesn't
+  L.rules = { koRules: o.bare || o.canvas?.style === 'bk' || o.canvas?.style === 'local' ? 'count' : 'mma', ...(o.rules ? { referee: o.referee, ...o.rules } : {}) };
   (window as unknown as { __live?: LiveFight }).__live = L; // debug / automated testing hook
   const P = o.player;
   const O = (1 - P) as Side;
@@ -338,7 +339,10 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     // overlays: the count, submission struggle
     for (const i of [0, 1] as Side[]) {
       if (L.F[i].down <= 0) continue;
-      dyn.addChild(text(`${L.countOf(i)}`, 0, 40, { width: W, align: 'center', color: PAL.bone, scale: 3, shadow: PAL.ink }));
+      const mma = (L.rules.koRules ?? 'mma') === 'mma';
+      // MMA: no count. He's down: jump on him (any attack) or let him up. Bareknuckle and smokers count.
+      if (!mma) dyn.addChild(text(`${L.countOf(i)}`, 0, 40, { width: W, align: 'center', color: PAL.bone, scale: 3, shadow: PAL.ink }));
+      else if (i !== P && !autopilot) dyn.addChild(text('HE\'S DOWN! JUMP ON HIM!', 0, 48, { width: W, align: 'center', color: PAL.gold, scale: 2, shadow: PAL.ink }));
       if (i === P && !autopilot) {
         hudG.rect(W / 2 - 60, 78, 120, 6).fill(PAL.night).rect(W / 2 - 59, 79, Math.round(118 * Math.min(1, L.F[i].getup)), 4).fill(PAL.gold);
         dyn.addChild(text('GET UP!', 0, 88, { width: W, align: 'center', small: true, color: PAL.gold, shadow: PAL.ink }));
@@ -415,6 +419,14 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         sfx('slam');
         sfx('roar');
         if (d === P) rumbleForHit(input, 1);
+        break;
+      case 'pounce':
+        arena.floor(d, 'up');
+        arena.takedown(a, 'shoot');
+        arena.showCallout(L.gpos === 'mount' ? 'MOUNT! FINISH IT!' : 'SIDE CONTROL! FINISH IT!');
+        sfx('slam');
+        sfx('roar');
+        if (d === P) rumbleForHit(input, 0.8);
         break;
       case 'getup':
         arena.floor(a, 'up');

@@ -38,6 +38,8 @@ describe('hands-on fight engine', () => {
     expect(seen.ties.size).toBeGreaterThanOrEqual(2);
     expect(seen.gpos.size).toBeGreaterThanOrEqual(3);
     expect(seen.ev.has('pass')).toBe(true);
+    // MMA knockdowns: the man standing jumps on him to finish it
+    if (seen.ev.has('kd')) expect(seen.ev.has('pounce')).toBe(true);
   });
 
   it('submissions follow position and direction', () => {

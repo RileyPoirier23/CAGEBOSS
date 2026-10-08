@@ -24,7 +24,7 @@ const MIN_GAP = 34;
 export interface LiveEvent {
   type:
     | 'punch' | 'kick' | 'hit' | 'miss' | 'block' | 'parry' | 'evade' | 'feint' | 'counter'
-    | 'kd' | 'getup' | 'ko' | 'tko' | 'clinch' | 'break' | 'knee' | 'shoot' | 'sprawl' | 'td'
+    | 'kd' | 'getup' | 'pounce' | 'ko' | 'tko' | 'clinch' | 'break' | 'knee' | 'shoot' | 'sprawl' | 'td'
     | 'gnp' | 'advance' | 'sweep' | 'standup' | 'sub' | 'tap' | 'escape' | 'bell' | 'rocked' | 'cut'
     | 'tie' | 'pummel' | 'fence' | 'trip' | 'pass' | 'scramble'
     | 'foul' | 'deduction' | 'injury' | 'doctor';
@@ -164,6 +164,8 @@ export interface LiveRules {
   /** the referee is bought: this side fouls more and never gets called; the other side always does */
   bought?: Side;
   referee?: string;
+  /** knockdowns: 'mma' (no count: jump on him and finish it, or let him up) or 'count' (bareknuckle, amateur smokers) */
+  koRules?: 'mma' | 'count';
 }
 
 export class LiveFight {
@@ -933,10 +935,37 @@ export class LiveFight {
 
   /** The man on the canvas has to beat the count: 10 counts, about 7 seconds. */
   private tickCount(dt: number, intents: [FightIntent[], FightIntent[]]): void {
+    const mma = (this.rules.koRules ?? 'mma') === 'mma';
     for (const i of [0, 1] as Side[]) {
       const o = this.F[i];
       if (o.down <= 0) continue;
       o.down += dt;
+      if (mma) {
+        const a = (1 - i) as Side;
+        // out cold: there's no count in MMA, the referee dives in
+        if (o.hp <= 0 && o.down > 0.6) {
+          o.down = 0;
+          this.finish(a, 'KO', 'knocked out cold');
+          return;
+        }
+        // the man standing jumps on him: straight to the mount (or side control) to finish it
+        if (!this.rules.noGrappling && intents[a].some((it) => it.type === 'punch' || it.type === 'kick' || it.type === 'shoot' || it.type === 'clinch' || it.type === 'ground')) {
+          this.pounce(a);
+          return;
+        }
+        for (const it of intents[i]) if (it.type === 'getup') o.getup += 0.09 * (0.4 + it.rhythm) * (0.6 + o.sk.heart / 150) * (0.5 + Math.max(0, o.hp + 20) / 120);
+        // nobody followed him down: he gets back to his feet (the referee doesn't count in MMA)
+        if (o.getup >= 1 || o.down >= 3.2) {
+          o.down = 0;
+          o.hp = Math.max(o.hp, 12 + o.sk.heart / 8);
+          o.stun = 0.5;
+          this.F[a].x = clamp(this.F[a].x + (i === 0 ? 30 : -30), ARENA_L, ARENA_R);
+          this.fixGap();
+          this.ev({ type: 'getup', side: i });
+          this.line(i, 'getup', `${this.name(a)} lets him up. ${this.name(i)} is back on his feet, on wobbly legs.`, 2);
+        }
+        continue;
+      }
       for (const it of intents[i]) {
         if (it.type === 'getup') o.getup += 0.075 * (0.4 + it.rhythm) * (0.6 + o.sk.heart / 150) * (0.5 + Math.max(0, o.hp + 20) / 120);
         if (it.type === 'getupFumble') o.getup = Math.max(0, o.getup - 0.05);
@@ -954,6 +983,26 @@ export class LiveFight {
         this.finish((1 - i) as Side, 'KO', 'counted out');
       }
     }
+  }
+
+  /** MMA knockdown: follow him to the mat and finish it. */
+  private pounce(a: Side): void {
+    const d = (1 - a) as Side;
+    const o = this.F[d];
+    o.down = 0;
+    o.getup = 0;
+    // he's hurt, not finished: a tough man can survive the storm (heart buys him time)
+    o.stun = Math.max(o.stun, 0.7);
+    o.hp = Math.max(o.hp, 12 + o.sk.heart / 6);
+    this.pos = 'ground';
+    this.top = a;
+    this.gpos = this.rng.chance(0.55) ? 'mount' : 'side';
+    this.gprog = this.standProg = 0;
+    this.gKey = this.sKey = '';
+    this.groundIdle = 0;
+    this.F[a].act = null;
+    this.ev({ type: 'pounce', side: a });
+    this.line(a, 'pounce', `${this.name(a)} jumps on him! ${this.gpos === 'mount' ? 'FULL MOUNT' : 'Side control'}, and the hammers are coming!`, 3);
   }
 
   /** Count shown to the player: 1..10 */
@@ -1357,6 +1406,11 @@ export class LiveAI {
     // knocked down: beat the count
     if (me.down > 0) {
       if (this.rng.chance(dt * (3 + sk.heart / 25))) out.push({ type: 'getup', side: this.rng.chance(0.5) ? 'left' : 'right', rhythm: this.rng.float(0.5, 1) });
+      return { intents: out, move: 0 };
+    }
+    if (op.down > 0) {
+      // he's hurt on the canvas: jump on him (the killer instinct varies)
+      if ((L.rules.koRules ?? 'mma') === 'mma' && op.down > 0.25 && this.rng.chance(dt * (2 + sk.fightIQ / 40 + (this.plan === 'pressure' ? 2 : 0)))) out.push({ type: 'shoot' });
       return { intents: out, move: 0 };
     }
     if (L.sub) {
