@@ -1117,6 +1117,7 @@ export class LiveFight {
     // the doctor looks at cuts before the bell; a good cutman buys you another round
     for (const i of [0, 1] as Side[]) {
       const c = this.F[i].cut;
+      if (this.rules.protectUntil && this.round < this.rules.protectUntil) break; // boss fights: the doctor waves it on
       if (c >= 4 && this.rng.chance(clamp((c - 3) * 0.16 * (1 - aid[i] * 0.6), 0, 0.85))) {
         this.doctor(i, false);
         return;

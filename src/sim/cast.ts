@@ -185,7 +185,7 @@ export function bossLive(s: GameState, bout: Bout): { rules?: LiveRules; referee
   if (!sb) return {};
   const rule = bossRule(s, sb.opp, sb.title);
   const oSide = (1 - sb.pSide) as 0 | 1;
-  if (rule === 'leprechaun') return { rules: { protectUntil: 3, dq: { side: oSide, round: 3, at: 95, text: WYATT_DQ } } };
+  if (rule === 'leprechaun') return { rules: { protectUntil: 4, dq: { side: oSide, round: 3, at: 95, text: WYATT_DQ } } };
   if (rule === 'standup') return { rules: { noGrappling: true } };
   if (rule === 'dirty') return { rules: { bought: oSide }, referee: DIRTY_DANIEL.name, refLook: DANIEL_REF_LOOK };
   return {};

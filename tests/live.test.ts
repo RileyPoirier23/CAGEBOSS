@@ -71,4 +71,42 @@ describe('hands-on fight engine', () => {
     for (let k = 0; k < 60 && (L.gpos as string) === 'half'; k++) L.update(0.2, [[], [{ type: 'ground', move: 'reverse' }]], [0, 0]);
     expect(L.gpos).toBe('guard');
   });
+
+  it('boss-fight rules: Wyatt survives until his round-3 DQ, Zac\'s fight has no grappling, Daniel never calls Spadam', () => {
+    const s = createFighterGame({ seed: 12, first: 'Han', last: 'Tibular', nick: '', gender: 'M', culture: 'canada', division: 'light', archetype: 'striker', look: { head: 0, skin: 1, hair: 1, hairColor: 1, beard: 0, brows: 0, eyes: 0, nose: 0, ears: 0, scar: 0, tattoo: 0, build: 1 } as never });
+    const f = me(s);
+    const opp = Object.values(s.fighters).find((x) => x.division === f.division && x.id !== f.id)!;
+    const run = (rules: LiveFight['rules'], seed: number, strong = false) => {
+      const sk = strong ? { ...f.skills, striking: 99, power: 99 } : fightReadySkills(s);
+      const L = new LiveFight(f, opp, sk, opp.skills, 3, seed);
+      L.rules = rules;
+      const ai: [LiveAI, LiveAI] = [new LiveAI(0, seed * 3, strong ? 'pressure' : 'balanced'), new LiveAI(1, seed * 5)];
+      let steps = 0;
+      let tds = 0;
+      while (L.phase !== 'over' && steps < 100000) {
+        if (L.phase === 'break') L.nextRound([0.5, 0.5]);
+        const a = ai[0].update(L, 1 / 30);
+        const b = ai[1].update(L, 1 / 30);
+        L.update(1 / 30, [a.intents, b.intents], [a.move, b.move]);
+        if (L.pos !== 'stand') tds++;
+        L.events.length = 0;
+        steps++;
+      }
+      return { L, tds };
+    };
+    for (let seed = 1; seed <= 6; seed++) {
+      // Wyatt: nothing ends it early (even a 99-power fighter), round 3 ends in his DQ
+      const w = run({ protectUntil: 4, dq: { side: 1, round: 3, at: 95, text: 'split punch' } }, seed, true);
+      expect(w.L.result?.method).toBe('DQ');
+      expect(w.L.result?.round).toBe(3);
+      expect(w.L.result?.winner).toBe(0);
+      // Zac: stand and bang only
+      const z = run({ noGrappling: true }, seed);
+      expect(z.tds).toBe(0);
+      // Spadam (side 1) with Daniel: his fouls are never penalized; the other side's always are
+      const d = run({ bought: 1 }, seed);
+      expect(d.L.fouls.filter((x) => x.side === 1).every((x) => !x.penalized)).toBe(true);
+      expect(d.L.fouls.filter((x) => x.side === 0).every((x) => x.penalized)).toBe(true);
+    }
+  });
 });
