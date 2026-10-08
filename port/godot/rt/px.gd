@@ -372,6 +372,7 @@ class Container_ extends EventEmitter:
 			RenderingServer.canvas_item_set_parent(ch._ci, _ci)
 			RenderingServer.canvas_item_set_draw_index(ch._ci, children.size() - 1)
 			ch.emit("added", self)
+			emit("childAdded", ch, self, float(children.size() - 1))
 		return c
 	func addChildAt(c, index):
 		if c.parent != null: c.parent.removeChild(c)
@@ -381,6 +382,7 @@ class Container_ extends EventEmitter:
 		RenderingServer.canvas_item_set_parent(c._ci, _ci)
 		_reindex(i)
 		c.emit("added", self)
+		emit("childAdded", c, self, float(i))
 		return c
 	func _detach(c) -> void:
 		c._parent_ref = null

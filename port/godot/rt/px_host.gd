@@ -34,6 +34,15 @@ func _notification(what: int) -> void:
 
 func _exit_tree() -> void:
 	PX.alive = false
+	# drop every callback held in a static store before Godot unloads the scripts
+	DOM.shutdown()
+	JS.shutdown()
+	GenRegistry.shutdown()
+	PX.Ticker.shared._ls.clear()
+	if app != null:
+		app.ticker._ls.clear()
+		app.stage._px_ev.clear()
+	app = null
 
 func _attach_stage() -> void:
 	PX.root_ci = get_canvas_item()

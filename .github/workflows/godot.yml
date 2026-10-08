@@ -1,0 +1,88 @@
+name: Godot build
+
+# The Godot version of the game (consoles and phones; see docs/console/ENGINE.md): translates
+# the TypeScript (tools/gdport), checks the rules against the TypeScript game (golden tests),
+# then exports Windows, Linux, macOS and Android builds as downloadable artifacts
+# (Actions tab -> the run -> Artifacts). The Electron desktop builds are desktop.yml.
+on:
+  workflow_dispatch:
+  push:
+    branches: ['main', 'master', 'claude/**']
+    paths: ['src/**', 'data/**', 'public/**', 'port/godot/**', 'tools/gdport/**', 'tools/golden/**', '.github/workflows/godot.yml']
+
+concurrency:
+  group: godot-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: '4.5'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm ci
+        working-directory: tools/gdport
+      - name: ffmpeg (the .m4a songs become .ogg)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Godot and export templates
+        run: |
+          mkdir -p "$HOME/godot" "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          cd "$HOME/godot"
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          curl -sSL -o tpl.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q -j tpl.tpz 'templates/version.txt' 'templates/linux_release.x86_64' 'templates/windows_release_x86_64.exe' 'templates/macos.zip' 'templates/android_release.apk' 'templates/android_debug.apk' -d "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          rm tpl.tpz
+          echo "GODOT=$HOME/godot/godot" >> "$GITHUB_ENV"
+      - name: Translate the game
+        run: tools/gdport/build.sh
+      - name: Golden tests (the Godot rules match the TypeScript game)
+        run: T=1800 tools/golden/run.sh
+      - name: Android SDK / signing for the editor
+        run: |
+          keytool -genkeypair -v -keystore "$HOME/debug.keystore" -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
+          mkdir -p "$HOME/.config/godot"
+          cat > "$HOME/.config/godot/editor_settings-${GODOT_VERSION}.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_SDK_ROOT"
+          export/android/java_sdk_path = "$JAVA_HOME_17_X64"
+          export/android/debug_keystore = "$HOME/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          EOF
+      - name: Export
+        working-directory: port/godot
+        run: |
+          mkdir -p build/windows build/linux build/macos build/android
+          "$GODOT" --headless --path . --export-release "Windows" "build/windows/CAGE BOSS.exe"
+          "$GODOT" --headless --path . --export-release "Linux" build/linux/cageboss.x86_64
+          "$GODOT" --headless --path . --export-release "macOS" "build/macos/CAGE BOSS.zip"
+          "$GODOT" --headless --path . --export-debug "Android" build/android/cageboss-debug.apk || echo "::warning::Android export failed (see log)"
+          ls -la build/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cageboss-godot-windows
+          path: port/godot/build/windows
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cageboss-godot-linux
+          path: port/godot/build/linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cageboss-godot-macos
+          path: port/godot/build/macos
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cageboss-godot-android
+          path: port/godot/build/android
+          if-no-files-found: ignore

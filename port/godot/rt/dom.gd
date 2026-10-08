@@ -265,6 +265,18 @@ static func _pad(id: int) -> Dictionary:
 		return JSPromise.resolve("complete")}
 	return {"index": float(id), "id": Input.get_joy_name(id), "connected": true, "mapping": "standard", "timestamp": float(Time.get_ticks_msec()), "buttons": buttons, "axes": axes, "vibrationActuator": rumble}
 
+# ------------------------------------------------------------------ shutdown
+
+## Godot frees scripts at exit before static variables: lambdas still held in static stores
+## (listeners, frame callbacks) then crash the teardown. PXHost calls this on exit.
+static func shutdown() -> void:
+	if _window != null: _window._ls.clear()
+	if _document != null:
+		_document._ls.clear()
+		_document.body._ls.clear()
+		_document._by_id.clear()
+	_raf.clear()
+
 # ------------------------------------------------------------------ functions
 
 static var _raf: Array = []

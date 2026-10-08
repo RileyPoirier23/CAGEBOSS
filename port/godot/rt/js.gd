@@ -1097,6 +1097,10 @@ static func _interval_tick(id: int, f, ms: float) -> void:
 
 static var _micro: Array = []
 
+static func shutdown() -> void:
+	_micro.clear()
+	_timers.clear()
+
 static func queue_microtask(f) -> void:
 	_micro.append(f)
 

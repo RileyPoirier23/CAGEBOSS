@@ -5,3 +5,4 @@ tests/golden/
 *.import
 tests/tmp/
 public/
+build/
