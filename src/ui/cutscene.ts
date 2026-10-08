@@ -72,6 +72,8 @@ export const CAST: Record<string, Look2> = {
   jimmy: base({ skin: 0xc68a5e, hairStyle: 0, beard: 2, build: 1, outfit: { top: 0x101014, bottom: 0x101014, patch: 0xf2f2f2, bulk: 1, hands: 0xc68a5e } }),
   // Mateo: twelve, in a hoodie three sizes too big
   mateo: base({ skin: 0xb07a52, hairStyle: 1, hairColor: 0x1a1412, beard: 0, build: 0, outfit: { top: 0xb8733a, bottom: 0x2a2a44, bulk: 2, hands: 0xb07a52 } }),
+  // a regional promoter: slicked hair, a shirt you can hear
+  promoter: base({ skin: 0xe0a882, hairStyle: 2, hairColor: 0x161412, beard: 1, build: 2, outfit: { top: 0xb8402a, bottom: 0x2a2a30, shirt: 0xf0e0a0, bulk: 2, hands: 0xe0a882 } }),
   // a reporter
   reporter: base({ skin: 0xe0b090, hairStyle: 4, hairColor: 0x6a3a1a, beard: 0, build: 0, female: true, outfit: { top: 0x6a4c72, bottom: 0x222228, mic: true, hands: 0xe0b090 } }),
 };

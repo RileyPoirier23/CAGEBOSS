@@ -163,8 +163,8 @@ export function interviewChance(s: GameState): number {
   return clamp(0.06 + f.hype / 140 + tierK, 0.05, 0.95);
 }
 
-export function interviewMoment(s: GameState, rng: Rng, phase: 'pre' | 'post', won?: boolean): FMMoment | null {
-  if (!rng.chance(interviewChance(s))) return null;
+export function interviewMoment(s: GameState, rng: Rng, phase: 'pre' | 'post', won?: boolean, force = false): Extract<FMMoment, { kind: 'interview' }> | null {
+  if (!force && !rng.chance(interviewChance(s))) return null;
   const st = fm(s);
   const reps = content().reporters;
   const r = reps.length ? rng.pick(reps) : { name: 'A reporter', outlet: 'Local TV' };

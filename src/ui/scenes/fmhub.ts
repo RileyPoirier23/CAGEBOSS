@@ -44,6 +44,7 @@ import { openJumpRope, openTyreChop } from '../minigames';
 import { officialsFor } from '../../sim/events';
 import { portrait, namedPortrait, reporterPortrait } from '../sprites';
 import { content } from '../../core/content';
+import { fightWeekShow } from '../faceoff';
 
 const bar = (w: number, v: number, color: number): Graphics => {
   const g = new Graphics();
@@ -638,7 +639,11 @@ export class FMHubScene extends Scene {
       const res = doWeighIn(s, c, r);
       this.save(r);
       this.g.closeModal(wrap);
-      alertBox(this.g, res.made ? 'MADE WEIGHT' : 'MISSED WEIGHT', res.text, () => this.gameplan());
+      // then the press conference and the face-off (if this fight gets them)
+      alertBox(this.g, res.made ? 'MADE WEIGHT' : 'MISSED WEIGHT', res.text, () => {
+        const r2 = this.rng();
+        fightWeekShow(this.g, s, r2, () => this.save(r2), () => this.gameplan());
+      });
     };
     frame.addChild(button(need <= 0 ? 'STEP ON THE SCALE' : 'SENSIBLE CUT', bx + 8, by + bh - 40, 96, 15, () => go('easy'), { small: true, fill: PAL.moss }));
     if (need > 0) {
