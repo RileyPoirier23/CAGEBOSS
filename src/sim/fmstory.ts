@@ -405,7 +405,7 @@ const BEATS: Beat[] = [
   },
   {
     id: 'c3_zac_done', chapter: C3, when: (s, ss) => flag(ss, 'zacDone'), title: 'THE CONTRACT', who: 'Zac Buna',
-    text: (s, ss) => `${ss.flags.zacWon === 1 ? 'You won the Lounge final standing up.' : 'Zac took the Lounge final standing up.'} Afterwards, in the locker room, you sit down with Zac and read him his contract. All of it. Lenny takes 60% of his purses. Lenny owns his likeness. Lenny "may assign fighting style at his discretion". Zac is quiet for a long time. Then he walks into the hallway and fires Lenny Pratt so loudly the cameras come running. The next Monday he turns up at Ray's with a gi. "I've got nowhere to train. And you don't know any jiu-jitsu." He's right. (Zac Buna is now your sparring partner: SPAR with him for grappling.)`,
+    text: (s, ss) => `${ss.flags.zacWon === 1 ? 'You won the Lounge final standing up.' : 'Zac took the Lounge final standing up, then vacated the belt the same night: "I\'m not keeping a belt I won on a contract I couldn\'t read."'} Afterwards, in the locker room, you sit down with Zac and read him his contract. All of it. Lenny takes 60% of his purses. Lenny owns his likeness. Lenny "may assign fighting style at his discretion". Zac is quiet for a long time. Then he walks into the hallway and fires Lenny Pratt so loudly the cameras come running. The next Monday he turns up at Ray's with a gi. "I've got nowhere to train. And you don't know any jiu-jitsu." He's right. (Zac Buna is now your sparring partner: SPAR with him for grappling.)`,
     effect: (s, ss) => {
       ss.flags.ch3 = 1;
       ss.flags.zacPartner = 1;
@@ -427,7 +427,7 @@ const BEATS: Beat[] = [
   {
     id: 'c4_grudge_booked', chapter: C4, when: (s, ss) => tier(s) === 'of' && bookedVs(s, ss) && !isChamp(s), title: 'THE GRUDGE MATCH', who: 'Dane Whyte',
     text: (s, ss) => `The press conference has more cameras than seats. Dane Whyte at the podium: "Soup Kitchen versus Trust Fund. I couldn't make this up if I tried." ${rivalLast(s, ss)} leans into his mic: "${flag(ss, 'reported') ? 'You took three months from me. I\'m taking the rest of your career.' : 'My dad is going to knock down your gym the night I knock you out. Poetry.'}"`,
-    choices: [{ id: 'calm', label: '"See you Saturday."' }, { id: 'table', label: 'Flip the table' }],
+    choices: [{ id: 'calm', label: '"See you Saturday."' }, { id: 'table', label: 'Flip the table' }, { id: 'jimmy', label: 'Lean into the mic: "How\'s Jimmy?"' }],
   },
   {
     id: 'c4_grudge_won', chapter: C4, when: (s, ss) => flag(ss, 'grudgeWon'), title: 'TRUST FUND, OVERDRAWN', who: 'Tyler Vance',
@@ -493,7 +493,7 @@ const BEATS: Beat[] = [
   },
   {
     id: 'c5_won', chapter: C5, when: (s, ss) => flag(ss, 'spadamWon'), title: 'THE WHITE BEAST FALLS', who: 'Uncle Ray',
-    text: (s) => `Twenty-four and oh is twenty-four and one. Daniel Stinkovich, out of habit, grabs Spadam\'s wrist and starts to raise it before the announcer finishes reading your name. The arena boos him out of the cage. Spadam sits on the canvas for a long time. Then he gets up, finds you, and lifts your hand himself. "Pride of the Maritimes," he says. "Fair enough." ${champBoth(s) ? 'Two belts. Two divisions.' : 'The welterweight championship of the world.'} Ray\'s Boxing & Soup.`,
+    text: (s) => `Twenty-four and oh is twenty-four and one. Daniel Stinkovich, out of habit, grabs Spadam\'s wrist and starts to raise it before the announcer finishes reading your name. The arena boos him out of the cage. Spadam sits on the canvas for a long time. Then he gets up, finds you, and lifts your hand himself. "Pride of the Maritimes," he says. "Fair enough." ${champBoth(s) ? 'Two belts. Two divisions.' : 'The welterweight championship of the world.'} Ray\'s Boxing & Soup. In the crowd, a man in a navy three-piece suit stays until the very end, for the first time in his life. And on Monday the Commission opens Daniel Stinkovich\'s bank records: twenty-four deposits from "Beast Mode Kickboxing LLC". One per fight. He never referees again.`,
     effect: (s, ss) => {
       ss.flags.ch5 = 1;
     },
@@ -776,6 +776,14 @@ export function answerStory(s: GameState, beat: string, choice: string): string 
       st.morale = clamp(st.morale + 3, 0, 100);
       f.hype = clamp(f.hype + 4, 0, 100);
       return 'Forty seconds. Neither of you blinks. Then Spadam glances at Daniel, just for a moment, like he\'s checking something. You see it. So does everybody.';
+    case 'c4_grudge_booked:jimmy':
+      if (ss.flags.leverage === 1) {
+        // you kept the parking lot in your pocket: now he knows you know
+        st.oppFlagged = true;
+        return `${rivalLast(s, ss)} goes white. He doesn't say another word all press conference. Whatever he was taking, he stops taking it this week, and his body notices. (He fights flat.)`;
+      }
+      f.hype = clamp(f.hype + 3, 0, 100);
+      return `${rivalLast(s, ss)} smirks. "${ss.flags.reported === 1 ? 'Ask the Commission. They already know everything, thanks to you.' : 'Jimmy who?'}" The reporters write "JIMMY?" in their notebooks.`;
     case 'e_rematch_booked:respect':
       st.morale = clamp(st.morale + 6, 0, 100);
       return 'He looks at your hand for a second, then shakes it. Firm. "Saturday." "Saturday."';
@@ -795,6 +803,17 @@ export function storyResult(s: GameState, tierAt: Tier, opp: string, won: boolea
   if (opp === 'zac' && title) {
     ss.flags.zacDone = 1;
     if (won) ss.flags.zacWon = 1;
+    else {
+      // he won it on a contract he couldn't read: he vacates the Lounge belt and goes home to fix his life
+      const z = s.fighters.zac;
+      if (z) z.promotion = 'retired_zac';
+      st.ladder = st.ladder.filter((x) => x !== 'zac');
+      // the vacant title: you against the most beatable of the top contenders
+      const top = st.ladder.slice(0, 4).filter((x) => x !== st.player && s.fighters[x]);
+      const ovr = (id: string) => Object.values(s.fighters[id].skills).reduce((a, b) => a + b, 0);
+      const pick = top.sort((a, b) => ovr(a) - ovr(b))[0];
+      if (pick) st.ladder = [pick, st.player, ...st.ladder.filter((x) => x !== pick && x !== st.player)];
+    }
     st.partner = { name: 'Zac "The Attacker" Buna', stage: 99, spars: 0, leaking: false, fake: false };
     return;
   }

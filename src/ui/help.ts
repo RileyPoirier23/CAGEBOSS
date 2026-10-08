@@ -47,7 +47,7 @@ const PAGES: Record<HelpTopic, Block[]> = {
   start: [
     { h: 'THREE WAYS TO PLAY' },
     { icon: 'money', p: 'CAREER: you are the promoter. Work the desk, build cards, sign fighters, keep the money, the fans and the Commission happy, and stay out of prison.' },
-    { icon: 'belt', p: "ROAD TO CHAMPION: you are the fighter, with a story. Uncle Ray's soup-kitchen gym is drowning in back rent, a trust-fund rival is always one league ahead, and the CBFC title is a long way off." },
+    { icon: 'belt', p: 'ROAD TO CHAMPION: you are Han "The Pride Of The Maritimes" Tibular, with a story in five chapters. Uncle Ray\'s soup-kitchen gym is drowning in back rent, a trust-fund rival is always one league ahead, every league has a boss, and at the end of the road a six-foot-seven undefeated champion is waiting.' },
     { icon: 'glove', p: 'LEGACY MODE (unlocks when you finish Road To Champion): the fighter career with no script. Start in any league, change weight class, open your own gym, then retire and run your own promotion.' },
     { icon: 'glove', p: 'QUICK FIGHT: any two fighters from the roster, hands-on. Against the CPU or a friend (two controllers, a controller and the keyboard, or one shared keyboard).' },
     { icon: 'cal', p: 'SANDBOX: career mode with the rules off. Edit fighters, money and meters, and book whatever you like.' },
@@ -145,7 +145,8 @@ const PAGES: Record<HelpTopic, Block[]> = {
     { p: 'Bigger fights come with a PRESS CONFERENCE (a reporter\'s question, three answers) and a FACE-OFF at the weigh-in: stare him down, talk back, shove him (and pay the fine) or touch fists. Title fights always get both.' },
     { icon: 'heart', p: 'In the cage: eye pokes, low blows and fence grabs happen, and can cost a point. Bad cuts bring the doctor in. Hands break, ribs crack, legs get checked: injuries follow you out of the fight.' },
     { h: 'THE STORY' },
-    { p: 'Road To Champion is four chapters and an epilogue. The big moments play as cutscenes (click, Enter or A to move on; SKIP jumps to the choice). Your choices stick: what you tell the landlord, what you do in the parking lot, who you call when the rent comes due. Story fights (the grudge match, the title shot, the rematch) are offered to you when it\'s time.' },
+    { p: 'Road To Champion is five chapters and an epilogue, with a boss in every league: Tyler Vance at the local circuit, Wyatt "LeproClepto" Smitt at the regionals (nobody finishes him), Zac "The Attacker" Buna at the Lounge (his manager made it stand-up only), and Spadam "The White Beast" Biggs at the very end. Finish a chapter and its boss is playable in QUICK FIGHT.' },
+    { p: 'The big moments play as cutscenes: click, Enter or A for the next line, BACK (or Left / LB) to read the last one again, SKIP to jump to the choice. Your choices stick: what you tell the landlord, what you do in the parking lot, who you call when the rent comes due. Story fights (the grudge match, the title shot, the rematch, the superfight) are offered to you when it\'s time. Zac Buna becomes your sparring partner: SPAR with him to build your grappling.' },
   ],
   career: [
     { h: 'THE JOB' },

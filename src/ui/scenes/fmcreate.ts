@@ -152,7 +152,7 @@ export class FMCreateScene extends Scene {
     const p = new Container();
     p.position.set(14, 40);
     r.addChild(p);
-    p.addChild(box(452, 180, PAL.night, PAL.gold, { bevel: true }));
+    p.addChild(box(452, 184, PAL.night, PAL.gold, { bevel: true }));
     const por = portrait({ id: 'han-card', look: HAN.look, gender: 'M', age: HAN.age, variant: 'plain', attire: 'shirtless' }, 64);
     por.scale.set(2);
     por.position.set(10, 10);
@@ -165,11 +165,11 @@ export class FMCreateScene extends Scene {
       p.addChild(text(k, 152, 64 + i * 10, { small: true, color: PAL.ash }));
       p.addChild(text(v, 210, 64 + i * 10, { small: true, color: PAL.bone }));
     });
-    p.addChild(text("A lightweight prodigy who's never had a real fight. Everybody back home already calls him the Pride of the Maritimes, which is a lot to live up to when you mop floors for a living.", 152, 128, { small: true, width: 290, color: PAL.ash, maxLines: 4 }));
     // the one thing you choose: how he fights
-    r.addChild(text('HOW HE FIGHTS', 14, 226, { small: true, color: PAL.ash }));
-    r.addChild(selector(90, 223, 150, ARCHES.map((a) => ({ value: a.value, label: a.label })), this.arch, (v) => { this.arch = v; this.refresh(); }));
-    r.addChild(text(ARCHES.find((a) => a.value === this.arch)!.blurb, 248, 226, { small: true, width: 216, color: PAL.bone, maxLines: 2 }));
+    p.addChild(text('HOW HE FIGHTS', 152, 126, { small: true, color: PAL.gold }));
+    p.addChild(selector(210, 123, 150, ARCHES.map((a) => ({ value: a.value, label: a.label })), this.arch, (v) => { this.arch = v; this.refresh(); }));
+    p.addChild(text(ARCHES.find((a) => a.value === this.arch)!.blurb, 152, 140, { small: true, width: 290, color: PAL.bone, maxLines: 1 }));
+    p.addChild(text("A lightweight prodigy who's never had a real fight. Everybody back home already calls him the Pride of the Maritimes, which is a lot to live up to when you mop floors for a living.", 152, 154, { small: true, width: 290, color: PAL.ash, maxLines: 3 }));
     r.addChild(button('← BACK', 10, H - 20, 60, 14, () => { this.exit(); void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g))); }, { small: true }));
     r.addChild(button('STEP INTO THE CAGE →', W - 160, H - 21, 150, 16, () => this.start(), { fill: PAL.blood }));
   }

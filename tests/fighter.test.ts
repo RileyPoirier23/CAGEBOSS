@@ -75,6 +75,7 @@ describe('fighter mode', () => {
       doAction(s, 'rest', null, rng);
       endWeek(s, rng);
     }
+    if (process.env.STORYDBG) console.log(s.week, fm(s).tier, fm(s).ladder.slice(0, 6), fm(s).ladder.indexOf(fm(s).player), fm(s).history.slice(-6).map((h) => h.opp + ':' + h.result + ':' + h.title), JSON.stringify((fm(s) as any).story?.flags));
     expect(tiers.has('regional')).toBe(true);
     expect(tiers.has('pfl')).toBe(true);
     expect(fm(s).tier).toBe('of');

@@ -12,6 +12,19 @@ import { openHelp } from './help';
 /** Newest first. Keep each version to a few lines. */
 export const NOTES: { v: string; lines: string[] }[] = [
   {
+    v: '2.0.0',
+    lines: [
+      'Road To Champion: you are Han "The Pride Of The Maritimes" Tibular.',
+      'Five chapters, time skips, a boss in every league, a superfight at the end.',
+      'Beat a chapter: its boss is playable in QUICK FIGHT.',
+      'Cutscenes everywhere, with BACK so you never miss a line.',
+      'Settings > Text: Clear or Bold lettering if pixels are hard to read.',
+      'Four new songs: SANDOTHERAPPER x Jayson, and $cott.',
+      'Every league fights in its own room. 1ton finally makes sense.',
+      'CREDITS plays the full roll. SUPPORT THE DEV if you want to help.',
+    ],
+  },
+  {
     v: '1.7.0',
     lines: [
       'Road To Champion: a much longer story, with cutscenes.',

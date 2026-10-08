@@ -176,6 +176,7 @@ export function storyScene(s: GameState, id: string): Cutscene | null {
           shot('gym', [ray(390, -1), you(250, 1), boss('zac', 140, 1, { enter: 'left' }, GI)], [
             { who: 'zac', text: "Monday. I've got nowhere to train. And you don't know any jiu-jitsu." },
             { who: 'ray', text: "He's not wrong." },
+            ...(ss?.flags.zacWon === 1 ? [] : [{ who: 'zac', text: "And I vacated the belt. I'm not keeping something I won on a contract I couldn't read." }]),
             { who: null, text: 'Zac Buna is now your sparring partner. SPAR with him to build your grappling.' },
           ], 'MONDAY'),
         ],
@@ -268,7 +269,14 @@ export function storyScene(s: GameState, id: string): Cutscene | null {
             { who: null, text: 'Spadam sits on the canvas for a long time. Then he gets up, finds you, and lifts your hand himself.' },
             { who: 'spadam', text: 'Pride of the Maritimes. Fair enough.', poses: { you: 'celebrate' } },
             { who: 'ray', text: "I'm not crying. It's the soup.", shake: true, sfx: 'crowd' },
+            { who: null, text: `${Rf} points at the crowd. Up in row twelve, a man in a navy three-piece suit is still in his seat. Gordon Vance stayed to the end. First time in his life.` },
           ]),
+          shot('office', [npc('daniel', 'Daniel Stinkovich', 330, -1)], [
+            { who: null, text: 'Monday. The Commission opens Daniel Stinkovich\'s bank records.' },
+            { who: null, text: 'Twenty-four deposits from "Beast Mode Kickboxing LLC". One per fight.' },
+            { who: 'daniel', text: "I'm very experienced.", poses: { daniel: 'hurt' } },
+            { who: null, text: 'He never referees again.' },
+          ], 'THE COMMISSION'),
         ],
       };
     case 'c5_lost':
