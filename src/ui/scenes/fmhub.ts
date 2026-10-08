@@ -606,7 +606,7 @@ export class FMHubScene extends Scene {
     win.body.addChild(button('LOAD…', 82, 6, 72, 15, () => { win.close(); openLoad(this.g, familyOf(this.g.state!)); }, { small: true }));
     win.body.addChild(button('HELP: HOW TO BE A PRO', 6, 24, 148, 15, () => openHelp(this.g, 'rtc'), { small: true, fill: PAL.shadow, border: PAL.gold }));
     win.body.addChild(button('SETTINGS', 6, 42, 148, 15, () => openSettings(this.g), { small: true }));
-    win.body.addChild(button('ACHIEVEMENTS', 6, 60, 148, 15, () => openAchievements(this.g), { small: true }));
+    win.body.addChild(button('TROPHY CASE', 6, 60, 148, 15, () => openAchievements(this.g), { small: true }));
     win.body.addChild(button('RETIRE…', 6, 78, 148, 15, () => { win.close(); confirm(this.g, 'Hang up the gloves for good?', () => this.legacy()); }, { small: true, fill: PAL.ember }));
     win.body.addChild(button('QUIT TO TITLE', 6, 96, 148, 15, () => { this.g.autosave(); win.close(); void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g))); }, { small: true }));
   }

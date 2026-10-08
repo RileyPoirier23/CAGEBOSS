@@ -54,7 +54,7 @@ const PAGES: Record<HelpTopic, Block[]> = {
     { h: 'MENUS & SAVING' },
     { keys: [['A', 'Enter', 'Confirm / click'], ['B', 'Esc', 'Back / close'], ['Menu', 'Esc', 'Pause / menu'], ['View', 'F1', 'This HELP screen'], ['LStick', null, 'Move the cursor (pad)']] },
     { p: 'Every mode autosaves each week and has three save slots of its own (MENU > SAVE). LOAD has a tab per mode. CONTINUE on the title screen picks up your latest save. Ironman careers only keep the autosave.' },
-    { p: 'ACHIEVEMENTS (title screen and menus) tracks what you have unlocked across every save.' },
+    { p: 'MODES on the title screen has every way to play. The TROPHY CASE (title screen and menus) has an object for every achievement, lit up once you win it, across every save.' },
     { p: 'Settings has text speed, the swear bleep, fight speed, hands-on fights on/off, controller remapping (CONTROLS) and audio.' },
     { p: 'This page lives above SETTINGS in every menu and in the fight pause menu. When the game updates, WHAT\'S NEW tells you what changed.' },
   ],

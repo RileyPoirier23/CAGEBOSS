@@ -1,12 +1,12 @@
 /**
  * Achievements UI: remembers unlocks across saves, plays the congratulations screen when
- * something new is earned, and the ACHIEVEMENTS list (title menu, in-game menus).
+ * something new is earned, and the TROPHY CASE (title menu, in-game menus).
  */
 import { Container, Graphics, type Ticker } from 'pixi.js';
 import type { Game } from './app';
 import { PAL } from '../art/palette';
-import { W, H, text, button, box, ScrollBox } from './kit';
-import { openWindow } from './widgets';
+import { W, H, text, button, box } from './kit';
+import { drawTrophy } from './trophyart';
 import { loadJSON, storeJSON } from '../core/save';
 import { ACHIEVEMENTS, earned, type Achievement } from '../sim/achievements';
 import { sfx } from '../audio/sfx';
@@ -93,29 +93,101 @@ function congrats(g: Game, a: Achievement, done: () => void): void {
   sfx('roar');
 }
 
-/** The list: everything, what you've got, when. */
+/**
+ * The trophy case: every achievement is an object on a shelf in a lit glass cabinet. The ones
+ * you have are lit up; the ones you don't are silhouettes. Pick one to read its plaque.
+ */
 export function openAchievements(g: Game): void {
   const have = unlocked();
-  const win = openWindow(g, `Achievements  ${Object.keys(have).filter((k) => ACHIEVEMENTS.some((a) => a.id === k)).length}/${ACHIEVEMENTS.length}`, 340, 230);
-  const sb = new ScrollBox(328, 200);
-  sb.position.set(6, 4);
-  win.body.addChild(sb);
-  const groups: [string, Achievement['mode'][]][] = [['THE FIGHTER', ['fighter']], ['ROAD TO CHAMPION', ['rtc']], ['LEGACY MODE', ['legacy']], ['THE PROMOTER', ['career']]];
-  let y = 0;
-  for (const [label, modes] of groups) {
-    sb.content.addChild(text(label, 0, y, { color: PAL.gold }));
-    y += 12;
-    for (const a of ACHIEVEMENTS.filter((x) => modes.includes(x.mode))) {
-      const got = !!have[a.id];
-      const ic = icon(a.icon);
-      ic.alpha = got ? 1 : 0.25;
-      ic.position.set(2, y + 1);
-      sb.content.addChild(ic);
-      sb.content.addChild(text(a.name, 22, y, { small: true, color: got ? PAL.bone : PAL.grey }));
-      sb.content.addChild(text(a.desc, 22, y + 8, { small: true, color: got ? PAL.ash : PAL.grey, width: 300, maxLines: 1 }));
-      y += 19;
+  const root = new Container();
+  const wrap = g.modal(root, { dim: 1 });
+  const got = ACHIEVEMENTS.filter((a) => have[a.id]).length;
+  // the room: dark panelled wall, a rug
+  const room = new Graphics().rect(0, 0, W, H).fill(0x22160f);
+  for (let x = 0; x < W; x += 24) room.rect(x, 0, 1, H).fill(0x1a100a);
+  room.rect(0, H - 12, W, 12).fill(0x3a1a1a);
+  root.addChild(room);
+  root.addChild(text('TROPHY CASE', 16, 8, { scale: 2, color: PAL.gold, shadow: 0x000000 }));
+  root.addChild(text(`${got} / ${ACHIEVEMENTS.length} WON`, W - 160, 13, { width: 100, align: 'right', small: true, color: PAL.bone }));
+  root.addChild(button('CLOSE', W - 54, 9, 44, 14, () => g.closeModal(wrap), { small: true, fill: PAL.shadow, border: PAL.gold }));
+  // the cabinet
+  const CX = 14, CY = 30, CW = W - 28, ROW = 44;
+  const cab = new Graphics();
+  cab.rect(CX - 4, CY - 4, CW + 8, ROW * 4 + 10).fill(0x5a3a20).rect(CX - 4, CY - 4, CW + 8, 3).fill(0x7a5a3a);
+  cab.rect(CX, CY, CW, ROW * 4 + 2).fill(0x120c0a);
+  // back light
+  for (let k = 0; k < 6; k++) cab.rect(CX, CY + k * 3, CW, 3).fill({ color: 0xffe8b0, alpha: 0.05 - k * 0.008 });
+  root.addChild(cab);
+  const rows: { label: string; items: Achievement[]; at?: number }[][] = [
+    [{ label: 'THE FIGHTER', items: ACHIEVEMENTS.filter((a) => a.mode === 'fighter').slice(0, 10) }],
+    [{ label: 'THE FIGHTER (CONT.)', items: ACHIEVEMENTS.filter((a) => a.mode === 'fighter').slice(10) }],
+    [{ label: 'ROAD TO CHAMPION', items: ACHIEVEMENTS.filter((a) => a.mode === 'rtc') }, { label: 'LEGACY MODE', items: ACHIEVEMENTS.filter((a) => a.mode === 'legacy'), at: 6 }],
+    [{ label: 'THE PROMOTER', items: ACHIEVEMENTS.filter((a) => a.mode === 'career') }],
+  ];
+  const slotW = CW / 10;
+  const glow = new Graphics();
+  const art = new Graphics();
+  const sel = new Graphics();
+  root.addChild(glow, sel, art);
+  const order: { a: Achievement; x: number; y: number }[] = [];
+  rows.forEach((groups, ri) => {
+    const shelfY = CY + (ri + 1) * ROW - 6;
+    // a glass shelf with a brass edge
+    cab.rect(CX, shelfY, CW, 2).fill({ color: 0xd8f0ff, alpha: 0.35 }).rect(CX, shelfY + 2, CW, 5).fill(0x3a2414);
+    for (const grp of groups) {
+      const start = grp.at ?? 0;
+      root.addChild(text(grp.label, CX + start * slotW + 3, shelfY + 2, { small: true, color: 0xc8a060, maxLines: 1 }));
+      grp.items.forEach((a, k) => {
+        const x = CX + (start + k) * slotW + slotW / 2;
+        order.push({ a, x, y: shelfY });
+        const lit = !!have[a.id];
+        if (lit) glow.ellipse(x, shelfY - 12, 18, 16).fill({ color: 0xffe0a0, alpha: 0.07 });
+        drawTrophy(art, a.id, x, shelfY, !lit, 1.2);
+        const hit = new Graphics().rect(x - slotW / 2, shelfY - ROW + 6, slotW, ROW - 6).fill({ color: 0, alpha: 0.001 });
+        hit.eventMode = 'static';
+        hit.cursor = 'pointer';
+        hit.on('pointerover', () => pick(order.findIndex((o) => o.a === a)));
+        hit.on('pointertap', () => pick(order.findIndex((o) => o.a === a)));
+        root.addChild(hit);
+      });
     }
-    y += 4;
-  }
-  sb.refresh();
+  });
+  // the plaque: the one you're looking at
+  const plaque = new Container();
+  plaque.position.set(CX, CY + ROW * 4 + 10);
+  root.addChild(plaque);
+  let cur = 0;
+  const pick = (i: number) => {
+    if (i < 0 || i >= order.length) return;
+    if (i !== cur) sfx('click');
+    cur = i;
+    const { a, x, y } = order[i];
+    const lit = !!have[a.id];
+    sel.clear();
+    sel.poly([x - 4, CY, x + 4, CY, x + slotW / 2, y, x - slotW / 2, y]).fill({ color: 0xfff2c8, alpha: 0.1 });
+    sel.rect(x - slotW / 2 + 1, y - ROW + 7, slotW - 2, ROW - 7).stroke({ color: PAL.gold, width: 1, alpha: 0.7 });
+    plaque.removeChildren().forEach((c) => c.destroy({ children: true }));
+    plaque.addChild(box(CW, 46, 0x2a1a10, 0xc8a060, { bevel: true }));
+    const big = new Graphics();
+    drawTrophy(big, a.id, 26, 42, !lit, 1.35);
+    plaque.addChild(big);
+    plaque.addChild(text(lit ? a.name : `${a.name}  (NOT YET)`, 56, 6, { color: lit ? PAL.gold : PAL.ash }));
+    plaque.addChild(text(a.desc, 56, 18, { small: true, color: PAL.bone, width: CW - 66, maxLines: 2 }));
+    const when = lit ? `WON ${new Date(have[a.id]).toLocaleDateString()}` : 'LOCKED';
+    plaque.addChild(text(when, 56, 35, { small: true, color: lit ? 0x8ad87a : PAL.grey }));
+  };
+  pick(Math.max(0, order.findIndex((o) => !have[o.a.id])));
+  const popKeys = g.pushKeyHandler((e) => {
+    if (e.type !== 'keydown') return false;
+    if (e.key === 'ArrowRight') pick(cur + 1);
+    else if (e.key === 'ArrowLeft') pick(cur - 1);
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      const { x, y } = order[cur];
+      const want = y + (e.key === 'ArrowDown' ? ROW : -ROW);
+      const cands = order.map((o, i) => ({ i, d: Math.abs(o.x - x) + (o.y === want ? 0 : 1e6) })).sort((p, q) => p.d - q.d);
+      if (cands[0] && cands[0].d < 1e6) pick(cands[0].i);
+    } else return false;
+    return true;
+  });
+  wrap.once('destroyed', popKeys);
 }
