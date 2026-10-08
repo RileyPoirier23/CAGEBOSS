@@ -10,6 +10,7 @@ import { openWindow } from './widgets';
 import { loadJSON, storeJSON } from '../core/save';
 import { ACHIEVEMENTS, earned, type Achievement } from '../sim/achievements';
 import { sfx } from '../audio/sfx';
+import { platformAchievement } from '../desktopsync';
 
 const KEY = 'cageboss.achievements';
 const unlocked = (): Record<string, number> => loadJSON<Record<string, number>>(KEY, {});
@@ -40,7 +41,10 @@ export function checkAchievements(g: Game): void {
   const have = unlocked();
   const fresh = earned(s).filter((a) => !have[a.id]);
   if (!fresh.length) return;
-  for (const a of fresh) have[a.id] = Date.now();
+  for (const a of fresh) {
+    have[a.id] = Date.now();
+    platformAchievement(a.id);
+  }
   storeJSON(KEY, have);
   const queue = [...fresh];
   const next = () => {

@@ -23,8 +23,11 @@ import { installTouch, attachTouchCanvas } from './ui/touch';
 import { installController } from './ui/controller';
 import { installNative } from './native';
 import { platform } from './core/platform';
+import { installSaveFiles, syncPlatformAchievements } from './desktopsync';
 
 async function boot() {
+  installSaveFiles(); // desktop: saves mirrored to files (Steam Cloud syncs those)
+  syncPlatformAchievements();
   loadBrowserContent();
   const game = new Game();
   document.body.dataset.platform = platform;

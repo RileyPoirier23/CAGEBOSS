@@ -6,27 +6,42 @@ press conferences, watch the fights, and try to stay out of prison.
 
 The full design spec lives in [`CAGE_BOSS_GAME_SPEC.md`](CAGE_BOSS_GAME_SPEC.md).
 
-## Playing (Windows)
+## Playing (Windows, Mac, Linux)
 
-CAGE BOSS is a desktop game. Grab `CAGE-BOSS-<version>-setup.exe` (installer, adds a desktop
-shortcut) or `CAGE-BOSS-<version>-portable.exe` (no install, just double-click) from the
-repo's **Releases** page, or from the **Actions → Desktop build** run artifacts.
+CAGE BOSS is a desktop game. Everything is on the repo's **Releases** page:
+
+| | |
+|---|---|
+| Windows | `CAGE-BOSS-Setup.exe` (installer, updates itself) or `CAGE-BOSS-Portable.exe` (no install) |
+| Mac | `CAGE-BOSS-Mac-AppleSilicon.dmg` (M1 and newer) or `CAGE-BOSS-Mac-Intel.dmg` |
+| Linux | `CAGE-BOSS-Linux.AppImage` (`chmod +x`, then run; updates itself) or `CAGE-BOSS-Linux.tar.gz` |
+
+**Mac:** the game isn't signed with a paid Apple developer certificate, so the first time you
+open it macOS says it "can't be checked". Right-click the app → **Open** → **Open** (or System
+Settings → Privacy & Security → **Open Anyway**). After that it opens normally. The Mac build
+tells you when there's a new version instead of updating itself.
 
 Rated R: swearing, crude jokes, violence. Settings has a streamer-safe bleep mode.
 
 It starts fullscreen; `F11` or `Alt+Enter` toggles windowed. Saves live in your user profile
-(`%APPDATA%/CAGE BOSS`).
+(`%APPDATA%/CAGE BOSS` on Windows, `~/Library/Application Support/CAGE BOSS` on Mac,
+`~/.config/CAGE BOSS` on Linux), and are mirrored as plain files in its `saves/` folder (back
+that folder up, copy it to another computer, or let Steam Cloud sync it: see
+[`docs/STEAM.md`](docs/STEAM.md)).
 
-### Building the .exe yourself
+### Building it yourself
 
 ```bash
 npm install
 npm run dist:win       # -> release/CAGE-BOSS-<version>-setup.exe and -portable.exe
+npm run dist:mac       # on a Mac -> release/CAGE-BOSS-<version>-mac-arm64.dmg / -x64.dmg
+npm run dist:linux     # -> release/CAGE-BOSS-<version>-linux-x86_64.AppImage / .tar.gz
 npm run desktop        # run the desktop build without packaging
 ```
 
-Pushing a tag like `v0.2.0` runs the GitHub workflow that builds both .exe files on Windows
-and attaches them to a Release.
+Every push builds Windows. Bumping the version in `package.json` (or pushing a tag like
+`v1.7.0`) runs the GitHub workflow on Windows, Mac and Linux runners and publishes a Release
+with all of them attached; installed copies pick the update up from there.
 
 ## Running from source (dev)
 
