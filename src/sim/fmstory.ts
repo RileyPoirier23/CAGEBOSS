@@ -25,7 +25,9 @@ export type FMMoment =
   | { kind: 'signing'; league: string; short: string; tier: Tier; promoter: string; terms: [string, string][]; blurb: string }
   | { kind: 'checkin'; who: StaffId; name: string; text: string }
   | { kind: 'story'; id: string; chapter: string; title: string; text: string; who: string; choices?: MomentChoice[] }
-  | { kind: 'interview'; phase: 'pre' | 'post'; reporter: string; outlet: string; q: string; choices: MomentChoice[] };
+  | { kind: 'interview'; phase: 'pre' | 'post'; reporter: string; outlet: string; q: string; choices: MomentChoice[] }
+  /** the end of the road: credits roll and the memorial */
+  | { kind: 'credits' };
 
 export interface StoryState {
   /** beats already shown */
@@ -337,6 +339,7 @@ export function storyWeek(s: GameState): void {
     if (ss.seen.includes(b.id) || !b.when(s, ss)) continue;
     ss.seen.push(b.id);
     pushMoment(s, { kind: 'story', id: b.id, chapter: b.chapter, title: b.title, text: b.text(s, ss), who: b.who, choices: b.choices });
+    if (b.id === 'c4_champ') pushMoment(s, { kind: 'credits' });
     return;
   }
 }

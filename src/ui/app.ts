@@ -303,11 +303,13 @@ export class Game {
 
   /** a hands-on fight is running (View / F1 cycles its camera instead of opening HELP) */
   inLiveFight = false;
+  /** an unskippable sequence (end credits) is playing: no HELP pop-ups */
+  cutscene = false;
 
   private tick(dt: number): void {
     this.tickNowPlaying(dt);
     // View / F1 anywhere: the HELP screen
-    if (!this.inLiveFight && input.pressed('help') && !this.modals.some((m) => (m as Container & { isHelp?: boolean }).isHelp)) openHelp(this);
+    if (!this.inLiveFight && !this.cutscene && input.pressed('help') && !this.modals.some((m) => (m as Container & { isHelp?: boolean }).isHelp)) openHelp(this);
     if (this.loader && !this.loader.update(dt)) {
       this.loader.destroy({ children: true });
       this.loader = null;

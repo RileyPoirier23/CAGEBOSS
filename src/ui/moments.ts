@@ -14,6 +14,7 @@ import { alertBox } from './widgets';
 import { fighterPortrait, npcPortrait, namedPortrait, reporterPortrait } from './sprites';
 import { content } from '../core/content';
 import { sfx } from '../audio/sfx';
+import { openEndCredits } from './endcredits';
 import { me } from '../sim/fighter';
 import { answerStory, answerInterview, type FMMoment } from '../sim/fmstory';
 import type { Rng } from '../core/rng';
@@ -39,6 +40,8 @@ export function showMoment(g: Game, s: GameState, m: FMMoment, rng: () => Rng, d
       return card(g, `MESSAGE  •  ${ROLE[m.who] ?? 'TEAM'}: ${m.name.toUpperCase()}`, m.text, npcPortrait(m.name, 'manager', 32), [{ id: 'ok', label: m.who === 'coach' ? 'YES COACH' : 'GOT IT' }], () => done(), PAL.sky);
     case 'story':
       return story(g, s, m, done);
+    case 'credits':
+      return openEndCredits(g, done);
     case 'interview': {
       const rep = content().reporters.find((r) => r.name === m.reporter);
       const face = rep ? reporterPortrait(rep, 32) : npcPortrait(m.reporter, 'fan', 32);

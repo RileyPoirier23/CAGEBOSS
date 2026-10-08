@@ -22,6 +22,7 @@ export const FIGHT_PAD_LAYOUT: FightPadLayout = {
     { id: 'BLOCK', label: 'BLOCK', x: W - 120, y: H - 32, r: 14, color: PAL.slate },
     { id: 'GRAB', label: 'GRAB', x: W - 78, y: H - 30, r: 14, color: PAL.ember },
     { id: 'EVADE', label: 'DODGE', x: W - 36, y: H - 22, r: 13, color: PAL.plum },
+    { id: 'BODY', label: 'BODY', x: W - 134, y: H - 64, r: 12, color: PAL.gold },
   ],
 };
 

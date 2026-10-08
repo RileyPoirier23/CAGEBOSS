@@ -25,7 +25,7 @@ export type FightButton =
   | 'getupLeft' | 'getupRight';
 
 /** Buttons on the on-screen touch fight pad (src/ui/fightpad.ts). */
-export type TouchFightButton = 'LEAD' | 'REAR' | 'KICK' | 'BLOCK' | 'GRAB' | 'EVADE';
+export type TouchFightButton = 'LEAD' | 'REAR' | 'KICK' | 'BLOCK' | 'GRAB' | 'EVADE' | 'BODY';
 
 export interface FightBinding {
   pad?: PadButton[];
@@ -49,7 +49,7 @@ export const DEFAULT_FIGHT_BINDINGS: Record<FightButton, FightBinding> = {
   grab: { pad: ['B'], keys: ['Space'], touch: ['GRAB'] },
   feint: { pad: ['Y'], keys: ['KeyU'] },
   // hold to send strikes to the body (the stick also works: down + punch)
-  body: { pad: ['LT'], keys: ['KeyO'] },
+  body: { pad: ['LT'], keys: ['KeyO'], touch: ['BODY'] },
   // right-stick flicks are read from the stick; these are the digital equivalents
   evadeUp: { keys: ['ArrowUp'] },
   evadeDown: { keys: ['ArrowDown'] },
@@ -60,13 +60,13 @@ export const DEFAULT_FIGHT_BINDINGS: Record<FightButton, FightBinding> = {
 };
 
 export const FIGHT_ACTIONS: Record<FightButton, FightActionInfo> = {
-  lead: { label: 'Lead hand', help: 'Tap = light, hold = medium/heavy. Stick: toward = hook, down = uppercut, up = overhand, neutral = jab' },
-  rear: { label: 'Rear hand', help: 'Same as lead; neutral = straight. Trigger pressure adds power' },
-  kick: { label: 'Kick', help: 'Stick up = head, neutral = body, down = low. On the ground: stick + this = advance / reverse / stand up' },
-  block: { label: 'Block / parry', help: 'Hold to block, tap just before a punch lands to parry' },
-  grab: { label: 'Clinch / shoot', help: 'Hold = clinch (stick toward = shoot a takedown). Tap while being shot = sprawl' },
-  feint: { label: 'Feint', help: 'Fake a strike' },
-  body: { label: 'Body modifier', help: 'Hold with a punch to go to the body (jab, straight, hook)' },
+  lead: { label: 'Lead hand', help: 'Tap = light, hold = heavy. Neutral jab, toward/up hook, down body jab, down+toward uppercut. Clinch: short hooks' },
+  rear: { label: 'Rear hand', help: 'Neutral straight, toward hook, up overhand, down body shot, down+toward uppercut, away spinning backfist. Clinch: heavy = elbow' },
+  kick: { label: 'Kick', help: 'Neutral body, up head, down leg, toward front kick, away spinning kick. Clinch: knees (up = head from the plum). Ground: pass / sweep / stand' },
+  block: { label: 'Block / parry', help: 'Hold to block (head high; body and legs leak through), tap just before a punch lands to parry' },
+  grab: { label: 'Grab', help: 'Hold = clinch (toward = shoot). Tap = sprawl. Clinch: up plum, toward underhooks, down trip, away break. Ground: + stick = submission' },
+  feint: { label: 'Feint', help: 'Fake a strike: a good one makes him flinch and opens a counter' },
+  body: { label: 'Body modifier', help: 'Hold with a punch to go to the body (jab, straight, hook). Same as stick down' },
   evadeUp: { label: 'Slip', help: 'Right stick flick up (or arrow)' },
   evadeDown: { label: 'Roll / duck', help: 'Right stick flick down' },
   evadeAway: { label: 'Pull', help: 'Right stick flick away from the opponent' },

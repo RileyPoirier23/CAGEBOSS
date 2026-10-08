@@ -13,6 +13,8 @@ import { sfx } from '../audio/sfx';
 
 const KEY = 'cageboss.achievements';
 const unlocked = (): Record<string, number> => loadJSON<Record<string, number>>(KEY, {});
+/** Has this achievement ever been unlocked (any save)? */
+export const hasAchievement = (id: string): boolean => !!unlocked()[id];
 
 function icon(kind: Achievement['icon'], big = false): Graphics {
   const g = new Graphics();
