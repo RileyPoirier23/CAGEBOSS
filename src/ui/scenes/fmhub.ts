@@ -45,6 +45,7 @@ import { officialsFor } from '../../sim/events';
 import { portrait, namedPortrait, reporterPortrait } from '../sprites';
 import { content } from '../../core/content';
 import { fightWeekShow } from '../faceoff';
+import { bossLive } from '../../sim/cast';
 
 const bar = (w: number, v: number, color: number): Graphics => {
   const g = new Graphics();
@@ -744,9 +745,12 @@ export class FMHubScene extends Scene {
           this.save(r2);
           const A = s.fighters[bout.a];
           const B = s.fighters[bout.b];
+          // the story's boss fights have their own rules (and one very bad referee)
+          const boss = bossLive(s, bout);
           openLiveFight(this.g, {
             bout, A, B, skills: [A.skills, B.skills], player: side(bout) as 0 | 1, plan: st.plan, oppPlan: oppPlan(2), cutTier: st.staff.cutman, seed,
-            event: ev.name, judges: off.judges.map((j) => j.name), referee: off.referee.name, sponsors: eventSponsors(s, ev), canvas: eventCanvas(s, ev), bare: !!st.fight?.bare, state: s, ev,
+            rules: boss.rules, refLook: boss.refLook,
+            event: ev.name, judges: off.judges.map((j) => j.name), referee: boss.referee ?? off.referee.name, sponsors: eventSponsors(s, ev), canvas: eventCanvas(s, ev), bare: !!st.fight?.bare, state: s, ev,
             done: (res) => {
               bout.result = res;
               done();

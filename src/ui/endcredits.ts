@@ -3,7 +3,7 @@
  * None of it can be skipped: everybody who finishes the road sees her.
  *
  *   In Memoriam: Yvette Collette (August 20th 1953 - October 7th 2026).
- *   Grandmother, Wife and Mother.
+ *   Grandmother, Sister, Wife and Mother.
  *
  * The portrait is her real photo, in black and white and reduced to pixels to sit in the game's
  * style, in front of a soft pixel backdrop (public/memorial/memere_portrait.png). Her photo is
@@ -166,7 +166,7 @@ export function buildMemorial(g: Game, close: () => void, waitSec = 0): Containe
   line('IN MEMORIAM', 30, 0x8a8478, { small: true });
   line('YVETTE COLLETTE', 41, 0xeee8dc, { scale: 2 });
   line('August 20th 1953  -  October 7th 2026', 64, 0xb8b2a6);
-  line('Grandmother, Wife and Mother.', 80, 0xeee8dc);
+  line('Grandmother, Sister, Wife and Mother.', 80, 0xeee8dc);
   c.addChild(new Graphics().rect(tx, 96, 60, 1).fill(0x5a5650));
   line('John 14:27', 104, 0x8a8478, { small: true });
   line('"Peace I leave with you; my peace I give to you. Not as the world gives do I give to you. Let not your hearts be troubled, neither let them be afraid."', 114, 0xd8d2c6, { maxLines: 5 });

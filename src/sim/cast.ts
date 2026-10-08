@@ -12,7 +12,10 @@
  *  - Spadam "The White Beast" Biggs: undefeated CBFC welterweight champion, 6'7", 99 overall.
  *    The last fight of the road, a superfight at welterweight, refereed by "Dirty" Daniel.
  */
-import type { Fighter, GameState, Skills } from '../core/types';
+import type { Bout, Fighter, GameState, Skills } from '../core/types';
+import type { FightOpts } from './fight';
+import type { LiveRules } from './live';
+import type { Look2 } from '../ui/rig';
 import type { OfficialDef } from '../core/content';
 import { Rng } from '../core/rng';
 import { content } from '../core/content';
@@ -57,7 +60,8 @@ const BOSSES: Record<string, BossDef> = {
   spadam: {
     id: 'spadam', first: 'Spadam', last: 'Biggs', nick: 'The White Beast', division: 'welter', height: 201, reach: 208, age: 30,
     country: 'Canada', hometown: 'Halifax, Nova Scotia', gym: 'Beast Mode Kickboxing',
-    look: { head: 3, skin: 0, hair: 1, hairColor: 4, beard: 1, brows: 0, eyes: 1, nose: 2, ears: 1, scar: 2, tattoo: 0, build: 2 },
+    // long brown hair and a beard, like a painting in a church. A church that does knees
+    look: { head: 3, skin: 0, hair: 9, hairColor: 1, beard: 3, brows: 1, eyes: 1, nose: 2, ears: 1, scar: 2, tattoo: 0, build: 2 },
     skills: { striking: 99, power: 99, wrestling: 99, grappling: 99, cardio: 99, chin: 99, fightIQ: 99, durability: 99, heart: 99, weightCut: 30 },
     record: [24, 0], styles: ['Kickboxer', 'Counter Striker'], traits: ['Showman', 'Business Savvy'],
     log: 'Six foot seven. Twenty-four and oh. Kickboxing world champion before he ever set foot in a cage. Has never been taken down. Has never had a point taken off him either, which is a story in itself.',
@@ -114,10 +118,12 @@ export type BossRule = 'leprechaun' | 'standup' | 'dirty' | null;
 
 /** The special rules for a fight against this opponent (only in the story, only for the title). */
 export function bossRule(s: GameState, oppId: string, title: boolean): BossRule {
-  const st = (s as GameState & { fm?: { legacy?: boolean; story?: unknown } }).fm;
+  const st = (s as GameState & { fm?: { legacy?: boolean; story?: { flags: Record<string, unknown> } } }).fm;
   if (!st || st.legacy || !st.story) return null;
-  if (oppId === 'wyatt' && title) return 'leprechaun';
-  if (oppId === 'zac' && title) return 'standup';
+  const done = (k: string) => st.story!.flags[k] === 1;
+  if (oppId === 'wyatt' && title && !done('wyattDone')) return 'leprechaun';
+  // once Zac has fired his manager, he grapples like he always should have
+  if (oppId === 'zac' && title && !done('zacDone')) return 'standup';
   if (oppId === 'spadam') return 'dirty';
   return null;
 }
@@ -134,3 +140,46 @@ export function unlockFighter(id: string): boolean {
   return true;
 }
 export const unlockedFighters = (): string[] => Object.keys(loadJSON<Record<string, number>>(UNLOCK_KEY, {}));
+
+// ------------------------------------------------------------------ the rules each boss fight runs under
+
+const WYATT_DQ = 'Wyatt drops into the full splits and punches straight up into the groin. A Johnny Cage special. The whole arena groans as one.';
+
+/** Which side the player is on in this bout, and the opponent's id (Road To Champion). */
+function storyBout(s: GameState, bout: Bout): { pSide: 0 | 1; opp: string; title: boolean } | null {
+  const st = (s as GameState & { fm?: { player: string; fight?: { title: string | null; tierTitle?: boolean } | null } }).fm;
+  if (!st || (bout.a !== st.player && bout.b !== st.player)) return null;
+  const pSide = bout.a === st.player ? 0 : 1;
+  return { pSide, opp: pSide === 0 ? bout.b : bout.a, title: !!(st.fight?.title || st.fight?.tierTitle) };
+}
+
+/** Simulated boss fights: the options for simulateFight (merged in by runBout). */
+export function bossSimOpts(s: GameState, bout: Bout): Partial<FightOpts> {
+  const sb = storyBout(s, bout);
+  if (!sb) return {};
+  const rule = bossRule(s, sb.opp, sb.title);
+  const oSide = (1 - sb.pSide) as 0 | 1;
+  if (rule === 'leprechaun') return { dq: { side: oSide, round: 3, text: WYATT_DQ } };
+  if (rule === 'standup') return { noGrappling: true };
+  if (rule === 'dirty') return { referee: DIRTY_DANIEL };
+  return {};
+}
+
+/** Hands-on boss fights: the live engine's rules, the referee and what he looks like. */
+export function bossLive(s: GameState, bout: Bout): { rules?: LiveRules; referee?: string; refLook?: Look2 } {
+  const sb = storyBout(s, bout);
+  if (!sb) return {};
+  const rule = bossRule(s, sb.opp, sb.title);
+  const oSide = (1 - sb.pSide) as 0 | 1;
+  if (rule === 'leprechaun') return { rules: { protectUntil: 3, dq: { side: oSide, round: 3, at: 95, text: WYATT_DQ } } };
+  if (rule === 'standup') return { rules: { noGrappling: true } };
+  if (rule === 'dirty') return { rules: { bought: oSide }, referee: DIRTY_DANIEL.name, refLook: DANIEL_REF_LOOK };
+  return {};
+}
+
+/** Daniel in the cage: referee black, curly mop, a little pudgy, glasses on (he only wears them working). */
+export const DANIEL_REF_LOOK: Look2 = {
+  skin: 0xf0cfae, hairStyle: 8, hairColor: 0x3b2a1e, beard: 0, build: 2, trunks: 0x111111, trim: 0x111111, glove: 0x2a5aa8,
+  stance: 'upright', female: false, tattoo: 0, glasses: 2,
+  outfit: { top: 0x141418, bottom: 0x1c1c22, bulk: 2, shortSleeves: true, hands: 0x4a7ad8, patch: 0xd8d8d8 },
+};

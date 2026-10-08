@@ -11,9 +11,11 @@ export const FRIENDS: [string, string][] = [
 ];
 /** The soundtrack: the artists, who they are, and their songs. */
 export const ARTISTS: [string, string, string][] = [
-  ['SANDOTHERAPPER', 'Aiden Thibodeau', 'Champion, fu2, Your Mom Hates Me, Doin Shit (with RUIN143)'],
+  ['SANDOTHERAPPER', 'Aiden Thibodeau', 'Champion, fu2, Your Mom Hates Me, Doin Shit (with RUIN143), Blicky Dance (with Jayson)'],
+  ['$cott', 'Ben Richard', 'Make Me Bleed, Maybe Its Me, TONY'],
   ['RUIN143', 'Parker Francis', 'ossa, Bloodhound for You, Come Closer (feat. SANDOTHERAPPER)'],
   ['Zuddha', 'Zuddha', 'All Hustle, A Moment w/ Grace (ft. FTB VON), Open to You, some interlude'],
   ['F.O.K.', '1ton', 'BAG ft. Hope Nikku (prod. Miler)'],
   ['EYE-V', '', 'Gen Apathy'],
+  ['Jayson', '', 'Blicky Dance (with SANDOTHERAPPER)'],
 ];

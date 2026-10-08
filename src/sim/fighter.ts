@@ -27,7 +27,7 @@ import { LOCAL_SPONSORS, REGIONAL_SPONSORS } from './sponsorship';
 import type { FMMoment, StoryState, FMStats } from './fmstory';
 import { gymWeek, gymTrainBonus } from './legacy';
 import { SCRUM } from './onetonlines';
-import { HAN } from './cast';
+import { HAN, isBoss } from './cast';
 import { pushMoment, signingMoment, storyPromote, storyWeek, storyOffers, storyResult, startStory, staffCheckin, interviewMoment, storyPurse, stats, isLegacy } from './fmstory';
 
 export type BodyPart = 'head' | 'jaw' | 'body' | 'larm' | 'rarm' | 'lhand' | 'rhand' | 'legs';
@@ -802,6 +802,13 @@ function sparPartner(s: GameState, rng: Rng, g: number): string {
   const st = fm(s);
   const p = st.partner!;
   p.spars++;
+  // Zac Buna (Road To Champion): the real thing. Grappling, every time, no drama
+  if (p.stage === 99) {
+    const f = me(s);
+    f.skills.grappling = clamp(f.skills.grappling + g * 0.9, 10, 99);
+    f.skills.wrestling = clamp(f.skills.wrestling + g * 0.5, 10, 99);
+    return `Rolled with ${p.name} for two hours: +${(g * 0.9).toFixed(1)} grappling, +${(g * 0.5).toFixed(1)} wrestling. He tapped you eleven times and apologised every time.`;
+  }
   let extra = '';
   // the storyline: he goes too hard, then the clip leaks, then you find out who he really works for
   if (p.stage === 0 && p.spars >= 2) {
@@ -842,9 +849,13 @@ export function calloutTargets(s: GameState): Fighter[] {
     const i = Math.max(0, st.ladder.indexOf(f.id));
     return st.ladder.slice(Math.max(0, i - 4), i).map((id) => s.fighters[id]).filter(Boolean).reverse();
   }
-  const wall = [undisputed(s, f.division)?.holder, ...(s.rankings[f.division] ?? [])].filter((x): x is string => !!x && x !== f.id);
+  const wall = [undisputed(s, f.division)?.holder, ...(s.rankings[f.division] ?? [])].filter((x): x is string => !!x && x !== f.id && !isBoss(x));
   const my = rankOf(s, f.id) ?? 16;
-  return wall.map((id) => s.fighters[id]).filter((x) => x && x.status === 'active').filter((x) => (rankOf(s, x.id) ?? 16) <= my + 2).slice(0, 8);
+  const out = wall.map((id) => s.fighters[id]).filter((x) => x && x.status === 'active').filter((x) => (rankOf(s, x.id) ?? 16) <= my + 2).slice(0, 8);
+  // once you're a champion, you can call out the Beast (he won't take it seriously)
+  const sp = s.fighters.spadam;
+  if (sp && sp.status === 'active' && Object.values(s.belts).some((b) => b.holder === f.id) && st.fight?.opp !== 'spadam') out.unshift(sp);
+  return out;
 }
 
 const CALLOUTS = [
@@ -855,6 +866,15 @@ const CALLOUTS = [
   "{x}'s cardio has a 3-minute warranty. I fight for 15.",
   "Hey {x}, I'm free whenever your mom lets you out.",
   "{x} fights like he's buffering. Let's go.",
+];
+/** Spadam Biggs, humbly egoing anyone who calls him out. */
+const SPADAM_EGO = [
+  'Love the energy, little guy. Genuinely. Eat some soup and get back to me.',
+  "Appreciate you, {you}. Big fan. Not of fighting you, but of you. Keep going champ.",
+  "Respect the hustle. I'll fight you when you're a welterweight. Or a building.",
+  "That's cute. My nephew called me out too. He's six. He had more reach.",
+  "Thank you for thinking of me. I'm booked until you're good.",
+  "Humbly: no. But I'll sign something for your gym.",
 ];
 const REPLIES = [
   "who?",
@@ -874,6 +894,13 @@ export function callOut(s: GameState, targetId: string, rng: Rng): string {
   st.ap--;
   const line = rng.pick(CALLOUTS).replace(/\{x\}/g, '@' + t.last.toLowerCase());
   post(s, '@' + f.last.toLowerCase(), line);
+  if (t.id === 'spadam') {
+    // the Beast doesn't fight people who call him out. He pats them on the head.
+    const ego = rng.pick(SPADAM_EGO).replace(/\{you\}/g, f.last);
+    post(s, '@whitebeastbiggs', ego);
+    f.hype = clamp(f.hype + 2, 0, 100);
+    return `You called out Spadam Biggs. He replied: "${ego}"`;
+  }
   heatUp(s, f.id, t.id, rng.int(12, 25));
   f.hype = clamp(f.hype + rng.int(3, 7), 0, 100);
   const reply = rng.chance(0.65);
@@ -1036,13 +1063,13 @@ export function makeOffers(s: GameState, rng: Rng, force = false): void {
   const wall = s.rankings[f.division] ?? [];
   const mine = rankOf(s, f.id);
   const champ = undisputed(s, f.division);
-  const pool = Object.values(s.fighters).filter((x) => x.division === f.division && x.id !== f.id && x.status === 'active' && x.promotion === 'us' && !x.injuries.some((i) => i.until > s.week));
+  const pool = Object.values(s.fighters).filter((x) => x.division === f.division && x.id !== f.id && x.status === 'active' && x.promotion === 'us' && !isBoss(x.id) && !x.injuries.some((i) => i.until > s.week));
   const pick = (list: Fighter[]) => (list.length ? rng.pick(list) : null);
   const n = 1 + (st.staff.manager >= 2 ? 1 : 0) + (rng.chance(0.4) ? 1 : 0);
   for (let i = 0; i < n && st.offers.length < 3; i++) {
     let opp: Fighter | null;
     let why: string;
-    if (mine !== null && mine <= 2 && champ?.holder && champ.holder !== f.id && i === 0) {
+    if (mine !== null && mine <= 2 && champ?.holder && champ.holder !== f.id && !isBoss(champ.holder) && i === 0) {
       opp = s.fighters[champ.holder];
       st.offers.push(offerVs(s, opp, rng, 'The CBFC matchmaker called. TITLE SHOT.', champ.id));
       continue;
@@ -1051,7 +1078,7 @@ export function makeOffers(s: GameState, rng: Rng, force = false): void {
       opp = pick(pool.filter((x) => !wall.includes(x.id)));
       why = rng.pick(['A step-up fight on the prelims.', 'Short notice, but a win is a win.', 'Their guy pulled out. You in?']);
     } else {
-      const above = wall.slice(Math.max(0, mine - 4), mine - 1).map((id) => s.fighters[id]).filter(Boolean);
+      const above = wall.slice(Math.max(0, mine - 4), mine - 1).map((id) => s.fighters[id]).filter((x) => x && !isBoss(x.id));
       opp = pick(above.length && rng.chance(0.6) ? above : pool.filter((x) => (rankOf(s, x.id) ?? 99) > mine));
       why = rng.pick(['Beat him and you jump the line.', 'A ranked scalp on the main card.', 'The matchmaker thinks you two will bleed for the cameras.']);
     }
@@ -1965,7 +1992,7 @@ function leagueWeek(s: GameState, rng: Rng): string[] {
   const ev: FightEvent = { id: 'lg' + s.week, name: `CBFC Fight Night ${s.week + 1}`, number: null, week: s.week, venue: 'ape_x', region: 'na', card: [], status: 'done', ppv: false, notes: ['league'] };
   const divs = rng.sample(s.divisionsOpen, Math.min(3, s.divisionsOpen.length));
   for (const d of divs) {
-    const wall = (s.rankings[d] ?? []).map((id) => s.fighters[id]).filter((x) => x && x.id !== st.player && x.id !== st.fight?.opp && x.status === 'active');
+    const wall = (s.rankings[d] ?? []).map((id) => s.fighters[id]).filter((x) => x && x.id !== st.player && x.id !== st.fight?.opp && x.status === 'active' && !isBoss(x.id));
     if (wall.length < 2) continue;
     const i = rng.int(0, wall.length - 2);
     const a = wall[i];
@@ -2042,7 +2069,7 @@ export function fightEvent(s: GameState, rng: Rng): FightEvent {
   // the rest of the card (the better the fighters, the higher they go). Watch them from cageside.
   const promo = sg.promo;
   const pool = Object.values(s.fighters)
-    .filter((x) => x.promotion === promo && x.status === 'active' && x.id !== f.id && x.id !== opp.id && !x.injuries.some((i) => i.until > s.week))
+    .filter((x) => x.promotion === promo && x.status === 'active' && x.id !== f.id && x.id !== opp.id && !isBoss(x.id) && !x.injuries.some((i) => i.until > s.week))
     .sort((a, b) => overall(b.skills) + b.hype * 0.3 - (overall(a.skills) + a.hype * 0.3));
   const used = new Set<string>();
   for (let pos = 0; pos < size; pos++) {
@@ -2174,7 +2201,7 @@ export function afterFight(s: GameState, ev: FightEvent, rng: Rng): string[] {
   st.oppFlagged = false;
   // your night isn't over: presser, 1ton, whatever else happened in the tunnel
   fightNightEvents(s, ev, rng);
-  storyResult(s, tierAt, o.opp, won, lost, !!o.title);
+  storyResult(s, tierAt, o.opp, won, lost, !!(o.title || o.tierTitle));
   storyWeek(s);
   if (st.tier === 'of') {
     const rk = rankOf(s, f.id);
