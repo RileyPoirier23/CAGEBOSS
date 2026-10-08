@@ -5,6 +5,11 @@
 class_name PX
 extends RefCounted
 
+## profiling (PROF=1): time in Graphics fill/stroke and per ticker listener
+static var prof := false
+static var prof_gfx_us := 0
+static var prof_gfx_n := 0
+static var prof_ticker := {}
 ## false once the engine is shutting down (the RenderingServer may already be gone)
 static var alive := true
 ## the canvas item everything hangs off (set by PXHost)
@@ -33,6 +38,16 @@ static func color(c, alpha = 1.0) -> Color:
 	if c == null: return Color(0, 0, 0, alpha)
 	var n = int(c)
 	return Color8((n >> 16) & 255, (n >> 8) & 255, n & 255, 255) * Color(1, 1, 1, alpha)
+
+static var _rgb_cache := {}
+## an opaque 0xRRGGBB colour (cached: the UI uses a few hundred)
+static func rgb(c: float) -> Color:
+	var col = _rgb_cache.get(c)
+	if col == null:
+		var n = int(c)
+		col = Color8((n >> 16) & 255, (n >> 8) & 255, n & 255, 255)
+		_rgb_cache[c] = col
+	return col
 
 static func _v(p) -> Vector2:
 	if p is Vector2: return p
@@ -122,6 +137,13 @@ static func _rect_of(r: Rect2) -> Rectangle:
 
 class EventEmitter extends RefCounted:
 	var _px_ev := {}
+	## JS objects take any property (the UI hangs data off display objects)
+	var _px_extra := {}
+	func _set(p: StringName, v) -> bool:
+		_px_extra[p] = v
+		return true
+	func _get(p: StringName):
+		return _px_extra.get(p)
 	func on(ev, fn, _ctx = null):
 		if not _px_ev.has(ev): _px_ev[ev] = []
 		_px_ev[ev].append([fn, false])
@@ -621,8 +643,12 @@ class Graphics extends Container_:
 		_tick = 0
 
 	func fill(style = null, alpha = null):
-		var st = _style(style, alpha)
-		var col = PX.color(st["color"], float(st["alpha"]))
+		var _pt0 = Time.get_ticks_usec() if PX.prof else 0
+		var col: Color
+		if style is float and alpha == null: col = PX.rgb(style)
+		else:
+			var st = _style(style, alpha)
+			col = PX.color(st["color"], float(st["alpha"]))
 		var p = _take_path("stroke")
 		for s in p:
 			match s[0]:
@@ -646,6 +672,9 @@ class Graphics extends Container_:
 						_grow(_pts_rect(pts))
 						_hit_shapes.append(["poly", pts])
 		_done("fill", p)
+		if PX.prof:
+			PX.prof_gfx_us += Time.get_ticks_usec() - _pt0
+			PX.prof_gfx_n += 1
 		return self
 	static func _pts_rect(pts: PackedVector2Array) -> Rect2:
 		var r = Rect2(pts[0], Vector2.ZERO)
@@ -929,7 +958,13 @@ class Ticker extends RefCounted:
 		for e in _ls.duplicate():
 			if not _ls.has(e): continue
 			if e[3]: _ls.erase(e)
-			JS.call_(e[0], [self])
+			if PX.prof:
+				var t0 = Time.get_ticks_usec()
+				JS.call_(e[0], [self])
+				var k = str(e[0].get_method()) + "@" + str(e[0].get_object().get_script().resource_path.get_file() if e[0].get_object() != null and e[0].get_object().get_script() != null else "?")
+				PX.prof_ticker[k] = PX.prof_ticker.get(k, 0) + Time.get_ticks_usec() - t0
+			else:
+				JS.call_(e[0], [self])
 
 # ------------------------------------------------------------------ application
 

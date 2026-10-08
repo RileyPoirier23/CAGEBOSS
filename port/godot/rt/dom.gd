@@ -259,7 +259,11 @@ static func _pad(id: int) -> Dictionary:
 		else: v = 1.0 if Input.is_joy_button_pressed(id, b) else 0.0
 		buttons.append({"pressed": v > 0.5, "touched": v > 0.0, "value": v})
 	var axes = [Input.get_joy_axis(id, JOY_AXIS_LEFT_X), Input.get_joy_axis(id, JOY_AXIS_LEFT_Y), Input.get_joy_axis(id, JOY_AXIS_RIGHT_X), Input.get_joy_axis(id, JOY_AXIS_RIGHT_Y)]
-	return {"index": float(id), "id": Input.get_joy_name(id), "connected": true, "mapping": "standard", "timestamp": float(Time.get_ticks_msec()), "buttons": buttons, "axes": axes, "vibrationActuator": null}
+	var rumble = {"playEffect": func(_kind = null, o = null):
+		if o is Dictionary:
+			Input.start_joy_vibration(id, float(o.get("weakMagnitude", 0.0)), float(o.get("strongMagnitude", 0.0)), float(o.get("duration", 150.0)) / 1000.0)
+		return JSPromise.resolve("complete")}
+	return {"index": float(id), "id": Input.get_joy_name(id), "connected": true, "mapping": "standard", "timestamp": float(Time.get_ticks_msec()), "buttons": buttons, "axes": axes, "vibrationActuator": rumble}
 
 # ------------------------------------------------------------------ functions
 

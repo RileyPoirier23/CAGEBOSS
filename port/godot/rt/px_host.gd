@@ -44,8 +44,11 @@ func _sync_window() -> void:
 	DOM.window.innerWidth = float(s.x)
 	DOM.window.innerHeight = float(s.y)
 
+static var script_ms := 0.0
+
 func _process(_delta: float) -> void:
-	var now = Time.get_ticks_usec() / 1000.0
+	var t0 = Time.get_ticks_usec()
+	var now = t0 / 1000.0
 	var dt = now - _last_ms
 	_last_ms = now
 	DOM.run_animation_frames(now)
@@ -56,6 +59,7 @@ func _process(_delta: float) -> void:
 	JS.flush_microtasks()
 	for m in PX._masked.duplicate(): m._update_mask()
 	_update_cursor()
+	script_ms = (Time.get_ticks_usec() - t0) / 1000.0
 
 # ------------------------------------------------------------------ input
 

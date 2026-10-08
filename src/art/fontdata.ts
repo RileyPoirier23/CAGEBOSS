@@ -250,7 +250,23 @@ export const SMALL_FACE: FontFace = {
 };
 
 /** Normalise typographic characters to ones the fonts have. */
+/** Text layout runs every frame for HUDs; these memos keep it cheap (bounded, cleared when full). */
+const MEMO_MAX = 4000;
+const normMemo = new Map<string, string>();
+const lineMemo = new Map<string, number>();
+const wrapMemo = new Map<string, string[]>();
+const widthMemo = new Map<string, Map<string, number>>();
+
 export function normalizeText(s: string): string {
+  const hit = normMemo.get(s);
+  if (hit !== undefined) return hit;
+  const v = normalizeTextRaw(s);
+  if (normMemo.size >= MEMO_MAX) normMemo.clear();
+  normMemo.set(s, v);
+  return v;
+}
+
+function normalizeTextRaw(s: string): string {
   return s
     .replace(/[‘’‛]/g, "'")
     .replace(/[“”]/g, '"')
@@ -272,13 +288,32 @@ export function glyphFor(face: FontFace, ch: string): string[] | null {
 }
 
 export function charWidth(face: FontFace, ch: string): number {
-  if (ch === ' ') return face.spaceWidth;
-  const g = glyphFor(face, ch) ?? glyphFor(face, '?');
-  return g ? g[0].length : face.spaceWidth;
+  let m = widthMemo.get(face.name);
+  if (!m) widthMemo.set(face.name, (m = new Map()));
+  const hit = m.get(ch);
+  if (hit !== undefined) return hit;
+  let w: number;
+  if (ch === ' ') w = face.spaceWidth;
+  else {
+    const g = glyphFor(face, ch) ?? glyphFor(face, '?');
+    w = g ? g[0].length : face.spaceWidth;
+  }
+  m.set(ch, w);
+  return w;
 }
 
 /** Width in pixels of a single line (no wrapping, markup stripped). */
 export function measureLine(face: FontFace, s: string): number {
+  const key = face.name + '\u0000' + s;
+  const hit = lineMemo.get(key);
+  if (hit !== undefined) return hit;
+  const w = measureLineRaw(face, s);
+  if (lineMemo.size >= MEMO_MAX) lineMemo.clear();
+  lineMemo.set(key, w);
+  return w;
+}
+
+function measureLineRaw(face: FontFace, s: string): number {
   let w = 0;
   let first = true;
   for (const ch of stripMarkup(normalizeText(s))) {
@@ -299,6 +334,16 @@ export function stripMarkup(s: string): string {
  * markup tokens (which have zero width).
  */
 export function wrapText(face: FontFace, text: string, maxWidth: number): string[] {
+  const key = face.name + '\u0000' + maxWidth + '\u0000' + text;
+  const hit = wrapMemo.get(key);
+  if (hit) return hit.slice();
+  const out = wrapTextRaw(face, text, maxWidth);
+  if (wrapMemo.size >= MEMO_MAX) wrapMemo.clear();
+  wrapMemo.set(key, out.slice());
+  return out;
+}
+
+function wrapTextRaw(face: FontFace, text: string, maxWidth: number): string[] {
   const out: string[] = [];
   for (const para of normalizeText(text).split('\n')) {
     const words = para.split(' ');

@@ -95,6 +95,8 @@ function kindOfType(t, depth = 0) {
   if (name === 'RegExp') return 'regexp';
   if (name === 'Array' || name === 'ReadonlyArray' || name === 'RegExpMatchArray' || name === 'RegExpExecArray' || name === 'Uint8ClampedArray' || name === 'Uint8Array') return 'array';
   if (name === 'Promise') return 'dict';
+  // Map/Set iterators are plain arrays here
+  if (name === 'MapIterator' || name === 'SetIterator' || name === 'ArrayIterator' || name === 'IterableIterator' || name === 'IteratorObject' || name === 'BuiltinIterator') return 'array';
   if (name === 'String') return 'string';
   if (name === 'Number') return 'number';
   if (name === 'Date') return 'any';
@@ -458,6 +460,7 @@ class ModuleEmitter {
     const prevLoops = this.loops;
     this.loops = [];
     this.fn = new Fn(node, null);
+    this.fn.prof = PROFILE && name !== 'constructor';
     this.analyzeBoxing(node, this.fn.root);
     const { ps, pro } = this.params(node, '\t');
     const body = [...pro, ...this.predeclLines(node, '\t')];
@@ -479,6 +482,10 @@ class ModuleEmitter {
       }
     }
     const fname = isMethod ? memberName(name) : safe(name);
+    if (PROFILE && fname !== '_init' && this.fn.prof) {
+      body.unshift(`\tJS.prof_enter(${gdStr(this.cls.slice(2) + '.' + fname)})`);
+      body.push('\tJS.prof_exit()');
+    }
     const lines = [`${head} ${fname}(${ps.join(', ')}):`, ...(body.length ? body : ['\tpass'])];
     this.fn = prevFn;
     this.loops = prevLoops;
@@ -737,6 +744,12 @@ class ModuleEmitter {
       case ts.SyntaxKind.ReturnStatement: {
         const v = s.expression ? this.E(s.expression, pre) : '';
         flush();
+        if (this.fn.prof) {
+          if (v) out.push(`${ind}var _pr = ${v}`);
+          out.push(`${ind}JS.prof_exit()`);
+          out.push(`${ind}return${v ? ' _pr' : ''}`);
+          return;
+        }
         out.push(`${ind}return${v ? ' ' + v : ''}`);
         return;
       }
@@ -1651,7 +1664,17 @@ class ModuleEmitter {
     const i = this.E(n.argumentExpression, pre);
     const opt = !!n.questionDotToken || isInOptionalChain(n);
     const wrap = (v) => (opt ? (pureExpr(n.expression) ? `(null if ${o} == null else ${v})` : `JS.idx(${o}, ${i})`) : v);
-    if (objK === 'array') return wrap(`JS.ai(${o}, ${i})`);
+    if (objK === 'array') {
+      // a tuple read at a constant index in range: plain indexing
+      const t = checker.getTypeAtLocation(n.expression);
+      if (!opt && checker.isTupleType(t) && ts.isNumericLiteral(n.argumentExpression)) {
+        const k = Number(n.argumentExpression.text);
+        const fixed = t.target?.fixedLength ?? checker.getTypeArguments(t).length;
+        const minLen = t.target?.minLength ?? fixed;
+        if (Number.isInteger(k) && k < minLen) return `${o}[${k}]`;
+      }
+      return wrap(`JS.ai(${o}, ${i})`);
+    }
     if (objK === 'string') return wrap(`JS.s_idx(${o}, ${i})`);
     if (objK === 'dict') return wrap(`${o}.get(${ik === 'string' ? i : `JS.key(${i})`})`);
     if (objK === 'map') return wrap(`${o}.get_(${i})`);
@@ -1787,6 +1810,18 @@ class ModuleEmitter {
       }
       if (d && ts.isFunctionDeclaration(d) && isModuleLevel(d)) return this.directCall(d, n, pre);
       if (d && fromNodeModules(d)) return `PX.${callee.text}(${this.args(n.arguments, pre).join(', ')})`;
+    }
+    // a local arrow function called with an argument count it accepts: call it directly
+    if (ts.isIdentifier(callee) && !optCall && !n.arguments.some((x) => ts.isSpreadElement(x))) {
+      const d = declOf(resolve(checker.getSymbolAtLocation(callee)));
+      const init = d && ts.isVariableDeclaration(d) && d.parent.flags & ts.NodeFlags.Const ? d.initializer : null;
+      if (init && (ts.isArrowFunction(init) || ts.isFunctionExpression(init)) && !init.parameters.some((p) => p.dotDotDotToken)) {
+        const required = init.parameters.filter((p) => !p.initializer && !p.questionToken).length;
+        if (n.arguments.length >= required && n.arguments.length <= init.parameters.length) {
+          const f = this.E(callee, pre);
+          return `${f}.call(${this.args(n.arguments, pre).join(', ')})`;
+        }
+      }
     }
     // a callable value
     const f = this.E(callee, pre);
@@ -2085,6 +2120,8 @@ const spreadOrList = (em, args, pre) => {
 /** Godot's built-in class names: a script class can't reuse one (Container, Button, Input...) */
 const NATIVE = new Set(JSON.parse(fs.readFileSync(path.join(REPO, 'tools/gdport/godot_classes.json'), 'utf8')));
 const clsName = (n) => (NATIVE.has(n) ? n + '_' : safe(n));
+/** GDPROF=1: every function records its own time (JS.prof_report) */
+const PROFILE = !!process.env.GDPROF;
 const OVERRIDES = JSON.parse(fs.readFileSync(path.join(REPO, 'tools/gdport/overrides.json'), 'utf8'));
 const DOM_OBJS = new Set(['window', 'document', 'navigator', 'location']);
 const DOM_CLASSES = new Set(['Audio', 'ResizeObserver', 'KeyboardEvent', 'PointerEvent', 'WheelEvent', 'MouseEvent', 'TouchEvent', 'Event', 'CustomEvent']);

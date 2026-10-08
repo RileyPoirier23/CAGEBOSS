@@ -22,6 +22,7 @@ import { boutLabel } from '../sim/events';
 import { rankLabel } from '../sim/rankings';
 import { PAL } from '../art/palette';
 import { W, H, text, button, box } from './kit';
+import type { PixelText, TextOpts } from './text';
 import { ArenaView, AH, AW, type CanvasInfo } from './arena';
 import { input } from '../core/input';
 import { isTouchDevice } from '../core/platform';
@@ -259,6 +260,20 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     // legs
     hudG.rect(x + 3, y + 17, 4, 9).fill(col(f.legs)).rect(x + 9, y + 17, 4, 9).fill(col(f.legs));
   };
+  // The HUD is rebuilt every frame: a text is reused while its words, style and place stay the same.
+  const hudPool = new Map<string, PixelText>();
+  let hudUsed = new Set<string>();
+  const hudText = (s: string, x: number, y: number, opts: TextOpts = {}): PixelText => {
+    let key = `${s}\u0001${x}|${y}|${opts.small ? 1 : 0}|${opts.color ?? ''}|${opts.width ?? ''}|${opts.align ?? ''}|${opts.maxLines ?? ''}|${opts.scale ?? ''}|${opts.shadow ?? ''}`;
+    while (hudUsed.has(key)) key += '+';
+    let t = hudPool.get(key);
+    if (!t || t.destroyed) {
+      t = text(s, x, y, opts);
+      hudPool.set(key, t);
+    } else t.y = Math.round(y);
+    hudUsed.add(key);
+    return t;
+  };
   const heart = (x: number, y: number, i: Side) => {
     const f = L.F[i];
     const beat = (performance.now() / 1000) * (f.bpm / 60);
@@ -266,13 +281,13 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     const c = f.bpm > 165 ? PAL.blood : f.bpm > 135 ? PAL.ember : 0xd04050;
     const s = pulse ? 1 : 0;
     hudG.rect(x + 1 - s, y, 2 + s, 2).fill(c).rect(x + 4, y, 2 + s, 2).fill(c).rect(x - s, y + 1, 7 + s * 2, 2).fill(c).rect(x + 1, y + 3, 5, 1).fill(c).rect(x + 2, y + 4, 3, 1).fill(c).rect(x + 3, y + 5, 1, 1).fill(c);
-    dyn.addChild(text(`${Math.round(f.bpm)} BPM`, x + 10, y - 1, { small: true, color: f.bpm > 165 ? PAL.blood : PAL.bone }));
+    dyn.addChild(hudText(`${Math.round(f.bpm)} BPM`, x + 10, y - 1, { small: true, color: f.bpm > 165 ? PAL.blood : PAL.bone }));
   };
   const bar = (x: number, y: number, w: number, v: number, c: number, label: string, right = false) => {
     hudG.rect(x, y, w, 4).fill(PAL.night);
     const n = Math.round(w * Math.max(0, Math.min(1, v)));
     hudG.rect(right ? x + w - n : x, y, n, 4).fill(c);
-    dyn.addChild(text(label, right ? x - 26 : x + w + 3, y - 2, { small: true, color: PAL.ash }));
+    dyn.addChild(hudText(label, right ? x - 26 : x + w + 3, y - 2, { small: true, color: PAL.ash }));
   };
 
   /** Where the fight is, in words: no button prompts (HELP has those), just the state. */
@@ -293,7 +308,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
 
   const drawHud = () => {
     hudG.clear();
-    dyn.removeChildren().forEach((c) => c.destroy({ children: true }));
+    dyn.removeChildren();
+    hudUsed = new Set();
     // left / right panels
     for (const i of [0, 1] as Side[]) {
       const left = i === 0;
@@ -304,11 +320,11 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       bar(left ? x : x + 26, y0 + 31, 50, L.F[i].hp / 100, L.F[i].hp > 40 ? PAL.moss : PAL.blood, 'HEAD', !left);
     }
     // centre: clock + control prompts
-    dyn.addChild(text(`ROUND ${L.round}/${L.rounds}   ${L.clockText()}`, 0, y0 + 3, { width: W, align: 'center', color: PAL.gold }));
-    if (autopilot) dyn.addChild(text(hint('AUTOPILOT (ESC to take over)', 'AUTOPILOT ({Menu} to take over)'), 0, y0 + 14, { width: W, align: 'center', small: true, color: PAL.ember }));
+    dyn.addChild(hudText(`ROUND ${L.round}/${L.rounds}   ${L.clockText()}`, 0, y0 + 3, { width: W, align: 'center', color: PAL.gold }));
+    if (autopilot) dyn.addChild(hudText(hint('AUTOPILOT (ESC to take over)', 'AUTOPILOT ({Menu} to take over)'), 0, y0 + 14, { width: W, align: 'center', small: true, color: PAL.ember }));
     const sit = situation();
     if (sit) {
-      dyn.addChild(text(sit.text, 150, y0 + (autopilot ? 25 : 16), { width: W - 300, align: 'center', small: true, color: sit.color, maxLines: 2 }));
+      dyn.addChild(hudText(sit.text, 150, y0 + (autopilot ? 25 : 16), { width: W - 300, align: 'center', small: true, color: sit.color, maxLines: 2 }));
       // progress on the mat: your passing / escape work
       if (L.pos === 'ground' && !L.sub) {
         const v = Math.max(0, Math.min(1, L.top === P ? L.gprog : L.standProg));
@@ -316,23 +332,20 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       }
     }
     // the booth and the play-by-play, newest at the bottom
-    if (stage === 'tape' || stage === 'intro') dyn.addChild(text(hint('ENTER / A: SKIP THE INTROS', '{A}: SKIP THE INTROS'), 0, H - 11, { small: true, color: PAL.grey, width: W, align: 'center' }));
+    if (stage === 'tape' || stage === 'intro') dyn.addChild(hudText(hint('ENTER / A: SKIP THE INTROS', '{A}: SKIP THE INTROS'), 0, H - 11, { small: true, color: PAL.grey, width: W, align: 'center' }));
     else {
       const speakers = content().commentary.speakers;
       const rows: { t: string; c: number }[] = booth.slice(-3).map((l) => ({ t: `{#${speakers[l.speaker!]?.color ?? 'c4a04a'}}${speakers[l.speaker!]?.short ?? l.speaker!.toUpperCase()}:{/} ${l.text}`, c: PAL.fog }));
       let yy = H - 12;
       if (lineT > 0) {
-        dyn.addChild(text(lastLine, 112, yy, { small: true, color: PAL.gold, width: W - 224, align: 'center', maxLines: 1 }));
+        dyn.addChild(hudText(lastLine, 112, yy, { small: true, color: PAL.gold, width: W - 224, align: 'center', maxLines: 1 }));
         yy -= 10;
       }
       for (const r of rows.reverse()) {
-        const t = text(r.t, 112, 0, { small: true, color: r.c, width: W - 224, maxLines: 3 });
+        const t = hudText(r.t, 112, 0, { small: true, color: r.c, width: W - 224, maxLines: 3 });
         yy -= t.textHeight - 6;
         t.y = yy;
-        if (yy < y0 + 44) {
-          t.destroy();
-          break;
-        }
+        if (yy < y0 + 44) break;
         dyn.addChild(t);
         yy -= 10;
       }
@@ -342,17 +355,23 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       if (L.F[i].down <= 0) continue;
       const mma = (L.rules.koRules ?? 'mma') === 'mma';
       // MMA: no count. He's down: jump on him (any attack) or let him up. Bareknuckle and smokers count.
-      if (!mma) dyn.addChild(text(`${L.countOf(i)}`, 0, 40, { width: W, align: 'center', color: PAL.bone, scale: 3, shadow: PAL.ink }));
-      else if (i !== P && !autopilot) dyn.addChild(text('HE\'S DOWN! JUMP ON HIM!', 0, 48, { width: W, align: 'center', color: PAL.gold, scale: 2, shadow: PAL.ink }));
+      if (!mma) dyn.addChild(hudText(`${L.countOf(i)}`, 0, 40, { width: W, align: 'center', color: PAL.bone, scale: 3, shadow: PAL.ink }));
+      else if (i !== P && !autopilot) dyn.addChild(hudText('HE\'S DOWN! JUMP ON HIM!', 0, 48, { width: W, align: 'center', color: PAL.gold, scale: 2, shadow: PAL.ink }));
       if (i === P && !autopilot) {
         hudG.rect(W / 2 - 60, 78, 120, 6).fill(PAL.night).rect(W / 2 - 59, 79, Math.round(118 * Math.min(1, L.F[i].getup)), 4).fill(PAL.gold);
-        dyn.addChild(text('GET UP!', 0, 88, { width: W, align: 'center', small: true, color: PAL.gold, shadow: PAL.ink }));
+        dyn.addChild(hudText('GET UP!', 0, 88, { width: W, align: 'center', small: true, color: PAL.gold, shadow: PAL.ink }));
       }
     }
     if (L.sub) {
       const v = Math.max(0, Math.min(1, L.sub.prog));
       hudG.rect(W / 2 - 80, 30, 160, 8).fill(PAL.night).rect(W / 2 - 79, 31, Math.round(158 * v), 6).fill(L.sub.atk === P ? PAL.moss : PAL.blood);
-      dyn.addChild(text(L.sub.name.toUpperCase(), 0, 20, { width: W, align: 'center', small: true, color: PAL.gold, shadow: PAL.ink }));
+      dyn.addChild(hudText(L.sub.name.toUpperCase(), 0, 20, { width: W, align: 'center', small: true, color: PAL.gold, shadow: PAL.ink }));
+    }
+    // texts that left the HUD this frame
+    for (const [k, t] of hudPool) {
+      if (hudUsed.has(k)) continue;
+      t.destroy();
+      hudPool.delete(k);
     }
   };
 

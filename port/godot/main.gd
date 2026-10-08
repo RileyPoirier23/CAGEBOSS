@@ -4,6 +4,7 @@ extends Node
 var game = null
 
 func _ready() -> void:
+	PX.prof = OS.get_environment("PROF") != ""
 	var host = PXHost.new()
 	host.name = "PX"
 	add_child(host)
@@ -46,7 +47,16 @@ func _process(dt: float) -> void:
 	_fps_t += dt
 	if OS.get_environment("FPS") != "" and _fps_t > 1.0:
 		_fps_t = 0.0
-		printerr("fps %d  frame %.1f ms" % [Engine.get_frames_per_second(), dt * 1000.0])
+		if PX.prof:
+			var tk = PX.prof_ticker.keys()
+			tk.sort_custom(func(a, b): return PX.prof_ticker[a] > PX.prof_ticker[b])
+			for k in tk.slice(0, 4): printerr("   ticker %s %.1f ms/s" % [k, PX.prof_ticker[k] / 1000.0])
+			printerr("   gfx fill %.1f ms/s (%d)" % [PX.prof_gfx_us / 1000.0, PX.prof_gfx_n])
+			JS.prof_report()
+			PX.prof_ticker.clear()
+			PX.prof_gfx_us = 0
+			PX.prof_gfx_n = 0
+		printerr("fps %d  frame %.1f ms  script %.1f ms  items %d  draws %d" % [Engine.get_frames_per_second(), dt * 1000.0, PXHost.script_ms, Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME), Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)])
 	if _shot == "": return
 	_t += dt
 	if _t >= _shot_at:

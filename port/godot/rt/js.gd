@@ -112,13 +112,19 @@ static func to_int32(v) -> int:
 static func to_uint32(v) -> int:
 	return to_int32(v) & 0xFFFFFFFF
 
-static func bor(a, b) -> float: return float(to_int32(to_int32(a) | to_int32(b)))
-static func band(a, b) -> float: return float(to_int32(to_int32(a) & to_int32(b)))
-static func bxor(a, b) -> float: return float(to_int32(to_int32(a) ^ to_int32(b)))
-static func bnot(a) -> float: return float(to_int32(~to_int32(a)))
-static func shl(a, b) -> float: return float(to_int32(to_int32(a) << (to_uint32(b) & 31)))
-static func shr(a, b) -> float: return float(to_int32(a) >> (to_uint32(b) & 31))
-static func ushr(a, b) -> float: return float(to_uint32(a) >> (to_uint32(b) & 31))
+static func bor(a, b) -> float: return float(_i32(a) | _i32(b))
+## ToInt32 with a fast path for the usual case (a float already in int32 range)
+static func _i32(v) -> int:
+	if typeof(v) == TYPE_FLOAT:
+		var f: float = v
+		if absf(f) < 2147483648.0: return int(f)
+	return to_int32(v)
+static func band(a, b) -> float: return float(_i32(a) & _i32(b))
+static func bxor(a, b) -> float: return float(_i32(a) ^ _i32(b))
+static func bnot(a) -> float: return float(~_i32(a))
+static func shl(a, b) -> float: return float(_wrap32(_i32(a) << (_i32(b) & 31)))
+static func shr(a, b) -> float: return float(_i32(a) >> (_i32(b) & 31))
+static func ushr(a, b) -> float: return float((_i32(a) & 0xFFFFFFFF) >> (_i32(b) & 31))
 
 static func imul(a, b) -> float:
 	return float(_wrap32(to_int32(a) * to_int32(b)))
@@ -1206,3 +1212,33 @@ static func _ls_write(k: String) -> void:
 	if f:
 		f.store_string(_ls_data[k])
 		f.close()
+# ------------------------------------------------------------------ profiling (translator built with GDPROF=1)
+
+static var _pstack: Array = []
+static var prof_tbl := {}
+
+static func prof_enter(n: String) -> void:
+	_pstack.append([n, Time.get_ticks_usec(), 0])
+
+static func prof_exit() -> void:
+	if _pstack.is_empty(): return
+	var e = _pstack.pop_back()
+	var el = Time.get_ticks_usec() - e[1]
+	var r = prof_tbl.get(e[0])
+	if r == null:
+		r = [0, 0, 0]
+		prof_tbl[e[0]] = r
+	r[0] += el - e[2]
+	r[1] += 1
+	r[2] += el
+	if not _pstack.is_empty(): _pstack[-1][2] += el
+
+## top functions by exclusive time since the last report
+static func prof_report(n := 15) -> void:
+	var ks = prof_tbl.keys()
+	var by = 2 if OS.get_environment("PROF") == "incl" else 0
+	ks.sort_custom(func(a, b): return prof_tbl[a][by] > prof_tbl[b][by])
+	for k in ks.slice(0, n):
+		printerr("   %-50s excl %7.1f ms  incl %7.1f ms  calls %d" % [k, prof_tbl[k][0] / 1000.0, prof_tbl[k][2] / 1000.0, prof_tbl[k][1]])
+	prof_tbl.clear()
+	_pstack.clear()

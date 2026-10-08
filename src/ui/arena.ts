@@ -545,38 +545,55 @@ export class ArenaView extends Container {
     });
   }
 
+  /** The crowd's seats (positions and colours) for this room: fixed, so worked out once. */
+  private crowdSeats: { x: number; y: number; v: number; head: number; body: number; fist: number }[] | null = null;
+  private crowdKey = '';
+
   private drawCrowd(): void {
     const g = this.crowd;
-    g.clear();
     // smaller rooms, smaller crowds: a bingo hall is half empty, the CBFC is sold out
     const style = this.canvasStyle;
-    const fill = { local: 0.45, bk: 0.55, regional: 0.8, pfl: 0.85, cbfc: 1 }[style];
-    const rows = style === 'local' || style === 'bk' ? 2 : 4;
-    for (let r = 0; r < rows; r++) {
-      const y = 22 + r * 7 + (rows === 2 ? 14 : 0);
-      for (let x = (r % 2) * 4; x < AW; x += 8) {
-        const n = Math.sin(x * 12.9898 + r * 78.233) * 43758.5453;
-        const v = n - Math.floor(n);
-        if (((n * 7) % 1 + 1) % 1 > fill) continue;
-        const excite = this.intensity >= 3 ? Math.round(Math.abs(Math.sin(this.t * 9 + x)) * -2) : 0;
-        const head = lerpColor(0x1e171c, 0x4a3a40, v * 0.7);
-        g.circle(x + 3, y + excite, 2.5).fill(head);
-        g.rect(x, y + 2 + excite, 7, 5).fill(shade(head, -0.2));
-        if (this.intensity >= 2 && v > 0.93) g.rect(x + 2, y - 4 + excite, 2, 4).fill(shade(head, 0.2)); // fist up
-        if (v > 0.97 && Math.sin(this.t * 2 + x) > 0) g.rect(x + 3, y - 2, 1, 2).fill(0xbfd8ff); // phone screen
+    if (!this.crowdSeats) {
+      const fill = { local: 0.45, bk: 0.55, regional: 0.8, pfl: 0.85, cbfc: 1 }[style];
+      const rows = style === 'local' || style === 'bk' ? 2 : 4;
+      this.crowdSeats = [];
+      for (let r = 0; r < rows; r++) {
+        const y = 22 + r * 7 + (rows === 2 ? 14 : 0);
+        for (let x = (r % 2) * 4; x < AW; x += 8) {
+          const n = Math.sin(x * 12.9898 + r * 78.233) * 43758.5453;
+          const v = n - Math.floor(n);
+          if (((n * 7) % 1 + 1) % 1 > fill) continue;
+          const head = lerpColor(0x1e171c, 0x4a3a40, v * 0.7);
+          this.crowdSeats.push({ x, y, v, head, body: shade(head, -0.2), fist: shade(head, 0.2) });
+        }
       }
     }
+    // the crowd only moves when it's on its feet (and phones blink): redraw when the picture changes
+    const bouncing = this.intensity >= 3;
+    const key = `${this.intensity >= 2 ? 1 : 0}|${bouncing ? Math.floor(this.t * 60) : 0}`;
+    if (key !== this.crowdKey) {
+      this.crowdKey = key;
+      g.clear();
+      for (const s of this.crowdSeats) {
+        const excite = bouncing ? Math.round(Math.abs(Math.sin(this.t * 9 + s.x)) * -2) : 0;
+        g.circle(s.x + 3, s.y + excite, 2.5).fill(s.head);
+        g.rect(s.x, s.y + 2 + excite, 7, 5).fill(s.body);
+        if (this.intensity >= 2 && s.v > 0.93) g.rect(s.x + 2, s.y - 4 + excite, 2, 4).fill(s.fist); // fist up
+      }
+    }
+    // what changes every frame goes on the lights layer (cleared each frame)
+    const l = this.lights;
+    l.clear();
+    for (const s of this.crowdSeats) if (s.v > 0.97 && Math.sin(this.t * 2 + s.x) > 0) l.rect(s.x + 3, s.y - 2, 1, 2).fill(0xbfd8ff); // phone screens
     if (this.intensity >= 2 && Math.random() < 0.06 * this.intensity) {
       const fx = Math.random() * AW;
-      g.circle(fx, 24 + Math.random() * 20, 2).fill(0xffffff);
+      l.circle(fx, 24 + Math.random() * 20, 2).fill(0xffffff);
     }
     // jumbotrons show the action (no jumbotrons in a bingo hall or a warehouse)
     const sc = this.scene === 'intro' ? 0x3a2a14 : this.intensity >= 3 ? 0x5a1a1a : 0x1a2a40;
-    if (style === 'regional') g.rect(152, 15, 56, 7).fill(sc).rect(272, 15, 56, 7).fill(sc);
-    else if (style !== 'local' && style !== 'bk') g.rect(152, 2, 56, 6).fill(sc).rect(272, 2, 56, 6).fill(sc);
+    if (style === 'regional') l.rect(152, 15, 56, 7).fill(sc).rect(272, 15, 56, 7).fill(sc);
+    else if (style !== 'local' && style !== 'bk') l.rect(152, 2, 56, 6).fill(sc).rect(272, 2, 56, 6).fill(sc);
     // spotlights over the cage
-    const l = this.lights;
-    l.clear();
     l.poly([AW / 2 - 30, 16, AW / 2 + 30, 16, AW / 2 + 150, FLOOR, AW / 2 - 150, FLOOR]).fill({ color: 0xfff2d0, alpha: 0.05 + this.intensity * 0.01 });
     // moving heads: four coloured beams sweeping the cage, wilder for walkouts and big moments
     const hype = this.scene === 'intro' ? 1 : this.intensity >= 3 ? 0.8 : this.scene === 'ceremony' ? 0.7 : 0.25;
