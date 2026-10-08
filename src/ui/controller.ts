@@ -358,9 +358,7 @@ export function installController(g: Game, hooks: ControllerHooks = {}): Virtual
   input.on('disconnect', () => g.toast('Controller disconnected', PAL.ember, { background: true }));
 
   // big screen shakes become rumble
-  const shake = g.shake.bind(g);
-  g.shake = (mag = 2, dur = 0.2) => {
-    shake(mag, dur);
+  g.onShake = (mag, dur) => {
     if (!g.settings.reduceShake && input.lastDevice === 'gamepad') input.rumble(Math.min(1, mag / 6), Math.min(1, mag / 4), Math.round(dur * 1000));
   };
   return vc;

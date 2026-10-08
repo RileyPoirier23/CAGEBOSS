@@ -4,3 +4,4 @@ tests/golden/
 .godot/
 *.import
 tests/tmp/
+public/

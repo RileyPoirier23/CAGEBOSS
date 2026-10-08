@@ -245,7 +245,11 @@ export class Game {
     while (this.modals.length) this.closeModal();
   }
 
+  /** Called on every shake (the controller turns big ones into rumble). */
+  onShake: ((mag: number, dur: number) => void) | null = null;
+
   shake(mag = 2, dur = 0.2): void {
+    this.onShake?.(mag, dur);
     if (this.settings.reduceShake) return;
     this.shakeMag = Math.max(this.shakeMag, mag);
     this.shakeT = Math.max(this.shakeT, dur);

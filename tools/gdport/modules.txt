@@ -1,14 +1,13 @@
 # TypeScript modules translated into the Godot port (globs are expanded by the shell).
-# Hand-written for Godot instead: src/core/input.ts, src/core/platform.ts (port/godot/platform)
-src/core/career.ts
-src/core/content.ts
-src/core/events.ts
-src/core/fightinput.ts
-src/core/format.ts
-src/core/rng.ts
-src/core/save.ts
-src/core/time.ts
-src/core/types.ts
+# Written by hand for Godot instead (port/godot/hand): src/desktop.ts, src/desktopsync.ts,
+# src/ui/touch.ts, src/main.ts (port/godot/main.gd), src/content.browser.ts, src/native.ts;
+# single functions are swapped for hand-written ones per tools/gdport/overrides.json.
+src/core/*.ts
 src/sim/*.ts
 src/storylets/*.ts
+src/art/*.ts
+src/audio/*.ts
+src/ui/[a-su-z]*.ts
+src/ui/t[a-np-z]*.ts
+src/ui/scenes/*.ts
 tools/golden/scenarios.ts

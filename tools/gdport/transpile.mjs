@@ -93,7 +93,8 @@ function kindOfType(t, depth = 0) {
   if (name === 'Set' || name === 'ReadonlySet' || name === 'WeakSet') return 'set';
   if (name === 'Map' || name === 'ReadonlyMap' || name === 'WeakMap') return 'map';
   if (name === 'RegExp') return 'regexp';
-  if (name === 'Array' || name === 'ReadonlyArray' || name === 'RegExpMatchArray' || name === 'RegExpExecArray') return 'array';
+  if (name === 'Array' || name === 'ReadonlyArray' || name === 'RegExpMatchArray' || name === 'RegExpExecArray' || name === 'Uint8ClampedArray' || name === 'Uint8Array') return 'array';
+  if (name === 'Promise') return 'dict';
   if (name === 'String') return 'string';
   if (name === 'Number') return 'number';
   if (name === 'Date') return 'any';
@@ -153,10 +154,33 @@ function isLibDecl(decl) {
   return program.isSourceFileDefaultLibrary(sf) || /[\\/]typescript[\\/]lib[\\/]/.test(sf.fileName) || /[\\/]@types[\\/]node[\\/]/.test(sf.fileName) || /[\\/]vite[\\/]/.test(sf.fileName);
 }
 /** a value imported from an npm package */
+/** parameter names of the constructor a class without one inherits */
+function inheritedCtorParams(cd) {
+  for (let k = cd; k; ) {
+    const h = k.heritageClauses?.find((c) => c.token === ts.SyntaxKind.ExtendsKeyword)?.types[0];
+    if (!h) return [];
+    const bd = declOf(resolve(checker.getSymbolAtLocation(h.expression)));
+    if (!bd) return [];
+    if (fromNodeModules(bd)) return ['a0'];
+    if (isLibDecl(bd)) return [];
+    const ctor = bd.members?.find((m) => ts.isConstructorDeclaration(m) && m.body);
+    if (ctor) return ctor.parameters.map((p, i) => 'p' + i);
+    k = ts.isClassDeclaration(bd) ? bd : null;
+  }
+  return [];
+}
+/** does a base class of this class declaration already have the member? */
+function baseHas(cd, name) {
+  const sym = checker.getSymbolAtLocation(cd.name);
+  if (!sym) return false;
+  const t = checker.getDeclaredTypeOfSymbol(sym);
+  for (const b of checker.getBaseTypes(t) ?? []) if (b.getProperty(name)) return true;
+  return false;
+}
 function npmRef(d, text) {
   const f = d.getSourceFile().fileName;
   if (f.includes('lz-string')) return 'LZString';
-  return `PX.${d.name?.getText?.() ?? text}`;
+  return `PX.${clsName(d.name?.getText?.() ?? text)}`;
 }
 function fromNodeModules(decl) {
   return !!decl && decl.getSourceFile().fileName.includes('node_modules') && !isLibDecl(decl);
@@ -192,7 +216,9 @@ class ModuleEmitter {
 
   tmp(prefix = '_t') {
     const r = this.fn.root;
-    r.counter++;
+    // unique in the whole module: field initializers from several Fns can share one _init
+    this.tmpSeq = (this.tmpSeq ?? 0) + 1;
+    r.counter = this.tmpSeq;
     const n = `${prefix}${r.counter}`;
     r.used.add(n);
     return n;
@@ -239,6 +265,8 @@ class ModuleEmitter {
             rec.captured = true;
             // a closure written before the declaration (JavaScript allows it, GDScript doesn't)
             if (cur.pos < d.pos && !ts.isParameter(d)) rec.early = declOwner;
+            // a closure in the variable's own initializer: const b = button(..., () => b.hide())
+            else if (ts.isVariableDeclaration(d) && d.initializer && cur !== d.initializer && cur.pos >= d.initializer.pos && cur.end <= d.initializer.end) rec.early = declOwner;
           }
           const p = n.parent;
           const isAssign = (ts.isBinaryExpression(p) && p.left === n && p.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && p.operatorToken.kind <= ts.SyntaxKind.LastAssignment) ||
@@ -320,12 +348,30 @@ class ModuleEmitter {
       if (ts.isImportDeclaration(st) || ts.isExportDeclaration(st) || ts.isInterfaceDeclaration(st) || ts.isTypeAliasDeclaration(st)) continue;
       if (ts.isFunctionDeclaration(st)) {
         if (!st.body) continue;
+        const ov = OVERRIDES[path.relative(REPO, sf.fileName)];
+        if (ov && ov.includes(st.name.text)) {
+          // hand-written in port/godot/hand: same name and parameters
+          const ps = st.parameters.map((p) => safe(p.name.getText()) + (p.initializer || p.questionToken ? ' = null' : ''));
+          const hand = 'H_' + this.cls.slice(2);
+          out.push(`static func ${safe(st.name.text)}(${ps.join(', ')}):`);
+          const sig = checker.getSignatureFromDeclaration(st);
+          const isVoid = sig && checker.getReturnTypeOfSignature(sig).flags & ts.TypeFlags.Void;
+          out.push(`\t${isVoid ? '' : 'return '}${hand}.${safe(st.name.text)}(${st.parameters.map((p) => safe(p.name.getText())).join(', ')})`);
+          out.push('');
+          continue;
+        }
         out.push(...this.emitFunction(st, 'static func', st.name.text));
         out.push('');
       } else if (ts.isVariableStatement(st)) {
         for (const d of st.declarationList.declarations) {
           if (!ts.isIdentifier(d.name)) {
             report(d, 'module-level destructuring');
+            continue;
+          }
+          const ov = OVERRIDES[path.relative(REPO, sf.fileName)];
+          if (ov && ov.includes(d.name.text) && d.initializer && ts.isArrowFunction(d.initializer)) {
+            const ps = d.initializer.parameters.map((p) => safe(p.name.getText()));
+            out.push(`static var ${safe(d.name.text)} = (func(${ps.map((p) => p + ' = null').join(', ')}): return H_${this.cls.slice(2)}.${safe(d.name.text)}(${ps.join(', ')}))`);
             continue;
           }
           this.fn = new Fn(st, null);
@@ -454,7 +500,8 @@ class ModuleEmitter {
       const inner = [];
       const v = this.E(body, inner);
       if (!inner.length) {
-        result = `(func(${ps.join(', ')}): return ${v})`;
+        const isVoid = checker.getTypeAtLocation(body).flags & ts.TypeFlags.Void;
+        result = isVoid ? `(func(${ps.join(', ')}): ${v})` : `(func(${ps.join(', ')}): return ${v})`;
       }
     }
     if (!result) {
@@ -465,7 +512,7 @@ class ModuleEmitter {
         const inner = [];
         const v = this.E(body, inner);
         lines.push(...inner.map((l) => '\t' + l));
-        lines.push(`\treturn ${v}`);
+        lines.push(checker.getTypeAtLocation(body).flags & ts.TypeFlags.Void ? `\t${v}` : `\treturn ${v}`);
       }
       this.fn = prevFn;
       const name = this.tmp('_f');
@@ -488,7 +535,7 @@ class ModuleEmitter {
     if (her && her.types[0].expression.getText() === 'Error') ext = ' extends RefCounted';
     else if (her) ext = ` extends ${this.typeRef(her.types[0].expression)}`;
     else ext = ' extends RefCounted';
-    out.push(`class ${safe(name)}${ext}:`);
+    out.push(`class ${clsName(name)}${ext}:`);
     if (her && her.types[0].expression.getText() === 'Error') {
       out.push('\tvar message = ""');
       if (!node.members.some((m) => ts.isConstructorDeclaration(m))) out.push('\tfunc _init(m = null):', '\t\tmessage = JS.str_(m) if m != null else ""');
@@ -501,6 +548,15 @@ class ModuleEmitter {
         this.fn = new Fn(m, null);
         const pre = [];
         let init = m.initializer ? this.E(m.initializer, pre) : 'null';
+        const inherited = !isStatic && her && baseHas(node, m.name.getText());
+        if (inherited) {
+          if (m.initializer) {
+            this.lateInits = this.lateInits ?? [];
+            this.lateInits.push({ nm, pre, init });
+          }
+          this.fn = null;
+          continue;
+        }
         if (pre.length) {
           // initializer needs statements: assign in _init instead
           this.lateInits = this.lateInits ?? [];
@@ -554,6 +610,8 @@ class ModuleEmitter {
           return extra;
         });
         out.push(...lines.map((l) => '\t' + l));
+      } else if (ts.isMethodDeclaration(m) && !m.body && m.modifiers?.some((x) => x.kind === ts.SyntaxKind.AbstractKeyword)) {
+        out.push(`\tfunc ${memberName(m.name.getText())}(${m.parameters.map((p) => safe(p.name.getText()) + ' = null').join(', ')}):`, '\t\tpass');
       } else if (ts.isMethodDeclaration(m) && m.body) {
         const isStatic = m.modifiers?.some((x) => x.kind === ts.SyntaxKind.StaticKeyword);
         out.push(...this.emitFunction(m, isStatic ? 'static func' : 'func', m.name.getText(), true).map((l) => '\t' + l));
@@ -564,8 +622,11 @@ class ModuleEmitter {
       }
     }
     if (this.lateInits?.length) {
-      // no constructor: emit one for the late field initializers
-      const lines = ['\tfunc _init():'];
+      // no constructor: emit one for the late field initializers; it takes the inherited
+      // constructor's parameters and passes them up first
+      const ps = inheritedCtorParams(node);
+      const lines = [`\tfunc _init(${ps.map((p) => p + ' = null').join(', ')}):`];
+      if (her && her.types[0].expression.getText() !== 'Error') lines.push(`\t\tsuper(${ps.join(', ')})`);
       for (const li of this.lateInits) {
         lines.push(...li.pre.map((l) => '\t\t' + l));
         lines.push(`\t\tself.${li.nm} = ${li.init}`);
@@ -581,8 +642,8 @@ class ModuleEmitter {
     // a class used as a value (new X, extends X, instanceof X, static access)
     const sym = resolve(checker.getSymbolAtLocation(expr));
     const d = declOf(sym);
-    if (d && fromNodeModules(d)) return `PX.${expr.getText()}`;
-    if (d && ts.isClassDeclaration(d)) return `${moduleClass(d.getSourceFile().fileName)}.${safe(d.name.text)}`;
+    if (d && fromNodeModules(d)) return npmRef(d, expr.getText());
+    if (d && ts.isClassDeclaration(d)) return `${moduleClass(d.getSourceFile().fileName)}.${clsName(d.name.text)}`;
     return this.E(expr, []);
   }
 
@@ -792,7 +853,8 @@ class ModuleEmitter {
       case ts.SyntaxKind.BreakStatement:
         if (s.label) report(s, 'labeled break');
         if (this.inSwitch && this.inSwitch.depth === this.loops.length) {
-          // the break that ends a case: nothing to do in an if/elif chain
+          // the break that ends a case: nothing to do in an if/elif chain (or leave the while-true wrapper)
+          if (this.inSwitch.wrap) out.push(`${ind}break`);
           return;
         }
         out.push(`${ind}break`);
@@ -856,6 +918,39 @@ class ModuleEmitter {
   }
 
   switchStatement(s, out, ind) {
+    // a break before the end of a case can't be expressed in an if-chain: run the chain inside
+    // `while true:` so that break leaves it (only when no continue targets an outer loop)
+    const scan = (pred) => {
+      let found = false;
+      const visit = (m) => {
+        if (found) return;
+        if (pred(m)) found = true;
+        if (ts.isIterationStatement(m, false) || (ts.isSwitchStatement(m) && m !== s) || ts.isFunctionLike(m)) return;
+        ts.forEachChild(m, visit);
+      };
+      s.caseBlock.clauses.forEach((c) => c.statements.forEach((x) => visit(x)));
+      return found;
+    };
+    const midBreak = s.caseBlock.clauses.some((c) => {
+      const st = c.statements.length === 1 && ts.isBlock(c.statements[0]) ? c.statements[0].statements : c.statements;
+      return st.some((x, k) => {
+        let f = false;
+        const visit = (m) => {
+          if (f) return;
+          if (ts.isBreakStatement(m) && !m.label && !(k === st.length - 1 && m === x)) f = true;
+          if (ts.isIterationStatement(m, false) || ts.isSwitchStatement(m) || ts.isFunctionLike(m)) return;
+          ts.forEachChild(m, visit);
+        };
+        visit(x);
+        return f;
+      });
+    });
+    const wrap = midBreak && !scan((m) => ts.isContinueStatement(m));
+    if (midBreak && !wrap) report(s, 'break inside a switch case (not at the end) with a continue');
+    if (wrap) {
+      out.push(`${ind}while true:`);
+      ind += '\t';
+    }
     const pre = [];
     const v = this.E(s.expression, pre);
     out.push(...pre.map((l) => ind + l));
@@ -865,7 +960,7 @@ class ModuleEmitter {
     let first = true;
     let pending = [];
     const prevSwitch = this.inSwitch;
-    this.inSwitch = { depth: this.loops.length };
+    this.inSwitch = { depth: this.loops.length, wrap };
     const kind = kindOf(s.expression);
     let wroteElse = false;
     for (let i = 0; i < clauses.length; i++) {
@@ -901,7 +996,7 @@ class ModuleEmitter {
           visit(n);
           return found;
         };
-        if (k < stmts.length - 1 ? hasInnerBreak(x) : !ts.isBreakStatement(x) && hasInnerBreak(x)) report(x, 'break inside a switch case (not at the end)');
+        void hasInnerBreak;
       });
       if (isDefault) {
         if (first) {
@@ -924,6 +1019,7 @@ class ModuleEmitter {
     }
     this.inSwitch = prevSwitch;
     if (first) out.push(`${ind}pass`);
+    if (wrap) out.push(`${ind}break`);
   }
 
   // -------------------------------------------------- destructuring
@@ -1128,6 +1224,8 @@ class ModuleEmitter {
       const o = this.E(target.expression, pre);
       const ik = kindOf(target.argumentExpression);
       const i = this.E(target.argumentExpression, pre);
+      const tn = checker.getTypeAtLocation(target.expression).getSymbol()?.getName();
+      if (tn === 'Uint8ClampedArray' || tn === 'Uint8Array') return { read: `JS.ai(${o}, ${i})`, write: (v) => `JS.u8c_set(${o}, ${i}, ${v})` };
       if (objK === 'array') return { read: `JS.ai(${o}, ${i})`, write: (v) => `JS.set_idx(${o}, ${i}, ${v})` };
       if (objK === 'dict') {
         const key = ik === 'string' ? i : `JS.key(${i})`;
@@ -1342,8 +1440,19 @@ class ModuleEmitter {
         pre.push(lv.write(`(${t} ${n.operator === K.PlusPlusToken ? '+' : '-'} 1.0)`));
         return t;
       }
-      case K.TypeOfExpression:
+      case K.TypeOfExpression: {
+        // typeof <browser global>: what the Godot stand-ins provide
+        if (ts.isIdentifier(n.expression)) {
+          const d = declOf(resolve(checker.getSymbolAtLocation(n.expression)));
+          if (d && isLibDecl(d) && !fromNodeModules(d)) {
+            const t = n.expression.text;
+            if (DOM_OBJS.has(t) || t === 'localStorage') return '"object"';
+            if (DOM_CLASSES.has(t) || ['requestAnimationFrame', 'cancelAnimationFrame', 'matchMedia', 'Audio', 'setTimeout', 'Promise'].includes(t)) return '"function"';
+            return '"undefined"';
+          }
+        }
         return `JS.type_of(${this.E(n.expression, pre)})`;
+      }
       case K.VoidExpression:
         return 'null';
       case K.DeleteExpression:
@@ -1355,7 +1464,7 @@ class ModuleEmitter {
         report(n, 'spread here');
         return this.E(n.expression, pre);
       case K.AwaitExpression:
-        return `await ${this.E(n.expression, pre)}`;
+        return `JS.await_(${this.E(n.expression, pre)})`;
       case K.ClassExpression:
         report(n, 'class expression');
         return 'null';
@@ -1399,6 +1508,7 @@ class ModuleEmitter {
 
   ident(n, symOverride) {
     const text = n.text;
+    if (text === '__APP_VERSION__') return gdStr(JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8')).version);
     if (text === 'undefined') return 'null';
     if (text === 'NaN') return 'NAN';
     if (text === 'Infinity') return 'INF';
@@ -1411,9 +1521,13 @@ class ModuleEmitter {
     const d = declOf(sym);
     if (!d) return safe(text);
     if (fromNodeModules(d)) return npmRef(d, text);
-    if (isLibDecl(d)) return GLOBAL_IDENTS[text] ?? (report(n, 'global ' + text), safe(text));
+    if (isLibDecl(d)) {
+      if (DOM_OBJS.has(text) || DOM_CLASSES.has(text)) return `DOM.${text}`;
+      if (text === 'Promise') return 'JSPromise';
+      return GLOBAL_IDENTS[text] ?? (report(n, 'global ' + text), safe(text));
+    }
     const sf = d.getSourceFile();
-    if (ts.isClassDeclaration(d)) return `${moduleClass(sf.fileName)}.${safe(d.name.text)}`;
+    if (ts.isClassDeclaration(d)) return `${moduleClass(sf.fileName)}.${clsName(d.name.text)}`;
     if (ts.isFunctionDeclaration(d) && isModuleLevel(d)) return `${moduleClass(sf.fileName)}.${safe(d.name.text)}`;
     if (isModuleLevel(d)) return `${moduleClass(sf.fileName)}.${safe(text)}`;
     if (ts.isImportSpecifier(d) || ts.isImportClause(d) || ts.isNamespaceImport(d)) {
@@ -1474,6 +1588,7 @@ class ModuleEmitter {
   }
 
   propAccess(n, pre) {
+    if (n.getText().replace(/\s/g, '') === 'import.meta.env.BASE_URL') return '"res://public/"';
     const objN = n.expression;
     const name = n.name.text;
     // globals: Math.PI, Number.MAX_SAFE_INTEGER ...
@@ -1483,10 +1598,11 @@ class ModuleEmitter {
       if (d && isLibDecl(d) && !fromNodeModules(d)) {
         const g = GLOBAL_PROPS[`${objN.text}.${name}`];
         if (g) return g;
+        if (DOM_OBJS.has(objN.text)) return `DOM.${objN.text}.${memberName(name)}`;
         report(n, `global property ${objN.text}.${name}`);
         return 'null';
       }
-      if (s && s.flags & ts.SymbolFlags.Module) {
+      if (s && s.flags & ts.SymbolFlags.Module && !(d && fromNodeModules(d) && s.flags & ts.SymbolFlags.Class)) {
         // namespace import
         const target = declOf(resolve(checker.getSymbolAtLocation(n.name)));
         if (target) return `${moduleClass(target.getSourceFile().fileName)}.${safe(name)}`;
@@ -1524,7 +1640,8 @@ class ModuleEmitter {
   }
 
   typeRefForClass(cd) {
-    return `${moduleClass(cd.getSourceFile().fileName)}.${safe(cd.name.text)}`;
+    if (fromNodeModules(cd)) return npmRef(cd, cd.name.text);
+    return `${moduleClass(cd.getSourceFile().fileName)}.${clsName(cd.name.text)}`;
   }
 
   elemAccess(n, pre) {
@@ -1542,7 +1659,25 @@ class ModuleEmitter {
   }
 
   args(nodes, pre) {
-    return nodes.map((a) => (ts.isSpreadElement(a) ? (report(a, 'spread argument'), this.E(a.expression, pre)) : this.E(a, pre)));
+    const out = [];
+    for (const a of nodes) {
+      if (!ts.isSpreadElement(a)) {
+        out.push(this.E(a, pre));
+        continue;
+      }
+      const t = checker.getTypeAtLocation(a.expression);
+      if (checker.isTupleType(t)) {
+        // f(...tuple): a fixed number of arguments
+        const n = (t.target?.fixedLength ?? checker.getTypeArguments(t).length);
+        const tmp = this.tmp();
+        pre.push(`var ${tmp} = ${this.E(a.expression, pre)}`);
+        for (let i = 0; i < n; i++) out.push(`${tmp}[${i}]`);
+        continue;
+      }
+      report(a, 'spread argument');
+      out.push(this.E(a.expression, pre));
+    }
+    return out;
   }
 
   call(n, pre, stmt) {
@@ -1551,6 +1686,16 @@ class ModuleEmitter {
     if (callee.getText().replace(/\s/g, '') === 'Object.prototype.hasOwnProperty.call') return `JS.has(${this.E(n.arguments[0], pre)}, ${this.E(n.arguments[1], pre)})`;
     // f(...args)
     if (n.arguments.length === 1 && ts.isSpreadElement(n.arguments[0]) && !ts.isPropertyAccessExpression(callee)) return `JS.call_(${this.E(callee, pre)}, ${this.E(n.arguments[0].expression, pre)})`;
+    if (callee.kind === ts.SyntaxKind.ImportKeyword) {
+      const spec = n.arguments[0];
+      const r = ts.resolveModuleName(spec.text, n.getSourceFile().fileName, program.getCompilerOptions(), ts.sys);
+      const f = r.resolvedModule?.resolvedFileName;
+      if (!f) {
+        report(n, 'dynamic import of ' + spec.text);
+        return 'null';
+      }
+      return `JSPromise.resolve(${moduleClass(path.resolve(f))})`;
+    }
     const optCall = !!n.questionDotToken;
     // super(...)
     if (callee.kind === ts.SyntaxKind.SuperKeyword) return `super(${this.args(n.arguments, pre).join(', ')})`;
@@ -1566,10 +1711,12 @@ class ModuleEmitter {
           const key = `${recv.text}.${name}`;
           const h = GLOBAL_CALLS[key];
           if (h) return h(this, n.arguments, pre, n);
+          if (DOM_OBJS.has(recv.text)) return `DOM.${recv.text}.${memberName(name)}(${this.args(n.arguments, pre).join(', ')})`;
+          if (recv.text === 'Promise') return `JSPromise.${name}(${this.args(n.arguments, pre).join(', ')})`;
           report(n, 'global call ' + key);
           return 'null';
         }
-        if (s && s.flags & ts.SymbolFlags.Module) {
+        if (s && s.flags & ts.SymbolFlags.Module && !(d && fromNodeModules(d) && s.flags & ts.SymbolFlags.Class)) {
           const target = declOf(resolve(checker.getSymbolAtLocation(callee.name)));
           if (target && fromNodeModules(target)) return `${npmRef(target, recv.text)}.${callee.name.text}(${this.args(n.arguments, pre).join(', ')})`;
           if (target) return this.directCall(target, n, pre);
@@ -1585,6 +1732,12 @@ class ModuleEmitter {
         pre.push(`var ${t} = ${r}`);
         return `(null if ${t} == null else ${v.split(r).join(t)})`;
       };
+      {
+        const md0 = declOf(checker.getSymbolAtLocation(callee.name));
+        if (md0 && fromNodeModules(md0) && (ts.isMethodDeclaration(md0) || ts.isMethodSignature(md0))) {
+          return guard(`${r}.${memberName(name)}(${this.args(n.arguments, pre).join(', ')})`);
+        }
+      }
       const methodHandlers = rk === 'array' ? ARRAY_METHODS : rk === 'string' ? STRING_METHODS : rk === 'number' ? NUMBER_METHODS : rk === 'set' ? SET_METHODS : rk === 'map' ? MAP_METHODS : rk === 'regexp' ? REGEXP_METHODS : null;
       if (methodHandlers) {
         const h = methodHandlers[name];
@@ -1687,11 +1840,28 @@ class ModuleEmitter {
             return `JS.array_new(${a[0] ?? ''})`;
           case 'Date':
             return `JS.date(${a.join(', ')})`;
+          case 'Uint8ClampedArray':
+          case 'Uint8Array':
+            return `JS.u8c(${a[0] ?? '0.0'})`;
+          case 'Promise':
+            return `JSPromise.new(${a[0] ?? ''})`;
+          case 'Audio':
+            return `DOM.Audio.new(${a[0] ?? ''})`;
+          case 'ResizeObserver':
+            return `DOM.ResizeObserver.new(${a[0] ?? ''})`;
+          case 'KeyboardEvent':
+          case 'PointerEvent':
+          case 'WheelEvent':
+          case 'MouseEvent':
+          case 'TouchEvent':
+          case 'Event':
+          case 'CustomEvent':
+            return `DOM.DomEvent.new(${a.join(', ')})`;
         }
         report(n, 'new ' + c.text);
         return 'null';
       }
-      if (d && fromNodeModules(d)) return `PX.${c.text}.new(${a.join(', ')})`;
+      if (d && fromNodeModules(d)) return `${npmRef(d, c.text)}.new(${a.join(', ')})`;
       if (d && ts.isClassDeclaration(d)) {
         // the constructor may be inherited (from a user class, or Error's message)
         let args = [];
@@ -1711,6 +1881,13 @@ class ModuleEmitter {
           k = bd && ts.isClassDeclaration(bd) ? bd : null;
         }
         return `${this.typeRefForClass(d)}.new(${args.join(', ')})`;
+      }
+    }
+    if (ts.isPropertyAccessExpression(c)) {
+      const d = declOf(resolve(checker.getSymbolAtLocation(c.name)));
+      if (d && ts.isClassDeclaration(d) && !fromNodeModules(d)) {
+        const ctor = d.members.find((m) => ts.isConstructorDeclaration(m) && m.body);
+        return `${this.typeRefForClass(d)}.new(${(ctor ? this.trimArgs(ctor, a) : []).join(', ')})`;
       }
     }
     report(n, 'new of ' + c.getText());
@@ -1904,6 +2081,13 @@ const spreadOrList = (em, args, pre) => {
   return `[${lst(em, args, pre)}]`;
 };
 
+/** browser globals provided by rt/dom.gd */
+/** Godot's built-in class names: a script class can't reuse one (Container, Button, Input...) */
+const NATIVE = new Set(JSON.parse(fs.readFileSync(path.join(REPO, 'tools/gdport/godot_classes.json'), 'utf8')));
+const clsName = (n) => (NATIVE.has(n) ? n + '_' : safe(n));
+const OVERRIDES = JSON.parse(fs.readFileSync(path.join(REPO, 'tools/gdport/overrides.json'), 'utf8'));
+const DOM_OBJS = new Set(['window', 'document', 'navigator', 'location']);
+const DOM_CLASSES = new Set(['Audio', 'ResizeObserver', 'KeyboardEvent', 'PointerEvent', 'WheelEvent', 'MouseEvent', 'TouchEvent', 'Event', 'CustomEvent']);
 const GLOBAL_IDENTS = { Math: 'null', console: 'null', JSON: 'null', undefined: 'null', NaN: 'NAN', Infinity: 'INF', Boolean: 'JS.truthy', localStorage: 'JS.local_storage()', String: 'JS.str_', Number: 'JS.num' };
 const GLOBAL_PROPS = {
   'Math.PI': 'PI', 'Math.E': '2.718281828459045', 'Math.SQRT2': '1.4142135623730951', 'Math.LN2': '0.6931471805599453', 'Math.LN10': '2.302585092994046',
@@ -1963,7 +2147,10 @@ const GLOBAL_FUNCS = {
   clearTimeout: (em, a, p) => `JS.clear_timeout(${a1(em, a, p)})`,
   setInterval: (em, a, p) => `JS.set_interval(${lst(em, a, p)})`,
   clearInterval: (em, a, p) => `JS.clear_timeout(${a1(em, a, p)})`,
-  requestAnimationFrame: (em, a, p) => `JS.set_timeout(${a1(em, a, p)}, 16.0)`,
+  requestAnimationFrame: (em, a, p) => `DOM.requestAnimationFrame(${a1(em, a, p)})`,
+  cancelAnimationFrame: (em, a, p) => `DOM.cancelAnimationFrame(${a1(em, a, p)})`,
+  matchMedia: (em, a, p) => `DOM.matchMedia(${a1(em, a, p)})`,
+  queueMicrotask: (em, a, p) => `JS.queue_microtask(${a1(em, a, p)})`,
   encodeURIComponent: (em, a, p) => `${a1(em, a, p)}.uri_encode()`,
   decodeURIComponent: (em, a, p) => `${a1(em, a, p)}.uri_decode()`,
   btoa: (em, a, p) => `Marshalls.utf8_to_base64(${a1(em, a, p)})`,
@@ -1974,6 +2161,8 @@ const GLOBAL_FUNCS = {
 const cb = (em, args, pre, i = 0) => em.E(args[i], pre);
 
 const ARRAY_METHODS = {
+  next: (em, r) => `JS.iter_next(${r})`,
+  set: (em, r, a, p) => `JS.typed_set(${r}, ${lst(em, a, p)})`,
   push: (em, r, a, p, n, stmt) => (stmt && a.length === 1 && !ts.isSpreadElement(a[0]) ? `${r}.append(${em.E(a[0], p)})` : `JS.push(${r}, ${spreadOrList(em, a, p)})`),
   pop: (em, r) => `JS.pop(${r})`,
   shift: (em, r) => `JS.shift(${r})`,

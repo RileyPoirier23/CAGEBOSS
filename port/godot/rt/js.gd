@@ -1087,6 +1087,69 @@ static func _interval_tick(id: int, f, ms: float) -> void:
 		call_(f, [])
 		_interval_tick(id, f, ms))
 
+# ------------------------------------------------------------------ microtasks / promises
+
+static var _micro: Array = []
+
+static func queue_microtask(f) -> void:
+	_micro.append(f)
+
+static func flush_microtasks() -> void:
+	var guard = 0
+	while not _micro.is_empty() and guard < 100000:
+		guard += 1
+		var f = _micro.pop_front()
+		call_(f, [])
+
+## await: our promises settle synchronously, so run pending callbacks and take the value
+static func await_(p):
+	if p is JSPromise:
+		flush_microtasks()
+		return p._value
+	return p
+
+## an async function's result
+static func async_result(v) -> JSPromise:
+	return JSPromise.resolve(v)
+
+# ------------------------------------------------------------------ typed arrays (Uint8ClampedArray as an Array of floats)
+
+static func u8c(n) -> Array:
+	var a: Array = []
+	if n is Array:
+		for v in n: a.append(_clamp8(v))
+		return a
+	a.resize(int(num(n)))
+	a.fill(0.0)
+	return a
+
+static func _clamp8(v) -> float:
+	var f = num(v)
+	if is_nan(f) or f <= 0.0: return 0.0
+	if f >= 255.0: return 255.0
+	# round half to even, like Uint8ClampedArray
+	var r = floor(f)
+	var d = f - r
+	if d > 0.5 or (d == 0.5 and int(r) % 2 == 1): r += 1.0
+	return r
+
+static func u8c_set(a: Array, i, v) -> float:
+	var k = int(num(i))
+	if k < 0 or k >= a.size(): return num(v)
+	a[k] = _clamp8(v)
+	return num(v)
+
+## [...].next() on a fresh key/value list: its first element, iterator-result style
+static func iter_next(a) -> Dictionary:
+	var arr: Array = iter(a)
+	return {"value": arr[0] if arr.size() > 0 else null, "done": arr.is_empty()}
+
+static func typed_set(a: Array, src, offset = 0.0) -> void:
+	var o = int(num(offset))
+	var s: Array = iter(src)
+	for i in s.size():
+		if o + i < a.size(): a[o + i] = s[i]
+
 static func clear_timeout(id) -> void:
 	if id == null: return
 	_timers.erase(int(num(id)))
@@ -1102,32 +1165,44 @@ static func match_all(s, r: RegEx) -> Array:
 
 # ------------------------------------------------------------------ localStorage (a JSON file in user://)
 
-static var _ls: Dictionary = {}
+static var _ls = null
 static var _ls_loaded := false
-const LS_PATH := "user://storage.json"
+## localStorage: one file per key in user://storage (cloud-save friendly)
+const LS_DIR := "user://storage/"
 
-static func local_storage() -> Dictionary:
+static func _ls_file(k: String) -> String:
+	return LS_DIR + k.uri_encode() + ".txt"
+
+class Storage extends RefCounted:
+	var length: float:
+		get: return float(JS._ls_data.size())
+	func getItem(k): return JS._ls_data.get(JS.str_(k))
+	func setItem(k, v) -> void:
+		JS._ls_data[JS.str_(k)] = JS.str_(v)
+		JS._ls_write(JS.str_(k))
+	func removeItem(k) -> void:
+		JS._ls_data.erase(JS.str_(k))
+		DirAccess.remove_absolute(JS._ls_file(JS.str_(k)))
+	func key(i): return JS.ai(JS._ls_data.keys(), i)
+	func clear_() -> void:
+		for k in JS._ls_data.keys(): DirAccess.remove_absolute(JS._ls_file(k))
+		JS._ls_data.clear()
+
+static func local_storage():
 	if not _ls_loaded:
 		_ls_loaded = true
-		if FileAccess.file_exists(LS_PATH):
-			var f = FileAccess.open(LS_PATH, FileAccess.READ)
-			var d = JSON.parse_string(f.get_as_text())
-			if d is Dictionary: _ls_data = d
-		_ls = {
-			"getItem": func(k): return _ls_data.get(str_(k)),
-			"setItem": func(k, v):
-				_ls_data[str_(k)] = str_(v)
-				_ls_save(),
-			"removeItem": func(k):
-				_ls_data.erase(str_(k))
-				_ls_save(),
-			"key": func(i): return JS.ai(_ls_data.keys(), i),
-		}
-	_ls["length"] = float(_ls_data.size())
+		DirAccess.make_dir_recursive_absolute(LS_DIR)
+		for fn in DirAccess.get_files_at(LS_DIR):
+			if not fn.ends_with(".txt"): continue
+			var f = FileAccess.open(LS_DIR + fn, FileAccess.READ)
+			if f: _ls_data[fn.trim_suffix(".txt").uri_decode()] = f.get_as_text()
+		_ls = JS.Storage.new()
 	return _ls
 
 static var _ls_data: Dictionary = {}
 
-static func _ls_save() -> void:
-	var f = FileAccess.open(LS_PATH, FileAccess.WRITE)
-	if f: f.store_string(JSON.stringify(_ls_data))
+static func _ls_write(k: String) -> void:
+	var f = FileAccess.open(_ls_file(k), FileAccess.WRITE)
+	if f:
+		f.store_string(_ls_data[k])
+		f.close()
