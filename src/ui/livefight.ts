@@ -475,6 +475,26 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       case 'escape':
         arena.showCallout('ESCAPED!');
         break;
+      case 'foul':
+        arena.showCallout(`${(e.name ?? 'FOUL').toUpperCase()}!`);
+        arena.play(d, 'hurt', 1.2);
+        sfx('snap');
+        if (d === P) rumbleForHit(input, 0.6);
+        break;
+      case 'deduction':
+        arena.showCallout('POINT DEDUCTED');
+        sfx('crowd');
+        break;
+      case 'injury':
+        arena.showCallout('INJURY!');
+        arena.play(a, 'hurt', 0.8);
+        sfx('snap');
+        if (a === P) rumbleForHit(input, 0.8);
+        break;
+      case 'doctor':
+        arena.showCallout('DOCTOR!');
+        sfx('crowd');
+        break;
       case 'cut':
         arena.cue({ round: L.round, t: 0, text: '', side: a, intensity: 1, act: 'cut', pos: 'stand', hp: [L.F[0].hp, L.F[1].hp] }, true);
         break;
@@ -510,6 +530,14 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     openCorner(g, f, rep, o.cutTier, L.round, (aid, plan) => {
       auto.plan = plan;
       L.nextRound([P === 0 ? aid : 0.5, P === 1 ? aid : 0.5]);
+      if ((L.phase as string) === 'over') {
+        // the doctor stopped it in the corner
+        for (const e of L.events) handle(e);
+        L.events.length = 0;
+        sayLine(L.log[L.log.length - 1]?.text ?? '');
+        setPadUiMode('game');
+        return;
+      }
       arena.manual = [L.F[0].x, L.F[1].x];
       arena.manualRound();
       setPadUiMode('game');

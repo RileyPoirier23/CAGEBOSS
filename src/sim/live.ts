@@ -26,7 +26,8 @@ export interface LiveEvent {
     | 'punch' | 'kick' | 'hit' | 'miss' | 'block' | 'parry' | 'evade' | 'feint' | 'counter'
     | 'kd' | 'getup' | 'ko' | 'tko' | 'clinch' | 'break' | 'knee' | 'shoot' | 'sprawl' | 'td'
     | 'gnp' | 'advance' | 'sweep' | 'standup' | 'sub' | 'tap' | 'escape' | 'bell' | 'rocked' | 'cut'
-    | 'tie' | 'pummel' | 'fence' | 'trip' | 'pass' | 'scramble';
+    | 'tie' | 'pummel' | 'fence' | 'trip' | 'pass' | 'scramble'
+    | 'foul' | 'deduction' | 'injury' | 'doctor';
   side: Side;
   /** strike name (jab, hook, headkick...) */
   name?: string;
@@ -175,7 +176,14 @@ export class LiveFight {
   events: LiveEvent[] = [];
   /** per round, per side: points for the cards */
   rpts: [number, number][] = [[0, 0]];
-  result: { winner: Side | -1; method: 'KO' | 'TKO' | 'SUB' | 'DEC' | 'DRAW'; detail: string; round: number; time: string } | null = null;
+  result: { winner: Side | -1; method: 'KO' | 'TKO' | 'SUB' | 'DEC' | 'DRAW' | 'NC' | 'DOC'; detail: string; round: number; time: string } | null = null;
+  /** in-fight injuries (fighter side, name, weeks out) and fouls, like the sim keeps */
+  injuries: { side: Side; name: string; weeks: number }[] = [];
+  fouls: { side: Side; text: string; penalized: boolean }[] = [];
+  /** point deductions per round, per side */
+  private ded: [number, number][] = [[0, 0]];
+  /** a broken hand / bad shin hits softer for the rest of the fight */
+  private hurtLimb: [Partial<Record<'lead' | 'rear' | 'legs', boolean>>, Partial<Record<'lead' | 'rear' | 'legs', boolean>>] = [{}, {}];
   /** commentary-ish lines (for the result's ticker) */
   log: TickerLine[] = [];
   private rng: Rng;
@@ -472,6 +480,8 @@ export class LiveFight {
     if (move === 'trip') {
       const bonus = mine ? (c.tie === 'under' ? 0.3 : c.tie === 'collar' ? 0.12 : 0.04) : theirs ? -0.2 : 0;
       const p = clamp(0.22 + edge * 1.2 + bonus + (c.fence === 1 - i ? 0.1 : 0) + (o.gas < 40 ? 0.12 : 0) + (o.stun > 0 ? 0.2 : 0), 0.06, 0.85);
+      // pinned on the fence, he grabs it to stay up: a foul (and no takedown)
+      if (c.fence === 1 - i && this.rng.chance(0.08)) return this.foul((1 - i) as Side, 'fence');
       if (this.rng.chance(p)) {
         this.pos = 'ground';
         this.top = i;
@@ -740,6 +750,10 @@ export class LiveFight {
         return;
       }
     }
+    // accidents happen: eye pokes off a jab, low blows off a front or leg kick, knees to a downed man
+    if (this.pos === 'stand' && this.rng.chance(a.name === 'jab' || a.name === 'cross' ? 0.006 : a.name === 'front kick' || a.name === 'legkick' ? 0.012 : 0)) {
+      return this.foul(i, a.name === 'jab' || a.name === 'cross' ? 'eyepoke' : 'groin');
+    }
     if (o.parryT > 0 && a.target === 'head' && a.kind === 'punch' && o.stun <= 0) {
       f.stun = 0.38;
       o.counterT = 0.6;
@@ -748,6 +762,8 @@ export class LiveFight {
       return;
     }
     let dmg = a.dmg * 0.62 * (0.55 + f.sk.power / 110) * this.gasK(f);
+    const limb = this.hurtLimb[i];
+    if ((a.hand === 'lead' && limb.lead) || (a.hand === 'rear' && limb.rear) || (a.kind === 'kick' && limb.legs)) dmg *= 0.5;
     const counter = f.counterT > 0;
     if (counter) {
       dmg *= 1.5;
@@ -762,7 +778,15 @@ export class LiveFight {
       const through = a.target === 'legs' ? 0.55 : a.target === 'body' ? (a.heavy ? 0.55 : 0.42) : a.heavy ? 0.32 : 0.18;
       dmg *= through;
       o.gas = Math.max(0, o.gas - 1.5);
-      if (a.target === 'legs') f.legs = Math.max(0, f.legs - 2.5); // checked
+      if (a.target === 'legs') {
+        f.legs = Math.max(0, f.legs - 2.5); // checked
+        // a hard check can break the kicker's shin
+        if (a.name === 'legkick' && this.rng.chance(0.02)) {
+          if (this.injure(i, 'shin', this.rng.chance(0.25))) return;
+        }
+      }
+      // a heavy shot into a hard elbow or forehead: broken hand
+      if (a.kind === 'punch' && a.heavy && this.rng.chance(0.003)) this.injure(i, a.hand === 'lead' ? 'lead hand' : 'rear hand', false);
       this.ev({ type: 'block', side: (1 - i) as Side, name: a.name });
       this.apply(i, a.target, dmg, false, false);
       return;
@@ -770,6 +794,10 @@ export class LiveFight {
     f.landed++;
     f.comboT = 0.45;
     if (this.pos === 'clinch') this.clinch.idle = 0;
+    // knuckles on skull: hands break
+    if (a.kind === 'punch' && a.target === 'head' && a.heavy && this.rng.chance(0.0025)) this.injure(i, a.hand === 'lead' ? 'lead hand' : 'rear hand', false);
+    // a heavy body shot cracks ribs
+    if (a.target === 'body' && a.heavy && this.rng.chance(0.03)) this.injure((1 - i) as Side, 'ribs', false);
     if (a.push && this.pos === 'stand') {
       // the front kick shoves him off and stops whatever he was winding up
       this.nudge((1 - i) as Side, -a.push);
@@ -798,6 +826,8 @@ export class LiveFight {
         o.cut++;
         this.ev({ type: 'cut', side: (1 - i) as Side });
         this.line(i, 'cut', `${this.name((1 - i) as Side)} is cut open.`, 2);
+        // a gusher: the referee calls the doctor in
+        if (o.cut >= 5 && this.rng.chance(0.25)) return this.doctor((1 - i) as Side, true);
       }
       if (o.hp <= 0) {
         if (o.hp < -12 || o.kdsRound >= 2 || this.pos === 'ground') return this.finish(i, this.pos === 'ground' ? 'TKO' : 'KO', this.pos === 'ground' ? 'ground and pound' : name ?? 'punch');
@@ -967,7 +997,14 @@ export class LiveFight {
       const d = this.F[(1 - this.sub.atk) as Side];
       this.sub.prog += dt * (0.02 + (100 - d.gas) / 2500) - dt * 0.05;
       d.gas = Math.max(0, d.gas - dt * 4);
-      if (this.sub.prog >= 1) return this.finish(this.sub.atk, 'SUB', this.sub.name);
+      if (this.sub.prog >= 1) {
+        // a late tap (or a stubborn man) leaves something torn
+        const n = this.sub.name;
+        const def = (1 - this.sub.atk) as Side;
+        if (/armbar|kimura|americana|omoplata/.test(n) && this.rng.chance(0.3)) this.injuries.push({ side: def, name: /armbar/.test(n) ? 'elbow ligaments' : 'shoulder', weeks: this.rng.int(6, 12) });
+        if (LEG_LOCKS.has(n) && this.rng.chance(0.4)) this.injuries.push({ side: def, name: 'knee ligaments', weeks: this.rng.int(8, 20) });
+        return this.finish(this.sub.atk, 'SUB', n);
+      }
       if (this.sub.prog <= 0) {
         const esc = (1 - this.sub.atk) as Side;
         this.ev({ type: 'escape', side: esc });
@@ -1018,8 +1055,17 @@ export class LiveFight {
   /** Between rounds (after the corner): recovery, scaled by corner aid (0..1). */
   nextRound(aid: [number, number]): void {
     if (this.phase !== 'break') return;
+    // the doctor looks at cuts before the bell; a good cutman buys you another round
+    for (const i of [0, 1] as Side[]) {
+      const c = this.F[i].cut;
+      if (c >= 4 && this.rng.chance(clamp((c - 3) * 0.16 * (1 - aid[i] * 0.6), 0, 0.85))) {
+        this.doctor(i, false);
+        return;
+      }
+    }
     this.round++;
     this.rpts.push([0, 0]);
+    this.ded.push([0, 0]);
     this.clock = ROUND_SECONDS;
     this.pos = 'stand';
     this.sub = null;
@@ -1054,6 +1100,9 @@ export class LiveFight {
         const nb = b * rng.float(0.85, 1.15);
         const diff = na - nb;
         const sc: [number, number] = Math.abs(diff) < 0.6 ? [10, 10] : diff > 0 ? [10, diff > Math.max(12, nb * 2.5) ? 8 : 9] : [diff < -Math.max(12, na * 2.5) ? 8 : 9, 10];
+        const dd = this.ded[r] ?? [0, 0];
+        sc[0] -= dd[0];
+        sc[1] -= dd[1];
         per.push(sc);
         totals[j][0] += sc[0];
         totals[j][1] += sc[1];
@@ -1063,19 +1112,103 @@ export class LiveFight {
     return { totals, rounds };
   }
 
-  private decision(): void {
+  private decision(technical = false): void {
     const { totals } = this.cards();
     const votes = totals.map(([a, b]) => (a > b ? 0 : b > a ? 1 : -1));
     const a = votes.filter((v) => v === 0).length;
     const b = votes.filter((v) => v === 1).length;
     const winner: Side | -1 = a >= 2 ? 0 : b >= 2 ? 1 : -1;
     const detail = winner < 0 ? 'split draw' : (winner === 0 ? a : b) === 3 ? 'unanimous' : (winner === 0 ? b : a) === 0 ? 'majority' : 'split';
-    this.result = { winner, method: winner < 0 ? 'DRAW' : 'DEC', detail, round: this.round, time: '5:00' };
+    this.result = { winner, method: winner < 0 ? 'DRAW' : 'DEC', detail: technical ? `technical ${detail}` : detail, round: this.round, time: technical ? this.clockElapsed() : '5:00' };
     this.phase = 'over';
+  }
+
+  /** A foul: the referee calls time, maybe takes a point, and sometimes the other man can't go on. */
+  private foul(i: Side, kind: 'eyepoke' | 'groin' | 'fence'): void {
+    const o = this.F[(1 - i) as Side];
+    const f = this.F[i];
+    const label = { eyepoke: 'Eye poke', groin: 'Low blow', fence: 'Grabbing the fence' }[kind];
+    const prior = this.fouls.filter((x) => x.side === i).length;
+    const penalized = kind === 'fence' ? prior >= 1 : prior >= 1 && this.rng.chance(0.6);
+    this.fouls.push({ side: i, text: label, penalized });
+    f.act = null;
+    o.act = null;
+    o.stun = Math.max(o.stun, kind === 'fence' ? 0.2 : 1.6);
+    if (kind !== 'fence') o.hp -= 3;
+    this.pos = 'stand';
+    this.sub = null;
+    this.F[0].x -= 16;
+    this.F[1].x += 16;
+    this.fixGap();
+    this.ev({ type: 'foul', side: i, name: label });
+    this.line(i, kind === 'fence' ? 'foul' : 'foul', kind === 'eyepoke' ? `EYE POKE! ${this.name((1 - i) as Side)} can't see. The referee calls time.` : kind === 'groin' ? `LOW BLOW! ${this.name((1 - i) as Side)} is down holding himself. Time out.` : `${this.name(i)} grabs the fence. The referee is not happy.`, 2);
+    this.log[this.log.length - 1].key = 'foul_' + kind;
+    if (penalized) {
+      this.ded[this.round - 1][i] += 1;
+      this.ev({ type: 'deduction', side: i, name: label });
+      this.line(i, 'foul', `The referee takes a point from ${this.name(i)}.`, 2);
+      this.log[this.log.length - 1].key = 'deduction';
+    }
+    // sometimes he can't continue
+    if (kind !== 'fence' && this.rng.chance(0.06)) {
+      const early = this.round === 1 || (this.round === 2 && this.clock > ROUND_SECONDS / 2);
+      this.line((1 - i) as Side, 'stop', `${this.name((1 - i) as Side)} can't continue.`, 3);
+      this.log[this.log.length - 1].key = 'cannot_continue';
+      if (early) {
+        this.result = { winner: -1, method: 'NC', detail: `No Contest (accidental ${label.toLowerCase()})`, round: this.round, time: this.clockElapsed() };
+        this.phase = 'over';
+      } else this.decision(true);
+    }
+  }
+
+  /** An injury in the fight. Returns true if it stopped the fight. */
+  private injure(i: Side, part: 'lead hand' | 'rear hand' | 'shin' | 'ribs' | 'knee', severe: boolean): boolean {
+    const names = { 'lead hand': 'broken hand', 'rear hand': 'broken hand', shin: severe ? 'broken leg' : 'cracked shin', ribs: 'cracked ribs', knee: 'blown knee' };
+    if (this.injuries.some((x) => x.side === i && x.name === names[part])) return false;
+    const weeks = { 'lead hand': 8, 'rear hand': 8, shin: severe ? 40 : 10, ribs: 6, knee: 26 }[part];
+    this.injuries.push({ side: i, name: names[part], weeks: weeks + this.rng.int(0, 4) });
+    const f = this.F[i];
+    if (part === 'lead hand') this.hurtLimb[i].lead = true;
+    if (part === 'rear hand') this.hurtLimb[i].rear = true;
+    if (part === 'shin' || part === 'knee') {
+      this.hurtLimb[i].legs = true;
+      f.legs = Math.max(0, f.legs - 30);
+    }
+    if (part === 'ribs') {
+      f.body = Math.max(0, f.body - 20);
+      f.gas = Math.max(0, f.gas - 10);
+    }
+    this.ev({ type: 'injury', side: i, name: names[part] });
+    this.line(i, 'injury', part === 'ribs' ? `That one cracked ${this.name(i)}'s ribs. You can see it in his face.` : severe ? `OH NO. ${this.name(i)}'s leg snapped on the check!` : `${this.name(i)} is shaking out his ${part.replace(/lead |rear /, '')}. Something's broken.`, severe ? 3 : 2);
+    this.log[this.log.length - 1].key = severe ? 'limb_snap' : 'injury_' + part.replace(' ', '_');
+    if (severe) {
+      this.finish((1 - i) as Side, 'TKO', `Injury (${names[part]})`);
+      return true;
+    }
+    return false;
+  }
+
+  /** The doctor looks at a cut: mid-round on a gusher, or between rounds. */
+  private doctor(i: Side, midRound: boolean): void {
+    const c = this.F[i].cut;
+    this.ev({ type: 'doctor', side: i });
+    this.line(-1, 'doctor', `The referee brings in the doctor to look at ${this.name(i)}'s cut.`, 2);
+    if (!midRound || this.rng.chance(clamp((c - 4) * 0.25, 0.15, 0.8))) {
+      this.line((1 - i) as Side, 'stop', `The doctor waves it off! ${this.name(i)} can't see out of that eye.`, 3);
+      this.log[this.log.length - 1].key = 'doctor';
+      this.result = { winner: (1 - i) as Side, method: 'TKO', detail: 'Doctor stoppage (cut)', round: this.round, time: midRound ? this.clockElapsed() : '5:00' };
+      this.phase = 'over';
+      this.ev({ type: 'tko', side: (1 - i) as Side });
+      return;
+    }
+    this.line(-1, 'idle', 'The doctor lets it continue. The crowd roars.', 2);
+    this.F[i].stun = Math.max(this.F[i].stun, 0.4);
   }
 
   private finish(winner: Side, method: 'KO' | 'TKO' | 'SUB', detail: string): void {
     if (this.result) return;
+    // a knockout costs the loser time off (concussion protocol)
+    if (method === 'KO' || (method === 'TKO' && !/Injury|Doctor/.test(detail))) this.injuries.push({ side: (1 - winner) as Side, name: 'concussion', weeks: method === 'KO' ? this.rng.int(6, 10) : this.rng.int(3, 6) });
     this.result = { winner, method, detail, round: this.round, time: this.clockElapsed() };
     this.phase = 'over';
     this.F[(1 - winner) as Side].down = 0;
@@ -1118,9 +1251,9 @@ export class LiveFight {
       damage: [Math.round(100 - this.F[0].hp), Math.round(100 - this.F[1].hp)].map((d) => clamp(d, 0, 100)) as [number, number],
       ticker: this.log,
       stats: { strikes: [this.F[0].landed, this.F[1].landed], takedowns: [this.F[0].tds, this.F[1].tds], knockdowns: [this.F[1].kds, this.F[0].kds] },
-      injuries: [],
-      fouls: [],
-      pointDeductions: [0, 0],
+      injuries: this.injuries.map((x) => ({ fighter: ids[x.side], name: x.name, weeks: x.weeks })),
+      fouls: this.fouls.map((x) => ({ fighter: ids[x.side], text: x.text, penalized: x.penalized })),
+      pointDeductions: [this.ded.reduce((a, d) => a + d[0], 0), this.ded.reduce((a, d) => a + d[1], 0)],
       roundScores: rounds,
       cuts: [this.F[0].cut, this.F[1].cut],
     };
