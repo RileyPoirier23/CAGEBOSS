@@ -185,8 +185,20 @@ export function weightFor(hold: number): Weight {
   return hold < FIGHT_TUNING.tapMax ? 'light' : hold < FIGHT_TUNING.mediumMax ? 'medium' : 'heavy';
 }
 
-/** Build a FightSample from the shared Input (+ the optional touch fight pad). */
-export function sampleFight(inp: Input, binds: Record<FightButton, FightBinding>, touch?: TouchPadState | null, facing: 1 | -1 = 1, pad?: number): FightSample {
+/**
+ * Which part of the keyboard a player uses. 'full' = everything (one player); in 2-player
+ * versus on one keyboard, 'left' = WASD + J K L... (no arrow keys) and 'right' = the arrow keys
+ * plus P2_KEYS; 'none' = controller only.
+ */
+export type KeyboardShare = 'full' | 'left' | 'right' | 'none';
+/** Player 2's half of a shared keyboard: arrows to move, the keys around Enter to fight. */
+export const P2_KEYS: Partial<Record<FightButton, string[]>> = {
+  lead: ['Comma'], rear: ['Period'], kick: ['Slash'], block: ['ShiftRight'], grab: ['Enter'], feint: ['Quote'], body: ['Semicolon'],
+  getupLeft: ['BracketLeft'], getupRight: ['BracketRight'],
+};
+
+/** Build a FightSample from the shared Input (+ the optional touch fight pad). pad = which controller (-1 = none). */
+export function sampleFight(inp: Input, binds: Record<FightButton, FightBinding>, touch?: TouchPadState | null, facing: 1 | -1 = 1, pad?: number, kb: KeyboardShare = 'full'): FightSample {
   const held = new Set<FightButton>();
   const analog = new Set<FightButton>();
   const pressure: Partial<Record<FightButton, number>> = {};
@@ -201,7 +213,8 @@ export function sampleFight(inp: Input, binds: Record<FightButton, FightBinding>
         }
       } else if (inp.button(pb, pad)) p = 1;
     }
-    for (const k of b.keys ?? []) if (inp.key(k)) p = 1;
+    const keys = kb === 'full' || kb === 'left' ? b.keys ?? [] : kb === 'right' ? P2_KEYS[name] ?? [] : [];
+    for (const k of keys) if (kb === 'left' && /^Arrow/.test(k) ? false : inp.key(k)) p = 1;
     for (const t of b.touch ?? []) if (touch?.held.has(t)) p = 1;
     if (p > 0) {
       held.add(name);
@@ -209,21 +222,22 @@ export function sampleFight(inp: Input, binds: Record<FightButton, FightBinding>
     }
   }
   // arrow keys left/right = pull / lean depending on which way we face
-  const left = inp.key('ArrowLeft');
-  const right = inp.key('ArrowRight');
+  const left = kb === 'full' && inp.key('ArrowLeft');
+  const right = kb === 'full' && inp.key('ArrowRight');
   if (left || right) held.add((right ? 1 : -1) * facing > 0 ? 'evadeToward' : 'evadeAway');
   // movement: left stick, else WASD, else the touch stick
   let move = { x: 0, y: 0 };
   const padList = inp.padList();
-  if (padList.length) move = inp.stick('left', pad);
-  if (!move.x && !move.y) {
-    const kx = (inp.key('KeyD') ? 1 : 0) - (inp.key('KeyA') ? 1 : 0);
-    const ky = (inp.key('KeyS') ? 1 : 0) - (inp.key('KeyW') ? 1 : 0);
+  if (padList.length && pad !== -1) move = inp.stick('left', pad);
+  if (!move.x && !move.y && kb !== 'none') {
+    const r = kb === 'right';
+    const kx = (inp.key(r ? 'ArrowRight' : 'KeyD') ? 1 : 0) - (inp.key(r ? 'ArrowLeft' : 'KeyA') ? 1 : 0);
+    const ky = (inp.key(r ? 'ArrowDown' : 'KeyS') ? 1 : 0) - (inp.key(r ? 'ArrowUp' : 'KeyW') ? 1 : 0);
     if (kx || ky) move = { x: kx / Math.hypot(kx, ky), y: ky / Math.hypot(kx, ky) };
   }
   if (!move.x && !move.y && touch) move = { ...touch.stick };
   // head movement: right stick; the touch EVADE button flicks in the touch stick's direction
-  let look = padList.length ? inp.stick('right', pad) : { x: 0, y: 0 };
+  let look = padList.length && pad !== -1 ? inp.stick('right', pad) : { x: 0, y: 0 };
   if (touch?.held.has('EVADE') && Math.hypot(touch.stick.x, touch.stick.y) > 0.3) {
     const m = Math.hypot(touch.stick.x, touch.stick.y);
     look = { x: touch.stick.x / m, y: touch.stick.y / m };

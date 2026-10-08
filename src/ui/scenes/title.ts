@@ -10,6 +10,7 @@ import { sfx } from '../../audio/sfx';
 import type { PixelText } from '../text';
 import { openSettings } from './settings';
 import { openHelp } from '../help';
+import { QuickFightScene } from './quickfight';
 import { openAchievements } from '../achievements';
 import { maybeWhatsNew } from '../whatsnew';
 import { openLoad, latestSave, continueLatest } from './loadmenu';
@@ -95,6 +96,7 @@ export class TitleScene extends Scene {
       ['NEW CAREER', () => this.g.goto(new NewGameScene(this.g, 'career'))],
       ['ROAD TO CHAMPION', () => this.g.goto(new FMCreateScene(this.g))],
       ['LEGACY MODE', () => this.g.goto(new FMCreateScene(this.g, true))],
+      ['QUICK FIGHT', () => this.g.goto(new QuickFightScene(this.g))],
       ['SANDBOX', () => this.g.goto(new NewGameScene(this.g, 'sandbox'))],
       ['LOAD', () => openLoad(this.g)],
       ['HELP', () => openHelp(this.g)],

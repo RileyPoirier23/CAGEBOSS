@@ -24,7 +24,7 @@ import { W, H, text, button, box } from './kit';
 import { ArenaView, AH, AW, type CanvasInfo } from './arena';
 import { input } from '../core/input';
 import { isTouchDevice } from '../core/platform';
-import { FightInput, sampleFight, rumbleForHit, type FightIntent } from '../core/fightinput';
+import { FightInput, sampleFight, rumbleForHit, type FightIntent, type KeyboardShare } from '../core/fightinput';
 import { TouchFightPad } from './fightpad';
 import { setPadUiMode } from './controller';
 import { fighterPortrait } from './sprites';
@@ -56,6 +56,8 @@ export interface LiveFightOpts {
   /** with the game state and event: the full broadcast (tale of the tape, Juiced Butler, the booth, Bleeter, the decision) */
   state?: GameState;
   ev?: FightEvent;
+  /** local 2-player versus: each player's controller (-1 = none) and share of the keyboard */
+  versus?: { p1: { pad?: number; kb: KeyboardShare }; p2: { pad?: number; kb: KeyboardShare } };
   done: (r: FightResult) => void;
 }
 
@@ -78,6 +80,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   const P = o.player;
   const O = (1 - P) as Side;
   const fi = new FightInput();
+  const fi2 = o.versus ? new FightInput() : null;
+  let primed2 = false;
   const ai = new LiveAI(O, o.seed ^ 0x9e3779b9, o.oppPlan);
   const auto = new LiveAI(P, o.seed ^ 0x51ed27, o.plan);
   let autopilot = false;
@@ -206,8 +210,9 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   const pB = fighterPortrait(o.B, 32, 'plain');
   pB.position.set(W - 36, y0 + 4);
   hud.addChild(pA, pB);
-  hud.addChild(text((P === 0 ? 'YOU: ' : '') + o.A.last.toUpperCase(), 40, y0 + 3, { small: true, color: P === 0 ? PAL.gold : PAL.bone }));
-  hud.addChild(text((P === 1 ? 'YOU: ' : '') + o.B.last.toUpperCase(), W - 140, y0 + 3, { small: true, color: P === 1 ? PAL.gold : PAL.bone, width: 100, align: 'right' }));
+  const tag = (i: Side) => (o.versus ? (i === P ? 'P1: ' : 'P2: ') : i === P ? 'YOU: ' : '');
+  hud.addChild(text(tag(0) + o.A.last.toUpperCase(), 40, y0 + 3, { small: true, color: P === 0 || o.versus ? PAL.gold : PAL.bone }));
+  hud.addChild(text(tag(1) + o.B.last.toUpperCase(), W - 140, y0 + 3, { small: true, color: P === 1 || o.versus ? PAL.gold : PAL.bone, width: 100, align: 'right' }));
 
   const wrap = g.modal(root, { dim: 0 });
   g.inLiveFight = true;
@@ -542,6 +547,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       arena.manualRound();
       setPadUiMode('game');
       fi.reset();
+      fi2?.reset();
+      primed2 = false;
       primed = false;
       freeze = 1.4;
       arena.showCallout(`ROUND ${L.round}`);
@@ -628,6 +635,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       paused = false;
       setPadUiMode('game');
       fi.reset();
+      fi2?.reset();
+      primed2 = false;
       primed = false;
     };
     fr.addChild(button('RESUME', bx + 10, by + 20, bw - 20, 14, resume, { small: true, fill: PAL.moss }));
@@ -663,6 +672,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       paused = false;
       setPadUiMode('game');
       fi.reset();
+      fi2?.reset();
+      primed2 = false;
       primed = false;
     });
   };
@@ -716,7 +727,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       } else if (L.phase === 'fight') {
         const ctx = L.context(P);
         const facing: 1 | -1 = P === 0 ? 1 : -1;
-        const sample = sampleFight(input, fi.bindings, pad?.state(), facing);
+        const sample = sampleFight(input, fi.bindings, pad?.state(), facing, o.versus?.p1.pad, o.versus?.p1.kb ?? 'full');
         if (!primed) {
           primed = true;
           fi.prime(sample);
@@ -732,7 +743,17 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
           mine = hum;
           move = sample.move.x;
         }
-        const them = ai.update(L, dt);
+        let them = ai.update(L, dt);
+        if (fi2 && o.versus) {
+          // player two
+          const f2: 1 | -1 = facing === 1 ? -1 : 1;
+          const s2 = sampleFight(input, fi2.bindings, null, f2, o.versus.p2.pad, o.versus.p2.kb);
+          if (!primed2) {
+            primed2 = true;
+            fi2.prime(s2);
+          }
+          them = { intents: fi2.update(s2, dt, { facing: f2, ...L.context(O) }), move: s2.move.x };
+        }
         const intents: [FightIntent[], FightIntent[]] = P === 0 ? [mine, them.intents] : [them.intents, mine];
         const moves: [number, number] = P === 0 ? [move, them.move] : [them.move, move];
         const logLen = L.log.length;
