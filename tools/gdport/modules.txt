@@ -1,0 +1,14 @@
+# TypeScript modules translated into the Godot port (globs are expanded by the shell).
+# Hand-written for Godot instead: src/core/input.ts, src/core/platform.ts (port/godot/platform)
+src/core/career.ts
+src/core/content.ts
+src/core/events.ts
+src/core/fightinput.ts
+src/core/format.ts
+src/core/rng.ts
+src/core/save.ts
+src/core/time.ts
+src/core/types.ts
+src/sim/*.ts
+src/storylets/*.ts
+tools/golden/scenarios.ts

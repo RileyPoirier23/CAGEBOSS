@@ -1,2 +1,5 @@
+gen/
+data/
+tests/golden/
 .godot/
 *.import
