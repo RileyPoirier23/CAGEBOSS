@@ -9,28 +9,42 @@ import type { Skills } from '../../core/types';
 import { PAL } from '../../art/palette';
 import { W, H, text, button, box, ScrollBox } from '../kit';
 import { openWindow, confirm, alertBox, selector } from '../widgets';
+import { openHelp } from '../help';
+import { openSettings } from './settings';
+import { showMoment } from '../moments';
+import { divisionMoves, changeDivision, gym, openGym, upgradeGym, GYM_COST, GYM_UPGRADE } from '../../sim/legacy';
+import { createNewGame } from '../../sim/newgame';
+import { startWeek } from '../../sim/week';
+import { routePhase } from '../flow';
+import { openAchievements, checkAchievements } from '../achievements';
+import { openSaveSlots, openLoad } from './loadmenu';
+import { familyOf } from '../../core/save';
 import { fighterPortrait } from '../sprites';
 import { money, record } from '../../core/format';
 import { fmtDate } from '../../core/time';
 import { Rng } from '../../core/rng';
 import { sfx } from '../../audio/sfx';
 import { fullName, overall } from '../../sim/fighters';
-import { divisionName } from '../../sim/divisions';
+import { divisionName, DIVISION_ORDER } from '../../sim/divisions';
 import { rankLabel, rankOf, undisputed } from '../../sim/rankings';
 import {
   fm, me, BODY_PARTS, STAFF_ROLES, PLANS, doAction, treat, clinicCost, weeklyStaffCost, calloutTargets, callOut, humblePost,
   startPeds, stopPeds, bareknuckle, gamble, acceptOffer, resolveEvent, endWeek, fightThisWeek, weighInInfo, doWeighIn, fightEvent,
-  afterFight, postFightCallout, weightLimit, fightReadySkills, type ActionId, type StaffId, type BodyPart,
-  ensureFM, condition, trainSkill, cutWeight, hire, fire, resolveDoc, fightWeekPaperwork, cagesideReact, bkNext, bkPurse, bkSpot,
-  ladderSpot, TIER_NAME, BKB_NAME, BRADIE, bradieOnYou, askOnlyFighters, postContent, cardSlot, SLOT_NAME, type CutMethod, type FMDoc,
+  afterFight, postFightCallout, weightLimit, contractLimit, fightReadySkills, type ActionId, type StaffId, type BodyPart,
+  ensureFM, condition, trainSkill, cutWeight, hire, fire, fightWeekPaperwork, cagesideReact, bkNext, bkPurse, bkSpot,
+  ladderSpot, stage, BKB_NAME, BRADIE, bradieOnYou, askOnlyFighters, postContent, cardSlot, SLOT_NAME, type CutMethod,
 } from '../../sim/fighter';
 import { FightNightScene } from './fightnight';
 import { openCorner } from '../cutman';
 import type { GamePlan } from '../../sim/fight';
 import { openLiveFight } from '../livefight';
+import { openFMDesk } from '../fmdesk';
+import { eventSponsors, eventCanvas } from '../../sim/sponsorship';
 import { openJumpRope, openTyreChop } from '../minigames';
 import { officialsFor } from '../../sim/events';
-import { portrait, namedPortrait } from '../sprites';
+import { portrait, namedPortrait, reporterPortrait } from '../sprites';
+import { content } from '../../core/content';
+import { fightWeekShow } from '../faceoff';
 
 const bar = (w: number, v: number, color: number): Graphics => {
   const g = new Graphics();
@@ -41,6 +55,7 @@ const bar = (w: number, v: number, color: number): Graphics => {
 
 export class FMHubScene extends Scene {
   music = 'office' as const;
+  tutorialKey = 'fmhub';
   private msg = '';
   private paperworkWarned = false;
   private rng(): Rng {
@@ -50,14 +65,17 @@ export class FMHubScene extends Scene {
     this.g.state!.rng = r.state;
   }
 
+  /** set while the post-fight chain (results, Bradie, the mic) plays; popups wait for it */
+  static holdPopups = false;
+
   enter(): void {
     if (this.g.state) ensureFM(this.g.state);
     super.enter();
-    setTimeout(() => this.popups(), 300);
+    if (!FMHubScene.holdPopups) setTimeout(() => this.popups(), 300);
   }
 
   /** Week report, then any controversy waiting for a decision. */
-  private popups(): void {
+  popups(): void {
     const s = this.g.state;
     if (!s?.fm || this.g.modals.length) return;
     const st = fm(s);
@@ -67,8 +85,17 @@ export class FMHubScene extends Scene {
       alertBox(this.g, `WEEK ${s.week + 1}`, lines.slice(0, 9).join('\n'), () => this.popups());
       return;
     }
+    if (st.moments?.length) {
+      const m = st.moments.shift()!;
+      showMoment(this.g, s, m, () => new Rng((Math.random() * 1e9) | 0), () => {
+        this.g.autosave();
+        this.refresh();
+        setTimeout(() => this.popups(), 250);
+      });
+      return;
+    }
     const ev = st.pending[0];
-    if (!ev) return;
+    if (!ev) return checkAchievements(this.g);
     const frame = new Container();
     const wrap = this.g.modal(frame, { dim: 0.7 });
     const bw = 320;
@@ -77,7 +104,8 @@ export class FMHubScene extends Scene {
     const bx = (W - bw) / 2;
     const by = (H - bh) / 2;
     frame.addChild(box(bw, bh, PAL.night, PAL.blood, { bevel: true })).position.set(bx, by);
-    const face = ev.portrait?.startsWith('npc:') ? namedPortrait(ev.portrait.slice(4), 32) : null;
+    const repDef = ev.portrait?.startsWith('rep:') ? content().reporters.find((x) => x.id === ev.portrait!.slice(4)) : null;
+    const face = ev.portrait?.startsWith('npc:') ? namedPortrait(ev.portrait.slice(4), 32) : repDef ? reporterPortrait(repDef, 32) : null;
     const tx = face ? bx + 46 : bx + 8;
     if (face) {
       face.position.set(bx + 8, by + 8);
@@ -121,12 +149,13 @@ export class FMHubScene extends Scene {
     L.addChild(por);
     L.addChild(text(fullName(f).toUpperCase(), 72, 6, { small: true, width: 72, color: PAL.bone, maxLines: 2 }));
     L.addChild(text(`"${f.nick}"`, 72, 24, { small: true, width: 72, color: PAL.gold, maxLines: 2 }));
-    L.addChild(text(record(f.record), 72, 42, { color: PAL.bone }));
+    L.addChild(text(st.tier === 'amateur' ? `AM ${record(f.record)}` : record(f.record), 72, 42, { color: PAL.bone }));
+    if (st.amateur) L.addChild(text(`PRO  (AM ${st.amateur.w}-${st.amateur.l}${st.amateur.d ? '-' + st.amateur.d : ''})`, 72, 62, { small: true, color: PAL.ash, width: 72, maxLines: 1 }));
     const rk = rankOf(s, f.id);
     const spot = ladderSpot(s);
     if (st.tier === 'of') L.addChild(text(rk === 0 ? 'CHAMPION' : rk ? `RANKED #${rk}` : 'UNRANKED', 72, 54, { small: true, color: rk === 0 ? PAL.gold : rk ? PAL.sky : PAL.ash }));
-    else L.addChild(text(`${st.tier === 'amateur' ? 'AMATEUR' : 'FURY FC'} ${spot === 0 ? 'CHAMP' : '#' + ((spot ?? 0) + 1)}`, 72, 54, { small: true, color: spot === 0 ? PAL.gold : PAL.sky }));
-    L.addChild(text(`${divisionName(f.division)}  •  ${st.tier === 'of' ? 'CBFC' : st.tier === 'amateur' ? 'Amateur' : 'Regional pro'}`, 4, 72, { small: true, color: PAL.ash, width: 140, maxLines: 1 }));
+    else L.addChild(text(`${stage(s).short} ${spot === 0 ? 'CHAMP' : '#' + ((spot ?? 0) + 1)}`, 72, 54, { small: true, color: spot === 0 ? PAL.gold : PAL.sky, width: 72, maxLines: 1 }));
+    L.addChild(text(`${divisionName(f.division)}  •  ${stage(s).short}`, 4, 72, { small: true, color: PAL.ash, width: 140, maxLines: 1 }));
     const cond = condition(s);
     L.addChild(text(`OVR ${Math.round(overall(f.skills))}  •  AGE ${f.age}  •`, 4, 82, { small: true, color: PAL.ash }));
     L.addChild(text(cond.label === 'PEAK CONDITION' ? 'PEAK' : cond.label, 98, 82, { small: true, color: PAL[cond.color] }));
@@ -140,7 +169,7 @@ export class FMHubScene extends Scene {
     vit('ENERGY', st.energy, st.energy < 30 ? PAL.blood : PAL.moss, `${Math.round(st.energy)}`);
     vit('MORALE', st.morale, PAL.sky, `${Math.round(st.morale)}`);
     vit('HYPE', f.hype, PAL.gold, `${Math.round(f.hype)}`);
-    const lim = weightLimit(s);
+    const lim = contractLimit(s);
     const over = st.walkWeight - lim;
     vit('WEIGHT', Math.max(0, 100 - over * 5), over > 12 ? PAL.blood : over > 7 ? PAL.ember : PAL.moss, `${st.walkWeight.toFixed(1)} / ${lim}`);
     const health = Math.round(BODY_PARTS.reduce((a, p) => a + st.body[p.id], 0) / BODY_PARTS.length);
@@ -149,6 +178,7 @@ export class FMHubScene extends Scene {
     L.addChild(selector(30, y, 112, [{ value: 'clean' as const, label: 'Clean ($$)' }, { value: 'balanced' as const, label: 'Balanced' }, { value: 'junk' as const, label: 'Junk ($)' }], st.diet, (v) => { st.diet = v; }));
     y += 16;
     if (st.ped.on) L.addChild(text('ON A CYCLE', 4, y + 2, { small: true, color: PAL.blood }));
+    L.addChild(button(`CAREER FILE${st.rap?.length ? ` (${st.rap.length} FLAG${st.rap.length > 1 ? 'S' : ''})` : ''}`, 4, 212, 138, 11, () => this.careerFile(), { small: true, fill: st.rap?.length ? 0x3a1a1a : PAL.shadow }));
 
     // ------------------------------------------------ middle: this week
     const M = new Container();
@@ -179,7 +209,7 @@ export class FMHubScene extends Scene {
     free(`PAPERWORK${st.inbox.length ? ` (${st.inbox.length})` : ''}`, 126, () => this.paperwork(), st.inbox.length ? PAL.ember : PAL.shadow);
     free('CONDITION & CLINIC', 141, () => this.conditionMenu());
     free('STAFF', 156, () => this.staffMenu());
-    free(st.tier === 'of' ? 'RANKINGS' : 'THE LADDER', 171, () => this.rankingsMenu());
+    free(`${stage(s).short} ROSTER & RANKINGS`, 171, () => this.rankingsMenu());
     if (st.undergroundOpen) free('THE UNDERGROUND', 186, () => this.undergroundMenu(), 0x1d3a22);
     if (this.msg) M.addChild(text(this.msg, 6, 202, { small: true, width: 148, color: PAL.bone, maxLines: 3 }));
 
@@ -235,7 +265,8 @@ export class FMHubScene extends Scene {
     if (fightThisWeek(s)) r.addChild(button('FIGHT WEEK: WEIGH-IN →', W - 170, H - 19, 164, 16, () => this.weighIn(), { fill: PAL.blood }));
     else r.addChild(button('END WEEK →', W - 110, H - 19, 104, 16, () => this.endTheWeek(), { fill: PAL.blood }));
     r.addChild(button('MENU', 6, H - 19, 50, 16, () => this.menu(), { small: true }));
-    r.addChild(text(`Staff ${money(weeklyStaffCost(s))}/wk`, 62, H - 14, { small: true, color: PAL.ash }));
+    if (st.legacy) r.addChild(button('LEGACY…', 60, H - 19, 60, 16, () => this.legacyMenu(), { small: true, fill: PAL.plum }));
+    r.addChild(text(`Staff ${money(weeklyStaffCost(s))}/wk`, st.legacy ? 126 : 62, H - 14, { small: true, color: PAL.ash }));
   }
 
   // ---------------------------------------------------------------- menus
@@ -265,8 +296,8 @@ export class FMHubScene extends Scene {
     const s = this.g.state!;
     const st = fm(s);
     const win = openWindow(this.g, 'Cut weight', 250, 128);
-    const lim = weightLimit(s);
-    win.body.addChild(text(`You walk around ${st.walkWeight.toFixed(1)} lbs. Limit ${lim}. ${st.water > 0 ? `(${st.water.toFixed(1)} lbs is sauna water.)` : ''}`, 6, 4, { small: true, width: 238, color: PAL.bone }));
+    const lim = contractLimit(s);
+    win.body.addChild(text(`You walk around ${st.walkWeight.toFixed(1)} lbs. ${lim !== weightLimit(s) ? 'Contracted' : 'Limit'} ${lim}. ${st.water > 0 ? `(${st.water.toFixed(1)} lbs is sauna water.)` : ''}`, 6, 4, { small: true, width: 238, color: PAL.bone }));
     const go = (m: CutMethod) => {
       win.close();
       this.msg = cutWeight(s, m);
@@ -417,115 +448,125 @@ export class FMHubScene extends Scene {
 
   // ---------------------------------------------------------------- paperwork
 
+  /** Same inspection as the career desk, at your kitchen table. */
   private paperwork(): void {
-    const s = this.g.state!;
-    const st = fm(s);
-    const win = openWindow(this.g, 'Paperwork', 280, 150);
-    if (!st.inbox.length) {
-      win.body.addChild(text('Nothing to sign. Enjoy it while it lasts.', 6, 6, { small: true, color: PAL.ash }));
-      return;
-    }
-    win.body.addChild(text('Read before you sign. Unread paperwork gets signed as-is after two weeks (or at the weigh-in).', 6, 2, { small: true, width: 268, color: PAL.ash }));
-    st.inbox.slice(0, 7).forEach((d, i) => {
-      win.body.addChild(button(`${d.title}  •  ${d.from}`, 6, 22 + i * 17, 268, 14, () => { win.close(); this.openDoc(d); }, { small: true, fill: d.kind === 'medical' ? PAL.blood : PAL.steel }));
+    openFMDesk(this.g, () => {
+      this.refresh();
+      setTimeout(() => this.popups(), 200);
     });
   }
 
-  /** Papers-please style: compare the document to the reference card, flag what's wrong, then sign or dispute. */
-  private openDoc(d: FMDoc): void {
-    const s = this.g.state!;
-    const frame = new Container();
-    const wrap = this.g.modal(frame, { dim: 0.8 });
-    const flagged = new Set<string>();
-    const draw = () => {
-      frame.removeChildren().forEach((c) => c.destroy({ children: true }));
-      // the document (paper)
-      const dx = 20;
-      const dy = 16;
-      const dw = 250;
-      const dh = 230;
-      frame.addChild(new Graphics().rect(dx + 3, dy + 3, dw, dh).fill({ color: 0x000000, alpha: 0.4 }).rect(dx, dy, dw, dh).fill(0xe8e0cc).rect(dx, dy, dw, 18).fill(0xd4c8ac));
-      frame.addChild(text(d.title, dx + 6, dy + 5, { color: 0x2a2018 }));
-      frame.addChild(text(`From: ${d.from}`, dx + 6, dy + 22, { small: true, color: 0x5a4a38, width: dw - 12 }));
-      d.fields.forEach((fl, i) => {
-        const y = dy + 36 + i * 22;
-        const on = flagged.has(fl.label);
-        const row = new Container();
-        row.addChild(new Graphics().rect(0, 0, dw - 12, 19).fill(on ? 0xf0b0a0 : 0xf4eedf).stroke({ color: on ? 0xa01818 : 0xc8bca0, width: 1 }));
-        row.addChild(text(fl.label.toUpperCase(), 4, 2, { small: true, color: 0x7a6a50 }));
-        row.addChild(text(fl.value, 4, 10, { small: true, color: 0x1a1410, width: dw - 20, maxLines: 1 }));
-        row.position.set(dx + 6, y);
-        row.eventMode = 'static';
-        row.cursor = 'pointer';
-        row.on('pointertap', () => {
-          if (on) flagged.delete(fl.label);
-          else flagged.add(fl.label);
-          sfx('click');
-          draw();
-        });
-        frame.addChild(row);
-      });
-      frame.addChild(text('Click a line to flag it.', dx + 6, dy + dh - 12, { small: true, color: 0x7a6a50 }));
-      // the reference card
-      const rx = 284;
-      const rw = 182;
-      frame.addChild(box(rw, 150, PAL.night, PAL.gold, { bevel: true })).position.set(rx, dy);
-      frame.addChild(text(d.ref.title, rx + 6, dy + 6, { small: true, color: PAL.gold, width: rw - 12 }));
-      d.ref.lines.forEach((l, i) => {
-        frame.addChild(text(l.label.toUpperCase(), rx + 6, dy + 20 + i * 22, { small: true, color: PAL.ash }));
-        frame.addChild(text(l.value, rx + 6, dy + 28 + i * 22, { small: true, color: PAL.bone, width: rw - 12, maxLines: 2 }));
-      });
-      const done = (action: 'sign' | 'dispute') => {
-        const r = this.rng();
-        const res = resolveDoc(s, d.id, action, [...flagged], r);
-        this.save(r);
-        this.g.closeModal(wrap);
-        sfx(res.good ? 'stamp' : 'bad');
-        this.msg = res.text;
-        this.refresh();
-        this.g.autosave();
-        alertBox(this.g, res.good ? 'FILED' : 'HMM', res.text);
-      };
-      frame.addChild(button('SIGN IT', rx, dy + 160, 86, 18, () => done('sign'), { fill: PAL.moss }));
-      frame.addChild(button(d.kind === 'sponsor' ? 'TURN IT DOWN' : 'DISPUTE', rx + 96, dy + 160, 86, 18, () => done('dispute'), { fill: PAL.blood, disabled: d.kind !== 'sponsor' && !flagged.size }));
-      frame.addChild(button('LATER', rx, dy + 184, 182, 14, () => this.g.closeModal(wrap), { small: true }));
-      frame.addChild(text(d.kind === 'sponsor' ? 'Turning a deal down needs a flagged line to count as a catch.' : 'Dispute = send back the flagged lines.', rx, dy + 204, { small: true, width: 182, color: PAL.ash }));
-    };
-    draw();
-  }
-
-  private rankingsMenu(): void {
+  /** The whole roster of the promotion you're in, division by division (rankings, champion first). */
+  private rankingsMenu(div?: string): void {
     const s = this.g.state!;
     const f = me(s);
     const st = fm(s);
-    if (st.tier !== 'of') {
-      const win = openWindow(this.g, `${TIER_NAME[st.tier]}: ${divisionName(f.division)}`, 240, 150);
-      st.ladder.forEach((id, i) => {
-        const x = s.fighters[id];
-        win.body.addChild(text(`${i === 0 ? 'C ' : '#' + (i + 1)}  ${fullName(x)}  ${record(x.record)}`, 6, 4 + i * 11, { small: true, color: id === f.id ? PAL.gold : PAL.bone }));
-      });
-      win.body.addChild(text(st.tier === 'amateur' ? 'Beat the champ to turn pro.' : "Win the Fury FC belt and Bradie's people call.", 6, 4 + st.ladder.length * 11 + 4, { small: true, color: PAL.ash }));
-      return;
-    }
-    const win = openWindow(this.g, `${divisionName(f.division)} rankings`, 240, 220);
-    const sb = new ScrollBox(228, 196);
-    sb.position.set(6, 4);
-    const champ = undisputed(s, f.division)?.holder;
-    const ids = [champ, ...(s.rankings[f.division] ?? [])].filter((x): x is string => !!x);
+    const sg = stage(s);
+    const d = div ?? f.division;
+    const divs = st.tier === 'of' ? s.divisionsOpen.slice() : Object.keys(st.rosters).length ? Object.keys(st.rosters) : [f.division];
+    divs.sort((a, b) => DIVISION_ORDER.indexOf(a) - DIVISION_ORDER.indexOf(b));
+    const win = openWindow(this.g, `${sg.short} roster`, 250, 230);
+    win.body.addChild(text(sg.name, 6, 3, { small: true, color: PAL.gold, width: 238, maxLines: 1 }));
+    win.body.addChild(selector(6, 12, 238, divs.map((x) => ({ value: x, label: divisionName(x) })), d, (v) => { win.close(); this.rankingsMenu(v); }));
+    const sb = new ScrollBox(238, 166);
+    sb.position.set(6, 28);
+    let ids: string[];
+    let champ: string | null | undefined = null;
+    if (st.tier === 'of') {
+      champ = undisputed(s, d)?.holder;
+      ids = [champ, ...(s.rankings[d] ?? [])].filter((x): x is string => !!x);
+    } else ids = (d === f.division ? st.ladder : st.rosters[d]) ?? [];
     ids.forEach((id, i) => {
       const x = s.fighters[id];
-      sb.content.addChild(text(`${i === 0 && champ ? 'C ' : '#' + (champ ? i : i + 1)}  ${fullName(x)}  ${record(x.record)}`, 0, i * 11, { small: true, color: id === f.id ? PAL.gold : PAL.bone }));
+      if (!x) return;
+      const label = st.tier === 'of' ? (i === 0 && champ ? 'C ' : '#' + (champ ? i : i + 1)) : i === 0 ? 'C ' : '#' + (i + 1);
+      sb.content.addChild(text(`${label}  ${fullName(x)}  ${record(x.record)}`, 0, i * 11, { small: true, color: id === f.id ? PAL.gold : PAL.bone, width: 228, maxLines: 1 }));
     });
-    if (!ids.includes(f.id)) sb.content.addChild(text(`…  ${fullName(f)} (unranked)`, 0, ids.length * 11 + 4, { small: true, color: PAL.gold }));
+    if (d === f.division && !ids.includes(f.id)) sb.content.addChild(text(`…  ${fullName(f)} (unranked)`, 0, ids.length * 11 + 4, { small: true, color: PAL.gold }));
     win.body.addChild(sb);
+    sb.refresh();
+    const foot = st.tier === 'of' ? 'Rankings follow the real ones.' : st.tier === 'pfl' ? 'Lounge order follows the real PFL. Win the season final and the CBFC calls.' : `Beat the ${sg.short} champ to move up.`;
+    win.body.addChild(text(foot, 6, 198, { small: true, color: PAL.ash, width: 238, maxLines: 2 }));
+  }
+
+  /** Your file: every fight (amateur and pro), the rap sheet, and what the press wrote. */
+  private careerFile(tab: 'fights' | 'file' | 'press' = 'fights'): void {
+    const s = this.g.state!;
+    const st = fm(s);
+    const f = me(s);
+    const win = openWindow(this.g, `Career file: ${fullName(f)}`, 360, 226);
+    const am = st.amateur ?? (st.tier === 'amateur' ? f.record : null);
+    const pro = st.tier === 'amateur' ? null : f.record;
+    const rec = (r: { w: number; l: number; d: number } | null) => (r ? `${r.w}-${r.l}${r.d ? '-' + r.d : ''}` : '-');
+    win.body.addChild(text(`PRO ${rec(pro)}   •   AMATEUR ${rec(am)}${st.turnedPro !== undefined ? `   •   TURNED PRO ${fmtDate(st.turnedPro)}` : ''}`, 6, 2, { small: true, color: PAL.gold, width: 348, maxLines: 1 }));
+    const tabs: [typeof tab, string][] = [['fights', 'FIGHTS'], ['file', `RAP SHEET (${st.rap?.length ?? 0})`], ['press', 'PRESS']];
+    tabs.forEach(([id, label], i) => win.body.addChild(button(label, 6 + i * 116, 12, 112, 13, () => { win.close(); this.careerFile(id); }, { small: true, fill: id === tab ? PAL.gold : PAL.shadow })));
+    const sb = new ScrollBox(346, 172);
+    sb.position.set(6, 30);
+    win.body.addChild(sb);
+    let yy = 0;
+    const row = (t: string, c: number, tag?: [string, number]) => {
+      let x = 0;
+      if (tag) {
+        sb.content.addChild(text(tag[0], 0, yy, { small: true, color: tag[1] }));
+        x = 52;
+      }
+      const tt = text(t, x, yy, { small: true, width: 338 - x, color: c, maxLines: 3 });
+      sb.content.addChild(tt);
+      yy += Math.max(10, tt.textHeight + 3);
+    };
+    if (tab === 'fights') {
+      if (!st.history.length) row('No fights yet. Everybody starts somewhere. Usually a bingo hall.', PAL.ash);
+      for (const h of st.history.slice().reverse()) {
+        const o = s.fighters[h.opp];
+        const c = h.result === 'W' ? PAL.moss : h.result === 'L' ? PAL.blood : PAL.bone;
+        row(`${h.result}  vs ${o ? fullName(o) : 'unknown'}  •  ${h.method}, R${h.round}  •  ${h.promo ?? ''} ${fmtDate(h.week)}${h.title ? '  •  TITLE' : ''}`, c, [h.pro === false || (h.pro === undefined && st.turnedPro !== undefined && h.week < st.turnedPro) ? 'AMATEUR' : 'PRO', h.pro === false ? PAL.ash : PAL.gold]);
+      }
+    } else if (tab === 'file') {
+      const rap = st.rap ?? [];
+      if (!rap.length) row('Clean. No arrests, no failed tests, no missed weight, no bad contracts. Suspiciously clean.', PAL.moss);
+      const col: Record<string, number> = { ARREST: PAL.blood, CHARGE: PAL.blood, DOPING: PAL.ember, SUSPENSION: PAL.ember, WEIGHT: PAL.gold, CONTRACT: PAL.sky };
+      for (const r of rap.slice().reverse()) row(`${fmtDate(r.week)}: ${r.text}`, PAL.bone, [r.kind, col[r.kind] ?? PAL.ash]);
+      if (st.ped.caught) row(`USADA-ish flag: ${st.ped.caught} adverse finding${st.ped.caught > 1 ? 's' : ''}. Enhanced testing applies.`, PAL.ember);
+    } else {
+      const pr = st.press ?? [];
+      if (!pr.length) row('Nobody has written about you yet. Win something.', PAL.ash);
+      for (const a of pr.slice().reverse()) row(`"${a.headline}"`, PAL.bone, [a.outlet.toUpperCase().slice(0, 12), PAL.sky]);
+    }
     sb.refresh();
   }
 
   private menu(): void {
-    const win = openWindow(this.g, 'Menu', 160, 92);
-    win.body.addChild(button('SAVE', 6, 6, 148, 15, () => { this.g.autosave(); this.g.toast('Saved.', PAL.moss, { small: true }); win.close(); }, { small: true }));
-    win.body.addChild(button('RETIRE…', 6, 24, 148, 15, () => { win.close(); confirm(this.g, 'Hang up the gloves for good?', () => this.legacy()); }, { small: true, fill: PAL.ember }));
-    win.body.addChild(button('QUIT TO TITLE', 6, 42, 148, 15, () => { this.g.autosave(); win.close(); void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g))); }, { small: true }));
+    const win = openWindow(this.g, 'Menu', 160, 146);
+    win.body.addChild(button('SAVE…', 6, 6, 72, 15, () => { this.g.autosave(); win.close(); openSaveSlots(this.g); }, { small: true }));
+    win.body.addChild(button('LOAD…', 82, 6, 72, 15, () => { win.close(); openLoad(this.g, familyOf(this.g.state!)); }, { small: true }));
+    win.body.addChild(button('HELP: HOW TO BE A PRO', 6, 24, 148, 15, () => openHelp(this.g, 'rtc'), { small: true, fill: PAL.shadow, border: PAL.gold }));
+    win.body.addChild(button('SETTINGS', 6, 42, 148, 15, () => openSettings(this.g), { small: true }));
+    win.body.addChild(button('ACHIEVEMENTS', 6, 60, 148, 15, () => openAchievements(this.g), { small: true }));
+    win.body.addChild(button('RETIRE…', 6, 78, 148, 15, () => { win.close(); confirm(this.g, 'Hang up the gloves for good?', () => this.legacy()); }, { small: true, fill: PAL.ember }));
+    win.body.addChild(button('QUIT TO TITLE', 6, 96, 148, 15, () => { this.g.autosave(); win.close(); void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g))); }, { small: true }));
+  }
+
+  /** Legacy Mode: weight classes, your own gym. */
+  private legacyMenu(): void {
+    const s = this.g.state!;
+    const f = me(s);
+    const win = openWindow(this.g, 'Legacy', 280, 168);
+    const b = win.body;
+    b.addChild(text('WEIGHT CLASS', 6, 4, { color: PAL.gold }));
+    b.addChild(text(`You fight at ${divisionName(f.division)}. Moving up: more power, easier cut. Moving down: faster, hungrier, miserable cut.`, 6, 15, { small: true, width: 266, color: PAL.ash, maxLines: 2 }));
+    divisionMoves(s).forEach((d, i) => b.addChild(button(`MOVE TO ${divisionName(d).toUpperCase()}`, 6 + i * 136, 34, 130, 14, () => confirm(this.g, `Move to ${divisionName(d)}? You start at the bottom of that ladder.`, () => { this.msg = changeDivision(s, d); win.close(); this.g.autosave(); this.refresh(); }), { small: true, fill: PAL.steel })));
+    b.addChild(text('YOUR OWN GYM', 6, 58, { color: PAL.gold }));
+    const gy = gym(s);
+    if (!gy) {
+      b.addChild(text(`Open your own gym for ${money(GYM_COST)}. Members pay dues every week, and training in your own place makes you better.`, 6, 69, { small: true, width: 266, color: PAL.ash, maxLines: 3 }));
+      b.addChild(button(`OPEN ${f.last.toUpperCase()} MMA (${money(GYM_COST)})`, 6, 92, 266, 14, () => { this.msg = openGym(s); sfx('cash'); win.close(); this.g.autosave(); this.refresh(); }, { small: true, fill: PAL.moss }));
+    } else {
+      b.addChild(text(`${gy.name}  •  level ${gy.level}  •  ${gy.members} members  •  training +${Math.round(gy.level * 6)}%`, 6, 69, { small: true, width: 266, color: PAL.bone, maxLines: 2 }));
+      if (gy.level < 4) b.addChild(button(`UPGRADE (${money(GYM_UPGRADE(gy.level))})`, 6, 92, 266, 14, () => { this.msg = upgradeGym(s); win.close(); this.g.autosave(); this.refresh(); }, { small: true, fill: PAL.moss }));
+    }
+    b.addChild(text('WHEN YOU HANG THEM UP', 6, 114, { color: PAL.gold }));
+    b.addChild(text('Retire (MENU > RETIRE) and you can start a promoter career with your name on the door and your savings in the bank.', 6, 125, { small: true, width: 266, color: PAL.ash, maxLines: 3 }));
   }
 
   private legacy(): void {
@@ -538,7 +579,17 @@ export class FMHubScene extends Scene {
     const verdict = wasChamp ? 'A champion. They will put you in the hall of fame and spell your name wrong.' : f.record.w > f.record.l * 2 ? 'A real one. Fans will remember your fights; promoters will remember your invoices.' : 'A journeyman with stories. Great at barbecues.';
     alertBox(this.g, 'LEGACY', `${fullName(f)} retires at ${f.age} with a record of ${record(f.record)}.\n${titles} wins under the ${s.promotion.name} banner. ${st.ped.caught ? `${st.ped.caught} failed drug test${st.ped.caught > 1 ? 's' : ''}. ` : ''}\n\n${verdict}`, () => {
       this.g.autosave();
-      void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g)));
+      const toTitle = () => void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g)));
+      if (!st.legacy) return toTitle();
+      // Legacy Mode: the gloves come off, the suit goes on
+      confirm(this.g, `Become a promoter? A new career: ${f.last.toUpperCase()} FIGHTING CHAMPIONSHIP, with ${money(Math.max(0, st.money))} of your savings on top of the usual budget.`, () => {
+        const ns = createNewGame({ seed: (s.seed ^ 0x51ed) >>> 0, mode: 'career', difficulty: 'normal', promotionName: `${f.last} Fighting Championship`, presidentName: fullName(f) });
+        ns.promotion.cash += Math.max(0, st.money);
+        startWeek(ns);
+        this.g.state = ns;
+        routePhase(this.g, true);
+        this.g.autosave();
+      }, 'SUIT UP', 'NO, TITLE');
     });
   }
 
@@ -580,13 +631,19 @@ export class FMHubScene extends Scene {
     const by = (H - bh) / 2;
     frame.addChild(box(bw, bh, PAL.night, PAL.gold, { bevel: true })).position.set(bx, by);
     frame.addChild(text('WEIGH-INS', bx + 8, by + 6, { color: PAL.gold }));
-    frame.addChild(text(need <= 0 ? `You're on weight (${weightLimit(s)} lbs). Step on the scale and flex.` : `You walk around ${fm(s).walkWeight.toFixed(1)} lbs. The limit is ${weightLimit(s)}. You need to cut ${need.toFixed(1)} lbs. Risk of missing: ~${Math.round(risk * 100)}% (a nutritionist helps).`, bx + 8, by + 20, { small: true, width: bw - 16, color: PAL.bone }));
+    const lim = contractLimit(s);
+    const signed = lim !== weightLimit(s) ? ` (the weight YOU signed for; your division is ${weightLimit(s)})` : '';
+    frame.addChild(text(need <= 0 ? `You're on weight (${lim} lbs${signed}). Step on the scale and flex.` : `You walk around ${fm(s).walkWeight.toFixed(1)} lbs. The limit is ${lim}${signed}. You need to cut ${need.toFixed(1)} lbs. Risk of missing: ~${Math.round(risk * 100)}% (a nutritionist helps).`, bx + 8, by + 20, { small: true, width: bw - 16, color: PAL.bone }));
     const go = (c: 'easy' | 'hard' | 'miss') => {
       const r = this.rng();
       const res = doWeighIn(s, c, r);
       this.save(r);
       this.g.closeModal(wrap);
-      alertBox(this.g, res.made ? 'MADE WEIGHT' : 'MISSED WEIGHT', res.text, () => this.gameplan());
+      // then the press conference and the face-off (if this fight gets them)
+      alertBox(this.g, res.made ? 'MADE WEIGHT' : 'MISSED WEIGHT', res.text, () => {
+        const r2 = this.rng();
+        fightWeekShow(this.g, s, r2, () => this.save(r2), () => this.gameplan());
+      });
     };
     frame.addChild(button(need <= 0 ? 'STEP ON THE SCALE' : 'SENSIBLE CUT', bx + 8, by + bh - 40, 96, 15, () => go('easy'), { small: true, fill: PAL.moss }));
     if (need > 0) {
@@ -641,6 +698,18 @@ export class FMHubScene extends Scene {
       mod('power', 5);
       mod('wrestling', 4);
     }
+    if (st.fight!.bare) {
+      // no gloves: everything cuts, hands break, chins matter
+      mod('power', 4);
+      mod('chin', -6);
+      f.skills.chin = Math.max(10, f.skills.chin - 6);
+      f.skills.power = Math.min(99, f.skills.power + 4);
+    }
+    if (st.fight!.rehydro) {
+      // fought dry: no gas, and a brain with no fluid around it
+      f.skills.cardio = Math.max(10, f.skills.cardio - 9);
+      f.skills.chin = Math.max(10, f.skills.chin - 4);
+    }
     if (st.partner?.leaking) mod('fightIQ', 8);
     if (st.partner?.fake) mod('fightIQ', -6);
     const restore = () => {
@@ -677,7 +746,7 @@ export class FMHubScene extends Scene {
           const B = s.fighters[bout.b];
           openLiveFight(this.g, {
             bout, A, B, skills: [A.skills, B.skills], player: side(bout) as 0 | 1, plan: st.plan, oppPlan: oppPlan(2), cutTier: st.staff.cutman, seed,
-            event: ev.name, judges: off.judges.map((j) => j.name), referee: off.referee.name,
+            event: ev.name, judges: off.judges.map((j) => j.name), referee: off.referee.name, sponsors: eventSponsors(s, ev), canvas: eventCanvas(s, ev), bare: !!st.fight?.bare, state: s, ev,
             done: (res) => {
               bout.result = res;
               done();
@@ -694,11 +763,18 @@ export class FMHubScene extends Scene {
         const quote = bradieOnYou(s, won, r2);
         this.save(r2);
         this.g.autosave();
+        FMHubScene.holdPopups = true;
         this.g.goto(new FMHubScene(this.g));
+        const release = () => {
+          FMHubScene.holdPopups = false;
+          const sc = this.g.scene;
+          if (sc instanceof FMHubScene) setTimeout(() => sc.popups(), 250);
+        };
         setTimeout(() => {
           alertBox(this.g, won ? 'VICTORY' : 'FIGHT OVER', lines.join('\n'), () => {
             this.bradieSays(quote, () => {
-              if (won) this.micMoment();
+              if (won) this.micMoment(release);
+              else release();
             });
           });
         }, 400);
@@ -752,7 +828,7 @@ export class FMHubScene extends Scene {
     opts.forEach(([c, label, fill], i) => frame.addChild(button(label, bx + 8 + (i % 2) * 144, by + 50 + Math.floor(i / 2) * 20, 140, 15, () => pick(c), { small: true, fill })));
   }
 
-  private micMoment(): void {
+  private micMoment(then?: () => void): void {
     const s = this.g.state!;
     const frame = new Container();
     const wrap = this.g.modal(frame, { dim: 0.7 });
@@ -768,7 +844,10 @@ export class FMHubScene extends Scene {
       const out = postFightCallout(s, id, r);
       this.save(r);
       this.g.closeModal(wrap);
-      alertBox(this.g, 'THE MIC', out, () => this.refreshScene());
+      alertBox(this.g, 'THE MIC', out, () => {
+        this.refreshScene();
+        then?.();
+      });
     };
     targets.forEach((t, i) => frame.addChild(button(`CALL OUT ${t.last.toUpperCase()} (${rankLabel(s, t.id)})`, bx + 8, by + 22 + i * 18, bw - 16, 15, () => pick(t.id), { small: true, fill: PAL.blood })));
     frame.addChild(button('THANK EVERYONE', bx + 8, by + bh - 22, bw - 16, 15, () => pick(null), { small: true, fill: PAL.steel }));

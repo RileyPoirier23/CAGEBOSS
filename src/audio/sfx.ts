@@ -105,7 +105,9 @@ function noise(dur: number, vol = 0.3, filterFreq = 1200, q = 0.7, delay = 0, at
 
 export type Sfx =
   | 'click' | 'stamp' | 'paper' | 'crowd' | 'roar' | 'boo' | 'phone' | 'cash' | 'punch' | 'bell'
-  | 'error' | 'citation' | 'type' | 'good' | 'bad' | 'thud' | 'whoosh' | 'kick' | 'snap';
+  | 'error' | 'citation' | 'type' | 'good' | 'bad' | 'thud' | 'whoosh' | 'kick' | 'snap'
+  // grappling: tie-ups, the fence, takedowns, scrambles, submissions
+  | 'grapple' | 'scuffle' | 'cage' | 'slam' | 'scramble' | 'squeak' | 'strain' | 'tap';
 
 export function sfx(name: Sfx): void {
   if (muted) return;
@@ -184,6 +186,51 @@ export function sfx(name: Sfx): void {
     case 'bad':
       tone(330, 0.12, 'square', 0.12);
       tone(247, 0.2, 'square', 0.12, 0, 0.1);
+      break;
+    case 'grapple':
+      // two bodies colliding: a dull slap and cloth/skin friction
+      tone(95, 0.1, 'sine', 0.35, -25);
+      noise(0.18, 0.3, 1400, 0.8, 0, 0.01, 'bandpass');
+      noise(0.12, 0.18, 2200, 0.8, 0.07, 0.02, 'bandpass');
+      break;
+    case 'scuffle':
+      // hips and knees moving on the canvas
+      noise(0.1, 0.16, 1100, 0.9, 0, 0.02, 'bandpass');
+      noise(0.1, 0.12, 1600, 0.9, 0.08, 0.02, 'bandpass');
+      break;
+    case 'cage':
+      // somebody's back hits the fence: a metallic rattle
+      noise(0.35, 0.3, 3200, 6, 0, 0.003, 'bandpass');
+      tone(523, 0.3, 'triangle', 0.08, -40);
+      tone(739, 0.25, 'triangle', 0.06, -30, 0.02);
+      tone(70, 0.12, 'sine', 0.4, -20);
+      break;
+    case 'slam':
+      // a body hitting the canvas
+      tone(55, 0.28, 'sine', 0.75, -25);
+      noise(0.2, 0.55, 380, 0.7, 0, 0.004);
+      noise(0.25, 0.15, 1800, 0.8, 0.05, 0.03, 'bandpass');
+      break;
+    case 'scramble':
+      for (let i = 0; i < 4; i++) noise(0.08, 0.18, 900 + i * 300, 1, i * 0.06, 0.01, 'bandpass');
+      tone(85, 0.08, 'sine', 0.25, -20, 0.12);
+      break;
+    case 'squeak':
+      // a shoe-less foot dragging on the mat
+      tone(1900, 0.06, 'sine', 0.05, 400);
+      noise(0.08, 0.1, 2600, 2, 0, 0.01, 'bandpass');
+      break;
+    case 'strain':
+      // a submission locked in: a straining groan, rising
+      tone(110, 0.55, 'sawtooth', 0.07, 40);
+      tone(165, 0.5, 'sawtooth', 0.04, 50, 0.05);
+      noise(0.45, 0.1, 700, 1.5, 0, 0.1, 'bandpass');
+      break;
+    case 'tap':
+      for (let i = 0; i < 3; i++) {
+        noise(0.05, 0.45, 1500, 1, i * 0.13, 0.002, 'bandpass');
+        tone(180, 0.05, 'sine', 0.3, -40, i * 0.13);
+      }
       break;
   }
 }

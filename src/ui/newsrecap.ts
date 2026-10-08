@@ -3,6 +3,7 @@
  * Michael Biscuit. Results board, Play of the Night replay, hot takes, the
  * ratings, and a headline crawl along the bottom.
  */
+import { eventSponsors, eventCanvas } from '../sim/sponsorship';
 import { Container, Graphics } from 'pixi.js';
 import type { Game } from './app';
 import type { Bout, EventFinancials, FightEvent, TickerLine } from '../core/types';
@@ -184,7 +185,7 @@ export class NewsRecap extends Container {
           this.seg.addChild(text('PLAY OF THE NIGHT', SX, SY + 22, { width: SW, align: 'center', color: PAL.gold }));
           this.seg.addChild(text(`${boutTitle(s, best)}  •  ${boutLabel(s, best)}`, SX, SY + 32, { width: SW, align: 'center', small: true, color: PAL.ash }));
           if (A && B) {
-            const arena = new ArenaView(A, B, best.rounds, { event: this.ev.name });
+            const arena = new ArenaView(A, B, best.rounds, { event: this.ev.name, sponsors: eventSponsors(this.g.state!, this.ev), canvas: eventCanvas(this.g.state!, this.ev) });
             arena.scale.set(0.5);
             arena.position.set(Math.round(W / 2 - (480 * 0.5) / 2), SY + 42);
             const m = new Graphics().rect(arena.x, arena.y, 480 * 0.5, 150 * 0.5).fill(0xffffff);

@@ -16,6 +16,10 @@ export type Pose =
   | 'shoot' | 'sprawl' | 'clinch' | 'top' | 'topPunch' | 'bottom' | 'bottomSub' | 'hurt' | 'rocked' | 'down' | 'ko' | 'celebrate'
   | 'taunt' | 'stool' | 'walk1' | 'walk2' | 'block' | 'slip' | 'lifted'
   | 'doubled' | 'touch'
+  // directional strikes
+  | 'bodyJab' | 'leadHook' | 'bodyHook' | 'overhand' | 'frontKick' | 'spinKick'
+  // the clinch: dominant ties, the man in them, the fence, knees and trips
+  | 'collar' | 'plum' | 'underhook' | 'clinchDef' | 'cageBack' | 'plumKnee' | 'trip' | 'falling' | 'techUp'
   | 'stand' | 'armUp' | 'headDown' | 'refHold' | 'refRaise' | 'mic' | 'point' | 'flex'
   | GroundPose;
 
@@ -30,7 +34,9 @@ export type GroundPose =
   | 'sTop' | 'sTopPunch' | 'sBot'
   | 'bkTop' | 'bkTopPunch' | 'bkBot'
   | 'rncAtk' | 'rncVic' | 'guilAtk' | 'guilVic' | 'triAtk' | 'triVic' | 'abAtk' | 'abVic'
-  | 'atriAtk' | 'atriVic' | 'kimAtk' | 'kimVic' | 'legAtk' | 'legVic';
+  | 'atriAtk' | 'atriVic' | 'kimAtk' | 'kimVic' | 'legAtk' | 'legVic'
+  // half guard, and the in-between frames of passes and scrambles
+  | 'hTop' | 'hTopPunch' | 'hBot' | 'passTop' | 'passBot' | 'scrA' | 'scrB';
 
 const P = (o: Partial<Record<Joint, [number, number]>>, base?: Rig): Rig => ({ ...(base ?? GUARD), ...o } as Rig);
 
@@ -89,6 +95,16 @@ export const GROUND_POSES: Record<GroundPose, Rig> = {
   kimVic: GP({ ...FLAT, elF: [22, -16], haF: [14, -22], elB: [18, -10], haB: [12, -14], ...FLAT_LEGS }),
   kimAtk: GP({ hip: [-10, -14], ...KNEEL_LEGS, neck: [12, -20], head: [16, -26], shF: [14, -22], shB: [9, -18], elF: [20, -14], haF: [14, -22], elB: [8, -14], haB: [16, -18] }),
   legVic: GP({ hip: [6, -4], neck: [34, -4], head: [42, -6], shF: [32, -7], shB: [30, -3], elF: [28, -12], haF: [22, -14], elB: [30, -10], haB: [24, -8], knF: [-6, -10], ftF: [-18, -14], knB: [-8, -6], ftB: [-20, -2] }),
+  // half guard: top kneels with one leg trapped, bottom on his side tangled round it
+  hBot: GP({ hip: [-6, -6], neck: [20, -8], head: [28, -10], shF: [18, -10], shB: [16, -6], elF: [22, -18], haF: [28, -24], elB: [14, -14], haB: [18, -20], knF: [-10, -18], ftF: [-18, -10], knB: [-12, -12], ftB: [-22, -8] }),
+  hTop: GP({ hip: [-10, -18], knF: [0, -4], ftF: [-14, 0], knB: [-6, -4], ftB: [-22, 0], neck: [10, -30], head: [17, -34], elF: [18, -22], haF: [24, -14], elB: [10, -20], haB: [16, -10] }),
+  hTopPunch: GP({ hip: [-10, -20], knF: [0, -4], ftF: [-14, 0], knB: [-6, -4], ftB: [-22, 0], neck: [12, -34], head: [18, -38], elF: [18, -22], haF: [24, -14], elB: [14, -36], haB: [24, -12] }),
+  // passing: hips high, stepping over the legs; the man underneath kicks to keep him out
+  passTop: GP({ hip: [-6, -30], knF: [8, -14], ftF: [14, -2], knB: [-14, -10], ftB: [-22, 0], neck: [12, -36], head: [18, -40], elF: [20, -22], haF: [26, -10], elB: [10, -24], haB: [16, -12] }),
+  passBot: GP({ hip: [-8, -4], neck: [20, -4], head: [28, -6], shF: [18, -7], shB: [16, -3], elF: [24, -18], haF: [30, -26], elB: [20, -16], haB: [26, -22], knF: [-6, -26], ftF: [-2, -36], knB: [-12, -20], ftB: [-14, -30] }),
+  // a scramble: both rolling, nobody on top yet
+  scrA: GP({ hip: [-4, -16], neck: [14, -24], head: [20, -28], knF: [6, -8], ftF: [14, 0], knB: [-12, -8], ftB: [-20, 0], elF: [22, -12], haF: [28, -4], elB: [10, -14], haB: [16, -4] }),
+  scrB: GP({ hip: [0, -10], neck: [-14, -18], head: [-20, -22], knF: [10, -20], ftF: [18, -12], knB: [6, -12], ftB: [14, -4], elF: [-6, -10], haF: [-2, -2], elB: [-16, -10], haB: [-22, -4] }),
   legAtk: GP({ hip: [-26, -8], neck: [-44, -22], head: [-50, -28], shF: [-42, -24], shB: [-46, -20], elF: [-30, -18], haF: [-20, -16], elB: [-32, -12], haB: [-22, -12], knF: [-14, -18], ftF: [-2, -10], knB: [-16, -10], ftB: [-4, -2] }),
 };
 
@@ -140,6 +156,24 @@ export const POSES: Record<Pose, Rig> = {
   stool: P({ hip: [0, -26], neck: [2, -52], head: [3, -60], shF: [6, -50], shB: [-2, -50], elF: [16, -38], haF: [22, -32], elB: [-10, -38], haB: [-14, -30], knF: [16, -24], ftF: [16, 0], knB: [12, -22], ftB: [10, 0] }),
   walk1: P({ head: [1, -76], neck: [0, -67], shF: [3, -64], shB: [-3, -64], elF: [6, -52], haF: [8, -42], elB: [-6, -52], haB: [-8, -42], knF: [6, -20], ftF: [10, 0], knB: [-4, -20], ftB: [-8, 0] }),
   walk2: P({ head: [1, -76], neck: [0, -67], shF: [3, -64], shB: [-3, -64], elF: [-4, -52], haF: [-6, -42], elB: [4, -52], haB: [6, -42], knF: [-2, -20], ftF: [-6, 0], knB: [4, -20], ftB: [8, 0] }),
+  // ---- directional strikes
+  bodyJab: P({ hip: [2, -36], neck: [7, -58], head: [11, -65], shF: [10, -57], elF: [24, -48], haF: [38, -46], haB: [12, -60], elB: [8, -52], knF: [12, -18], knB: [-5, -18] }),
+  leadHook: P({ neck: [5, -66], head: [7, -74], shF: [9, -64], elF: [24, -68], haF: [30, -72], haB: [10, -68], elB: [6, -56] }),
+  bodyHook: P({ hip: [2, -36], neck: [8, -58], head: [12, -64], shF: [10, -56], elF: [20, -44], haF: [30, -50], haB: [12, -60], knF: [12, -18], knB: [-5, -18] }),
+  overhand: P({ neck: [9, -64], head: [13, -70], shB: [6, -64], elB: [18, -82], haB: [36, -70], hip: [2, -38], haF: [14, -66], elF: [12, -56], knF: [12, -18] }),
+  frontKick: P({ neck: [-2, -67], head: [-2, -75], hip: [0, -42], knF: [16, -50], ftF: [38, -48], knB: [-6, -21], ftB: [-12, 0], haF: [10, -64], haB: [4, -62] }),
+  spinKick: P({ neck: [-8, -64], head: [-12, -70], shF: [-4, -62], shB: [-10, -62], hip: [0, -42], knB: [20, -44], ftB: [44, -46], knF: [-2, -21], ftF: [-4, 0], haF: [-14, -60], haB: [-6, -58], elF: [-10, -56], elB: [-4, -54] }),
+  // ---- clinch
+  collar: P({ neck: [7, -66], head: [11, -72], shF: [10, -64], elF: [18, -70], haF: [22, -78], shB: [3, -64], elB: [14, -58], haB: [22, -62] }),
+  plum: P({ hip: [-2, -40], neck: [8, -64], head: [11, -70], shF: [10, -63], elF: [20, -68], haF: [24, -76], shB: [4, -63], elB: [18, -66], haB: [24, -74] }),
+  plumKnee: P({ hip: [-2, -42], neck: [8, -64], head: [11, -70], shF: [10, -63], elF: [20, -66], haF: [24, -72], shB: [4, -63], elB: [18, -64], haB: [24, -70], knB: [22, -58], ftB: [10, -36] }),
+  underhook: P({ hip: [0, -38], neck: [10, -62], head: [15, -67], shF: [12, -60], elF: [22, -52], haF: [28, -46], shB: [6, -60], elB: [18, -50], haB: [26, -44], knF: [10, -20], knB: [-6, -20] }),
+  clinchDef: P({ hip: [-2, -40], neck: [8, -60], head: [13, -62], shF: [10, -58], elF: [16, -52], haF: [22, -60], shB: [4, -58], elB: [12, -50], haB: [20, -56] }),
+  cageBack: P({ hip: [-4, -40], neck: [-6, -66], head: [-6, -74], shF: [-2, -63], shB: [-9, -63], elF: [8, -58], haF: [16, -62], elB: [2, -56], haB: [12, -58] }),
+  trip: P({ hip: [2, -36], neck: [12, -58], head: [18, -62], shF: [14, -58], shB: [8, -58], elF: [22, -50], haF: [28, -46], elB: [18, -48], haB: [24, -44], knB: [14, -14], ftB: [30, -4], knF: [8, -20], ftF: [10, 0] }),
+  falling: P({ hip: [-6, -26], neck: [-18, -48], head: [-24, -54], shF: [-14, -48], shB: [-20, -46], elF: [-6, -56], haF: [2, -62], elB: [-24, -40], haB: [-30, -34], knF: [8, -30], ftF: [20, -24], knB: [2, -18], ftB: [8, -6] }),
+  // technical stand-up: one hand posted behind, one up in front
+  techUp: P({ hip: [-6, -26], neck: [4, -50], head: [8, -57], knF: [8, -18], ftF: [14, 0], knB: [-16, -8], ftB: [-24, 0], haB: [-14, -20], elB: [-10, -30], haF: [12, -50], elF: [10, -40] }),
   lifted: P({ hip: [0, -60], neck: [-6, -84], head: [-10, -90], knF: [10, -48], ftF: [16, -34], knB: [4, -44], ftB: [10, -30], haF: [8, -72], haB: [2, -70] }),
   // ---- ceremony / announcer / referee
   stand: STAND,

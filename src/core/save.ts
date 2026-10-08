@@ -9,8 +9,24 @@ import LZString from 'lz-string';
 import { ensureCareer } from './career';
 
 export const SAVE_VERSION = 1;
-export type SlotId = '1' | '2' | '3' | 'auto';
+/** Slot ids: career uses auto/1/2/3; Road To Champion r-prefixed (rauto, r1..), Legacy Mode l-prefixed. */
+export type SlotId = string;
 export const SLOTS: SlotId[] = ['auto', '1', '2', '3'];
+export type SaveFamily = 'career' | 'rtc' | 'legacy';
+export const FAMILY_NAME: Record<SaveFamily, string> = { career: 'Promoter career', rtc: 'Road To Champion', legacy: 'Legacy Mode' };
+/** The four slots (autosave first) for one kind of game. */
+export function slotsFor(f: SaveFamily): SlotId[] {
+  const p = f === 'career' ? '' : f === 'rtc' ? 'r' : 'l';
+  return SLOTS.map((x) => p + x);
+}
+export function familyOf(state: GameState): SaveFamily {
+  if (state.mode !== 'fighter') return 'career';
+  return (state as GameState & { fm?: { legacy?: boolean } }).fm?.legacy ? 'legacy' : 'rtc';
+}
+export const autoSlot = (state: GameState): SlotId => slotsFor(familyOf(state))[0];
+export const isAutoSlot = (slot: SlotId): boolean => slot.endsWith('auto');
+/** Every slot of every kind (for "has this person ever saved anything"). */
+export const ALL_SLOTS: SlotId[] = [...slotsFor('career'), ...slotsFor('rtc'), ...slotsFor('legacy')];
 
 export interface SaveMeta {
   slot: SlotId;
@@ -24,6 +40,9 @@ export interface SaveMeta {
   cash: number;
   savedAt: number;
   ending: string | null;
+  /** fighter modes: record and where you fight */
+  record?: string;
+  league?: string;
 }
 
 export interface SaveFile {
@@ -60,6 +79,21 @@ export function setStorage(s: KV): void {
 const key = (slot: SlotId) => `cageboss.save.${slot}`;
 
 export function makeSave(state: GameState, slot: SlotId): SaveFile {
+  const fmx = (state as GameState & { fm?: { player: string; money: number; tier: string; stage?: number; circuit?: { name: string }[] } }).fm;
+  if (state.mode === 'fighter' && fmx) {
+    const f = state.fighters[fmx.player];
+    const r = f?.record;
+    return {
+      kind: 'cageboss-save',
+      version: SAVE_VERSION,
+      meta: {
+        slot, name: f ? `${f.first} "${f.nick}" ${f.last}`.replace(' "" ', ' ') : 'Fighter', week: state.week, date: fmtDate(state.week), act: state.act, mode: state.mode,
+        difficulty: state.difficulty, seed: state.seed, cash: fmx.money, savedAt: Date.now(), ending: state.ending,
+        record: r ? `${r.w}-${r.l}${r.d ? '-' + r.d : ''}` : '', league: fmx.circuit?.[Math.min(fmx.stage ?? 0, fmx.circuit.length - 1)]?.name ?? fmx.tier,
+      },
+      state,
+    };
+  }
   return {
     kind: 'cageboss-save',
     version: SAVE_VERSION,
@@ -81,7 +115,7 @@ export function makeSave(state: GameState, slot: SlotId): SaveFile {
 }
 
 export function saveToSlot(state: GameState, slot: SlotId): boolean {
-  if (state.difficulty === 'ironman' && slot !== 'auto') return false;
+  if (state.difficulty === 'ironman' && !isAutoSlot(slot)) return false;
   try {
     const save = makeSave(state, slot);
     kv.setItem(key(slot), 'lz:' + LZString.compressToUTF16(JSON.stringify(save)));

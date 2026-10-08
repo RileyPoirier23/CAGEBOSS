@@ -642,6 +642,122 @@ ONETON['feed'] += [
     "New episode of the Lucha Lowdown: 3 hours, 1 topic. You know the topic.",
 ]
 
+# ---------------------------------------------------------------- 1ton: more of everything (v1.4.1)
+ONETON['ask_card'] += [
+    "1ton, Lucha Lowdown. {f}, when you beat {opp}, and you will, are you dedicating it to Mexico, to your mother, or to me? I'll accept any of the three. Ideally me.",
+    "1ton here. {presidentLast}, I counted. {f} has the best walkout on this card. The best hair. The best abuela in the building. Why is he not fighting last?",
+    "{f}, 1ton. I'm not going to ask about {opp}. Nobody in Mexico is going to ask about {opp}. Tell me about your corner. Is it all cousins? It should be all cousins.",
+    "1ton, the beard in the third row. {f}, I brought a flag the size of a parking space. Will you wear it out of the cage or should I just throw it in?",
+    "1ton. Quick one. {presidentLast}, if {f} wins tonight, title shot? Yes or yes?",
+    "1ton, Lucha Lowdown, live. {f}, my viewers want to know: how many tacos did you eat on fight week, and was it enough? It was not enough. Eat more.",
+    "{f}! It's 1ton! The pozole I made you is in the green room! Don't let {opp} eat it! That's the whole question!",
+    "1ton. {presidentLast}, explain to Mexico why {f} is on a {promotion} card and not on every {promotion} card.",
+    "1ton here. {f}, is it true {opp} said Mexican cardio is 'overrated'? He didn't? Well, someone said it. Respond.",
+    "1ton. {f}, the whole of Guadalajara is staying up to watch this. Some of them are four years old. Do it for the kids.",
+]
+ONETON['ask_roster'] += [
+    "1ton, Lucha Lowdown. Is {f} injured? Because if {f} isn't injured, I don't understand why I'm watching this card without {f} on it.",
+    "1ton. {presidentLast}, I have a petition here with 40,000 signatures asking for {f} on the next card. 39,000 of them are me. Still counts.",
+    "1ton here. Respectfully, {f} should be fighting tonight, tomorrow, and on Christmas. When?",
+    "1ton. Simple question. {f}. Main event. Mexico City. Day of the Dead. Yes?",
+    "1ton, the beard. Has anybody at {promotion} called {f} this month? I have. Twice. He's lovely. Book him.",
+    "1ton. {f} posted a training video at 4am. That's dedication. When does dedication get a fight date, {presidentLast}?",
+    "1ton here. If {f} isn't on the next card, I'm doing a hunger strike. It starts after dinner.",
+    "1ton, Lucha Lowdown. {f} versus anybody. I'll even let you pick the anybody. Date?",
+]
+ONETON['ask_other'] += [
+    "1ton. {f}, {where}. Sixteen wins, fourteen by knockout, two by 'his opponent saw him and left'. Sign him.",
+    "1ton here. I'm putting {f} in front of you right now, {presidentLast}. {where}. If you don't sign him, a rival will, and I'll ask THEM about him instead. You'll hate that.",
+    "1ton, Lucha Lowdown. Have your scouts looked at {f}? {where}. Your scouts should be fired. Except the one who's Mexican. Keep him.",
+    "1ton. {f} is {where}. I have his number. I have his mom's number. I have his barber's number. Pick one.",
+    "1ton here. A man named {f}, {where}, just knocked out a guy so hard the guy's family felt it. Contract. Tonight.",
+    "1ton. You keep saying the roster is full. Of what? Not {f}. {where}.",
+]
+ONETON['ask_none'] += [
+    "1ton. Your card has zero Mexican fighters. Zero. That's not a number, {presidentLast}. That's a cry for help.",
+    "1ton, Lucha Lowdown. I looked at the card. I looked at it again. I asked my wife to look at it. No Mexicans. Explain.",
+    "1ton here. If I find a Mexican fighter in this building tonight, can I put him on the card? I'll check the parking lot.",
+    "1ton. I'm not asking a question. I'm holding up a picture of the Mexican flag until somebody answers one.",
+    "1ton, the beard, the legend. {presidentLast}, do you even like tacos? Because this card says no.",
+    "1ton. This is a card with no Mexicans on it. In my country we call that a 'prelim'.",
+]
+ONETON['ask_broken'] = [
+    "1ton. {presidentLast}. You promised me a Mexican main event {n} times. I wrote them all down. I have them laminated. Where is it?",
+    "1ton here. Last time you said 'soon'. The time before that, 'soon'. {n} promises. Soon is not a date.",
+    "1ton, Lucha Lowdown. {n} promises, zero Mexican main events. My viewers have started calling you 'El Mentiroso'. I told them to stop. I didn't mean it.",
+    "1ton. I brought a calendar. Point to the day you keep your promise. Any day. I'll wait. I've been waiting {n} pressers.",
+]
+ONETON['answer_promise'] += [
+    "Next big card, 1ton. Mexican fighter, main event. Write it down.",
+    "Mexico City. Bullring. Main event. I mean it this time.",
+    "1ton, you'll get your main event. Bring the flag.",
+    "We're working on a Mexican Independence Day card. Don't tell anyone. Except everyone.",
+    "Next card. Top of it. Mexican fighter. Done. Can I go now?",
+    "If I don't deliver, you can have my parking spot.",
+]
+ONETON['answer_deflect'] += [
+    "Great question, 1ton. Let's move on to a different, worse question.",
+    "We'll discuss the roster another time. Somebody who isn't 1ton?",
+    "I'm not here to talk about the roster, I'm here to talk about tonight.",
+    "1ton, we've talked about this. Many times. Next.",
+    "Matchmaking's handling it. I don't talk matchmaking at pressers. Except when I do.",
+    "Let's keep it to tonight's card, guys. Tonight's card. Please.",
+]
+ONETON['answer_joke'] += [
+    "1ton, if I put a Mexican fighter in every main event, will you ask about anything else? (1ton: 'No.')",
+    "I'll sign the next Mexican fighter who can grow a beard like yours. So, no one.",
+    "1ton, I've started seeing you in my dreams. You're always asking about Mexican fighters.",
+    "Is the beard Mexican? Can the beard fight? Sign the beard.",
+    "I thought you were going to ask about the weather. Silly me.",
+]
+ONETON['answer_honest'] = [
+    "Honestly, 1ton? We don't have enough Mexican fighters. That's on us. We're scouting.",
+    "The truth: the Mexican guys I want are under contract elsewhere. I'm trying.",
+    "Real answer: I don't have one ready for a main event yet. Give me six months.",
+    "I'll be straight with you. We dropped the ball. We'll fix it.",
+    "Honestly, the money in Mexico City hasn't worked yet. It will.",
+]
+ONETON['answer_roast'] = [
+    "1ton, with all due respect, ask a different question or go back to your car.",
+    "You know there are other countries, right? You've heard? There's a whole map.",
+    "1ton, I've answered this forty times. The forty-first answer is: sit down.",
+    "Security, can we get 1ton a sandwich? He gets like this when he's hungry.",
+    "Does anyone else have a question that isn't the same question? Anyone? Not the beard.",
+]
+ONETON['react_promise'] += [
+    "1ton stands, salutes, and sits back down. The salute was in the colours of the Mexican flag. You don't know how.",
+    "\"I'm putting it on the show tonight,\" says 1ton. \"Three hours. Just your promise. On a loop.\"",
+    "1ton takes a photo of you mid-sentence. It will be his profile picture until you deliver.",
+    "1ton writes it in his notebook, then on his hand, then on the reporter next to him's hand.",
+    "\"Viva {presidentLast},\" says 1ton, for the first and maybe last time.",
+]
+ONETON['react_deflect'] += [
+    "1ton stares at you for eleven full seconds. Nobody breathes. Then he raises his hand again.",
+    "\"Mexico heard that,\" says 1ton quietly. \"Mexico will remember.\"",
+    "1ton puts his hand down, slowly, the way a man sheathes a sword.",
+    "1ton bleets, live, from the front row: \"{presidentLast} JUST DEFLECTED. AGAIN. CLIP IT.\"",
+    "1ton opens a bag of chips with real menace.",
+]
+ONETON['react_joke'] += [
+    "1ton does not laugh. His beard laughs, a little. He'll deny it.",
+    "\"Funny,\" says 1ton. \"You know what else is funny? Zero Mexican main events.\"",
+    "1ton laughs once, sharply, like a bark. Then the hand goes back up.",
+    "Half the room laughs. 1ton writes down the names of the people who laughed.",
+    "\"Save the jokes for the prelims,\" says 1ton. \"Like your Mexican fighters.\"",
+]
+ONETON['react_honest'] = [
+    "1ton blinks. Nobody has ever answered him honestly. He doesn't know what to do with his hand.",
+    "\"Thank you,\" says 1ton, genuinely moved. \"Now book one.\"",
+    "1ton nods slowly. \"Honesty. Respect. I'll only ask about it twice more tonight.\"",
+    "1ton bleets: \"{presidentLast} told the TRUTH at a presser. Mark the date. Mexico salutes you (a little).\"",
+]
+ONETON['react_roast'] = [
+    "1ton smiles. It's worse than anger. You'll be on the Lucha Lowdown for a month.",
+    "\"Noted,\" says 1ton, and bleets a photo of your bald spot from the front row.",
+    "The room goes \"ooooh\". 1ton just raises his hand again. He has done this for years. He has more years than you.",
+    "1ton stands up, walks out, and comes back in through a different door with his hand already up.",
+]
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     with open(os.path.join(OUT, 'owner.json'), 'w') as f:

@@ -2,6 +2,9 @@ import type { Game } from '../app';
 import { PAL } from '../../art/palette';
 import { text } from '../kit';
 import { openWindow } from '../widgets';
+import { button } from '../kit';
+import { hasAchievement } from '../achievements';
+import { openMemorial } from '../endcredits';
 
 export function openCredits(g: Game): void {
   const win = openWindow(g, 'Credits', 300, 262, { paper: 'cream' });
@@ -24,4 +27,6 @@ export function openCredits(g: Game): void {
     'Characters are satirical archetypes. If you think one of them is about you, that says more about you than about us.\n\n' +
     'No energy drinks were harmed. Several were consumed.',
     8, 6, { width: 284, color: PAL.ink }));
+  // finished the road: the memorial stays here
+  if (hasAchievement('rtc_epilogue')) win.body.addChild(button('IN MEMORIAM', 196, 232, 96, 13, () => openMemorial(g), { small: true, fill: 0x2a262c }));
 }

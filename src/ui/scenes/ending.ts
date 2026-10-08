@@ -9,7 +9,7 @@ import { money } from '../../core/format';
 import { TitleScene } from './title';
 import { fullName } from '../../sim/fighters';
 import { hashString } from '../../core/rng';
-import { saveToSlot } from '../../core/save';
+import { saveToSlot, autoSlot } from '../../core/save';
 
 const FATES_GOOD = ['opened a gym that actually makes money', 'became a beloved commentator', 'retired to a farm and never looks at a cage again', 'got into the Hall of Fame and cried for 40 minutes', 'runs a successful hot sauce empire', 'coaches kids for free on weekends'];
 const FATES_BAD = ['is fighting bare-knuckle in a parking lot in Tijuana', 'lost everything in a crypto coin named after themselves', 'hosts a podcast with 11 listeners', 'is suing you. Still.', 'joined a slap league', 'is "between opportunities"'];
@@ -19,7 +19,7 @@ export class EndingScene extends Scene {
     const s = this.g.state!;
     const id = s.ending ?? 'survivor';
     const e = content().endings.find((x) => x.id === id) ?? content().endings[content().endings.length - 1];
-    saveToSlot(s, 'auto');
+    saveToSlot(s, autoSlot(s));
     const r = this.root;
     r.addChild(fullBg(0x1a1418));
     const p = paper(W - 40, H - 30, 'news', 99);

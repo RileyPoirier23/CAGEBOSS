@@ -59,7 +59,7 @@ export function openSettings(g: Game, onClose?: () => void): void {
   b.addChild(checkbox(8, y, 'Offer the tutorial on new careers', s.tutorial !== false, (v) => { s.tutorial = v; save(); }));
   if (g.state?.mode === 'career') b.addChild(button('REPLAY', 196, y - 1, 46, 11, () => { resetTutorial(g); g.toast('Tutorial back on for this career.', PAL.moss, { small: true }); }, { small: true, fill: PAL.steel }));
   y += 12;
-  b.addChild(checkbox(8, y, 'Hands-on fights in Fighter Mode', s.handsOn !== false, (v) => { s.handsOn = v; save(); }));
+  b.addChild(checkbox(8, y, 'Hands-on fights (Road To Champion)', s.handsOn !== false, (v) => { s.handsOn = v; save(); }));
   y += 12;
   if (desktop) {
     b.addChild(checkbox(8, y, 'Fullscreen (F11)', s.fullscreen !== false, (v) => { s.fullscreen = v; save(); }));

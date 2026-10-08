@@ -8,7 +8,7 @@
 import { Container, Graphics, type Ticker } from 'pixi.js';
 import type { Game } from '../app';
 import { PAL } from '../../art/palette';
-import { W, H, text, button, box } from '../kit';
+import { W, H, text, button, box, hoverTip } from '../kit';
 import { checkbox } from '../widgets';
 import { input } from '../../core/input';
 import { isTouchDevice } from '../../core/platform';
@@ -59,7 +59,7 @@ export function openFightLab(g: Game): void {
   const tbl = new Container();
   tbl.position.set(150, 16);
   root.addChild(tbl);
-  const rows: FightButton[] = ['lead', 'rear', 'kick', 'block', 'grab', 'feint', 'evadeUp', 'getupLeft'];
+  const rows: FightButton[] = ['lead', 'rear', 'kick', 'block', 'grab', 'body', 'feint', 'evadeUp', 'getupLeft'];
   rows.forEach((b, i) => {
     const y = i * 11;
     const bind = fi.bindings[b];
@@ -75,7 +75,7 @@ export function openFightLab(g: Game): void {
       kg.position.set(Math.max(x, 18), y);
       tbl.addChild(kg);
     }
-    tbl.addChild(text(FIGHT_ACTIONS[b].label + (b === 'evadeUp' ? ' (R-stick flick)' : ''), 50, y + 2, { small: true, color: PAL.bone }));
+    tbl.addChild(hoverTip(text(FIGHT_ACTIONS[b].label + (b === 'evadeUp' ? ' (R-stick flick)' : ''), 50, y + 2, { small: true, color: PAL.bone }), FIGHT_ACTIONS[b].help));
   });
 
   // live meters + log
@@ -100,6 +100,7 @@ export function openFightLab(g: Game): void {
   setPad(isTouchDevice());
 
   root.addChild(button('CLOSE', W - 46, H - 16, 40, 12, () => g.closeModal(wrap), { small: true, fill: PAL.blood }));
+  root.addChild(text('Hover a move for what the stick does. The full move list (clinch, ground, submissions) is in HELP.', 150, 16 + rows.length * 11 + 3, { small: true, color: PAL.ash, width: 146, maxLines: 3 }));
 
   const meter = (x: number, y: number, v: { x: number; y: number }, label: string) => {
     live.rect(x, y, 25, 25).fill(PAL.night).rect(x + 12, y, 1, 25).fill(PAL.shadow).rect(x, y + 12, 25, 1).fill(PAL.shadow);

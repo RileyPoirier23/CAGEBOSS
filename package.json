@@ -1,7 +1,7 @@
 {
   "name": "cage-boss",
   "private": true,
-  "version": "1.4.0",
+  "version": "1.7.0",
   "type": "module",
   "description": "CAGE BOSS - a satirical MMA-promoter management sim",
   "scripts": {
@@ -16,8 +16,9 @@
     "desktop": "vite build && electron .",
     "desktop:windowed": "vite build && electron . --windowed",
     "dist:win": "tsc --noEmit && vite build && electron-builder --win portable nsis --x64 --publish never",
-    "dist:linux": "tsc --noEmit && vite build && electron-builder --linux AppImage --x64 --publish never",
-    "dist:win:nowine": "tsc --noEmit && vite build && electron-builder --win dir --x64 -c.win.signAndEditExecutable=false && node tools/stamp-exe.mjs \"release/win-unpacked/CAGE BOSS.exe\" build/icon.ico && electron-builder --win portable --x64 --prepackaged release/win-unpacked -c.win.signAndEditExecutable=false --publish never"
+    "dist:linux": "tsc --noEmit && vite build && electron-builder --linux AppImage tar.gz --x64 --publish never",
+    "dist:win:nowine": "tsc --noEmit && vite build && electron-builder --win dir --x64 -c.win.signAndEditExecutable=false && node tools/stamp-exe.mjs \"release/win-unpacked/CAGE BOSS.exe\" build/icon.ico && electron-builder --win portable --x64 --prepackaged release/win-unpacked -c.win.signAndEditExecutable=false --publish never",
+    "dist:mac": "tsc --noEmit && vite build && electron-builder --mac dmg zip --x64 --arm64 --publish never"
   },
   "devDependencies": {
     "@capacitor/android": "^8.5.2",
@@ -53,7 +54,8 @@
       "electron/**/*",
       "build/icon.png",
       "package.json",
-      "node_modules/**/*"
+      "node_modules/**/*",
+      "build/icon-1024.png"
     ],
     "asar": true,
     "win": {
@@ -71,9 +73,24 @@
       "artifactName": "CAGE-BOSS-${version}-setup.exe"
     },
     "linux": {
-      "icon": "build/icon.png",
+      "icon": "build/icon-1024.png",
       "category": "Game",
-      "artifactName": "CAGE-BOSS-${version}.${ext}"
+      "synopsis": "A satirical pixel MMA game: run the promotion, or fight your way to the belt.",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "tar.gz",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "CAGE-BOSS-${version}-linux-${arch}.${ext}"
     },
     "publish": [
       {
@@ -82,7 +99,35 @@
         "repo": "CAGEBOSS",
         "releaseType": "release"
       }
-    ]
+    ],
+    "afterPack": "build/afterPack.cjs",
+    "mac": {
+      "icon": "build/icon-1024.png",
+      "category": "public.app-category.games",
+      "identity": null,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "CAGE-BOSS-${version}-mac-${arch}.${ext}",
+      "darkModeSupport": true
+    },
+    "dmg": {
+      "title": "CAGE BOSS ${version}",
+      "artifactName": "CAGE-BOSS-${version}-mac-${arch}.${ext}"
+    }
   },
   "dependencies": {
     "electron-updater": "^6.8.9"

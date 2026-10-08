@@ -3,9 +3,12 @@
  * scene manager with a modal stack, settings, toasts and screen shake.
  */
 import { maybeTutorial } from './tutorial';
+import { checkAchievements } from './achievements';
+import { openHelp } from './help';
+import { input } from '../core/input';
 import { Application, Container, TextureStyle, Graphics, Ticker } from 'pixi.js';
 import type { GameState } from '../core/types';
-import { loadJSON, storeJSON, saveToSlot } from '../core/save';
+import { loadJSON, storeJSON, saveToSlot, autoSlot } from '../core/save';
 import { setColorblind, PAL } from '../art/palette';
 import { setMuted, setMusic, setVolumes, sfx, unlock as sfxUnlock } from '../audio/sfx';
 import { W, H, tooltip, clearChildren, dimmer, box, text } from './kit';
@@ -191,6 +194,8 @@ export class Game {
     setMusicContext(scene.music);
     scene.enter();
     if (scene.tutorialKey) maybeTutorial(this, scene.tutorialKey);
+    // anything earned since the last screen gets its congratulations
+    if (this.state) setTimeout(() => checkAchievements(this), 1500);
   }
 
   /**
@@ -293,11 +298,18 @@ export class Game {
   }
 
   autosave(): void {
-    if (this.state) saveToSlot(this.state, 'auto');
+    if (this.state) saveToSlot(this.state, autoSlot(this.state));
   }
+
+  /** a hands-on fight is running (View / F1 cycles its camera instead of opening HELP) */
+  inLiveFight = false;
+  /** an unskippable sequence (end credits) is playing: no HELP pop-ups */
+  cutscene = false;
 
   private tick(dt: number): void {
     this.tickNowPlaying(dt);
+    // View / F1 anywhere: the HELP screen
+    if (!this.inLiveFight && !this.cutscene && input.pressed('help') && !this.modals.some((m) => (m as Container & { isHelp?: boolean }).isHelp)) openHelp(this);
     if (this.loader && !this.loader.update(dt)) {
       this.loader.destroy({ children: true });
       this.loader = null;

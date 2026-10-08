@@ -4081,6 +4081,1800 @@
    "startWith": "bellatrix"
   },
   {
+   "id": "usman_nurmagomedoof",
+   "first": "Usman",
+   "last": "Nurmagomedoof",
+   "nick": "The Cousin",
+   "gender": "M",
+   "age": 27,
+   "division": "light",
+   "country": "Dagestan (Russia)",
+   "hometown": "Makhachkala",
+   "look": {
+    "head": 2,
+    "skin": 1,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 78,
+    "wrestling": 92,
+    "grappling": 88,
+    "cardio": 92,
+    "chin": 84,
+    "fightIQ": 90,
+    "durability": 86,
+    "heart": 92,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Kickboxer"
+   ],
+   "traits": [
+    "Devout",
+    "Family First",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Family Business",
+    "arc": "The Family Business"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "chainWrestling",
+     "headKick"
+    ],
+    "celebration": "prays"
+   },
+   "record": {
+    "w": 19,
+    "l": 0,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 94,
+   "primeAge": 29,
+   "moneyIQ": 75,
+   "social": {
+    "followers": 900000,
+    "style": "prayer emojis"
+   },
+   "bio": "Comes from the most decorated family in Dagestan and is somehow the scariest striker in it. Won the Lounge's lightweight 'million' and spent it on a gym for 40 cousins.",
+   "hiddenTraits": [],
+   "parody": "Usman Nurmagomedov",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "aj_mckeen",
+   "first": "AJ",
+   "last": "McKeen",
+   "nick": "Mercenary",
+   "gender": "M",
+   "age": 29,
+   "division": "feather",
+   "country": "USA",
+   "hometown": "Long Beach, CA",
+   "look": {
+    "head": 0,
+    "skin": 4,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 2,
+    "build": 0
+   },
+   "skills": {
+    "striking": 88,
+    "power": 82,
+    "wrestling": 72,
+    "grappling": 88,
+    "cardio": 84,
+    "chin": 78,
+    "fightIQ": 84,
+    "durability": 80,
+    "heart": 84,
+    "weightCut": 55
+   },
+   "styles": [
+    "Counter Striker",
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Showman",
+    "Mercenary",
+    "Trash Talker"
+   ],
+   "marquee": {
+    "archetype": "The Lounge's Golden Boy",
+    "arc": "The Lounge's Golden Boy"
+   },
+   "anim": {
+    "stance": "handsLow",
+    "signature": [
+     "imanariRoll",
+     "neckCrank"
+    ],
+    "celebration": "strut"
+   },
+   "record": {
+    "w": 22,
+    "l": 2,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 90,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 700000,
+    "style": "all caps rants"
+   },
+   "bio": "Taps people with chokes that don't have names yet. Will fight anyone, in any league, for the right number, and will tell you the number on a livestream.",
+   "hiddenTraits": [],
+   "parody": "AJ McKee",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "vadim_nemcough",
+   "first": "Vadim",
+   "last": "Nemcough",
+   "nick": "The Quiet Storm",
+   "gender": "M",
+   "age": 31,
+   "division": "lightheavy",
+   "country": "Russia",
+   "hometown": "Belgorod",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 6,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 90,
+    "power": 84,
+    "wrestling": 84,
+    "grappling": 84,
+    "cardio": 86,
+    "chin": 86,
+    "fightIQ": 88,
+    "durability": 86,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Kickboxer",
+    "Wrestler"
+   ],
+   "traits": [
+    "Shy",
+    "Loyal",
+    "Perfectionist"
+   ],
+   "marquee": {
+    "archetype": "The Silent Champion",
+    "arc": "The Silent Champion"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "headKick",
+     "doubleLeg"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 18,
+    "l": 2,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 90,
+   "primeAge": 31,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 300000,
+    "style": "gym selfies"
+   },
+   "bio": "Says nothing, finishes everybody. Won so many tournaments that the Lounge started paying him to stop entering them.",
+   "hiddenTraits": [],
+   "parody": "Vadim Nemkov",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "ryan_badder",
+   "first": "Ryan",
+   "last": "Badder",
+   "nick": "Darth",
+   "gender": "M",
+   "age": 40,
+   "division": "heavy",
+   "country": "USA",
+   "hometown": "Reno, NV",
+   "look": {
+    "head": 3,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 6,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 74,
+    "power": 84,
+    "wrestling": 90,
+    "grappling": 76,
+    "cardio": 80,
+    "chin": 84,
+    "fightIQ": 86,
+    "durability": 86,
+    "heart": 86,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Boring But Effective"
+   ],
+   "traits": [
+    "Business Savvy",
+    "Loyal",
+    "Family First"
+   ],
+   "marquee": {
+    "archetype": "The Two-Belt Veteran",
+    "arc": "The Two-Belt Veteran"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "overhandRight",
+     "doubleLeg"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 31,
+    "l": 7,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 78,
+   "primeAge": 33,
+   "moneyIQ": 80,
+   "social": {
+    "followers": 250000,
+    "style": "gym selfies"
+   },
+   "bio": "Has held two belts at the same time, which the Lounge's accountants still talk about with fear. Owns gyms, a ranch, and a terrifying overhand right.",
+   "hiddenTraits": [],
+   "parody": "Ryan Bader",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "corey_andersun",
+   "first": "Corey",
+   "last": "Andersun",
+   "nick": "Overtime",
+   "gender": "M",
+   "age": 35,
+   "division": "lightheavy",
+   "country": "USA",
+   "hometown": "Rockford, IL",
+   "look": {
+    "head": 1,
+    "skin": 5,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 78,
+    "power": 76,
+    "wrestling": 92,
+    "grappling": 78,
+    "cardio": 94,
+    "chin": 82,
+    "fightIQ": 82,
+    "durability": 82,
+    "heart": 86,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Devout",
+    "Trash Talker",
+    "Gym Rat"
+   ],
+   "marquee": {
+    "archetype": "The Cardio Machine",
+    "arc": "The Cardio Machine"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "doubleLeg",
+     "cageGrind"
+    ],
+    "celebration": "prays"
+   },
+   "record": {
+    "w": 19,
+    "l": 6,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 31,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 200000,
+    "style": "all caps rants"
+   },
+   "bio": "Wrestles you for the full 25 minutes and then asks if there's a sixth round. There isn't. He checks every time.",
+   "hiddenTraits": [],
+   "parody": "Corey Anderson",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "johnny_eblenz",
+   "first": "Johnny",
+   "last": "Eblenz",
+   "nick": "Clean Johnny",
+   "gender": "M",
+   "age": 33,
+   "division": "middle",
+   "country": "USA",
+   "hometown": "Lebanon, MO",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 4,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 78,
+    "power": 78,
+    "wrestling": 92,
+    "grappling": 82,
+    "cardio": 86,
+    "chin": 84,
+    "fightIQ": 84,
+    "durability": 84,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Boring But Effective"
+   ],
+   "traits": [
+    "Shy",
+    "Gym Rat",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Unbeaten Grinder",
+    "arc": "The Unbeaten Grinder"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "doubleLeg"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 15,
+    "l": 1,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 86,
+   "primeAge": 31,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 120000,
+    "style": "gym selfies"
+   },
+   "bio": "Unbeaten for years by being exactly as exciting as tax season and twice as hard to escape.",
+   "hiddenTraits": [],
+   "parody": "Johnny Eblen",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "fabian_edwardz",
+   "first": "Fabian",
+   "last": "Edwardz",
+   "nick": "The Assassin",
+   "gender": "M",
+   "age": 31,
+   "division": "middle",
+   "country": "England",
+   "hometown": "Birmingham",
+   "look": {
+    "head": 1,
+    "skin": 5,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 86,
+    "power": 84,
+    "wrestling": 70,
+    "grappling": 72,
+    "cardio": 80,
+    "chin": 80,
+    "fightIQ": 82,
+    "durability": 80,
+    "heart": 84,
+    "weightCut": 55
+   },
+   "styles": [
+    "Counter Striker",
+    "Kickboxer"
+   ],
+   "traits": [
+    "Family First",
+    "Showman"
+   ],
+   "marquee": {
+    "archetype": "The Brother",
+    "arc": "The Brother"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "leftHand",
+     "flyingKnee"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 13,
+    "l": 4,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 30,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 250000,
+    "style": "gym selfies"
+   },
+   "bio": "The other Edwards brother. Has heard 'are you Leon?' at every airport on earth and has started saying yes.",
+   "hiddenTraits": [],
+   "parody": "Fabian Edwards",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "patchy_remix",
+   "first": "Patchy",
+   "last": "Remix",
+   "nick": "No Love",
+   "gender": "M",
+   "age": 31,
+   "division": "bantam",
+   "country": "USA",
+   "hometown": "Los Angeles, CA",
+   "look": {
+    "head": 1,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 0
+   },
+   "skills": {
+    "striking": 78,
+    "power": 74,
+    "wrestling": 82,
+    "grappling": 92,
+    "cardio": 84,
+    "chin": 80,
+    "fightIQ": 84,
+    "durability": 80,
+    "heart": 84,
+    "weightCut": 55
+   },
+   "styles": [
+    "Sub Hunter",
+    "Wrestler"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Mercenary"
+   ],
+   "marquee": {
+    "archetype": "The Choke Collector",
+    "arc": "The Choke Collector"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "rearNakedChoke"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 21,
+    "l": 1,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 86,
+   "primeAge": 29,
+   "moneyIQ": 55,
+   "social": {
+    "followers": 150000,
+    "style": "all caps rants"
+   },
+   "bio": "Has a rear-naked choke so automatic it's been described as 'a subscription service'. Cancellation is not possible.",
+   "hiddenTraits": [],
+   "parody": "Patchy Mix",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "sergio_petis",
+   "first": "Sergio",
+   "last": "Petis",
+   "nick": "The Phenom",
+   "gender": "M",
+   "age": 31,
+   "division": "bantam",
+   "country": "USA",
+   "hometown": "Milwaukee, WI",
+   "look": {
+    "head": 3,
+    "skin": 1,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 0
+   },
+   "skills": {
+    "striking": 86,
+    "power": 80,
+    "wrestling": 70,
+    "grappling": 76,
+    "cardio": 84,
+    "chin": 80,
+    "fightIQ": 90,
+    "durability": 78,
+    "heart": 82,
+    "weightCut": 55
+   },
+   "styles": [
+    "Counter Striker",
+    "Point Fighter"
+   ],
+   "traits": [
+    "Wholesome",
+    "Family First"
+   ],
+   "marquee": {
+    "archetype": "The Little Brother",
+    "arc": "The Little Brother"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "spinningBackfist"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 24,
+    "l": 6,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 30,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 120000,
+    "style": "gym selfies"
+   },
+   "bio": "Younger brother of a showtime kicker, famous for a spinning backfist that turned a whole fight upside down and a press conference that didn't.",
+   "hiddenTraits": [],
+   "parody": "Sergio Pettis",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "ray_cooper_threeish",
+   "first": "Ray",
+   "last": "Cooper the Third-ish",
+   "nick": "Bradda",
+   "gender": "M",
+   "age": 32,
+   "division": "welter",
+   "country": "USA",
+   "hometown": "Waipahu, HI",
+   "look": {
+    "head": 3,
+    "skin": 2,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 88,
+    "wrestling": 78,
+    "grappling": 72,
+    "cardio": 80,
+    "chin": 86,
+    "fightIQ": 76,
+    "durability": 84,
+    "heart": 88,
+    "weightCut": 60
+   },
+   "styles": [
+    "Brawler",
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Family First",
+    "Wholesome",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Aloha Banger",
+    "arc": "The Aloha Banger"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "leftHook",
+     "groundAndPound"
+    ],
+    "celebration": "shaka"
+   },
+   "record": {
+    "w": 25,
+    "l": 8,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 30,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 150000,
+    "style": "gym selfies"
+   },
+   "bio": "Third-generation Hawaiian fighter with a family tree made entirely of left hooks. Two-time Lounge season champion and one-time eater of an entire luau.",
+   "hiddenTraits": [],
+   "parody": "Ray Cooper III",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "larissa_pachecko",
+   "first": "Larissa",
+   "last": "Pachecko",
+   "nick": "The Blacksmith",
+   "gender": "W",
+   "age": 30,
+   "division": "wbantam",
+   "country": "Brazil",
+   "hometown": "Sao Paulo",
+   "look": {
+    "head": 1,
+    "skin": 3,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 2
+   },
+   "skills": {
+    "striking": 84,
+    "power": 90,
+    "wrestling": 78,
+    "grappling": 76,
+    "cardio": 80,
+    "chin": 86,
+    "fightIQ": 78,
+    "durability": 86,
+    "heart": 88,
+    "weightCut": 60
+   },
+   "styles": [
+    "Pressure Striker",
+    "Brawler"
+   ],
+   "traits": [
+    "Family First",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Rematch Queen",
+    "arc": "The Rematch Queen"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "overhandRight"
+    ],
+    "celebration": "flexes"
+   },
+   "record": {
+    "w": 24,
+    "l": 5,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 88,
+   "primeAge": 30,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 250000,
+    "style": "gym selfies"
+   },
+   "bio": "Lost to the same woman twice, then knocked the whole narrative out in the third fight. Holds grudges the way other people hold groceries.",
+   "hiddenTraits": [],
+   "parody": "Larissa Pacheco",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "dakota_ditchvisa",
+   "first": "Dakota",
+   "last": "Ditchvisa",
+   "nick": "Dynamite",
+   "gender": "W",
+   "age": 26,
+   "division": "wfly",
+   "country": "England",
+   "hometown": "Manchester",
+   "look": {
+    "head": 0,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 0
+   },
+   "skills": {
+    "striking": 88,
+    "power": 84,
+    "wrestling": 70,
+    "grappling": 72,
+    "cardio": 82,
+    "chin": 80,
+    "fightIQ": 84,
+    "durability": 80,
+    "heart": 84,
+    "weightCut": 55
+   },
+   "styles": [
+    "Muay Thai",
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Showman",
+    "Gym Rat"
+   ],
+   "marquee": {
+    "archetype": "The Muay Thai Missile",
+    "arc": "The Muay Thai Missile"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "muayThaiClinch",
+     "knee"
+    ],
+    "celebration": "flexes"
+   },
+   "record": {
+    "w": 14,
+    "l": 0,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 92,
+   "primeAge": 28,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 400000,
+    "style": "gym selfies"
+   },
+   "bio": "World Muay Thai champion who discovered she could also knee people in a cage. Undefeated, terrifying, and very polite about both.",
+   "hiddenTraits": [],
+   "parody": "Dakota Ditcheva",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "jesus_pinedough",
+   "first": "Jesus",
+   "last": "Pinedough",
+   "nick": "El Gallo",
+   "gender": "M",
+   "age": 28,
+   "division": "feather",
+   "country": "Peru",
+   "hometown": "Lima",
+   "look": {
+    "head": 2,
+    "skin": 2,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 0
+   },
+   "skills": {
+    "striking": 86,
+    "power": 82,
+    "wrestling": 72,
+    "grappling": 74,
+    "cardio": 82,
+    "chin": 80,
+    "fightIQ": 80,
+    "durability": 80,
+    "heart": 84,
+    "weightCut": 55
+   },
+   "styles": [
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Family First",
+    "Devout"
+   ],
+   "marquee": {
+    "archetype": "The Peruvian Rooster",
+    "arc": "The Peruvian Rooster"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "bodyKick"
+    ],
+    "celebration": "prays"
+   },
+   "record": {
+    "w": 22,
+    "l": 4,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 86,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 200000,
+    "style": "prayer emojis"
+   },
+   "bio": "Peru's favourite Lounge champion. Walks out to a marching band, which the Lounge pays for by not paying anyone else.",
+   "hiddenTraits": [],
+   "parody": "Jesus Pinedo",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "brendan_loughnaine",
+   "first": "Brendan",
+   "last": "Loughnaine",
+   "nick": "The Mancunian",
+   "gender": "M",
+   "age": 34,
+   "division": "feather",
+   "country": "England",
+   "hometown": "Manchester",
+   "look": {
+    "head": 1,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 78,
+    "wrestling": 80,
+    "grappling": 80,
+    "cardio": 88,
+    "chin": 82,
+    "fightIQ": 84,
+    "durability": 82,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Pressure Striker",
+    "Wrestler"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Business Savvy"
+   ],
+   "marquee": {
+    "archetype": "The Season Winner",
+    "arc": "The Season Winner"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "jabJabJab"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 28,
+    "l": 5,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 31,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 180000,
+    "style": "all caps rants"
+   },
+   "bio": "Won the season, got the million-dollar check, and has explained the tax on it at every press conference since.",
+   "hiddenTraits": [],
+   "parody": "Brendan Loughnane",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "magomed_magomedkerimoof",
+   "first": "Magomed",
+   "last": "Magomedkerimoof",
+   "nick": "The Wolf",
+   "gender": "M",
+   "age": 34,
+   "division": "welter",
+   "country": "Dagestan (Russia)",
+   "hometown": "Kizlyar",
+   "look": {
+    "head": 3,
+    "skin": 1,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 3,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 78,
+    "power": 72,
+    "wrestling": 90,
+    "grappling": 92,
+    "cardio": 90,
+    "chin": 82,
+    "fightIQ": 86,
+    "durability": 84,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Sub Hunter",
+    "Wrestler"
+   ],
+   "traits": [
+    "Devout",
+    "Loyal",
+    "Shy"
+   ],
+   "marquee": {
+    "archetype": "The Guillotine Factory",
+    "arc": "The Guillotine Factory"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "guillotine"
+    ],
+    "celebration": "prays"
+   },
+   "record": {
+    "w": 31,
+    "l": 5,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 31,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 120000,
+    "style": "prayer emojis"
+   },
+   "bio": "Has more guillotine wins than most guillotines. Won the season twice and asked for his prize in sheep. Was refused. Took the check.",
+   "hiddenTraits": [],
+   "parody": "Magomed Magomedkerimov",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "impa_kasangabay",
+   "first": "Impa",
+   "last": "Kasangabay",
+   "nick": "Tshilobo",
+   "gender": "M",
+   "age": 31,
+   "division": "middle",
+   "country": "USA",
+   "hometown": "Charlotte, NC",
+   "look": {
+    "head": 1,
+    "skin": 5,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 82,
+    "wrestling": 74,
+    "grappling": 72,
+    "cardio": 82,
+    "chin": 80,
+    "fightIQ": 80,
+    "durability": 80,
+    "heart": 84,
+    "weightCut": 55
+   },
+   "styles": [
+    "Counter Striker",
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Wholesome",
+    "Devout"
+   ],
+   "marquee": {
+    "archetype": "The Late Bloomer",
+    "arc": "The Late Bloomer"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "bodyKick"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 16,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 30,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 90000,
+    "style": "prayer emojis"
+   },
+   "bio": "Got cut from one league, won a season in another, and now sends the first league a postcard every Christmas.",
+   "hiddenTraits": [],
+   "parody": "Impa Kasanganay",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "renan_ferreirah",
+   "first": "Renan",
+   "last": "Ferreirah",
+   "nick": "Problema",
+   "gender": "M",
+   "age": 35,
+   "division": "heavy",
+   "country": "Brazil",
+   "hometown": "Rio de Janeiro",
+   "look": {
+    "head": 2,
+    "skin": 3,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 82,
+    "power": 94,
+    "wrestling": 66,
+    "grappling": 70,
+    "cardio": 70,
+    "chin": 80,
+    "fightIQ": 72,
+    "durability": 84,
+    "heart": 84,
+    "weightCut": 70
+   },
+   "styles": [
+    "Brawler",
+    "Kickboxer"
+   ],
+   "traits": [
+    "Showman",
+    "Party Animal"
+   ],
+   "marquee": {
+    "archetype": "The Giant Problem",
+    "arc": "The Giant Problem"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "leftHook",
+     "headKick"
+    ],
+    "celebration": "flexes"
+   },
+   "record": {
+    "w": 14,
+    "l": 4,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 32,
+   "moneyIQ": 55,
+   "social": {
+    "followers": 300000,
+    "style": "gym selfies"
+   },
+   "bio": "Six foot eight, eighty-inch reach, and knocks people out faster than the broadcast can play his walkout song.",
+   "hiddenTraits": [],
+   "parody": "Renan Ferreira",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "denis_goldsov",
+   "first": "Denis",
+   "last": "Goldsov",
+   "nick": "Gladiator",
+   "gender": "M",
+   "age": 34,
+   "division": "heavy",
+   "country": "Russia",
+   "hometown": "Moscow",
+   "look": {
+    "head": 3,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 6,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 1,
+    "build": 2
+   },
+   "skills": {
+    "striking": 80,
+    "power": 86,
+    "wrestling": 80,
+    "grappling": 72,
+    "cardio": 74,
+    "chin": 86,
+    "fightIQ": 78,
+    "durability": 88,
+    "heart": 88,
+    "weightCut": 60
+   },
+   "styles": [
+    "Brawler",
+    "Wrestler"
+   ],
+   "traits": [
+    "Loyal",
+    "Shy"
+   ],
+   "marquee": {
+    "archetype": "The Season Regular",
+    "arc": "The Season Regular"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "overhandRight"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 35,
+    "l": 7,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 80,
+   "primeAge": 32,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 80000,
+    "style": "gym selfies"
+   },
+   "bio": "Has been in every Lounge season since the first one. The playoffs are basically his cottage.",
+   "hiddenTraits": [],
+   "parody": "Denis Goltsov",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "gadzhi_rabadanoof",
+   "first": "Gadzhi",
+   "last": "Rabadanoof",
+   "nick": "Lightning",
+   "gender": "M",
+   "age": 32,
+   "division": "light",
+   "country": "Dagestan (Russia)",
+   "hometown": "Kizlyar",
+   "look": {
+    "head": 2,
+    "skin": 1,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 80,
+    "power": 78,
+    "wrestling": 88,
+    "grappling": 86,
+    "cardio": 88,
+    "chin": 82,
+    "fightIQ": 84,
+    "durability": 84,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler"
+   ],
+   "traits": [
+    "Devout",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Quiet Grinder",
+    "arc": "The Quiet Grinder"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "chainWrestling"
+    ],
+    "celebration": "prays"
+   },
+   "record": {
+    "w": 22,
+    "l": 4,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 30,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 60000,
+    "style": "prayer emojis"
+   },
+   "bio": "A lightweight who wins rounds the way glaciers win against mountains: slowly, then completely.",
+   "hiddenTraits": [],
+   "parody": "Gadzhi Rabadanov",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "timur_khizrieff",
+   "first": "Timur",
+   "last": "Khizrieff",
+   "nick": "The Lion",
+   "gender": "M",
+   "age": 30,
+   "division": "feather",
+   "country": "Russia",
+   "hometown": "Grozny",
+   "look": {
+    "head": 1,
+    "skin": 1,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 80,
+    "power": 76,
+    "wrestling": 90,
+    "grappling": 86,
+    "cardio": 88,
+    "chin": 80,
+    "fightIQ": 84,
+    "durability": 82,
+    "heart": 86,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Boring But Effective"
+   ],
+   "traits": [
+    "Devout",
+    "Gym Rat"
+   ],
+   "marquee": {
+    "archetype": "The Unbeaten Wrestler",
+    "arc": "The Unbeaten Wrestler"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "doubleLeg"
+    ],
+    "celebration": "prays"
+   },
+   "record": {
+    "w": 18,
+    "l": 0,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 86,
+   "primeAge": 29,
+   "moneyIQ": 70,
+   "social": {
+    "followers": 70000,
+    "style": "prayer emojis"
+   },
+   "bio": "Never lost, never smiles, never lets go of a single leg.",
+   "hiddenTraits": [],
+   "parody": "Timur Khizriev",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "clay_collards",
+   "first": "Clay",
+   "last": "Collards",
+   "nick": "Cassius",
+   "gender": "M",
+   "age": 31,
+   "division": "light",
+   "country": "USA",
+   "hometown": "Riverton, UT",
+   "look": {
+    "head": 3,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 1,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 84,
+    "power": 82,
+    "wrestling": 70,
+    "grappling": 66,
+    "cardio": 92,
+    "chin": 86,
+    "fightIQ": 74,
+    "durability": 86,
+    "heart": 94,
+    "weightCut": 55
+   },
+   "styles": [
+    "Brawler",
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Hothead",
+    "Trash Talker",
+    "Party Animal"
+   ],
+   "marquee": {
+    "archetype": "The Two-Sport Brawler",
+    "arc": "The Two-Sport Brawler"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "bodyHook"
+    ],
+    "celebration": "strut"
+   },
+   "record": {
+    "w": 24,
+    "l": 11,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 76,
+   "primeAge": 30,
+   "moneyIQ": 40,
+   "social": {
+    "followers": 150000,
+    "style": "all caps rants"
+   },
+   "bio": "Fights MMA on Thursday, boxes on Saturday, and spends Sunday asking why there's no fight on Sunday.",
+   "hiddenTraits": [],
+   "parody": "Clay Collard",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "cedric_doomby",
+   "first": "Cedric",
+   "last": "Doomby",
+   "nick": "The Best",
+   "gender": "M",
+   "age": 32,
+   "division": "welter",
+   "country": "France",
+   "hometown": "Paris",
+   "look": {
+    "head": 3,
+    "skin": 5,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 0
+   },
+   "skills": {
+    "striking": 94,
+    "power": 86,
+    "wrestling": 46,
+    "grappling": 50,
+    "cardio": 74,
+    "chin": 74,
+    "fightIQ": 82,
+    "durability": 74,
+    "heart": 72,
+    "weightCut": 55
+   },
+   "styles": [
+    "Kickboxer",
+    "Showboat"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Showman",
+    "Diva"
+   ],
+   "marquee": {
+    "archetype": "The Kickboxing Showman",
+    "arc": "The Kickboxing Showman"
+   },
+   "anim": {
+    "stance": "handsLow",
+    "signature": [
+     "spinningBackfist",
+     "flyingKnee"
+    ],
+    "celebration": "strut"
+   },
+   "record": {
+    "w": 6,
+    "l": 1,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 80,
+   "primeAge": 31,
+   "moneyIQ": 65,
+   "social": {
+    "followers": 1500000,
+    "style": "all caps rants"
+   },
+   "bio": "World kickboxing champion who talks about himself in the third person, the future tense and the superlative. Has a lot of followers and an equally large number of opinions about takedowns.",
+   "hiddenTraits": [],
+   "parody": "Cedric Doumbe",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "liz_carmoosh",
+   "first": "Liz",
+   "last": "Carmoosh",
+   "nick": "Girl-Rilla",
+   "gender": "W",
+   "age": 40,
+   "division": "wfly",
+   "country": "USA",
+   "hometown": "Lafayette, LA",
+   "look": {
+    "head": 1,
+    "skin": 4,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 78,
+    "power": 76,
+    "wrestling": 86,
+    "grappling": 82,
+    "cardio": 84,
+    "chin": 84,
+    "fightIQ": 82,
+    "durability": 84,
+    "heart": 90,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Ground & Pound"
+   ],
+   "traits": [
+    "Loyal",
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Veteran Champion",
+    "arc": "The Veteran Champion"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "groundAndPound"
+    ],
+    "celebration": "flexes"
+   },
+   "record": {
+    "w": 22,
+    "l": 7,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 78,
+   "primeAge": 33,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 120000,
+    "style": "gym selfies"
+   },
+   "bio": "Fought in the first-ever women's main event in the big league, then went and collected belts everywhere else. Still the toughest person in any room she's in.",
+   "hiddenTraits": [],
+   "parody": "Liz Carmouche",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
+   "id": "taila_santoss",
+   "first": "Taila",
+   "last": "Santoss",
+   "nick": "The Brazilian Hammer",
+   "gender": "W",
+   "age": 31,
+   "division": "wfly",
+   "country": "Brazil",
+   "hometown": "Joinville",
+   "look": {
+    "head": 2,
+    "skin": 2,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 82,
+    "power": 80,
+    "wrestling": 82,
+    "grappling": 80,
+    "cardio": 84,
+    "chin": 82,
+    "fightIQ": 80,
+    "durability": 82,
+    "heart": 84,
+    "weightCut": 55
+   },
+   "styles": [
+    "Pressure Striker",
+    "Wrestler"
+   ],
+   "traits": [
+    "Family First",
+    "Loyal"
+   ],
+   "marquee": {
+    "archetype": "The Title Chaser",
+    "arc": "The Title Chaser"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "overhandRight"
+    ],
+    "celebration": "none"
+   },
+   "record": {
+    "w": 21,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 84,
+   "primeAge": 30,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 90000,
+    "style": "gym selfies"
+   },
+   "bio": "Took the queen of the flyweights to a split decision once, which in the Lounge's marketing department now counts as 'basically a win'.",
+   "hiddenTraits": [],
+   "parody": "Taila Santos",
+   "debutAct": 1,
+   "startWith": "pfl_ish"
+  },
+  {
    "id": "dorian_blackwood",
    "first": "Dorian",
    "last": "Blackwood",

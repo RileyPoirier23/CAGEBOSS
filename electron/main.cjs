@@ -4,6 +4,7 @@
  */
 const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
 const path = require('node:path');
+const fs = require('node:fs');
 
 // music should start without waiting for a click, like a real game
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -44,6 +45,74 @@ function createWindow() {
   });
 }
 
+// ------------------------------------------------------------------ save files
+// Every save / setting / achievement is mirrored to <userData>/saves/<key>.txt. Those files
+// are the source of truth at startup, so Steam Auto-Cloud (or a USB stick) can carry them.
+const saveDir = () => path.join(app.getPath('userData'), 'saves');
+const fileFor = (key) => path.join(saveDir(), encodeURIComponent(key).replace(/%/g, '_') + '.txt');
+ipcMain.on('cageboss:files:readAll', (e) => {
+  const out = {};
+  try {
+    fs.mkdirSync(saveDir(), { recursive: true });
+    for (const f of fs.readdirSync(saveDir())) {
+      if (!f.endsWith('.txt')) continue;
+      const raw = fs.readFileSync(path.join(saveDir(), f), 'utf8');
+      const nl = raw.indexOf('\n');
+      if (nl > 0) out[raw.slice(0, nl)] = raw.slice(nl + 1);
+    }
+  } catch {
+    /* no saves yet */
+  }
+  e.returnValue = out;
+});
+ipcMain.on('cageboss:files:write', (_e, key, value) => {
+  try {
+    fs.mkdirSync(saveDir(), { recursive: true });
+    const f = fileFor(key);
+    // the key goes on the first line (file names can't hold every key); write then rename, so a crash can't half-write a save
+    fs.writeFileSync(f + '.tmp', key + '\n' + value, 'utf8');
+    fs.renameSync(f + '.tmp', f);
+  } catch {
+    /* disk full / read-only: local storage still has it */
+  }
+});
+ipcMain.on('cageboss:files:remove', (_e, key) => {
+  try {
+    fs.rmSync(fileFor(key), { force: true });
+  } catch {
+    /* already gone */
+  }
+});
+
+// ------------------------------------------------------------------ Steam
+// Optional. With steamworks.js installed and an App ID (steam_appid.txt next to the game, or
+// STEAM_APPID), achievements unlocked in-game unlock on Steam. Without either: nothing happens.
+let steam = null;
+function initSteam() {
+  try {
+    const candidates = [path.join(path.dirname(process.execPath), 'steam_appid.txt'), path.join(process.resourcesPath || '', 'steam_appid.txt'), path.join(__dirname, '..', 'steam_appid.txt')];
+    const file = candidates.find((f) => fs.existsSync(f));
+    const appId = Number(process.env.STEAM_APPID || (file ? fs.readFileSync(file, 'utf8').trim() : 0));
+    if (!appId) return;
+    const steamworks = require('steamworks.js');
+    steam = steamworks.init(appId);
+    try {
+      steamworks.electronEnableSteamOverlay();
+    } catch {
+      /* overlay is a nice-to-have */
+    }
+  } catch {
+    steam = null; // not installed, or Steam isn't running
+  }
+}
+ipcMain.on('cageboss:achievement', (_e, id) => {
+  try {
+    if (steam && !steam.achievement.isActivated(id)) steam.achievement.activate(id);
+  } catch {
+    /* unknown achievement id on the Steam side */
+  }
+});
+
 ipcMain.on('cageboss:quit', () => app.quit());
 ipcMain.on('cageboss:fullscreen', (_e, on) => win && win.setFullScreen(!!on));
 ipcMain.handle('cageboss:isFullscreen', () => (win ? win.isFullScreen() : false));
@@ -70,7 +139,7 @@ async function checkPortable() {
       type: 'info',
       title: 'CAGE BOSS update',
       message: `CAGE BOSS ${rel.tag_name} is out. You're on v${app.getVersion()}.`,
-      detail: 'Download the new portable .exe and replace this one. Your saves carry over.',
+      detail: process.platform === 'darwin' ? 'Download the new Mac build and drag it into Applications. Your saves carry over.' : 'Download the new version and replace this one. Your saves carry over.',
       buttons: ['Download', 'Later'],
       defaultId: 0,
     });
@@ -104,9 +173,15 @@ function checkInstalled() {
   autoUpdater.checkForUpdates().catch(() => {});
 }
 
+initSteam();
+
 app.whenReady().then(() => {
   createWindow();
-  if (!app.isPackaged) return;
-  setTimeout(() => (process.env.PORTABLE_EXECUTABLE_DIR ? checkPortable() : checkInstalled()), 4000);
+  // Steam builds are updated by Steam
+  if (!app.isPackaged || steam) return;
+  // Windows installer and Linux AppImage update themselves; the portable .exe and the (unsigned)
+  // Mac build can't replace themselves, so they just say a new version is out
+  const self = process.platform === 'win32' ? !process.env.PORTABLE_EXECUTABLE_DIR : process.platform === 'linux' ? !!process.env.APPIMAGE : false;
+  setTimeout(() => (self ? checkInstalled() : checkPortable()), 4000);
 });
 app.on('window-all-closed', () => app.quit());

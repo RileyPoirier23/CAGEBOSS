@@ -9,7 +9,12 @@ import { W, H, text, button } from '../kit';
 import { sfx } from '../../audio/sfx';
 import type { PixelText } from '../text';
 import { openSettings } from './settings';
-import { openLoad } from './loadmenu';
+import { openHelp } from '../help';
+import { QuickFightScene } from './quickfight';
+import { openAchievements, hasAchievement } from '../achievements';
+import { alertBox } from '../widgets';
+import { maybeWhatsNew } from '../whatsnew';
+import { openLoad, latestSave, continueLatest } from './loadmenu';
 import { NewGameScene } from './newgame';
 import { openCredits } from './credits';
 import { desktop } from '../../desktop';
@@ -86,22 +91,29 @@ export class TitleScene extends Scene {
     r.addChild(text('A PROMOTER SIMULATOR OF DUBIOUS ETHICS', 0, 64, { small: true, width: W, align: 'center', color: PAL.ash }));
 
     const menu = new Container();
+    const last = latestSave();
     const items: [string, () => void][] = [
+      ...(last ? [['CONTINUE', () => continueLatest(this.g)] as [string, () => void]] : []),
       ['NEW CAREER', () => this.g.goto(new NewGameScene(this.g, 'career'))],
-      ['FIGHTER MODE', () => this.g.goto(new FMCreateScene(this.g))],
+      ['ROAD TO CHAMPION', () => this.g.goto(new FMCreateScene(this.g))],
+      [hasAchievement('rtc_epilogue') ? 'LEGACY MODE' : 'LEGACY MODE (LOCKED)', () => (hasAchievement('rtc_epilogue') ? this.g.goto(new FMCreateScene(this.g, true)) : alertBox(this.g, 'Legacy Mode', 'Finish Road To Champion to unlock Legacy Mode: the fighter career with the script torn up.'))],
+      ['QUICK FIGHT', () => this.g.goto(new QuickFightScene(this.g))],
       ['SANDBOX', () => this.g.goto(new NewGameScene(this.g, 'sandbox'))],
       ['LOAD', () => openLoad(this.g)],
+      ['HELP', () => openHelp(this.g)],
+      ['ACHIEVEMENTS', () => openAchievements(this.g)],
       ['SETTINGS', () => openSettings(this.g)],
       ['CREDITS', () => openCredits(this.g)],
     ];
     if (desktop) items.push(['QUIT GAME', () => desktop!.quit()]);
     items.forEach(([label, fn], i) => {
-      menu.addChild(button(label, 0, i * 15, 96, 13, fn, { fill: PAL.night, border: PAL.ash }));
+      menu.addChild(button(label, 0, i * 14, 116, 12, fn, { fill: label === 'CONTINUE' ? PAL.moss : label === 'HELP' ? PAL.shadow : PAL.night, border: label === 'HELP' || label === 'CONTINUE' ? PAL.gold : PAL.ash }));
     });
-    menu.x = Math.floor((W - 96) / 2);
-    menu.y = desktop ? 132 : 138;
+    menu.x = Math.floor((W - 116) / 2);
+    menu.y = Math.max(80, H - 14 - items.length * 14);
     r.addChild(menu);
     r.addChild(text(`V${__APP_VERSION__}  •  M = MUTE  •  ALL CHARACTERS ARE FICTIONAL. ANY RESEMBLANCE IS A LAWSUIT WAITING TO HAPPEN.`, 0, H - 9, { small: true, width: W, align: 'center', color: PAL.grey }));
+    setTimeout(() => maybeWhatsNew(this.g), 400);
   }
 
   private drawFacade(): Container {

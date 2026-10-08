@@ -20,12 +20,12 @@ import type { Input, PadButton } from './input';
 // ------------------------------------------------------------ action table
 
 export type FightButton =
-  | 'lead' | 'rear' | 'kick' | 'block' | 'grab' | 'feint'
+  | 'lead' | 'rear' | 'kick' | 'block' | 'grab' | 'feint' | 'body'
   | 'evadeUp' | 'evadeDown' | 'evadeAway' | 'evadeToward'
   | 'getupLeft' | 'getupRight';
 
 /** Buttons on the on-screen touch fight pad (src/ui/fightpad.ts). */
-export type TouchFightButton = 'LEAD' | 'REAR' | 'KICK' | 'BLOCK' | 'GRAB' | 'EVADE';
+export type TouchFightButton = 'LEAD' | 'REAR' | 'KICK' | 'BLOCK' | 'GRAB' | 'EVADE' | 'BODY';
 
 export interface FightBinding {
   pad?: PadButton[];
@@ -48,6 +48,8 @@ export const DEFAULT_FIGHT_BINDINGS: Record<FightButton, FightBinding> = {
   block: { pad: ['LB'], keys: ['ShiftLeft', 'KeyI'], touch: ['BLOCK'] },
   grab: { pad: ['B'], keys: ['Space'], touch: ['GRAB'] },
   feint: { pad: ['Y'], keys: ['KeyU'] },
+  // hold to send strikes to the body (the stick also works: down + punch)
+  body: { pad: ['LT'], keys: ['KeyO'], touch: ['BODY'] },
   // right-stick flicks are read from the stick; these are the digital equivalents
   evadeUp: { keys: ['ArrowUp'] },
   evadeDown: { keys: ['ArrowDown'] },
@@ -58,12 +60,13 @@ export const DEFAULT_FIGHT_BINDINGS: Record<FightButton, FightBinding> = {
 };
 
 export const FIGHT_ACTIONS: Record<FightButton, FightActionInfo> = {
-  lead: { label: 'Lead hand', help: 'Tap = light, hold = medium/heavy. Stick: toward = hook, down = uppercut, up = overhand, neutral = jab' },
-  rear: { label: 'Rear hand', help: 'Same as lead; neutral = straight. Trigger pressure adds power' },
-  kick: { label: 'Kick', help: 'Stick up = head, neutral = body, down = low. On the ground: stick + this = advance / reverse / stand up' },
-  block: { label: 'Block / parry', help: 'Hold to block, tap just before a punch lands to parry' },
-  grab: { label: 'Clinch / shoot', help: 'Hold = clinch (stick toward = shoot a takedown). Tap while being shot = sprawl' },
-  feint: { label: 'Feint', help: 'Fake a strike' },
+  lead: { label: 'Lead hand', help: 'Tap = light, hold = heavy. Neutral jab, toward/up hook, down body jab, down+toward uppercut. Clinch: short hooks' },
+  rear: { label: 'Rear hand', help: 'Neutral straight, toward hook, up overhand, down body shot, down+toward uppercut, away spinning backfist. Clinch: heavy = elbow' },
+  kick: { label: 'Kick', help: 'Neutral body, up head, down leg, toward front kick, away spinning kick. Clinch: knees (up = head from the plum). Ground: pass / sweep / stand' },
+  block: { label: 'Block / parry', help: 'Hold to block (head high; body and legs leak through), tap just before a punch lands to parry' },
+  grab: { label: 'Grab', help: 'Hold = clinch (toward = shoot). Tap = sprawl. Clinch: up plum, toward underhooks, down trip, away break. Ground: + stick = submission' },
+  feint: { label: 'Feint', help: 'Fake a strike: a good one makes him flinch and opens a counter' },
+  body: { label: 'Body modifier', help: 'Hold with a punch to go to the body (jab, straight, hook). Same as stick down' },
   evadeUp: { label: 'Slip', help: 'Right stick flick up (or arrow)' },
   evadeDown: { label: 'Roll / duck', help: 'Right stick flick down' },
   evadeAway: { label: 'Pull', help: 'Right stick flick away from the opponent' },
@@ -93,6 +96,8 @@ export interface FightContext {
   /** +1 = opponent is to the right, -1 = to the left */
   facing: 1 | -1;
   grounded?: boolean;
+  /** tied up in the clinch: grab taps fight for position, kicks are knees */
+  clinch?: boolean;
   /** opponent is shooting a takedown on us (sprawl window) */
   beingShot?: boolean;
   submission?: 'attack' | 'defend' | null;
@@ -100,7 +105,9 @@ export interface FightContext {
 }
 
 export type Dir = 'neutral' | 'up' | 'down' | 'toward' | 'away';
-export type PunchType = 'jab' | 'straight' | 'hook' | 'uppercut' | 'overhand';
+export type PunchType = 'jab' | 'straight' | 'hook' | 'uppercut' | 'overhand' | 'bodyJab' | 'bodyStraight' | 'bodyHook' | 'spinBackfist';
+/** 8-way stick direction (relative to the opponent), for strike selection. */
+export type Dir8 = Dir | 'downToward' | 'upToward' | 'downAway' | 'upAway';
 export type Weight = 'light' | 'medium' | 'heavy';
 
 export type FightIntent =
@@ -108,13 +115,14 @@ export type FightIntent =
   | { type: 'parry' }
   | { type: 'block'; phase: 'start' | 'end' }
   | { type: 'evade'; kind: 'slip' | 'roll' | 'pull' | 'lean'; source: 'flick' | 'button' }
-  | { type: 'kick'; level: 'low' | 'body' | 'head' }
+  | { type: 'kick'; level: 'low' | 'body' | 'head' | 'front' | 'spin' }
   | { type: 'clinch' }
+  | { type: 'clinchMove'; move: 'plum' | 'under' | 'pummel' | 'trip' | 'break' }
   | { type: 'shoot' }
   | { type: 'sprawl' }
   | { type: 'feint' }
   | { type: 'ground'; move: 'advance' | 'reverse' | 'standup' | 'base' }
-  | { type: 'subAttempt' }
+  | { type: 'subAttempt'; dir: Dir }
   | { type: 'subTurn'; dir: 1 | -1; turns: number; role: 'attack' | 'defend' }
   | { type: 'mash'; rate: number; role: 'attack' | 'defend' }
   | { type: 'getup'; side: 'left' | 'right'; rhythm: number }
@@ -144,12 +152,53 @@ export function stickDir(v: { x: number; y: number }, facing: 1 | -1, threshold 
   return rx > 0 ? 'toward' : 'away';
 }
 
+export function stickDir8(v: { x: number; y: number }, facing: 1 | -1, threshold = FIGHT_TUNING.dir): Dir8 {
+  const rx = v.x * facing;
+  if (Math.hypot(rx, v.y) < threshold) return 'neutral';
+  const diag = 0.38;
+  if (Math.abs(rx) > diag && Math.abs(v.y) > diag) {
+    if (v.y > 0) return rx > 0 ? 'downToward' : 'downAway';
+    return rx > 0 ? 'upToward' : 'upAway';
+  }
+  return stickDir(v, facing, threshold);
+}
+
+/**
+ * Directional strikes (UFC style): the stick when the button goes down picks the shot.
+ *   neutral: jab / straight      toward: lead hook / rear hook       up: lead hook / overhand
+ *   down: body jab / body straight      down+toward: uppercuts      away: pull-counter jab / spinning backfist
+ * Holding the body modifier sends jabs, straights and hooks downstairs.
+ */
+export function punchFor(hand: 'lead' | 'rear', d: Dir8, body: boolean): PunchType {
+  let p: PunchType;
+  if (d === 'downToward' || d === 'downAway') p = 'uppercut';
+  else if (d === 'down') p = hand === 'lead' ? 'bodyJab' : 'bodyStraight';
+  else if (d === 'toward' || d === 'upToward') p = 'hook';
+  else if (d === 'up') p = hand === 'lead' ? 'hook' : 'overhand';
+  else if (d === 'away' || d === 'upAway') p = hand === 'lead' ? 'jab' : 'spinBackfist';
+  else p = hand === 'lead' ? 'jab' : 'straight';
+  if (body) p = p === 'jab' ? 'bodyJab' : p === 'straight' ? 'bodyStraight' : p === 'hook' ? 'bodyHook' : p;
+  return p;
+}
+
 export function weightFor(hold: number): Weight {
   return hold < FIGHT_TUNING.tapMax ? 'light' : hold < FIGHT_TUNING.mediumMax ? 'medium' : 'heavy';
 }
 
-/** Build a FightSample from the shared Input (+ the optional touch fight pad). */
-export function sampleFight(inp: Input, binds: Record<FightButton, FightBinding>, touch?: TouchPadState | null, facing: 1 | -1 = 1, pad?: number): FightSample {
+/**
+ * Which part of the keyboard a player uses. 'full' = everything (one player); in 2-player
+ * versus on one keyboard, 'left' = WASD + J K L... (no arrow keys) and 'right' = the arrow keys
+ * plus P2_KEYS; 'none' = controller only.
+ */
+export type KeyboardShare = 'full' | 'left' | 'right' | 'none';
+/** Player 2's half of a shared keyboard: arrows to move, the keys around Enter to fight. */
+export const P2_KEYS: Partial<Record<FightButton, string[]>> = {
+  lead: ['Comma'], rear: ['Period'], kick: ['Slash'], block: ['ShiftRight'], grab: ['Enter'], feint: ['Quote'], body: ['Semicolon'],
+  getupLeft: ['BracketLeft'], getupRight: ['BracketRight'],
+};
+
+/** Build a FightSample from the shared Input (+ the optional touch fight pad). pad = which controller (-1 = none). */
+export function sampleFight(inp: Input, binds: Record<FightButton, FightBinding>, touch?: TouchPadState | null, facing: 1 | -1 = 1, pad?: number, kb: KeyboardShare = 'full'): FightSample {
   const held = new Set<FightButton>();
   const analog = new Set<FightButton>();
   const pressure: Partial<Record<FightButton, number>> = {};
@@ -164,7 +213,8 @@ export function sampleFight(inp: Input, binds: Record<FightButton, FightBinding>
         }
       } else if (inp.button(pb, pad)) p = 1;
     }
-    for (const k of b.keys ?? []) if (inp.key(k)) p = 1;
+    const keys = kb === 'full' || kb === 'left' ? b.keys ?? [] : kb === 'right' ? P2_KEYS[name] ?? [] : [];
+    for (const k of keys) if (kb === 'left' && /^Arrow/.test(k) ? false : inp.key(k)) p = 1;
     for (const t of b.touch ?? []) if (touch?.held.has(t)) p = 1;
     if (p > 0) {
       held.add(name);
@@ -172,21 +222,22 @@ export function sampleFight(inp: Input, binds: Record<FightButton, FightBinding>
     }
   }
   // arrow keys left/right = pull / lean depending on which way we face
-  const left = inp.key('ArrowLeft');
-  const right = inp.key('ArrowRight');
+  const left = kb === 'full' && inp.key('ArrowLeft');
+  const right = kb === 'full' && inp.key('ArrowRight');
   if (left || right) held.add((right ? 1 : -1) * facing > 0 ? 'evadeToward' : 'evadeAway');
   // movement: left stick, else WASD, else the touch stick
   let move = { x: 0, y: 0 };
   const padList = inp.padList();
-  if (padList.length) move = inp.stick('left', pad);
-  if (!move.x && !move.y) {
-    const kx = (inp.key('KeyD') ? 1 : 0) - (inp.key('KeyA') ? 1 : 0);
-    const ky = (inp.key('KeyS') ? 1 : 0) - (inp.key('KeyW') ? 1 : 0);
+  if (padList.length && pad !== -1) move = inp.stick('left', pad);
+  if (!move.x && !move.y && kb !== 'none') {
+    const r = kb === 'right';
+    const kx = (inp.key(r ? 'ArrowRight' : 'KeyD') ? 1 : 0) - (inp.key(r ? 'ArrowLeft' : 'KeyA') ? 1 : 0);
+    const ky = (inp.key(r ? 'ArrowDown' : 'KeyS') ? 1 : 0) - (inp.key(r ? 'ArrowUp' : 'KeyW') ? 1 : 0);
     if (kx || ky) move = { x: kx / Math.hypot(kx, ky), y: ky / Math.hypot(kx, ky) };
   }
   if (!move.x && !move.y && touch) move = { ...touch.stick };
   // head movement: right stick; the touch EVADE button flicks in the touch stick's direction
-  let look = padList.length ? inp.stick('right', pad) : { x: 0, y: 0 };
+  let look = padList.length && pad !== -1 ? inp.stick('right', pad) : { x: 0, y: 0 };
   if (touch?.held.has('EVADE') && Math.hypot(touch.stick.x, touch.stick.y) > 0.3) {
     const m = Math.hypot(touch.stick.x, touch.stick.y);
     look = { x: touch.stick.x / m, y: touch.stick.y / m };
@@ -199,6 +250,9 @@ export function sampleFight(inp: Input, binds: Record<FightButton, FightBinding>
 interface Press {
   t: number;
   dir: Dir;
+  dir8: Dir8;
+  /** body modifier held when the button went down */
+  body: boolean;
   pressure: number;
   analog: boolean;
   fired?: boolean;
@@ -271,7 +325,8 @@ export class FightInput {
     const up = (b: FightButton) => !s.held.has(b) && this.prevHeld.has(b);
 
     // track press starts (direction is read when the button goes down)
-    for (const b of s.held) if (!this.prevHeld.has(b)) this.presses.set(b, { t: this.t, dir: moveDir, pressure: s.pressure[b] ?? 1, analog: !!s.analog?.has(b) });
+    const dir8 = stickDir8(s.move, ctx.facing);
+    for (const b of s.held) if (!this.prevHeld.has(b)) this.presses.set(b, { t: this.t, dir: moveDir, dir8, body: s.held.has('body'), pressure: s.pressure[b] ?? 1, analog: !!s.analog?.has(b) });
     for (const b of s.held) {
       const p = this.presses.get(b);
       if (p) p.pressure = Math.max(p.pressure, s.pressure[b] ?? 1);
@@ -329,8 +384,7 @@ export class FightInput {
       const p = this.presses.get(hand);
       if (!p) continue;
       const hold = this.t - p.t;
-      const neutral: PunchType = hand === 'lead' ? 'jab' : 'straight';
-      const punch: PunchType = p.dir === 'toward' ? 'hook' : p.dir === 'down' ? 'uppercut' : p.dir === 'up' ? 'overhand' : neutral;
+      const punch = punchFor(hand, p.dir8, p.body);
       // a hard trigger squeeze bumps the weight one step
       let weight = weightFor(hold);
       if (p.analog && p.pressure >= 0.95 && hold >= T.tapMax * 0.6 && weight !== 'heavy') weight = weight === 'light' ? 'medium' : 'heavy';
@@ -338,8 +392,9 @@ export class FightInput {
     }
 
     // block / parry
+    // the guard comes up the instant you press (a well-timed press also parries)
     if (down('block')) out.push({ type: 'parry' });
-    if (s.held.has('block') && !this.blocking && this.heldFor('block') >= T.parryWindow) {
+    if (s.held.has('block') && !this.blocking) {
       this.blocking = true;
       out.push({ type: 'block', phase: 'start' });
     }
@@ -355,9 +410,13 @@ export class FightInput {
         const move = moveDir === 'toward' ? 'advance' : moveDir === 'away' ? 'reverse' : moveDir === 'up' ? 'standup' : 'base';
         out.push({ type: 'ground', move });
       }
-      if (down('grab')) out.push({ type: 'subAttempt' });
-    } else {
+      if (down('grab')) out.push({ type: 'subAttempt', dir: moveDir });
+    } else if (ctx.clinch) {
+      // in the clinch: kicks are knees (up = to the head), grab taps fight for the tie-up
       if (down('kick')) out.push({ type: 'kick', level: moveDir === 'up' ? 'head' : moveDir === 'down' ? 'low' : 'body' });
+      if (down('grab')) out.push({ type: 'clinchMove', move: moveDir === 'up' ? 'plum' : moveDir === 'toward' ? 'under' : moveDir === 'down' ? 'trip' : moveDir === 'away' ? 'break' : 'pummel' });
+    } else {
+      if (down('kick')) out.push({ type: 'kick', level: moveDir === 'up' ? 'head' : moveDir === 'down' ? 'low' : moveDir === 'toward' ? 'front' : moveDir === 'away' ? 'spin' : 'body' });
 
       // clinch / shoot on hold, sprawl on a tap while being shot
       const g = this.presses.get('grab');
