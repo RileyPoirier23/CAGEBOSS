@@ -14,7 +14,7 @@ import type { Game } from './app';
 import { PAL } from '../art/palette';
 import { W, H, text, button } from './kit';
 import { setMusicContext } from '../audio/music';
-import { FRIENDS, ARTISTS } from './creditsdata';
+import { FRIENDS, ARTISTS, SUPPORTERS } from './creditsdata';
 
 type Kind = 'h' | 'n' | 'g' | 's' | 'b';
 const ROLL: [string, Kind][] = [
@@ -56,6 +56,14 @@ const ROLL: [string, Kind][] = [
   ['Thank you for letting me put your songs in this.', 'n'],
   ['Every walkout in here is yours.', 'n'],
   ['', 'n'],
+  ['Supporters', 's'],
+  ...(SUPPORTERS.length ? SUPPORTERS.map((n): [string, Kind] => [n, 'n']) : [['Your name could be here (SUPPORT THE DEV, on the title screen).', 'n'] as [string, Kind]]),
+  ['Thank you for keeping a solo dev going.', 'n'],
+  ['', 'n'],
+  ['Find me', 's'],
+  ['Instagram: @506clicks  •  @rpoirier07', 'n'],
+  ['TikTok: iheartgrannies69  •  Discord: gldmonkey', 'n'],
+  ['', 'n'],
   ['Made in Moncton, New Brunswick', 's'],
   ['506clicks.ca', 'n'],
   ['', 'n'],
@@ -65,14 +73,21 @@ const ROLL: [string, Kind][] = [
 
 const THANKS = 'From a bingo-hall smoker to the biggest fight in the world. Thank you for playing CAGE BOSS: every fight, every bad contract, every bowl of soup. It means more than you know.';
 
-/** Credits roll, thank-you, memorial. Nothing skippable. `done` when the player leaves the memorial. */
-export function openEndCredits(g: Game, done: () => void): void {
+/**
+ * Credits roll, thank-you, memorial. `done` when the player leaves the memorial.
+ * The end of the road: nothing skippable. From the CREDITS menu (`menu`): you can skip ahead,
+ * but only as far as the memorial. Everybody sees her.
+ */
+export function openEndCredits(g: Game, done: () => void, opts: { menu?: boolean } = {}): void {
   const root = new Container();
   const wrap = g.modal(root, { dim: 1 });
   root.addChild(new Graphics().rect(0, 0, W, H).fill(0x060508));
   setMusicContext('title');
-  // no Esc / back out of this one
-  const popKeys = g.pushKeyHandler((e) => e.key === 'Escape' || e.key === 'Backspace');
+  // no Esc / back out of this one (from the menu, Esc skips ahead to the memorial)
+  const popKeys = g.pushKeyHandler((e) => {
+    if (opts.menu && e.type === 'keydown' && (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'Enter')) toMemorial();
+    return e.key === 'Escape' || e.key === 'Backspace' || (!!opts.menu && e.key === 'Enter');
+  });
   g.cutscene = true;
   const pop = () => {
     popKeys();
@@ -96,6 +111,30 @@ export function openEndCredits(g: Game, done: () => void): void {
   let t = 0;
   let thanks: Container | null = null;
   let memorial: Container | null = null;
+  const showMemorial = () => {
+    stage = 'memorial';
+    t = 0;
+    skip?.destroy();
+    skip = null;
+    memorial = buildMemorial(g, () => {
+      g.app.ticker.remove(tick);
+      pop();
+      g.closeModal(wrap);
+      done();
+    }, opts.menu ? 4 : 8);
+    memorial.alpha = 0;
+    root.addChild(memorial);
+  };
+  /** Menu version: jump to the memorial (never past it). */
+  const toMemorial = () => {
+    if (stage === 'memorial') return;
+    roll.visible = false;
+    thanks?.destroy({ children: true });
+    thanks = null;
+    showMemorial();
+  };
+  let skip: Container | null = opts.menu ? button('SKIP TO THE END', W - 92, H - 16, 86, 12, toMemorial, { small: true, fill: 0x2a262c }) : null;
+  if (skip) root.addChild(skip);
   const tick = (tk: Ticker) => {
     const dt = Math.min(0.05, tk.deltaMS / 1000);
     t += dt;
@@ -118,16 +157,7 @@ export function openEndCredits(g: Game, done: () => void): void {
       if (t > 8.8) {
         thanks.destroy({ children: true });
         thanks = null;
-        stage = 'memorial';
-        t = 0;
-        memorial = buildMemorial(g, () => {
-          g.app.ticker.remove(tick);
-          pop();
-          g.closeModal(wrap);
-          done();
-        }, 8);
-        memorial.alpha = 0;
-        root.addChild(memorial);
+        showMemorial();
       }
     } else if (memorial) {
       memorial.alpha = Math.min(1, t / 3);

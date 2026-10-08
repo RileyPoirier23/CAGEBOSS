@@ -93,6 +93,20 @@ export function bossFighter(id: string): Fighter | null {
   return makeBoss(tmp, id, 'us');
 }
 
+/** Tyler "Trust Fund" Vance as a standalone fighter (Quick Fight). */
+export function tylerFighter(): Fighter {
+  const f = generateFighter(new Rng(1987), content().names, { division: 'light', gender: 'M', tier: 'contender', culture: 'us_urban', id: 'rival' });
+  Object.assign(f, { first: 'Tyler', last: 'Vance', nick: 'Trust Fund', age: 26, country: 'Canada', hometown: 'Moncton, New Brunswick (the nice part)', gym: "Ray's Boxing & Soup (now)", traits: ['Trash Talker', 'Showman'], record: { w: 21, l: 3, d: 0, nc: 0 } });
+  f.skills = { striking: 84, power: 80, wrestling: 78, grappling: 74, cardio: 84, chin: 80, fightIQ: 80, durability: 80, heart: 82, weightCut: 40 };
+  return f;
+}
+
+/** Every story fighter the player has unlocked, ready for Quick Fight. */
+export function unlockedStoryFighters(): Fighter[] {
+  const make: Record<string, () => Fighter | null> = { rival: tylerFighter, wyatt: () => bossFighter('wyatt'), zac: () => bossFighter('zac'), han: hanFighter, spadam: () => bossFighter('spadam') };
+  return ['rival', 'wyatt', 'zac', 'han', 'spadam'].filter((id) => unlockedFighters().includes(id)).map((id) => make[id]()).filter((f): f is Fighter => !!f);
+}
+
 /** Han as a standalone fighter (Quick Fight, after you finish the road). */
 export function hanFighter(): Fighter {
   const rng = new Rng(2001);

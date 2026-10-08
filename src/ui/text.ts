@@ -67,12 +67,43 @@ export function setTextResolution(r: number): void {
 
 /** Actual small-text glyph pixel size in logical units (whole device pixels, never larger than nominal). */
 function smallK(): number {
-  // HD small text is off: small text uses the chunky Cagebook small face (now with lowercase).
-  if (!HD_SMALL) return 0;
+  // HD small text is off by default: small text uses the chunky Cagebook small face (now with lowercase).
+  // The "Clear" and "Bold" text settings switch it on: fine print gets the full letterforms.
+  if (!HD_SMALL && fontMode === 'pixel') return 0;
   const px = Math.floor(resolution * SMALL_NOMINAL + 1e-6);
   return px >= 1 ? px / resolution : 0;
 }
 const HD_SMALL = false;
+
+// ---------------------------------------------------------------- readability (Settings → Text)
+export type FontMode = 'pixel' | 'clear' | 'bold';
+let fontMode: FontMode = 'pixel';
+/** A heavier face: every stroke one pixel wider (easier to read, a little wider). */
+function boldFace(f: FontFace): FontFace {
+  const glyphs: Record<string, string[]> = {};
+  for (const [ch, rows] of Object.entries(f.glyphs)) {
+    glyphs[ch] = rows.map((r) => {
+      let out = '';
+      for (let i = 0; i <= r.length; i++) out += r[i] === '#' || r[i - 1] === '#' ? '#' : '.';
+      return out;
+    });
+  }
+  return { ...f, name: f.name + '_bold', glyphs, spaceWidth: f.spaceWidth + 1 };
+}
+const BOLD_MAIN = boldFace(MAIN_FACE);
+const BOLD_SMALL = boldFace(SMALL_FACE);
+const mainFace = (): FontFace => (fontMode === 'bold' ? BOLD_MAIN : MAIN_FACE);
+const smallFace = (): FontFace => (fontMode === 'bold' ? BOLD_SMALL : SMALL_FACE);
+/** Settings → Text: Pixel (the look), Clear (full letterforms in fine print), Bold (heavier strokes). */
+export function setFontMode(m: FontMode): void {
+  if (m === fontMode) return;
+  fontMode = m;
+  for (const t of [...live]) {
+    if (t.destroyed) live.delete(t);
+    else t.rebuild();
+  }
+}
+export const getFontMode = (): FontMode => fontMode;
 
 function buildAtlas(face: FontFace): Atlas {
   const chars = Object.keys(face.glyphs);
@@ -134,10 +165,8 @@ export class PixelText extends Container {
     super();
     this.face = MAIN_FACE;
     this.build();
-    if (opts.small) {
-      live.add(this);
-      this.on('destroyed', () => live.delete(this));
-    }
+    live.add(this);
+    this.on('destroyed', () => live.delete(this));
   }
 
   rebuild(): void {
@@ -162,7 +191,7 @@ export class PixelText extends Container {
     const small = !!this.opts.small;
     const k = small ? smallK() : 1;
     this.hd = small && k > 0;
-    this.face = small && !this.hd ? SMALL_FACE : MAIN_FACE;
+    this.face = small && !this.hd ? smallFace() : mainFace();
     const face = this.face;
     const atlas = atlasFor(face);
     const color = this.opts.color ?? 0xe6dcc4;
@@ -251,12 +280,12 @@ function upperKeepMarkup(s: string): string {
 
 /** Layout width of a single line. Small text measures as an (upper-cased) label. */
 export function measure(text: string, small = false): number {
-  if (!small) return measureLine(MAIN_FACE, text);
-  return measureLine(SMALL_FACE, upperKeepMarkup(normalizeText(text)));
+  if (!small) return measureLine(mainFace(), text);
+  return measureLine(smallFace(), upperKeepMarkup(normalizeText(text)));
 }
 
 export function wrap(text: string, width: number, small = false): string[] {
-  return wrapText(small ? SMALL_FACE : MAIN_FACE, text, width);
+  return wrapText(small ? smallFace() : mainFace(), text, width);
 }
 
 export function lineHeight(small = false): number {

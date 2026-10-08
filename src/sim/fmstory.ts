@@ -44,7 +44,7 @@ export interface StoryState {
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
-type FMX = ReturnType<typeof fm> & { moments?: FMMoment[]; story?: StoryState; legacy?: boolean; stats?: FMStats };
+type FMX = ReturnType<typeof fm> & { moments?: FMMoment[]; story?: StoryState; legacy?: boolean; stats?: FMStats; xavier?: boolean };
 export interface FMStats { kos: number; subs: number; decs: number; streak: number; best: number; docsCaught: number; badSigned: number; interviews: number; belts: number }
 
 export const fmx = (s: GameState): FMX => fm(s) as FMX;
@@ -76,7 +76,11 @@ export function signingMoment(s: GameState, rng: Rng): FMMoment {
   const f = me(s);
   const base = { amateur: 400, regional: 2000, pfl: 12000, of: 14000 }[sg.tier];
   const fights = { amateur: 3, regional: 4, pfl: 6, of: 4 }[sg.tier];
-  const promoter = rng.pick(PROMOTERS[sg.tier]);
+  // Legacy Mode: the first man to sign you is Xavier "Allstar" Cockett, who finally got his league
+  const sx = fmx(s);
+  const xavier = !!sx.legacy && !sx.xavier;
+  if (xavier) sx.xavier = true;
+  const promoter = xavier ? 'Xavier "Allstar" Cockett' : rng.pick(PROMOTERS[sg.tier]);
   const terms: [string, string][] = [
     ['Promotion', sg.name],
     ['Fighter', `${f.first} "${f.nick}" ${f.last}`],
@@ -86,7 +90,9 @@ export function signingMoment(s: GameState, rng: Rng): FMMoment {
     ['Weight class', `${f.division.toUpperCase()} (${'made every time, or else'})`],
     ['Signed', `Week ${s.week + 1}`],
   ];
-  const blurb = sg.tier === 'amateur'
+  const blurb = xavier
+    ? `Xavier "Allstar" Cockett tips his cowboy hat. "Told you. Years ago, at a bingo hall, I told a kid I'd run my own league one day and he'd be my first signing. He went and got famous on me. So it's you." ${sg.name} is his. The ink is real. The hat is real. The horse is a rental.`
+    : sg.tier === 'amateur'
     ? `${sg.name}: a cage with one wobbly panel, a ring card girl who is also the promoter's niece, and a canvas held together with duct tape. Everybody starts somewhere.`
     : sg.tier === 'pfl'
     ? "The Professional Fighters' Lounge: a season, playoffs, a final and a cheque the size of a door. Real names on this roster. The cameras never stop."

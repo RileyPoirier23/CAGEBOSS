@@ -23,6 +23,7 @@ import { Rng } from '../../core/rng';
 import type { KeyboardShare } from '../../core/fightinput';
 import type { CanvasStyle } from '../arena';
 import { sfx } from '../../audio/sfx';
+import { unlockedStoryFighters } from '../../sim/cast';
 
 type Mode = 'cpu' | 'versus';
 type Plan = 'balanced' | 'pressure' | 'counter' | 'wrestle';
@@ -45,6 +46,12 @@ export class QuickFightScene extends Scene {
 
   private list(): Fighter[] {
     const s = roster();
+    if (this.div === 'story') {
+      // the Road To Champion bosses you've beaten (and Han)
+      const out = unlockedStoryFighters();
+      for (const f of out) s.fighters[f.id] = f;
+      return out;
+    }
     const ranked = (s.rankings[this.div] ?? []).map((id) => s.fighters[id]).filter(Boolean);
     const rest = Object.values(s.fighters)
       .filter((f) => f.division === this.div && f.status !== 'retired' && !ranked.includes(f))
@@ -83,7 +90,10 @@ export class QuickFightScene extends Scene {
     const mx = 180;
     const row = (label: string, y: number) => r.addChild(text(label, mx, y + 3, { small: true, color: PAL.ash }));
     row('DIVISION', 40);
-    r.addChild(selector(mx + 40, 40, 80, DIVISION_ORDER.map((d) => ({ value: d, label: divisionName(d) })), this.div, (v) => { this.div = v; this.pick = [0, 1]; this.refresh(); }));
+    const divOpts = DIVISION_ORDER.map((d) => ({ value: d, label: divisionName(d) }));
+    if (unlockedStoryFighters().length >= 2) divOpts.unshift({ value: 'story', label: 'Story fighters' });
+    r.addChild(selector(mx + 40, 40, 80, divOpts, this.div, (v) => { this.div = v; this.pick = [0, 1]; this.refresh(); }));
+    if (unlockedStoryFighters().length < 2) r.addChild(text('Beat Road To Champion chapters to unlock its fighters here.', mx, 204, { small: true, width: 120, color: PAL.grey, maxLines: 2 }));
     row('PLAYERS', 58);
     r.addChild(selector(mx + 40, 58, 80, [{ value: 'cpu' as Mode, label: '1P vs CPU' }, { value: 'versus' as Mode, label: '2P versus' }], this.mode, (v) => { this.mode = v; this.refresh(); }));
     row('ROUNDS', 76);

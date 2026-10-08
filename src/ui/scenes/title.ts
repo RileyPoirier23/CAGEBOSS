@@ -16,7 +16,8 @@ import { alertBox } from '../widgets';
 import { maybeWhatsNew } from '../whatsnew';
 import { openLoad, latestSave, continueLatest } from './loadmenu';
 import { NewGameScene } from './newgame';
-import { openCredits } from './credits';
+import { openEndCredits } from '../endcredits';
+import { openSupport, supportAvailable } from '../support';
 import { desktop } from '../../desktop';
 
 interface Drop {
@@ -103,7 +104,8 @@ export class TitleScene extends Scene {
       ['HELP', () => openHelp(this.g)],
       ['ACHIEVEMENTS', () => openAchievements(this.g)],
       ['SETTINGS', () => openSettings(this.g)],
-      ['CREDITS', () => openCredits(this.g)],
+      // the credits roll, the thank-you, and the memorial
+      ['CREDITS', () => openEndCredits(this.g, () => {}, { menu: true })],
     ];
     if (desktop) items.push(['QUIT GAME', () => desktop!.quit()]);
     items.forEach(([label, fn], i) => {
@@ -112,7 +114,9 @@ export class TitleScene extends Scene {
     menu.x = Math.floor((W - 116) / 2);
     menu.y = Math.max(80, H - 14 - items.length * 14);
     r.addChild(menu);
-    r.addChild(text(`V${__APP_VERSION__}  •  M = MUTE  •  ALL CHARACTERS ARE FICTIONAL. ANY RESEMBLANCE IS A LAWSUIT WAITING TO HAPPEN.`, 0, H - 9, { small: true, width: W, align: 'center', color: PAL.grey }));
+    r.addChild(text(`V${__APP_VERSION__}  •  M = MUTE  •  FICTIONAL, EXCEPT THE FRIENDS IN THE CREDITS. ANY OTHER RESEMBLANCE IS A LAWSUIT WAITING TO HAPPEN.`, 0, H - 9, { small: true, width: W, align: 'center', color: PAL.grey }));
+    // a solo dev: the support screen (desktop and web builds only)
+    if (supportAvailable()) r.addChild(button('SUPPORT THE DEV', W - 96, H - 26, 90, 13, () => openSupport(this.g), { small: true, fill: PAL.blood, border: PAL.gold }));
     setTimeout(() => maybeWhatsNew(this.g), 400);
   }
 

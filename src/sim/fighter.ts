@@ -369,7 +369,10 @@ export function createFighterGame(o: CreateOpts): GameState {
     const want = o.startTier ?? 'amateur';
     const tmp: string[] = [];
     while (st.tier !== want && st.stage < st.circuit.length - 1) promote(s, rng, tmp);
-    if (st.moments) st.moments = st.moments.slice(-1);
+    // one contract signing, for wherever you start: Xavier "Allstar" Cockett signs you first
+    st.moments = [];
+    (st as { xavier?: boolean }).xavier = false;
+    pushMoment(s, signingMoment(s, rng));
     st.stats = undefined; // skipping ahead isn't winning belts
   } else {
     startStory(s, rng);

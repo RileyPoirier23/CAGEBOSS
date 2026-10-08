@@ -8,6 +8,10 @@ import type { Fighter, GameState } from '../core/types';
 import { me } from '../sim/fighter';
 import { fmx } from '../sim/fmstory';
 import { CAST, type Actor, type Cutscene, type Shot } from './cutscene';
+import { sizeFor } from './arena';
+import { stage } from '../sim/fighter';
+
+const stageShort = (s: GameState) => stage(s).short;
 
 const YOU_CLOTHES = { top: 0x3a3a44, bottom: 0x22222a };
 const RIVAL_CLOTHES = { top: 0xf2f0ea, bottom: 0xc8b48a };
@@ -23,9 +27,260 @@ export function storyScene(s: GameState, id: string): Cutscene | null {
   const riv = (x: number, facing: 1 | -1, o: Partial<Actor> = {}): Actor => (r ? { id: 'rival', fighter: r, clothes: RIVAL_CLOTHES, name: `${Rf} ${R}`, x, facing, ...o } : { id: 'rival', look: CAST.gordon, name: `${Rf} ${R}`, x, facing, ...o });
   const npc = (who: keyof typeof CAST, name: string, x: number, facing: 1 | -1, o: Partial<Actor> = {}): Actor => ({ id: who, look: CAST[who], name, x, facing, ...o });
   const ray = (x: number, facing: 1 | -1, o: Partial<Actor> = {}) => npc('ray', 'Uncle Ray', x, facing, o);
-  const shot = (bg: Shot['bg'], cast: Actor[], lines: Shot['lines'], caption?: string): Shot => ({ bg, cast, lines, caption });
+  const shot = (bg: Shot['bg'], cast: Actor[], lines: Shot['lines'], caption?: string, tv?: Shot['tv']): Shot => ({ bg, cast, lines, caption, tv });
   const mateo = ss?.flags.mateo === 1;
+  const zacP = ss?.flags.zacPartner === 1;
+  // the bosses, drawn to size (Wyatt is four foot eight, Spadam is six foot seven)
+  const boss = (bid: 'wyatt' | 'zac' | 'spadam', x: number, facing: 1 | -1, o: Partial<Actor> = {}, clothes?: { top: number; bottom: number }): Actor => {
+    const bf = s.fighters[bid];
+    const names = { wyatt: 'Wyatt Smitt', zac: 'Zac Buna', spadam: 'Spadam Biggs' };
+    return bf ? { id: bid, fighter: bf, clothes, name: names[bid], x, facing, scale: 1.3 * sizeFor(bf), ...o } : { id: bid, look: CAST.dane, name: names[bid], x, facing, ...o };
+  };
+  const xav = (x: number, facing: 1 | -1, o: Partial<Actor> = {}) => npc('xavier', 'Xavier "Allstar" Cockett', x, facing, o);
+  const dan = (x: number, facing: 1 | -1, o: Partial<Actor> = {}) => npc('daniel', 'Daniel Stinkovich', x, facing, o);
+  const len = (x: number, facing: 1 | -1, o: Partial<Actor> = {}) => npc('lenny', 'Lenny Pratt', x, facing, o);
+  const kid = (x: number, facing: 1 | -1, o: Partial<Actor> = {}) => npc('mateo', 'Mateo', x, facing, { scale: 1, ...o });
+  const GREEN = { top: 0x1e5a2a, bottom: 0x2a2a2a };
+  const GI = { top: 0xe8e8e4, bottom: 0xe8e8e4 };
+  const WHITE_SUIT = { top: 0xe8e4dc, bottom: 0xe8e4dc };
   switch (id) {
+    case 'c1_tv':
+      return {
+        shots: [
+          shot('tv', [ray(440, -1)], [
+            { who: null, text: 'The gym TV. A CBFC replay, the sound turned down. A six-foot-seven welterweight with long brown hair and a beard folds a man in half with a knee.', sfx: 'thud' },
+            { who: null, text: 'SPADAM "THE WHITE BEAST" BIGGS. 24-0. The referee, a pudgy man with a curly mop and glasses, raises Biggs\'s hand before the other guy stops bouncing.' },
+            { who: 'ray', text: "That's not fighting. That's a weather event." },
+            { who: 'ray', text: "And that ref is Daniel Stinkovich. I worked a smoker with him in '04. He counted to ten in Roman numerals and lost his place." },
+          ], 'CBFC REPLAY', 'beast'),
+        ],
+      };
+    case 'c1_allstar':
+      return {
+        shots: [
+          shot('bingo', [you(150, 1), xav(330, -1, { enter: 'right' })], [
+            { who: null, text: 'After the fight. The bingo hall is stacking chairs; bingo resumes at nine.' },
+            { who: 'xavier', text: "Xavier Cockett. They call me Allstar. Don't ask, it's a long story and most of it's true." },
+            { who: 'xavier', text: "One day I'm gonna run my own league, kid. A real one." },
+            { who: 'xavier', text: "And you're gonna be my first signing. Remember I said that.", poses: { xavier: 'taunt' } },
+          ]),
+        ],
+      };
+    case 'c1_jar':
+      return {
+        shots: [
+          shot('gym', [ray(390, -1), you(270, 1), ...(mateo ? [kid(200, 1)] : [])], [
+            { who: null, text: 'Somebody stole the donation jar off the soup counter. $211 in coins, and an IOU from Mateo.' },
+            { who: 'ray', text: 'The only clue. Exactly where the jar was.' },
+            { who: null, text: 'He holds up a tiny green hat. About the size of a coffee cup.' },
+            { who: 'ray', text: 'Who in God\'s name wears a hat this small?' },
+          ]),
+        ],
+      };
+    case 'c2_wyatt':
+      return {
+        title: 'CHAPTER 2: THE REGIONALS',
+        shots: [
+          shot('stage', [you(160, 1), boss('wyatt', 300, -1, {}, GREEN)], [
+            { who: null, text: `The ${stageShort(s)} champion. Twelve and oh. Never been finished.` },
+            { who: 'wyatt', text: "Wyatt Smitt, lad. LeproClepto, if you're nasty. Nice granola bar." },
+            { who: null, text: 'He is eating your granola bar. You had it in your bag a minute ago.' },
+            { who: 'wyatt', text: "Lovely. Very oaty.", poses: { wyatt: 'taunt' } },
+            { who: null, text: 'On his head: a green top hat. A full-size one. You think about the soup jar.' },
+          ], 'OPEN WORKOUTS'),
+        ],
+      };
+    case 'c2_wyatt_booked':
+      return {
+        title: 'THE LEPRECHAUN',
+        shots: [
+          shot('stage', [you(204, 1, { pose: 'guard' }), boss('wyatt', 262, -1, { pose: 'guard' })], [
+            { who: null, text: 'The title fight face-off. Wyatt stands on a milk crate to look you in the chin.', flash: true, sfx: 'crowd' },
+            { who: 'wyatt', text: 'Three rounds, lad. Nobody finishes Wyatt Smitt. Nobody.' },
+            { who: null, text: 'He pats your chest, smiles, and hops off the crate.' },
+            { who: 'wyatt', text: 'Lookin\' for something?', poses: { wyatt: 'taunt' } },
+            { who: null, text: 'Your gold chain is gone. Nobody saw it happen.' },
+          ]),
+        ],
+      };
+    case 'c2_wyatt_done':
+      return {
+        shots: [
+          shot('gym', [ray(380, -1), you(250, 1), ...(mateo ? [kid(170, 1)] : [])], [
+            { who: null, text: 'Round three. Wyatt dropped into the splits and punched straight up. Disqualified. You are the champion. You are also walking funny.' },
+            { who: null, text: 'Next morning, a package at the gym: your chain. The soup jar, $211 plus $40 "interest". Mateo\'s IOU, paid.' },
+            { who: 'ray', text: '"Sorry lad. It\'s a condition. Great fight. W." In green crayon.' },
+            { who: 'ray', text: 'I kind of like him.' },
+          ], 'THE NEXT MORNING'),
+        ],
+      };
+    case 'c2_zac_tv':
+      return {
+        shots: [
+          shot('tv', [ray(440, -1)], [
+            { who: null, text: 'The Lounge on the gym TV. A ginger kid called Zac "The Attacker" Buna chokes a man out in forty seconds, then helps him up and checks he\'s okay.' },
+            { who: null, text: 'His manager grabs the mic: mustard suit, a moustache he thinks is charming. "Next season Zac is a STRIKER. Stand-up only. Big money!"' },
+            { who: null, text: 'Zac nods like he\'s hearing it for the first time.' },
+            { who: 'ray', text: 'Why would you take the best jiu-jitsu kid in the country and make him kickbox?' },
+          ], 'THE LOUNGE, ON TV', 'zac'),
+        ],
+      };
+    case 'c3_zac':
+      return {
+        shots: [
+          shot('hotel', [you(150, 1), boss('zac', 230, -1, {}, { top: 0x2a4a6a, bottom: 0x2a2a30 })], [
+            { who: 'zac', text: 'Hey. Can you read me what the pasta is? I left my glasses at home.' },
+            { who: null, text: 'He isn\'t wearing glasses. He has never worn glasses. You read him the whole menu.' },
+            { who: 'zac', text: "...I'll get the chicken." },
+          ], "THE FIGHTERS' HOTEL"),
+          shot('hotel', [you(150, 1), boss('zac', 230, -1, {}, { top: 0x2a4a6a, bottom: 0x2a2a30 }), len(370, -1, { enter: 'right' })], [
+            { who: 'lenny', text: 'Lenny Pratt, Zac\'s representation. Zac doesn\'t talk to other fighters. Bad for the brand.' },
+            { who: null, text: 'He signs the bill in Zac\'s name and pockets the receipt.' },
+          ]),
+        ],
+      };
+    case 'c3_spadam':
+      return {
+        shots: [
+          shot('presser', [you(120, 1), boss('spadam', 270, -1, {}, WHITE_SUIT), dan(390, -1)], [
+            { who: null, text: 'The Lounge\'s celebrity guest commentator has to duck to get through the door.' },
+            { who: 'spadam', text: 'Nice little run, kid. Genuinely. Call me when you\'re somebody.' },
+            { who: null, text: 'He signs your gloves without being asked. Behind him, a pudgy man with a curly mop carries his bag.' },
+            { who: 'daniel', text: "Daniel Stinkovich. Referee. I'm very experienced.", poses: { daniel: 'taunt' } },
+            { who: null, text: 'The referee. Carrying his bag.' },
+          ]),
+        ],
+      };
+    case 'c3_zac_booked':
+      return {
+        title: 'STAND-UP ONLY',
+        shots: [
+          shot('presser', [you(110, 1), len(240, 1), boss('zac', 370, -1, {}, GREEN)], [
+            { who: 'lenny', text: 'The bout agreement, clause nine: STAND-UP ONLY. No takedowns. No grappling. Zac signed it.' },
+            { who: null, text: 'Zac looks at the paper like it\'s in another language. To him, it is.' },
+            { who: 'zac', text: "I'm a striker now." },
+            { who: null, text: 'He doesn\'t sound sure. Rules are rules: no grappling in this fight, for either of you.' },
+          ]),
+        ],
+      };
+    case 'c3_zac_done':
+      return {
+        title: 'THE CONTRACT',
+        shots: [
+          shot('locker', [you(170, 1), boss('zac', 290, -1, { pose: 'stool' }, GI)], [
+            { who: null, text: 'After the Lounge final. You sit down with Zac and read him his contract. All of it.' },
+            { who: null, text: 'Lenny takes 60% of his purses. Lenny owns his likeness. Lenny "may assign fighting style at his discretion".' },
+            { who: 'zac', text: '...Wait here.', poses: { zac: 'stand' } },
+            { who: null, text: 'From the hallway, the loudest firing in the history of the Lounge.', shake: true, sfx: 'crowd' },
+          ]),
+          shot('gym', [ray(390, -1), you(250, 1), boss('zac', 140, 1, { enter: 'left' }, GI)], [
+            { who: 'zac', text: "Monday. I've got nowhere to train. And you don't know any jiu-jitsu." },
+            { who: 'ray', text: "He's not wrong." },
+            { who: null, text: 'Zac Buna is now your sparring partner. SPAR with him to build your grappling.' },
+          ], 'MONDAY'),
+        ],
+      };
+    case 'e_rematch_done':
+      return {
+        shots: [
+          shot('gym', [ray(390, -1), you(270, 1), riv(150, 1, { enter: 'left' })], ss?.flags.rematchWon === 1 ? [
+            { who: null, text: 'Monday. Six a.m.' },
+            { who: 'rival', text: "I heard there's a gym around here that'll take anybody." },
+            { who: 'ray', text: 'Anybody. Grab a mop.' },
+            { who: 'rival', text: '...I brought my own.', poses: { rival: 'taunt' } },
+          ] : [
+            { who: null, text: `Monday. Six a.m. ${Rf} has the belt now. He's here anyway.` },
+            { who: 'rival', text: "I don't want to train at my dad's gym anymore. Can I mop?" },
+            { who: 'ray', text: 'Mop\'s by the door.' },
+          ], 'THE NEXT MONDAY'),
+        ],
+      };
+    case 'c5_callout':
+      return {
+        title: 'CHAPTER 5: THE WHITE BEAST',
+        shots: [
+          shot('gym', [you(240, 1), ray(380, -1)], [
+            { who: null, text: 'You call out Spadam "The White Beast" Biggs. Twenty-four and oh. Welterweight champion.' },
+            { who: null, text: 'He replies in four minutes: "Love the energy, little guy. Genuinely. I\'m a welterweight. You\'re a snack. Eat some soup and get back to me."' },
+            { who: null, text: 'Then he likes your post. Which is somehow worse.' },
+            { who: 'ray', text: "Don't. Not yet." },
+          ]),
+        ],
+      };
+    case 'c5_tape':
+      return {
+        shots: [
+          shot('tv', [riv(70, 1), you(410, -1), ...(zacP ? [boss('zac', 450, -1, {}, GI)] : [])], [
+            { who: 'rival', text: 'Kickboxing, five years ago. I was nineteen. He broke my orbital in the first round.' },
+            { who: null, text: 'On the tape: Spadam hits him after the bell. The referee, curly mop and glasses, doesn\'t call it.' },
+            { who: 'rival', text: 'Daniel. Every one of his fights. Every single one. And watch: has anybody ever taken him down?' },
+            { who: null, text: 'Nobody ever has.' },
+            ...(zacP ? [{ who: 'zac', text: 'Then we take him down.' }] : [{ who: 'you', text: 'Then I take him down.' }]),
+          ], 'THE TAPE', 'tape'),
+        ],
+      };
+    case 'c5_superfight':
+      return {
+        shots: [
+          shot('office', [you(140, 1), npc('dane', 'Dane Whyte', 330, -1)], [
+            { who: null, text: 'A year of defending the belt. A year of Spadam saying no.' },
+            { who: 'dane', text: 'Biggs ran out of welterweights. The fans want you. He wants money. So: a superfight. You move up. His belt. Five rounds.' },
+            { who: 'dane', text: 'One condition from his side. The referee: Daniel Stinkovich. The Commission says he\'s "very experienced".' },
+            { who: 'you', text: 'He carries Spadam\'s bag.' },
+            { who: 'dane', text: "I know. Take it or leave it." },
+          ], 'ONE YEAR LATER  •  2 A.M.'),
+        ],
+      };
+    case 'c5_presser':
+      return {
+        title: 'THE SUPERFIGHT',
+        shots: [
+          shot('presser', [you(90, 1), npc('dane', 'Dane Whyte', 190, 1), boss('spadam', 300, -1, {}, WHITE_SUIT), dan(420, -1)], [
+            { who: 'spadam', text: 'I want to thank the little guy for moving up. Brave. Very brave. I\'ll be gentle.' },
+            { who: null, text: 'Daniel Stinkovich, in a referee shirt for some reason, gives Spadam a thumbs up.' },
+            { who: null, text: 'A reporter: "Is it a conflict of interest that the referee is at the press conference?"' },
+            { who: 'daniel', text: 'No.', poses: { daniel: 'taunt' } },
+            { who: null, text: 'He puts his glasses on, like that settles it.' },
+          ]),
+        ],
+      };
+    case 'c5_night':
+      return {
+        title: 'THE NIGHT BEFORE THE WHITE BEAST',
+        shots: [
+          shot('gym', [ray(400, -1, { pose: 'stool' }), you(290, 1), ...(mateo ? [kid(230, 1)] : []), ...(zacP ? [boss('zac', 150, 1, {}, GI)] : []), riv(60, 1)], [
+            { who: null, text: `After hours. The whole gym. ${mateo ? 'Mateo, fourteen now, tapes your hands like Ray taught him. ' : ''}${zacP ? 'Zac drills single legs on a heavy bag. ' : ''}${Rf} mops.` },
+            { who: 'ray', text: 'Hands up. Chin down. Eat something.' },
+            { who: null, text: 'The same thing he said before your first amateur fight.' },
+            { who: 'ray', text: "Marie would have liked you. She'd have hated the fighting. But she'd have liked you." },
+          ]),
+        ],
+      };
+    case 'c5_won':
+      return {
+        title: 'THE WHITE BEAST FALLS',
+        shots: [
+          shot('cage', [you(220, 1, { pose: 'celebrate' }), dan(300, -1), boss('spadam', 400, -1, { pose: 'down' })], [
+            { who: null, text: 'Twenty-four and oh is twenty-four and one.', flash: true, sfx: 'roar' },
+            { who: null, text: 'Out of habit, Daniel grabs Spadam\'s wrist and starts to raise it. The arena boos him out of the cage.', poses: { daniel: 'taunt' } },
+          ]),
+          shot('cage', [you(220, 1), boss('spadam', 300, -1), ray(400, -1, { pose: 'celebrate' })], [
+            { who: null, text: 'Spadam sits on the canvas for a long time. Then he gets up, finds you, and lifts your hand himself.' },
+            { who: 'spadam', text: 'Pride of the Maritimes. Fair enough.', poses: { you: 'celebrate' } },
+            { who: 'ray', text: "I'm not crying. It's the soup.", shake: true, sfx: 'crowd' },
+          ]),
+        ],
+      };
+    case 'c5_lost':
+      return {
+        shots: [
+          shot('street', [ray(200, 1), you(260, -1)], [
+            { who: null, text: 'Daniel raises Spadam\'s hand with both of his. The van home has no heat.' },
+            { who: 'ray', text: 'Monday. Six a.m.' },
+            { who: null, text: 'A week later Spadam\'s team calls. He wants the rematch. He says it was "closer than he likes". He has never said that about anybody.' },
+          ], 'THE DRIVE HOME'),
+        ],
+      };
     case 'c1_open':
       return {
         title: 'CHAPTER 1: SOUP',
@@ -209,6 +464,7 @@ export function storyScene(s: GameState, id: string): Cutscene | null {
             { who: null, text: `${f.first.toUpperCase()} "${(f.nick || 'THE SOUP').toUpperCase()}" ${f.last.toUpperCase()}!`, shake: true, sfx: 'crowd' },
             { who: 'ray', text: "I'm not crying. It's the soup. I've been chopping onions for thirty years.", poses: { ray: 'stand' } },
             { who: 'ray', text: ss?.gymSaved ? 'The gym is saved, kid. Your name is going next to the soup pot.' : 'Tomorrow you walk into Gordon Vance\'s office and pay him in cash. Then we buy the building.' },
+            { who: null, text: 'Somewhere in Halifax, a six-foot-seven man with long brown hair watches the replay. Twice.' },
           ]),
         ],
       };
@@ -228,16 +484,12 @@ export function storyScene(s: GameState, id: string): Cutscene | null {
       return {
         title: 'THE ROAD GOES ON',
         shots: [
-          shot('gym', ss?.flags.rematchWon === 1 ? [ray(340, -1), you(220, 1), riv(100, 1, { enter: 'left' })] : [ray(300, -1), you(180, 1)], ss?.flags.rematchWon === 1 ? [
-            { who: null, text: 'Monday. Six a.m.' },
-            { who: 'rival', text: "I heard there's a gym around here that'll take anybody." },
-            { who: 'ray', text: 'Anybody. Grab a mop.' },
-            { who: 'rival', text: "...I brought my own.", poses: { rival: 'taunt' } },
-          ] : [
-            { who: null, text: 'Monday. Six a.m.' },
-            { who: 'ray', text: 'He has the belt. You have soup. Some things never change.' },
-            { who: 'ray', text: 'Go get it back.' },
-          ]),
+          shot('gym', [ray(410, -1), you(300, 1), riv(220, 1), ...(zacP ? [boss('zac', 150, 1, {}, GI)] : []), ...(mateo ? [kid(80, 1)] : [])], [
+            { who: null, text: `Monday. Six a.m.${mateo ? ' Mateo has his first amateur fight next month.' : ''}${zacP ? ' Zac runs the Tuesday jiu-jitsu class.' : ''} ${Rf} mops.` },
+            { who: 'ray', text: 'Somebody in a cowboy hat called. Says he\'s starting a league. Says you owe him a signing.' },
+            { who: null, text: "Ray makes the soup Marie's way. The road doesn't end. It just gets more people on it." },
+            { who: null, text: 'The story is over. Your career isn\'t. (LEGACY MODE is unlocked.)' },
+          ], 'MONDAY. SIX A.M.'),
         ],
       };
   }

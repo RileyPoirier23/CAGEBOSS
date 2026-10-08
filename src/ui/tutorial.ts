@@ -175,6 +175,12 @@ function run(g: Game, key: string): void {
         show();
       }
     }, { small: true, fill: PAL.moss }));
+    // back a card, so nobody misses anything
+    if (i > 0) card.addChild(button('← BACK', bw - 112, bh - 18, 44, 13, () => {
+      sfx('click');
+      i--;
+      show();
+    }, { small: true, fill: PAL.shadow }));
     card.addChild(button('SKIP TUTORIAL', 8, bh - 18, 72, 13, () => {
       s.flags.tutorial = 'off';
       g.closeModal(wrap);

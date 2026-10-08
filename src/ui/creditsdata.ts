@@ -19,3 +19,9 @@ export const ARTISTS: [string, string, string][] = [
   ['EYE-V', '', 'Gen Apathy'],
   ['Jayson', '', 'Blicky Dance (with SANDOTHERAPPER)'],
 ];
+
+/**
+ * Supporters: everyone who donated to support development. They go in the CREDITS window and
+ * the end-of-road roll, in every update after they gave. Add names here, newest last.
+ */
+export const SUPPORTERS: string[] = [];
