@@ -8,6 +8,7 @@ import {
   createFighterGame, fm, me, doAction, endWeek, acceptOffer, fightThisWeek, doWeighIn, fightEvent, afterFight, resolveEvent, fightReadySkills,
   resolveDoc, trainSkill, bareknuckle,
 } from '../src/sim/fighter';
+import { fmx, answerStory } from '../src/sim/fmstory';
 import { runBout, applyBout } from '../src/sim/events';
 import { simulateFight } from '../src/sim/fight';
 
@@ -117,6 +118,44 @@ describe('road to champion story & legacy mode', () => {
     expect(st.moments?.[0]?.kind).toBe('signing');
     expect(st.moments?.some((m) => m.kind === 'story')).toBe(true);
     expect(st.legacy).toBeFalsy();
+  });
+  it('the whole road: chapters, the grudge match, the title, the credits, the rematch', () => {
+    const s = createFighterGame({ seed: 33, first: 'Road', last: 'Runner', nick: 'Soup', gender: 'M', culture: 'mexico', division: 'light', archetype: 'striker', look: look() });
+    const st = fmx(s);
+    const rng = new Rng(3);
+    const why: string[] = [];
+    for (let w = 0; w < 700 && !st.story?.seen.includes('e_end'); w++) {
+      // a fighter who's very, very good (this tests the story, not the balance)
+      for (const k of Object.keys(me(s).skills) as (keyof ReturnType<typeof me>['skills'])[]) me(s).skills[k] = 97;
+      for (const m of st.moments ?? []) if (m.kind === 'story' && m.choices) answerStory(s, m.id, m.choices[0].id);
+      st.moments = [];
+      while (st.pending.length) resolveEvent(s, st.pending[0].id === 'jimmy' ? 'no' : st.pending[0].choices[0].id, rng);
+      for (const d of st.inbox.slice()) resolveDoc(s, d.id, d.fault ? 'dispute' : 'sign', d.fault ? [d.fault] : [], rng);
+      if (!st.fight && st.offers.length) {
+        why.push(st.offers[0].why);
+        acceptOffer(s, 0);
+      }
+      if (fightThisWeek(s)) {
+        doWeighIn(s, 'easy', rng);
+        const ev = fightEvent(s, rng);
+        for (const b of ev.card) {
+          runBout(s, ev, b, rng, false, {});
+          applyBout(s, ev, b, rng);
+        }
+        afterFight(s, ev, rng);
+      }
+      for (const k of Object.keys(st.body) as (keyof typeof st.body)[]) st.body[k] = 100;
+      st.energy = 100;
+      doAction(s, 'rest', null, rng);
+      endWeek(s, rng);
+    }
+    const seen = st.story!.seen;
+    if (process.env.STORYDBG) console.log(s.week, seen.join(' '), JSON.stringify(st.story!.flags));
+    for (const id of ['c1_open', 'c1_landlord', 'c1_mateo', 'c1_vance_booked', 'c2_signed', 'c2_jimmy', 'c3_lounge', 'c3_confessional', 'c4_cbfc', 'c4_grudge_booked', 'c4_champ', 'e_plaque', 'e_rematch_booked', 'e_end']) expect(seen, id).toContain(id);
+    expect(why.some((x) => x.startsWith('GRUDGE MATCH'))).toBe(true);
+    expect(why.some((x) => x.startsWith('TITLE DEFENCE'))).toBe(true);
+    expect(st.story!.flags.rematchDone).toBe(1);
+    expect(st.story!.gymSaved).toBe(true);
   });
   it('Legacy Mode skips the story and can start in the CBFC', () => {
     const s = createFighterGame({ seed: 32, first: 'Legacy', last: 'Mode', nick: 'Chaos', gender: 'M', culture: 'mexico', division: 'light', archetype: 'wrestler', look: look(), legacy: true, startTier: 'of' });

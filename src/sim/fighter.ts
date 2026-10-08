@@ -26,7 +26,7 @@ import { sigOf } from './docs';
 import { LOCAL_SPONSORS, REGIONAL_SPONSORS } from './sponsorship';
 import type { FMMoment, StoryState, FMStats } from './fmstory';
 import { gymWeek, gymTrainBonus } from './legacy';
-import { pushMoment, signingMoment, storyPromote, storyWeek, startStory, staffCheckin, interviewMoment, storyPurse, stats, isLegacy } from './fmstory';
+import { pushMoment, signingMoment, storyPromote, storyWeek, storyOffers, storyResult, startStory, staffCheckin, interviewMoment, storyPurse, stats, isLegacy } from './fmstory';
 
 export type BodyPart = 'head' | 'jaw' | 'body' | 'larm' | 'rarm' | 'lhand' | 'rhand' | 'legs';
 export const BODY_PARTS: { id: BodyPart; name: string; effect: string }[] = [
@@ -979,7 +979,7 @@ export function gamble(s: GameState, stake: number, rng: Rng): string {
 
 // ---------------------------------------------------------------- offers
 
-function offerVs(s: GameState, opp: Fighter, rng: Rng, why: string, title: string | null = null): FMOffer {
+export function offerVs(s: GameState, opp: Fighter, rng: Rng, why: string, title: string | null = null): FMOffer {
   const st = fm(s);
   const f = me(s);
   if (st.tier !== 'of') {
@@ -1941,6 +1941,7 @@ export function endWeek(s: GameState, rng: Rng): string[] {
   }
   if (st.inbox.length) out.push(`${st.inbox.length} document${st.inbox.length > 1 ? 's' : ''} waiting in your PAPERWORK.`);
   makeOffers(s, rng);
+  storyOffers(s, rng);
   if (st.offers.length && !st.fight) out.push(`${st.offers.length} fight offer${st.offers.length > 1 ? 's' : ''} on the table.`);
   if (rng.chance(0.55)) post(s, BRADIE.handle, rng.pick(BRADIE_BLEETS).replace(/\{you\}/g, f.last.toLowerCase()));
   // bleets about you
@@ -2092,6 +2093,7 @@ export function afterFight(s: GameState, ev: FightEvent, rng: Rng): string[] {
   const st = fm(s);
   const f = me(s);
   const o = st.fight!;
+  const tierAt = st.tier;
   const b = ev.card.find((x) => x.a === f.id || x.b === f.id);
   const out: string[] = [];
   if (!b?.result) return out;
@@ -2170,6 +2172,7 @@ export function afterFight(s: GameState, ev: FightEvent, rng: Rng): string[] {
   st.oppFlagged = false;
   // your night isn't over: presser, 1ton, whatever else happened in the tunnel
   fightNightEvents(s, ev, rng);
+  storyResult(s, tierAt, o.opp, won, lost, !!o.title);
   storyWeek(s);
   if (st.tier === 'of') {
     const rk = rankOf(s, f.id);

@@ -17,6 +17,8 @@ import { sfx } from '../audio/sfx';
 import { openEndCredits } from './endcredits';
 import { me } from '../sim/fighter';
 import { answerStory, answerInterview, type FMMoment } from '../sim/fmstory';
+import { playCutscene } from './cutscene';
+import { storyScene } from './storyscenes';
 import type { Rng } from '../core/rng';
 
 const ROLE: Record<string, string> = { coach: 'HEAD COACH', nutrition: 'NUTRITIONIST', manager: 'MANAGER', cutman: 'CUTMAN' };
@@ -80,6 +82,15 @@ function card(g: Game, title: string, body: string, face: Container, choices: { 
 }
 
 function story(g: Game, s: GameState, m: Extract<FMMoment, { kind: 'story' }>, done: () => void): void {
+  // the big beats are staged as cutscenes
+  const scene = storyScene(s, m.id);
+  if (scene) {
+    return playCutscene(g, { ...scene, choices: m.choices }, (id) => {
+      const out = id ? answerStory(s, m.id, id) : '';
+      if (out) alertBox(g, m.title, out, done);
+      else done();
+    });
+  }
   const frame = new Container();
   const wrap = g.modal(frame, { dim: 0.8 });
   const bw = 360;

@@ -18,7 +18,7 @@ import { money } from '../core/format';
 import { generateFighter } from './generate';
 import { overall } from './fighters';
 import { DIVISION_LIMITS } from './divisions';
-import { fm, me, stage, type StaffId, type Tier } from './fighter';
+import { fm, me, stage, offerVs, type StaffId, type Tier } from './fighter';
 
 export interface MomentChoice { id: string; label: string }
 export type FMMoment =
@@ -210,6 +210,8 @@ interface Beat {
   who: string;
   text: (s: GameState, ss: StoryState) => string;
   choices?: MomentChoice[];
+  /** something that happens when the beat plays (no choice needed) */
+  effect?: (s: GameState, ss: StoryState) => void;
 }
 
 const rivalName = (s: GameState, ss: StoryState) => {
@@ -217,59 +219,184 @@ const rivalName = (s: GameState, ss: StoryState) => {
   return r ? `${r.first} "${r.nick}" ${r.last}` : 'Tyler Vance';
 };
 const rivalLast = (s: GameState, ss: StoryState) => (ss.rival ? s.fighters[ss.rival]?.last : null) ?? 'Vance';
-const wins = (s: GameState) => fm(s).history.filter((h) => h.result === 'W').length;
-const losses = (s: GameState) => fm(s).history.filter((h) => h.result === 'L').length;
+const rivalFirst = (s: GameState, ss: StoryState) => (ss.rival ? s.fighters[ss.rival]?.first : null) ?? 'Tyler';
+const hist = (s: GameState) => fm(s).history;
+const wins = (s: GameState) => hist(s).filter((h) => h.result === 'W').length;
+const losses = (s: GameState) => hist(s).filter((h) => h.result === 'L').length;
+const tier = (s: GameState) => fm(s).tier;
+/** fights since the start of this league */
+const since = (s: GameState, ss: StoryState, key: string) => hist(s).slice(Number(ss.flags[key] ?? 0));
+const weeksIn = (s: GameState, ss: StoryState, key: string) => s.week - Number(ss.flags[key + 'Week'] ?? 0);
+const bookedVs = (s: GameState, ss: StoryState) => !!ss.rival && fm(s).fight?.opp === ss.rival;
+const isChamp = (s: GameState) => Object.values(s.belts).some((b) => b.holder === fm(s).player && !b.symbolic);
+const rivalLast0 = 'Tyler Vance';
+const C1 = 'CHAPTER 1: SOUP';
+const C2 = 'CHAPTER 2: THE REGIONALS';
+const C3 = 'CHAPTER 3: THE LOUNGE';
+const C4 = 'CHAPTER 4: THE BIG SHOW';
+const EP = 'EPILOGUE: THE BELT';
 
 const BEATS: Beat[] = [
+  // ---------------------------------------------------------------- chapter 1: soup
   {
-    id: 'c1_open', chapter: 'CHAPTER 1: SOUP', when: () => true, title: "RAY'S BOXING & SOUP", who: 'Uncle Ray',
-    text: (s) => `"Welcome to the family business, kid. Half gym, half soup kitchen, all mine. For now." Uncle Ray waves at a stack of red envelopes. "The landlord wants $8,000 by the end of the year or he turns this place into a vape shop. So. No pressure. Win some fights, get famous, save the soup." He hands you a mop. "And mop."`,
+    id: 'c1_open', chapter: C1, when: () => true, title: "RAY'S BOXING & SOUP", who: 'Uncle Ray',
+    text: () => `"Welcome to the family business, kid. Half gym, half soup kitchen, all mine. For now." Uncle Ray waves at a stack of red envelopes. "The landlord wants $8,000 by the end of the year or he turns this place into a vape shop. So. No pressure. Win some fights, get famous, save the soup." He hands you a mop. "And mop."`,
   },
   {
-    id: 'c1_rival', chapter: 'CHAPTER 1: SOUP', when: (s) => s.week >= 1, title: 'THE KID FROM ACROSS TOWN', who: 'Bleeter',
-    text: (s, ss) => `A Bleet goes up from the fancy gym across town (the one with the cold plunge and the ring light): "lol just saw ${me(s).last} training at a SOUP KITCHEN. some of us have sponsors. see u at the top. or not." It's ${rivalName(s, ss)}, unbeaten, rich parents, a nickname he gave himself. He's the ${stage(s).short} champion. Of course he is.`,
-    choices: [{ id: 'fire', label: 'Fire back' }, { id: 'ignore', label: 'Let your hands talk' }],
+    id: 'c1_rival', chapter: C1, when: (s) => s.week >= 1, title: 'THE KID FROM ACROSS TOWN', who: 'Bleeter',
+    text: (s, ss) => `A white sports car idles outside the gym. ${rivalName(s, ss)} leans out: unbeaten, rich parents, a nickname he gave himself, and the ${stage(s).short} belt over his shoulder. "Soup kitchen. That's adorable. See you at the top. Or, you know. Not."`,
+    choices: [{ id: 'fire', label: '"Nice car. Did your dad win it for you?"' }, { id: 'ignore', label: 'Say nothing. Keep mopping.' }],
   },
   {
-    id: 'c1_firstwin', chapter: 'CHAPTER 1: SOUP', when: (s) => wins(s) >= 1, title: 'FIRST ONE', who: 'Uncle Ray',
-    text: () => '"That\'s one." Ray is pretending he isn\'t crying, which is how you know he\'s crying. He puts $200 of your purse in a jar marked RENT and a hand-written sign over the bag: OUR GUY WON. "Now do it about thirty more times."',
+    id: 'c1_gloves', chapter: C1, when: (s) => s.week >= 3, title: "RAY'S OLD GLOVES", who: 'Uncle Ray',
+    text: () => '"Here." Ray hands you a pair of gloves older than you. The leather is cracked, the laces are new. "Golden Gloves, 1987. I lost in the final to a guy called Butch who had a mullet you could hide a cat in. I want them to win something." (Morale up.)',
+    effect: (s) => { fm(s).morale = clamp(fm(s).morale + 6, 0, 100); },
   },
   {
-    id: 'c1_firstloss', chapter: 'CHAPTER 1: SOUP', when: (s) => losses(s) >= 1, title: 'THE BAD NIGHT', who: 'Uncle Ray',
+    id: 'c1_firstwin', chapter: C1, when: (s) => wins(s) >= 1, title: 'FIRST ONE', who: 'Uncle Ray',
+    text: () => '"That\'s one." Ray is pretending he isn\'t crying, which is how you know he\'s crying. He puts a hand-written sign over the heavy bag: OUR GUY WON. "Now do it about thirty more times."',
+  },
+  {
+    id: 'c1_firstloss', chapter: C1, when: (s) => losses(s) >= 1, title: 'THE BAD NIGHT', who: 'Uncle Ray',
     text: () => '"Everybody loses. The ones that matter come back Monday." Ray hands you a bowl of soup. It is genuinely excellent soup. "Monday. Six a.m. Bring your chin, you left it in the cage."',
   },
   {
-    id: 'c2_signed', chapter: 'CHAPTER 2: THE REGIONALS', when: (s) => fm(s).tier === 'regional', title: 'BIGGER ROOMS', who: 'Uncle Ray',
-    text: (s, ss) => `You took ${rivalLast(s, ss)}'s belt, or the one he left behind when he moved up. Either way you're regional now. Ray tapes the newspaper clipping to the soup pot. "The landlord came by. I told him my fighter's going pro. He asked what that means for the rent. I said 'eventually'." Back rent: ${money(ss.rent)}.`,
+    id: 'c1_landlord', chapter: C1, when: (s) => s.week >= 5, title: 'THE LANDLORD', who: 'Gordon Vance',
+    text: (s, ss) => `A man in a navy three-piece suit steps over a puddle and into the gym. "Gordon Vance. Vance Properties. I own this building, and the ten around it." Vance. As in ${rivalFirst(s, ss)} Vance. "My son tells me you're the reason my tenant thinks he can pay his rent in soup. ${money(ss.rent)} by the end of the year, Raymond. Or I knock it down."`,
+    choices: [{ id: 'promise', label: '"You\'ll get your money. Every cent."' }, { id: 'mouth', label: '"Tell your son I said hi."' }],
+  },
+  {
+    id: 'c1_mateo', chapter: C1, when: (s) => s.week >= 7, title: 'THE KID AT THE DOOR', who: 'Mateo',
+    text: () => 'A kid has been hanging around the gym door for a week. Twelve years old, a hoodie three sizes too big, and the stare of somebody who has already been in a few fights. "Mateo," he says. "Ray says you could teach me. Ray says you\'re not that good yet, but you\'re cheap."',
+    choices: [{ id: 'train', label: 'Teach him to hold his hands up' }, { id: 'homework', label: '"Do your homework first. Then we\'ll talk."' }],
+  },
+  {
+    id: 'c1_vance_booked', chapter: C1, when: (s, ss) => tier(s) === 'amateur' && bookedVs(s, ss), title: 'FACE TO FACE', who: 'Tyler Vance',
+    text: (s, ss) => `The weigh-in is in the back of a bingo hall. ${rivalLast(s, ss)} steps on the scale in designer underwear and turns to you. "My dad owns the building you train in. After Saturday, I'll own you too."`,
+    choices: [{ id: 'stare', label: 'Stare him down' }, { id: 'laugh', label: 'Laugh in his face' }, { id: 'shove', label: 'Shove him' }],
+  },
+  {
+    id: 'c1_beatvance', chapter: C1, when: (s, ss) => ss.flags.amWon === 1, title: 'THE SPORTS CAR LEAVES EARLY', who: 'Uncle Ray',
+    text: (s, ss) => `${rivalLast(s, ss)}'s seven-and-oh is seven-and-one. His dad's car is gone before the decision is read. Ray is standing on a folding chair, screaming, holding a ladle like a sword. "THE SOUP! THE SOUP IS UNDEFEATED!" (It isn't. You are, sort of. Ray does not care.)`,
+  },
+  {
+    id: 'c1_lostvance', chapter: C1, when: (s, ss) => ss.flags.amLost === 1, title: 'TRUST FUND', who: 'Bleeter',
+    text: (s, ss) => `${rivalName(s, ss)} on Bleeter, from the back seat of the car: "told u. soup is for sick people." Ray turns the phone face down. "He's right about one thing. Soup is for sick people. And you're sick of losing to him. So eat."`,
+  },
+  // ---------------------------------------------------------------- chapter 2: the regionals
+  {
+    id: 'c2_signed', chapter: C2, when: (s) => tier(s) === 'regional', title: 'BIGGER ROOMS', who: 'Uncle Ray',
+    text: (s, ss) => `You're regional now. Ray tapes the newspaper clipping to the soup pot. "Landlord came by again. I told him my fighter's going pro. He asked what that means for the rent. I said 'eventually'." Back rent: ${money(ss.rent)}.`,
     choices: [{ id: 'pay', label: 'Pay $1,500 toward the rent' }, { id: 'later', label: '"I\'ll handle it after the next fight"' }],
   },
   {
-    id: 'c2_bradie', chapter: 'CHAPTER 2: THE REGIONALS', when: (s) => fm(s).tier === 'regional' && s.week >= 2, title: 'A MAN WITH AN AFRO AND AN OFFER', who: 'Bradie',
+    id: 'c2_bradie', chapter: C2, when: (s, ss) => tier(s) === 'regional' && weeksIn(s, ss, 'reg') >= 2 && !ss.gymSaved, title: 'A MAN WITH AN AFRO AND AN OFFER', who: 'Bradie',
     text: (s, ss) => `Bradie slides into your DMs: "yo. heard about the soup gym. tragic. i could pay off the whole ${money(ss.rent)} tomorrow. all u gotta do is sign one (1) normal contract with only fighters. its basically normal. theres one clause. its fine."`,
     choices: [{ id: 'take', label: 'Take the money (the gym is saved... with a clause)' }, { id: 'no', label: '"I\'ll earn it."' }],
   },
   {
-    id: 'c3_lounge', chapter: 'CHAPTER 3: THE LOUNGE', when: (s) => fm(s).tier === 'pfl', title: 'THE CAMERAS NEVER STOP', who: 'Lounge producer',
+    id: 'c2_jimmy', chapter: C2, when: (s, ss) => tier(s) === 'regional' && weeksIn(s, ss, 'reg') >= 3, title: 'THE PARKING LOT', who: 'Jimmy Quavo',
+    text: (s, ss) => `Leaving the arena late, you see ${rivalLast(s, ss)} in the parking lot, handing an envelope to a man in a black tracksuit and a beanie. Jimmy Quavo. Everybody knows what Jimmy sells. ${rivalFirst(s, ss)} sees you seeing him.`,
+    choices: [{ id: 'report', label: 'Report it to the Commission' }, { id: 'keep', label: 'Keep it in your pocket for later' }, { id: 'confront', label: 'Walk over and say something' }],
+  },
+  {
+    id: 'c2_mateo', chapter: C2, when: (s, ss) => tier(s) === 'regional' && ss.flags.mateo === 1 && weeksIn(s, ss, 'reg') >= 5, title: "MATEO'S FIRST FIGHT", who: 'Mateo',
+    text: () => 'Mateo has his first kids\' tournament in a school gym. Ray says you should corner him. "I\'m not nervous," Mateo says, shaking so hard his headgear rattles.',
+    choices: [{ id: 'corner', label: 'Corner him yourself' }, { id: 'crowd', label: 'Cheer from the bleachers, let Ray corner' }],
+  },
+  {
+    id: 'c2_rent', chapter: C2, when: (s, ss) => tier(s) === 'regional' && !ss.gymSaved && weeksIn(s, ss, 'reg') >= 7, title: 'FINAL NOTICE', who: 'Gordon Vance',
+    text: (s, ss) => `A red envelope, hand-delivered by a man who looks embarrassed to be delivering it. FINAL NOTICE. ${money(ss.rent)} outstanding. "Payment plans are for people with plans." - G. Vance.`,
+    choices: [{ id: 'pay', label: 'Pay $2,000 now' }, { id: 'later', label: 'Put it on the fridge with the others' }],
+  },
+  {
+    id: 'c2_vance_booked', chapter: C2, when: (s, ss) => tier(s) === 'regional' && bookedVs(s, ss), title: 'ROUND TWO', who: 'Tyler Vance',
+    text: (s, ss) => `${rivalLast(s, ss)} at the press conference, in sunglasses, indoors: "Last time was a fluke. This time there's a TV camera, so my dad's actually watching."`,
+    choices: [{ id: 'stare', label: '"Tell him to bring popcorn."' }, { id: 'laugh', label: 'Ask if his dad bought the TV station too' }],
+  },
+  // ---------------------------------------------------------------- chapter 3: the lounge
+  {
+    id: 'c3_lounge', chapter: C3, when: (s) => tier(s) === 'pfl', title: 'THE CAMERAS NEVER STOP', who: 'Lounge producer',
     text: (s, ss) => `A producer in a headset greets you at the Lounge: "Love the soup gym angle. LOVE it. We're going to need you and ${rivalLast(s, ss)} to hate each other on camera. He's already here, he's already ranked, and he already called you 'the help'. Are you going to give us a moment at the press conference?"`,
     choices: [{ id: 'moment', label: 'Give them a moment (shove him)' }, { id: 'pro', label: 'Stay professional' }],
   },
   {
-    id: 'c3_ray', chapter: 'CHAPTER 3: THE LOUNGE', when: (s) => fm(s).tier === 'pfl' && s.week >= 2, title: 'RAY CALLS', who: 'Uncle Ray',
-    text: (s, ss) => ss.gymSaved ? '"The gym\'s full, kid. Twelve new kids signed up because of you. They all want to be you. God help them. The soup\'s still free."' : `"Landlord gave us one more season. ${money(ss.rent)} to go. The kids are doing a car wash. They washed the landlord's car. He tipped. It was a weird day."`,
+    id: 'c3_ray', chapter: C3, when: (s, ss) => tier(s) === 'pfl' && weeksIn(s, ss, 'pfl') >= 2, title: 'RAY CALLS', who: 'Uncle Ray',
+    text: (s, ss) => ss.gymSaved ? '"The gym\'s full, kid. Twelve new kids signed up because of you. They all want to be you. God help them. The soup\'s still free."' : `"Landlord gave us one more season. ${money(ss.rent)} to go. The kids did a car wash. They washed the landlord's car. He tipped. It was a weird day."`,
   },
   {
-    id: 'c4_cbfc', chapter: 'CHAPTER 4: THE BIG SHOW', when: (s) => fm(s).tier === 'of', title: 'THE BIG SHOW', who: 'Dane Whyte',
-    text: (s, ss) => `"Look, I'm gonna be honest with you." Dane Whyte is never honest with anyone. "I don't know who you are. But ${rivalLast(s, ss)} keeps talking about you, and the fans keep asking about the soup guy. So here's the deal: win, and you get the guy. Lose, and you go back to the soup."`,
+    id: 'c3_confessional', chapter: C3, when: (s, ss) => tier(s) === 'pfl' && weeksIn(s, ss, 'pfl') >= 3, title: 'THE CONFESSIONAL', who: 'Lounge producer',
+    text: (s, ss) => `The Lounge films "confessionals": you, a velvet couch, a red light. "Tell the camera how you feel about ${rivalLast(s, ss)}," the producer says. "Really feel. We need tears or threats. Ideally both."`,
+    choices: [{ id: 'honest', label: '"I don\'t hate him. I just need his belt."' }, { id: 'villain', label: 'Go full villain for the cameras' }],
   },
   {
-    id: 'c4_ranked', chapter: 'CHAPTER 4: THE BIG SHOW', when: (s) => fm(s).tier === 'of' && wins(s) >= 3 && fm(s).history.slice(-1)[0]?.result === 'W', title: 'THE KIDS ARE WATCHING', who: 'Uncle Ray',
-    text: () => '"There are forty kids in my gym right now, watching you on the TV I bought with your rent money. Don\'t tell the landlord. Win the next one and I\'ll make the good soup. The one with the meatballs."',
+    id: 'c3_suspended', chapter: C3, when: (s, ss) => tier(s) === 'pfl' && ss.flags.reported === 1 && weeksIn(s, ss, 'pfl') >= 4, title: 'FLAGGED', who: 'Bleeter',
+    text: (s, ss) => `BREAKING: ${rivalName(s, ss)} has been flagged for a banned substance and suspended for three months. He posts a single blurry photo of a parking lot and the caption "snitches." Everybody knows who he means.`,
+    effect: (s, ss) => {
+      const r = ss.rival ? s.fighters[ss.rival] : null;
+      if (r) r.injuries = [...r.injuries, { name: 'suspension', until: s.week + 12 }];
+      me(s).hype = clamp(me(s).hype + 3, 0, 100);
+    },
   },
   {
-    id: 'c4_champ', chapter: 'EPILOGUE', when: (s) => fm(s).tier === 'of' && Object.values(s.belts).some((b) => b.holder === fm(s).player), title: 'CHAMPION', who: 'Uncle Ray',
+    id: 'c3_landlord', chapter: C3, when: (s, ss) => tier(s) === 'pfl' && !ss.gymSaved && weeksIn(s, ss, 'pfl') >= 5, title: 'THE ULTIMATUM', who: 'Gordon Vance',
+    text: (s, ss) => `Gordon Vance's office has photos of every building he owns, and one of a building he knocked down, framed like a trophy. "You've made my son look ordinary. I don't forgive that. ${money(ss.rent)}, before your first CBFC fight, or the bulldozer comes on fight night."`,
+    choices: [{ id: 'payall', label: 'Pay it all, right now' }, { id: 'bradie', label: 'Call Bradie' }, { id: 'win', label: '"I\'ll pay you out of my CBFC purse."' }],
+  },
+  // ---------------------------------------------------------------- chapter 4: the big show
+  {
+    id: 'c4_cbfc', chapter: C4, when: (s) => tier(s) === 'of', title: 'THE BIG SHOW', who: 'Dane Whyte',
+    text: (s, ss) => `"Look, I'm gonna be honest with you." Dane Whyte is never honest with anyone. "I don't know who you are. But ${rivalLast(s, ss)} keeps talking about you, and the fans keep asking about the soup guy. So here's the deal: win a couple, and you get him. Beat him, and I'll think about a title shot. Lose, and you go back to the soup."`,
+  },
+  {
+    id: 'c4_ranked', chapter: C4, when: (s, ss) => tier(s) === 'of' && since(s, ss, 'of').filter((h) => h.result === 'W').length >= 1, title: 'THE KIDS ARE WATCHING', who: 'Uncle Ray',
+    text: (s, ss) => `"There are forty kids in my gym right now, watching you on the TV I bought with your rent money. Don't tell the landlord." ${ss.flags.mateo === 1 ? 'Mateo is wearing a homemade shirt with your face on it. The face is wrong, but the love is right.' : ''} "Win the next one and I'll make the good soup. The one with the meatballs."`,
+  },
+  {
+    id: 'c4_grudge_booked', chapter: C4, when: (s, ss) => tier(s) === 'of' && bookedVs(s, ss) && !isChamp(s), title: 'THE GRUDGE MATCH', who: 'Dane Whyte',
+    text: (s, ss) => `The press conference has more cameras than seats. Dane Whyte at the podium: "Soup Kitchen versus Trust Fund. I couldn't make this up if I tried, and I've tried." ${rivalLast(s, ss)} leans into his mic: "${ss.flags.reported === 1 ? 'You took three months from me. I\'m taking the rest of your career.' : 'My dad is going to knock down your gym the night I knock you out. Poetry.'}"`,
+    choices: [{ id: 'calm', label: '"See you Saturday."' }, { id: 'table', label: 'Flip the table' }],
+  },
+  {
+    id: 'c4_grudge_won', chapter: C4, when: (s, ss) => ss.flags.grudgeWon === 1, title: 'TRUST FUND, OVERDRAWN', who: rivalLast0,
+    text: (s, ss) => `After the fight, ${rivalFirst(s, ss)} finds you in the tunnel. The sunglasses are gone. "My dad bet the building on me. Like, actually. He told everyone at the club." He laughs, and it isn't a nice laugh. "He's never watched one of my fights to the end. He left in the second round." Then he walks away. Dane Whyte, from behind you: "Title shot. Don't make me regret it."`,
+  },
+  {
+    id: 'c4_grudge_lost', chapter: C4, when: (s, ss) => ss.flags.grudgeLost === 1, title: 'BACK TO THE SOUP', who: 'Uncle Ray',
+    text: (s, ss) => `${rivalLast(s, ss)} gets the title shot. You get a bag of ice. Ray drives you home in the van with no heat. Halfway there he says: "You know what the difference between you and him is? When he loses, his dad buys him a new car. When you lose, you come back Monday." He drops you off. "Six a.m." (Climb the rankings and the belt still comes to you.)`,
+  },
+  {
+    id: 'c4_titleshot', chapter: C4, when: (s) => tier(s) === 'of' && !!fm(s).fight?.title && !isChamp(s), title: 'THE NIGHT BEFORE', who: 'Uncle Ray',
+    text: () => 'The night before the title fight, the gym is closed but the lights are on. Ray is sitting on the ring apron, eating soup out of the pot with a ladle. "When I lost to Butch in \'87, I thought that was it. My one shot. Then I opened this place, and every kid who walked in got a shot." He hands you the ladle. "This is yours. Eat something. Then go get it."',
+  },
+  {
+    id: 'c4_champ', chapter: EP, when: (s) => tier(s) === 'of' && isChamp(s), title: 'CHAMPION', who: 'Uncle Ray',
     text: (s, ss) => `The belt is heavier than you thought. Ray is in the cage, crying openly now, holding a thermos. ${ss.gymSaved ? 'The gym is saved. There is a plaque with your name on it next to the soup pot.' : 'Tomorrow you walk into the landlord\'s office and pay the rent in cash. All of it. Then you buy the building.'} ${rivalLast(s, ss)} posts a single word on Bleeter: "rematch". Of course he does. That's the road. Now you defend it.`,
+    effect: (s, ss) => {
+      if (!ss.gymSaved) {
+        fm(s).money -= Math.min(ss.rent, Math.max(0, fm(s).money));
+        ss.rent = 0;
+        ss.gymSaved = true;
+      }
+      ss.flags.champWeek = s.week;
+    },
+  },
+  // ---------------------------------------------------------------- epilogue: the belt
+  {
+    id: 'e_plaque', chapter: EP, when: (s, ss) => !!ss.seen.includes('c4_champ') && s.week - Number(ss.flags.champWeek ?? s.week) >= 1, title: 'THE PLAQUE', who: 'Uncle Ray',
+    text: (s, ss) => `Ray unveils a brass plaque by the soup pot: "${me(s).first.toUpperCase()} ${me(s).last.toUpperCase()}. CBFC CHAMPION. MOPPED HERE." ${ss.flags.mateo === 1 ? 'Mateo reads it out loud twice, then asks if he can have a plaque. Ray says he can have a mop.' : 'The kids clap. Somebody spills the soup. Nobody minds.'}`,
+  },
+  {
+    id: 'e_rematch_booked', chapter: EP, when: (s, ss) => isChamp(s) && bookedVs(s, ss), title: 'THE REMATCH', who: 'Tyler Vance',
+    text: (s, ss) => `${rivalLast(s, ss)} at the weigh-in looks different. No sunglasses. No designer underwear. Just a guy who's been training. "My dad sold your building," he says quietly. "To me. I'm not knocking it down. I just wanted you to know before I take that belt."`,
+    choices: [{ id: 'respect', label: 'Shake his hand' }, { id: 'stare', label: 'Stare him down anyway' }],
+  },
+  {
+    id: 'e_end', chapter: EP, when: (s, ss) => ss.flags.rematchDone === 1, title: 'THE ROAD GOES ON', who: 'Uncle Ray',
+    text: (s, ss) => `${ss.flags.rematchWon === 1 ? `${rivalFirst(s, ss)} Vance joins Ray's gym the next Monday. Six a.m. He brings his own mop.` : `${rivalFirst(s, ss)} has the belt now. Ray hands you a bowl of soup and says "Monday. Six a.m." Some things don't change.`} The road doesn't end. It just gets more people on it. (The story is over. Your career isn't.)`,
   },
 ];
+
 
 /** Start the storyline (new Road To Champion career): Ray, the rent, and the rival. */
 export function startStory(s: GameState, rng: Rng): void {
@@ -309,7 +436,12 @@ function makeRival(s: GameState, rng: Rng, f: Fighter): Fighter {
 export function storyPromote(s: GameState): void {
   const st = fmx(s);
   const ss = st.story;
-  if (!ss?.rival) return;
+  if (!ss) return;
+  // when each league started (fights and weeks), for the beats that need "a while in"
+  const key = st.tier === 'regional' ? 'reg' : st.tier;
+  ss.flags[key] = st.history.length;
+  ss.flags[key + 'Week'] = s.week;
+  if (!ss.rival) return;
   const r = s.fighters[ss.rival];
   if (!r) return;
   const sg = stage(s);
@@ -338,6 +470,7 @@ export function storyWeek(s: GameState): void {
   for (const b of BEATS) {
     if (ss.seen.includes(b.id) || !b.when(s, ss)) continue;
     ss.seen.push(b.id);
+    b.effect?.(s, ss);
     pushMoment(s, { kind: 'story', id: b.id, chapter: b.chapter, title: b.title, text: b.text(s, ss), who: b.who, choices: b.choices });
     if (b.id === 'c4_champ') pushMoment(s, { kind: 'credits' });
     return;
@@ -383,8 +516,149 @@ export function answerStory(s: GameState, beat: string, choice: string): string 
     case 'c3_lounge:pro':
       st.morale = clamp(st.morale + 3, 0, 100);
       return 'You shake his hand. He pulls it away and fixes his hair. The internet loves you for it.';
+    case 'c1_landlord:promise':
+      st.morale = clamp(st.morale + 4, 0, 100);
+      return 'Gordon Vance smiles like a man who has heard that before, from better people. He leaves a business card on the soup pot. Ray uses it to scrape the pot.';
+    case 'c1_landlord:mouth':
+      f.hype = clamp(f.hype + 3, 0, 100);
+      ss.rent += 500;
+      return `"Late fee," he says, writing on his clipboard. "For the attitude." Rent is now ${money(ss.rent)}. Ray says it was worth it. Ray is not good with money.`;
+    case 'c1_mateo:train':
+      ss.flags.mateo = 1;
+      st.morale = clamp(st.morale + 5, 0, 100);
+      return 'You show Mateo how to keep his hands up. He drops them immediately. You show him again. By the end of the night he only drops them sometimes. Ray watches from the soup pot, very quiet.';
+    case 'c1_mateo:homework':
+      ss.flags.mateo = 1;
+      return 'Mateo rolls his eyes so hard he almost falls over, then does his homework at the soup table. It\'s fractions. You help. You are worse at fractions than at fighting. He comes back the next day.';
+    case 'c1_vance_booked:stare':
+    case 'c2_vance_booked:stare':
+    case 'e_rematch_booked:stare':
+      st.morale = clamp(st.morale + 3, 0, 100);
+      return 'You don\'t blink. He does. Everybody sees it.';
+    case 'c1_vance_booked:laugh':
+    case 'c2_vance_booked:laugh':
+      f.hype = clamp(f.hype + 4, 0, 100);
+      return 'The room laughs with you. His face goes the colour of a bad steak.';
+    case 'c1_vance_booked:shove':
+      f.hype = clamp(f.hype + 6, 0, 100);
+      st.money -= 200;
+      return 'Security pulls you apart. The local commission fines you $200 and the video gets 40,000 views, which in this town is everybody twice.';
+    case 'c2_jimmy:report':
+      ss.flags.reported = 1;
+      st.morale = clamp(st.morale + 3, 0, 100);
+      return 'You call the Commission\'s tip line. A tired woman takes it down. "We\'ll look into it." You have no idea if they will.';
+    case 'c2_jimmy:keep':
+      ss.flags.leverage = 1;
+      return 'You say nothing. You remember everything. That\'s a kind of currency too.';
+    case 'c2_jimmy:confront':
+      f.hype = clamp(f.hype + 3, 0, 100);
+      ss.flags.confronted = 1;
+      return `You walk over. Jimmy leaves at a speed that suggests practice. ${rivalLast(s, ss)} looks at you for a long time. "It's B12," he says. Nobody has ever said "it's B12" about anything that was B12.`;
+    case 'c2_mateo:corner':
+      ss.flags.mateoCornered = 1;
+      st.morale = clamp(st.morale + 8, 0, 100);
+      st.energy = clamp(st.energy - 10, 0, 100);
+      return 'Mateo loses a split decision to a kid who is clearly fourteen. In the car he says "I want to go again." Ray has to pull over for a minute.';
+    case 'c2_mateo:crowd':
+      st.morale = clamp(st.morale + 4, 0, 100);
+      return 'Mateo wins by "the other kid started crying". He points at you in the bleachers. You point back. Ray, cornering, cries more than the other kid.';
+    case 'c2_rent:pay': {
+      const amt = Math.min(2000, Math.max(0, st.money));
+      st.money -= amt;
+      ss.rent = Math.max(0, ss.rent - amt);
+      if (ss.rent === 0) ss.gymSaved = true;
+      return amt ? `${money(amt)} to Vance Properties. ${ss.rent ? `${money(ss.rent)} to go.` : 'RAY\'S BOXING & SOUP IS SAVED.'}` : 'You don\'t have it. The envelope goes on the fridge.';
+    }
+    case 'c2_rent:later':
+      return 'The fridge is now mostly envelopes. Ray calls it "the wall of shame" and puts a magnet of a cat on it.';
+    case 'c3_confessional:honest':
+      st.morale = clamp(st.morale + 5, 0, 100);
+      return 'The producer sighs. The clip airs anyway, and becomes the most-shared thing the Lounge has ever posted. Turns out people like it when somebody means something.';
+    case 'c3_confessional:villain':
+      f.hype = clamp(f.hype + 7, 0, 100);
+      st.morale = clamp(st.morale - 3, 0, 100);
+      return `You say things about ${rivalLast(s, ss)}'s dad that you'd never say in church. The producer is crying with joy. Ray texts you one word: "Really?"`;
+    case 'c3_landlord:payall': {
+      if (st.money < ss.rent) return `You don't have ${money(ss.rent)}. Gordon Vance knew that before he asked.`;
+      st.money -= ss.rent;
+      ss.rent = 0;
+      ss.gymSaved = true;
+      st.morale = clamp(st.morale + 10, 0, 100);
+      return 'You pay it. All of it. Cash, in a soup pot, which you leave on his desk. RAY\'S BOXING & SOUP IS SAVED.';
+    }
+    case 'c3_landlord:bradie':
+      ss.rent = 0;
+      ss.gymSaved = true;
+      st.ofa.joined = true;
+      if (!st.clauses.includes('of_likeness')) st.clauses.push('of_likeness');
+      return 'Bradie pays it in one wire transfer with the memo "soup :)". The gym is saved. Bradie now owns a percentage of your face. You try not to think about which percentage.';
+    case 'c3_landlord:win':
+      ss.flags.betPurse = 1;
+      f.hype = clamp(f.hype + 3, 0, 100);
+      return 'Gordon Vance laughs. "Fine. Your purse, my building. Don\'t lose." From here on, Ray\'s rent comes out of every purse until it\'s paid.';
+    case 'c4_grudge_booked:calm':
+      st.morale = clamp(st.morale + 4, 0, 100);
+      return 'Two words. The clip of you saying them gets more views than his whole speech.';
+    case 'c4_grudge_booked:table':
+      f.hype = clamp(f.hype + 8, 0, 100);
+      st.money -= 2500;
+      return 'The table goes over. So does a water jug, a microphone and Dane Whyte\'s dignity. CBFC fines you $2,500. Pay-per-view buys go up 30%.';
+    case 'e_rematch_booked:respect':
+      st.morale = clamp(st.morale + 6, 0, 100);
+      return 'He looks at your hand for a second, then shakes it. Firm. "Saturday." "Saturday."';
   }
   return '';
+}
+
+/** A fight vs the rival just ended: remember how it went (the story reacts next week). */
+export function storyResult(s: GameState, tierAt: Tier, opp: string, won: boolean, lost: boolean, title: boolean): void {
+  const st = fmx(s);
+  const ss = st.story;
+  if (!ss || st.legacy || opp !== ss.rival) return;
+  if (tierAt === 'amateur' && !ss.flags.amDone) {
+    ss.flags.amDone = 1;
+    if (won) ss.flags.amWon = 1;
+    else if (lost) ss.flags.amLost = 1;
+  } else if (tierAt === 'of' && ss.seen.includes('c4_champ') && title) {
+    ss.flags.rematchDone = 1;
+    if (won) ss.flags.rematchWon = 1;
+  } else if (tierAt === 'of' && !ss.flags.grudgeDone) {
+    ss.flags.grudgeDone = 1;
+    if (won) ss.flags.grudgeWon = 1;
+    else ss.flags.grudgeLost = 1;
+  }
+}
+
+/**
+ * The fights the story books for you in the CBFC: the grudge match with the rival, the
+ * title shot after you beat him, and the rematch (your first defence) after the credits.
+ */
+export function storyOffers(s: GameState, rng: Rng): void {
+  const st = fmx(s);
+  const ss = st.story;
+  if (!ss || st.legacy || st.tier !== 'of' || st.fight || st.retired) return;
+  const f = me(s);
+  const r = ss.rival ? s.fighters[ss.rival] : null;
+  const rivalOk = !!r && r.status !== 'retired' && !r.injuries.some((i) => i.until > s.week);
+  const has = (id: string) => st.offers.some((o) => o.opp === id);
+  const ofWins = since(s, ss, 'of').filter((h) => h.result === 'W').length;
+  const belt = Object.values(s.belts).find((b) => b.division === f.division && !b.interim && !b.symbolic);
+  if (!belt) return;
+  if (r && rivalOk && !ss.flags.grudgeDone && ofWins >= 2 && !has(r.id)) {
+    if (r.division !== f.division) r.division = f.division;
+    st.offers.unshift({ ...offerVs(s, r, rng, `GRUDGE MATCH: Soup Kitchen vs Trust Fund. Dane Whyte wants it on the main card.`), expires: s.week + 3 });
+    return;
+  }
+  if (ss.flags.grudgeWon === 1 && belt.holder && belt.holder !== f.id && !ss.seen.includes('c4_champ') && !has(belt.holder)) {
+    const champ = s.fighters[belt.holder];
+    if (champ && champ.status === 'active') st.offers.unshift({ ...offerVs(s, champ, rng, 'TITLE SHOT. You beat the Trust Fund; Dane Whyte keeps his word, for once.', belt.id), expires: s.week + 3 });
+    return;
+  }
+  if (r && rivalOk && belt.holder === f.id && ss.seen.includes('e_plaque') && !ss.flags.rematchDone && !has(r.id)) {
+    if (r.division !== f.division) r.division = f.division;
+    r.promotion = 'us';
+    st.offers.unshift({ ...offerVs(s, r, rng, `TITLE DEFENCE: the rematch. ${r.last} earned it. Mostly.`, belt.id), expires: s.week + 3 });
+  }
 }
 
 /** Rent paid down from purses as you go (Ray takes a cut "for the soup"). */
@@ -392,7 +666,7 @@ export function storyPurse(s: GameState, pay: number): string | null {
   const st = fmx(s);
   const ss = st.story;
   if (!ss || ss.gymSaved || pay <= 0) return null;
-  const amt = Math.min(ss.rent, Math.round(pay * 0.1));
+  const amt = Math.min(ss.rent, Math.round(pay * (ss.flags.betPurse === 1 ? 0.5 : 0.1)));
   ss.rent -= amt;
   st.money -= amt;
   if (ss.rent <= 0) {
