@@ -403,6 +403,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         arena.showCallout('KNOCKDOWN!');
         arena.flash = 0.3;
         arena.slowMo(1);
+        sfx('slam');
         sfx('roar');
         if (d === P) rumbleForHit(input, 1);
         break;
@@ -411,41 +412,45 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         sfx('crowd');
         break;
       case 'clinch':
-        sfx('thud');
+        sfx('grapple');
         break;
       case 'tie':
-        sfx('thud');
+        sfx('grapple');
         if (a === P) arena.showCallout(TIE_NAME[e.name as keyof typeof TIE_NAME] ?? 'TIE-UP');
         break;
       case 'pummel':
-        sfx('whoosh');
+        sfx('scuffle');
         break;
       case 'fence':
-        sfx('thud');
+        sfx('cage');
         arena.shakeT = 0.1;
         break;
       case 'trip':
         arena.takedown(a, 'trip');
         arena.showCallout('TRIPPED!');
+        sfx('slam');
         break;
       case 'pass':
         arena.transition('pass', a);
-        sfx('thud');
+        sfx('scuffle');
         if (e.name === 'back' || e.name === 'mount') arena.showCallout(e.name === 'back' ? 'TAKES THE BACK!' : 'FULL MOUNT!');
         break;
       case 'scramble':
         arena.transition('scramble', a);
         arena.showCallout('SCRAMBLE!');
+        sfx('scramble');
         break;
       case 'break':
         break;
       case 'shoot':
         arena.play(a, 'shoot', 0.45);
+        sfx('squeak');
         break;
       case 'sprawl':
         arena.play(a, 'sprawl', 0.5);
         arena.play(d, 'shoot', 0.35);
         arena.showCallout('STUFFED!');
+        sfx('grapple');
         break;
       case 'td':
         if (e.name !== 'trip') {
@@ -453,7 +458,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
           arena.play(a, 'shoot', 0.3);
           arena.play(d, 'lifted', 0.25);
         }
-        sfx('thud');
+        sfx('slam');
         arena.shakeT = 0.15;
         break;
       case 'gnp':
@@ -463,22 +468,26 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         if (d === P) rumbleForHit(input, 0.4);
         break;
       case 'advance':
-        sfx('thud');
+        sfx('scuffle');
         break;
       case 'sweep':
         arena.transition('scramble', a);
         arena.showCallout('SWEEP!');
-        sfx('thud');
+        sfx('slam');
         break;
       case 'standup':
         // the man underneath stands up in base (technical stand-up)
         if (e.name === 'bottom') arena.play(a, 'techUp', 0.45);
+        sfx('squeak');
         break;
       case 'sub':
         arena.showCallout('SUBMISSION ATTEMPT!');
+        sfx('strain');
+        sfx('crowd');
         break;
       case 'escape':
         arena.showCallout('ESCAPED!');
+        sfx('scramble');
         break;
       case 'foul':
         arena.showCallout(`${(e.name ?? 'FOUL').toUpperCase()}!`);
@@ -518,6 +527,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       case 'tap':
         arena.over(a, L.sub ? { name: L.sub.name, atk: L.sub.atk } : undefined);
         arena.showCallout('TAP! TAP! TAP!');
+        sfx('tap');
         sfx('roar');
         break;
       case 'bell':

@@ -112,6 +112,32 @@ export const NAMED_NPCS: Record<string, Omit<PortraitInput, 'id'>> = {
     look: { head: 1, skin: 1, hair: 8, hairColor: 3, beard: 1, brows: 0, eyes: 2, nose: 2, ears: 2, scar: 1, tattoo: 0, build: 1, stoned: 1 },
     gender: 'M', age: 41, variant: 'reporter', attire: 'hoodie', accent: 0x2aa0d8,
   },
+  // Road To Champion's cast.
+  // Uncle Ray: seventy, grey ponytail and a big grey beard, a nose that lost to Butch in '87.
+  uncle_ray: {
+    look: { head: 2, skin: 1, hair: 7, hairColor: 7, beard: 3, brows: 1, eyes: 0, nose: 2, ears: 2, scar: 1, tattoo: 0, build: 2 },
+    gender: 'M', age: 70, variant: 'reporter', attire: 'shirt', accent: 0x6a5a48,
+  },
+  // Dane Whyte: the CBFC boss. Bald, black suit, no tie, permanently on the phone.
+  dane_whyte: {
+    look: { head: 1, skin: 0, hair: 0, hairColor: 0, beard: 0, brows: 2, eyes: 1, nose: 1, ears: 0, scar: 0, tattoo: 0, build: 2 },
+    gender: 'M', age: 54, variant: 'reporter', attire: 'suit', accent: 0x15151a,
+  },
+  // Gordon Vance: the landlord (Tyler's dad). Silver side-part, navy three-piece.
+  gordon_vance: {
+    look: { head: 3, skin: 0, hair: 3, hairColor: 6, beard: 0, brows: 0, eyes: 2, nose: 0, ears: 0, scar: 0, tattoo: 0, build: 1, widow: 1 },
+    gender: 'M', age: 58, variant: 'reporter', attire: 'suit', accent: 0x1c2848,
+  },
+  // the Lounge producer: headset, black tee, no sleep since 2019
+  lounge_producer: {
+    look: { head: 0, skin: 4, hair: 1, hairColor: 0, beard: 2, brows: 1, eyes: 2, nose: 1, ears: 0, scar: 0, tattoo: 0, build: 1, glasses: 2 },
+    gender: 'M', age: 33, variant: 'reporter', attire: 'jersey', accent: 0x18181c,
+  },
+  // Mateo: twelve, a hoodie three sizes too big, a fighter's stare
+  mateo: {
+    look: { head: 0, skin: 3, hair: 2, hairColor: 0, beard: 0, brows: 2, eyes: 0, nose: 0, ears: 0, scar: 0, tattoo: 0, build: 0 },
+    gender: 'M', age: 18, variant: 'reporter', attire: 'hoodie', accent: 0xb8733a,
+  },
 };
 
 export function namedPortrait(key: string, size: 64 | 32 | 24 = 64): Container | null {

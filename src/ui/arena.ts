@@ -1146,11 +1146,12 @@ export class ArenaView extends Container {
         this.takedown(A, prevGround === 'clinch' || /trip|throw|sweeps? the leg|foot sweep/i.test(line.text) ? 'trip' : 'shoot');
         this.setPose(A, this.tdKind === 'trip' ? 'trip' : 'shoot', 0.3);
         this.setPose(D, this.tdKind === 'trip' ? 'falling' : 'lifted', 0.25);
-        sfx('thud');
+        sfx('slam');
         break;
       case 'sprawl':
         this.setPose(D, 'shoot', 0.35);
         this.setPose(A, 'sprawl', 0.5);
+        sfx('grapple');
         break;
       case 'sub':
         if (ground) {
@@ -1159,6 +1160,7 @@ export class ArenaView extends Container {
           if (kind === 'rnc') this.groundPos = 'back';
         } else this.setPose(A, 'clinch', 0.8);
         if (this.mode === 'tv') this.cutTo('close', 0.2);
+        sfx('strain');
         break;
       case 'tap':
         this.subAnim = { kind: subKindFor(line.text, ground && this.isTop(A)), atk: A, t: 2.4, tapped: true };
@@ -1167,13 +1169,16 @@ export class ArenaView extends Container {
         this.finished = true;
         this.showCallout('TAP! TAP! TAP!');
         this.refTo(this.center);
+        sfx('tap');
         sfx('roar');
         break;
       case 'sweep':
         this.burst(this.center, FLOOR, 8, 0xd8d0c0, 40, 0.4, 2, 60);
-        sfx('thud');
+        sfx('slam');
         break;
       case 'clinch':
+        sfx('grapple');
+        break;
       case 'ctrl':
         break;
       case 'taunt':

@@ -25,11 +25,14 @@ const ROLE: Record<string, string> = { coach: 'HEAD COACH', nutrition: 'NUTRITIO
 
 function speakerPortrait(who: string, size: 64 | 32, s?: GameState): Container {
   const rival = s?.fighters.rival;
-  if (rival && /bleeter|vance|trust fund/i.test(who)) return fighterPortrait(rival, size);
+  if (rival && /bleeter|tyler|madison|trust fund/i.test(who)) return fighterPortrait(rival, size);
   if (/bradie/i.test(who)) return namedPortrait('bradie_taylor', size) ?? npcPortrait(who, 'exec', size);
-  if (/dane/i.test(who)) return npcPortrait('dane_whyte', 'exec', size);
-  if (/ray/i.test(who)) return npcPortrait('uncle_ray_soup', 'manager', size);
-  if (/producer/i.test(who)) return npcPortrait('lounge_producer', 'exec', size);
+  if (/gordon/i.test(who)) return namedPortrait('gordon_vance', size)!;
+  if (/dane/i.test(who)) return namedPortrait('dane_whyte', size)!;
+  if (/ray/i.test(who)) return namedPortrait('uncle_ray', size)!;
+  if (/producer/i.test(who)) return namedPortrait('lounge_producer', size)!;
+  if (/mateo/i.test(who)) return namedPortrait('mateo', size)!;
+  if (/jimmy/i.test(who)) return namedPortrait('jimmy_quavo', size)!;
   return npcPortrait(who, 'manager', size);
 }
 
