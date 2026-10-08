@@ -74,7 +74,7 @@ export const CAST: Record<string, Look2> = {
   // the Lounge producer: black tee, headset
   producer: base({ skin: 0x8a5a3a, hairStyle: 1, hairColor: 0x101010, beard: 2, build: 1, outfit: { top: 0x18181c, bottom: 0x3a3a44, mic: true, bulk: 0, shortSleeves: true, hands: 0x8a5a3a } }),
   // Jimmy Quavo: the guy in the parking lot. Tracksuit, beanie
-  jimmy: base({ skin: 0xc68a5e, hairStyle: 0, beard: 2, build: 1, outfit: { top: 0x101014, bottom: 0x101014, patch: 0xf2f2f2, bulk: 1, hands: 0xc68a5e } }),
+  jimmy: base({ skin: 0xc68a5e, hairStyle: 0, beard: 2, build: 1, beanie: true, outfit: { top: 0x101014, bottom: 0x101014, patch: 0xf2f2f2, bulk: 1, hands: 0xc68a5e } }),
   // Mateo: twelve, in a hoodie three sizes too big
   mateo: base({ skin: 0xb07a52, hairStyle: 1, hairColor: 0x1a1412, beard: 0, build: 0, outfit: { top: 0xb8733a, bottom: 0x2a2a44, bulk: 2, hands: 0xb07a52 } }),
   // a regional promoter: slicked hair, a shirt you can hear

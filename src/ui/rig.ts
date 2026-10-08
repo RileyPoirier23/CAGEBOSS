@@ -236,6 +236,10 @@ export interface Look2 {
   inkArt?: number;
   /** the middle finger is up (the flip-off taunt) */
   bird?: boolean;
+  /** knit beanie, as in his photo */
+  beanie?: boolean;
+  /** freckles across the cheek, as in his photo */
+  freckles?: boolean;
   /** his own rhythm: idle bounce speed (1 = normal), guard height (+ = lower hands), lean (+ = forward) */
   tempo?: number;
   guardY?: number;
@@ -319,6 +323,8 @@ export function lookFor(f: Fighter, corner: 0 | 1, champ = false): Look2 {
     chain: !!f.look.chain,
     inkArt: f.look.inkArt,
     glasses: f.look.glasses === 2 ? 2 : undefined,
+    beanie: !!f.look.beanie,
+    freckles: !!f.look.freckles,
     ...styleFor(f),
   };
 }
@@ -853,7 +859,8 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
   };
   const sw = L.sway ?? 0;
   const long = L.hairStyle === 5 || L.hairStyle === 9 || (fem && (L.hairStyle === 6 || L.hairStyle === 7));
-  switch (L.hairStyle) {
+  // under a beanie only the hair that hangs below it shows
+  switch (L.beanie && !long ? 2 : L.hairStyle) {
     case 0:
       g.circle(...hpt(-1, -4.4), 1.4 * s).fill(shade(skin, 0.28)); // bald shine
       break;
@@ -959,6 +966,18 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
     g.circle(...hpt(5.4, 5.2), 0.8 * s).fill(hc); // chin patch
   } else if (L.beard === 1) {
     for (let i = 0; i < 5; i++) g.circle(...hpt(0.6 + i * 1.5, 4.2 + (i % 2)), 0.5 * s).fill(shade(skin, -0.32)); // stubble
+  }
+  if (L.freckles) for (const [fx, fy] of [[3.6, 0.6], [5, 1.2], [4.2, 1.8], [2.8, 1.4], [5.8, 0.4]] as [number, number][]) g.circle(...hpt(fx, fy), 0.32 * s).fill(shade(skin, -0.3));
+  if (L.beanie) {
+    // knit beanie pulled down to the brows, a folded cuff
+    const knit = 0x2a2a32;
+    const pts: [number, number][] = [];
+    for (let a = -10; a >= -200; a -= 15) pts.push(onR(a, R + 1.4));
+    pts.push([-6.4, 0.8], [-1, -1.2], [2.6, -3.6], [6.6, -3.2]);
+    g.poly(poly(pts)).fill(knit).stroke({ color: OUT, width: 0.8 * s, join: 'round' });
+    hl([-6.4, -0.6], [6.6, -4.4], 0x3a3a44, 1.6); // the cuff
+    for (let a = -40; a > -180; a -= 20) hl(onR(a, R - 1), onR(a, R + 1), 0x1c1c22, 0.4); // the rib knit
+    g.rect(...hpt(-4.5, -1.6), 1.4 * s, 1 * s).fill(0xd8d8de); // the tag
   }
   if (L.glasses === 1) hl([3.2, -1.4], [7.2, -1.4], 0x101014, 1.6); // shades (announcers, not fighters)
   else if (L.glasses === 2) {
