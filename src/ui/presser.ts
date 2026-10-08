@@ -21,7 +21,7 @@ import { expandPop } from '../sim/popculture';
 import { adjustMeter } from '../sim/econ';
 import { sfx } from '../audio/sfx';
 import { heatUp } from '../sim/feuds';
-import { ONETON, onetonQuestion, answerOneton, type OnetonAnswer } from '../sim/oneton';
+import { ONETON, onetonQuestion, onetonReplies, answerOneton, type OnetonAnswer } from '../sim/oneton';
 
 interface Seat {
   who: 'president' | Fighter;
@@ -296,17 +296,9 @@ export class PostFightPresser extends Container {
         label: 'CONTINUE →', fn: () => this.say(rep.name, reporterPortrait(rep, 32), react, [{ label: 'NEXT QUESTION →', fn: () => this.hands() }]),
       }]);
     };
-    const promise = q.kind === 'ask_card' ? 'PROMISE A TITLE RUN'
-      : q.kind === 'ask_roster' ? 'PROMISE HIM A FIGHT'
-        : q.kind === 'ask_other' ? "SAY YOU'LL SIGN HIM"
-          : q.kind === 'ask_broken' ? 'PROMISE AGAIN' : 'PROMISE A MAIN EVENT';
-    this.say(rep.name, reporterPortrait(rep, 32), q.text, [
-      { label: promise, fn: pick('promise') },
-      { label: 'TELL HIM THE TRUTH', fn: pick('honest') },
-      { label: 'DEFLECT', fn: pick('deflect') },
-      { label: 'MAKE A JOKE', fn: pick('joke') },
-      { label: 'ROAST HIM', fn: pick('roast') },
-    ]);
+    // each question has its own answers
+    const R = onetonReplies(q);
+    this.say(rep.name, reporterPortrait(rep, 32), q.text, (['promise', 'honest', 'deflect', 'joke', 'roast'] as OnetonAnswer[]).map((a) => ({ label: R[a].label, fn: pick(a) })));
   }
 
   private fighterQuestion(repId: string, seat: Seat): void {

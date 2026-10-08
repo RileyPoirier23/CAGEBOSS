@@ -26,6 +26,7 @@ import { sigOf } from './docs';
 import { LOCAL_SPONSORS, REGIONAL_SPONSORS } from './sponsorship';
 import type { FMMoment, StoryState, FMStats } from './fmstory';
 import { gymWeek, gymTrainBonus } from './legacy';
+import { SCRUM } from './onetonlines';
 import { pushMoment, signingMoment, storyPromote, storyWeek, storyOffers, storyResult, startStory, staffCheckin, interviewMoment, storyPurse, stats, isLegacy } from './fmstory';
 
 export type BodyPart = 'head' | 'jaw' | 'body' | 'larm' | 'rarm' | 'lhand' | 'rhand' | 'legs';
@@ -1177,21 +1178,6 @@ const PRESS_A: Record<string, string[]> = {
   excuse: ["\"I had the flu, a hamstring, and a bad feeling.\" Nobody buys it.", "You blame the judges, the lights, and the canvas. The canvas has no comment.", "\"I was off tonight. Mentally. Physically. Spiritually. Financially.\"", "You say you broke your hand in round one. The X-ray says you didn't."],
 };
 const REPORTERS = ['Ariel Hell-Wani', 'The Pathetic Fight Desk', 'Cageside Carl', 'MMA Junkie-ish', 'Chisel Rudolph', 'Big Hen'];
-const ONE_TON_Q = {
-  mex: [
-    "1ton, Lucha Lowdown! {you}, Mexico is SCREAMING right now. Who do you dedicate this to? It's Mexico. Say Mexico.",
-    "1ton. {you}. I have cried four times tonight. When do you headline in Mexico City?",
-    "1ton here! {you}, my mother wants to adopt you. She's serious. Answer carefully.",
-    "1ton. {you}, are you the greatest Mexican fighter alive? I'm asking for 130 million people. And me.",
-  ],
-  non: [
-    "1ton. {you}, quick question: do you have any Mexican blood? A grandma? A favourite taco? Anything?",
-    "1ton, Lucha Lowdown. {you}, why aren't you Mexican? Have you considered it?",
-    "1ton here. {you}, would you fight a Mexican fighter next? Because I have a list. It's long. It's laminated.",
-    "1ton. Not a question for {you}. A question for the room: where are the Mexicans? Okay, {you}, you can answer.",
-  ],
-};
-
 /** After your fight: press scrum (and sometimes something else happens). Pushes events to answer back at the hub. */
 export function fightNightEvents(s: GameState, ev: FightEvent, rng: Rng): void {
   const st = fm(s);
@@ -1204,12 +1190,13 @@ export function fightNightEvents(s: GameState, ev: FightEvent, rng: Rng): void {
   const mex = f.country === 'Mexico';
   // 1ton shows up at your scrum now and then (always, if you're Mexican)
   if (mex || rng.chance(0.3)) {
-    const q = rng.pick(ONE_TON_Q[mex ? 'mex' : 'non']).replace(/\{you\}/g, f.last);
+    // a question that fits the night (won or lost), with answers that answer it
+    const pool = SCRUM.map((c, i) => [c, i] as const).filter(([c]) => c.mex === mex && (c.when === 'any' || c.when === (won ? 'win' : 'loss')));
+    const [c, i] = rng.pick(pool);
     st.pending.push({
-      id: 'fn1ton', title: '1TON HAS HIS HAND UP', text: q, portrait: 'rep:oneton',
-      choices: mex
-        ? [{ id: 'viva', label: '"VIVA MEXICO!"' }, { id: 'humble', label: 'Thank him, stay humble' }, { id: 'joke', label: 'Make a joke' }]
-        : [{ id: 'abuela', label: 'Claim a Mexican grandma' }, { id: 'no', label: '"No. Next question."' }, { id: 'taco', label: 'Name your favourite taco' }, { id: 'joke', label: 'Make a joke' }],
+      id: 'fn1ton', title: '1TON HAS HIS HAND UP', text: c.q.replace(/\{you\}/g, f.last).replace(/\{opp\}/g, opp?.last ?? 'him'), portrait: 'rep:oneton',
+      data: { convo: i },
+      choices: c.choices.map((x) => ({ id: x.id, label: x.label })),
     });
   }
   const target = calloutTargets(s)[0];
@@ -1270,18 +1257,24 @@ function resolveFightNight(s: GameState, ev: FMEvent, choice: string, rng: Rng):
     return out;
   }
   if (ev.id === 'fn1ton') {
-    switch (choice) {
-      case 'viva': hype(8); post(s, '@1ton', `${f.last.toUpperCase()} SAID VIVA MEXICO AT THE PRESSER. I AM ON THE FLOOR. SOMEONE CALL MY MOTHER.`); return '"VIVA MEXICO!" 1ton stands on his chair. Security lets him. Nobody can stop it.';
-      case 'humble': hype(3); mor(3); return '1ton nods, deeply moved. "Humble. Mexican. Perfect." He writes "PERFECT" in his notebook.';
-      case 'abuela':
-        hype(4);
-        if (rng.chance(0.4)) { hype(-6); post(s, '@1ton', `I CHECKED. ${f.last.toUpperCase()}'S GRANDMA IS FROM OHIO. I HAVE NEVER BEEN SO BETRAYED.`); return '1ton investigates. Your grandma is from Ohio. He bleets about it for a week.'; }
-        post(s, '@1ton', `${f.last.toUpperCase()} HAS A MEXICAN ABUELA. I KNEW IT. I ALWAYS KNEW IT.`);
-        return '1ton gasps. "I KNEW IT." You are now, as far as 1ton is concerned, Mexican.';
-      case 'no': hype(-1); post(s, '@1ton', `asked ${f.last.toLowerCase()} one simple question. got "no". boring man. boring fight. 3/10.`); return '1ton lowers his hand, slowly, and writes your name on a list.';
-      case 'taco': hype(2); return rng.pick(['"Al pastor." 1ton nods. "Acceptable."', '"Fish taco." 1ton stares. "That\'s a Baja answer. I\'ll allow it."', '"Taco Bell." The room goes silent. 1ton leaves.']);
-      default: hype(2); return '1ton does not laugh. His beard laughs a little.';
+    const c = SCRUM[Number((ev.data as { convo?: number } | undefined)?.convo ?? -1)];
+    const ch = c?.choices.find((x) => x.id === choice);
+    if (!c || !ch) {
+      hype(2);
+      return '1ton does not laugh. His beard laughs a little.';
     }
+    const name = (t: string) => t.replace(/\{YOU\}/g, f.last.toUpperCase()).replace(/\{you\}/g, f.last.toLowerCase());
+    if (choice === 'abuela') {
+      // he checks
+      hype(4);
+      if (rng.chance(0.4)) { hype(-6); post(s, '@1ton', `I CHECKED. ${f.last.toUpperCase()}'S GRANDMA IS FROM OHIO. I HAVE NEVER BEEN SO BETRAYED.`); return '1ton investigates. Your grandma is from Ohio. He bleets about it for a week.'; }
+      post(s, '@1ton', `${f.last.toUpperCase()} HAS A MEXICAN ABUELA. I KNEW IT. I ALWAYS KNEW IT.`);
+      return '1ton gasps. "I KNEW IT." You are now, as far as 1ton is concerned, Mexican.';
+    }
+    hype(ch.hype);
+    if (ch.morale) mor(ch.morale);
+    if (ch.bleet) post(s, '@1ton', name(ch.bleet));
+    return ch.out;
   }
   switch (ev.id + ':' + choice) {
     case 'fnbottle:throw': hype(6); if (opp) heatUp(s, f.id, opp.id, 20); if (rng.chance(0.4)) { st.money -= 1000; return 'Direct hit. The Commission fines you $1,000. The clip is everywhere. Worth it.'; } return 'You miss, hit a cameraman, apologise to the cameraman. The beef is very real now.';

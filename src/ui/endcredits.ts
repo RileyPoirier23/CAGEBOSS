@@ -14,6 +14,7 @@ import type { Game } from './app';
 import { PAL } from '../art/palette';
 import { W, H, text, button } from './kit';
 import { setMusicContext } from '../audio/music';
+import { FRIENDS, ARTISTS } from './creditsdata';
 
 type Kind = 'h' | 'n' | 'g' | 's' | 'b';
 const ROLL: [string, Kind][] = [
@@ -27,21 +28,33 @@ const ROLL: [string, Kind][] = [
   ['506Clicks', 'b'],
   ['', 'n'],
   ['Starring', 's'],
-  ['You', 'n'],
+  ['Han "The Pride Of The Maritimes" Tibular', 'n'],
   ['Uncle Ray, and his soup', 'n'],
   ['Tyler "Trust Fund" Vance', 'n'],
+  ['Gordon Vance, landlord', 'n'],
+  ['Mateo, age twelve and three-quarters', 'n'],
+  ['Wyatt "LeproClepto" Smitt', 'n'],
+  ['Zac "The Attacker" Buna', 'n'],
+  ['Spadam "The White Beast" Biggs', 'n'],
+  ['"Dirty" Daniel Stinkovich, the worst referee alive', 'n'],
+  ['Xavier "Allstar" Cockett', 'n'],
   ['Bradie, against all advice', 'n'],
+  ['Jimmy Quavo, vitamins', 'n'],
+  ['1ton', 'n'],
   ['Dane Whyte', 'n'],
   ['The Juiced Butler', 'n'],
   ['Lon Anik  •  Blow Hogan  •  Sandwich Cormier', 'n'],
   ['', 'n'],
+  ['The real ones', 's'],
+  ['These friends asked to be in the game.', 'n'],
+  ['Thank you for that, and for everything else.', 'n'],
+  ...FRIENDS.map(([real, as]): [string, Kind] => [real === as ? real : `${real}  as  ${as}`, 'b']),
+  ['', 'n'],
   ['Original soundtrack by local artists', 's'],
-  ['SANDO', 'n'],
-  ['SANDO x RUIN', 'n'],
-  ['RUIN143', 'n'],
-  ['Zuddha', 'n'],
-  ['F.O.K. ft. Hope Nikku', 'n'],
-  ['EYE-V', 'n'],
+  ...ARTISTS.map(([name, real]): [string, Kind] => [real && real !== name ? `${name}  (${real})` : name, 'b']),
+  ['Hope Nikku  •  FTB VON  •  prod. Miler', 'n'],
+  ['Thank you for letting me put your songs in this.', 'n'],
+  ['Every walkout in here is yours.', 'n'],
   ['', 'n'],
   ['Made in Moncton, New Brunswick', 's'],
   ['506clicks.ca', 'n'],
@@ -50,7 +63,7 @@ const ROLL: [string, Kind][] = [
   ['The soup is still free.', 'g'],
 ];
 
-const THANKS = 'From a bingo-hall smoker to the CBFC belt. Thank you for playing CAGE BOSS: every fight, every bad contract, every bowl of soup. It means more than you know.';
+const THANKS = 'From a bingo-hall smoker to the biggest fight in the world. Thank you for playing CAGE BOSS: every fight, every bad contract, every bowl of soup. It means more than you know.';
 
 /** Credits roll, thank-you, memorial. Nothing skippable. `done` when the player leaves the memorial. */
 export function openEndCredits(g: Game, done: () => void): void {

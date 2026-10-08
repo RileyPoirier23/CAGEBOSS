@@ -1,5 +1,5 @@
 /**
- * The CAGE BOSS soundtrack: tracks by local artists (SANDO, RUIN143, F.O.K.,
+ * The CAGE BOSS soundtrack: tracks by local artists (SANDOTHERAPPER, RUIN143, Zuddha, F.O.K.,
  * Hope Nikku, prod. Miler), played from public/music with HTMLAudio.
  *
  * Contexts pick what plays:
@@ -19,14 +19,14 @@ export interface Track {
 }
 
 export const TRACKS: Track[] = [
-  { id: 'champion', title: 'Champion', artist: 'SANDO', file: 'champion-sando.m4a', hype: true },
-  { id: 'doin_shit', title: 'Doin Shit', artist: 'SANDO x RUIN', file: 'doin-shit-sando-x-ruin.m4a', hype: true },
+  { id: 'champion', title: 'Champion', artist: 'SANDOTHERAPPER', file: 'champion-sando.m4a', hype: true },
+  { id: 'doin_shit', title: 'Doin Shit', artist: 'SANDOTHERAPPER x RUIN143', file: 'doin-shit-sando-x-ruin.m4a', hype: true },
   { id: 'bag', title: 'BAG', artist: 'F.O.K. ft. Hope Nikku (prod. Miler)', file: 'bag-fok-ft-hope-nikku.mp3', hype: true },
-  { id: 'fu2', title: 'fu2', artist: 'SANDO', file: 'fu2-sando.mp3', hype: false },
+  { id: 'fu2', title: 'fu2', artist: 'SANDOTHERAPPER', file: 'fu2-sando.mp3', hype: false },
   { id: 'ossa', title: 'ossa', artist: 'RUIN143', file: 'ossa-ruin143.mp3', hype: false },
-  { id: 'your_mom', title: 'Your Mom Hates Me', artist: 'SANDO', file: 'your-mom-hates-me-sando.mp3', hype: true },
+  { id: 'your_mom', title: 'Your Mom Hates Me', artist: 'SANDOTHERAPPER', file: 'your-mom-hates-me-sando.mp3', hype: true },
   { id: 'bloodhound', title: 'Bloodhound for You', artist: 'RUIN143', file: 'bloodhound-for-you-ruin143.mp3', hype: true },
-  { id: 'come_closer', title: 'Come Closer', artist: 'RUIN143 feat. SANDO', file: 'come-closer-ruin143-ft-sando.mp3', hype: false },
+  { id: 'come_closer', title: 'Come Closer', artist: 'RUIN143 feat. SANDOTHERAPPER', file: 'come-closer-ruin143-ft-sando.mp3', hype: false },
   { id: 'gen_apathy', title: 'Gen Apathy', artist: 'EYE-V', file: 'gen-apathy-eye-v.mp3', hype: false },
   { id: 'all_hustle', title: 'All Hustle', artist: 'Zuddha', file: 'all-hustle-zuddha.mp3', hype: true },
   { id: 'moment_grace', title: 'A Moment w/ Grace', artist: 'Zuddha ft. FTB VON', file: 'a-moment-w-grace-zuddha-ft-ftb-von.mp3', hype: false },
