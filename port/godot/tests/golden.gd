@@ -13,5 +13,6 @@ func _init() -> void:
 		var r = M_tools_golden_scenarios.runScenario(name)
 		var f := FileAccess.open("res://tests/golden/%s.godot.json" % name, FileAccess.WRITE)
 		f.store_string(JS.json_stringify(r))
+		f.close()
 		print("%s: %d ms" % [name, Time.get_ticks_msec() - t])
 	quit()

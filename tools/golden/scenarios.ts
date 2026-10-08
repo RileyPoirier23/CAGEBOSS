@@ -6,8 +6,9 @@
  */
 import { Rng, hashString } from '../../src/core/rng';
 import { content } from '../../src/core/content';
+import { globalEnv, eligible } from '../../src/storylets/engine';
 import { createNewGame } from '../../src/sim/newgame';
-import { simulateWeek } from '../../src/sim/week';
+import { simulateWeek, startWeek } from '../../src/sim/week';
 import { POLICIES } from '../../src/sim/policies';
 import { simulateFight } from '../../src/sim/fight';
 import { generateFighter } from '../../src/sim/generate';
@@ -18,7 +19,7 @@ import {
 import { fmx, answerStory } from '../../src/sim/fmstory';
 import { runBout, applyBout } from '../../src/sim/events';
 
-export const SCENARIOS = ['rng', 'content', 'generate', 'newgame', 'weeks', 'fights', 'live', 'road'];
+export const SCENARIOS = ['rng', 'content', 'generate', 'newgame', 'eligible', 'startweek', 'weeks', 'fights', 'live', 'road'];
 
 function newGame(seed: number) {
   return createNewGame({ seed, mode: 'career', difficulty: 'normal', promotionName: 'Test FC', presidentName: 'Test Boss' });
@@ -45,6 +46,20 @@ export function runScenario(name: string): unknown {
     }
     case 'newgame':
       return newGame(77);
+    case 'eligible': {
+      const s = newGame(77);
+      const rng = new Rng(3);
+      const base = globalEnv(s, rng);
+      const cache = new Map<string, Record<string, any>>();
+      const out: unknown[] = [];
+      for (const d of content().storylets) out.push([d.id, eligible(s, d, rng, base, cache), rng.state]);
+      return out;
+    }
+    case 'startweek': {
+      const s = newGame(77);
+      startWeek(s);
+      return s;
+    }
     case 'weeks': {
       const s = newGame(77);
       const trail: unknown[] = [];

@@ -10,8 +10,19 @@ func _init(items = null) -> void:
 	if items != null:
 		for x in JS.iter(items): add(x)
 
-static func _k(x):
-	return float(x) if typeof(x) == TYPE_INT else x
+var _objs: Array = []
+
+## JS compares object keys by identity; Godot hashes dictionaries/arrays by content,
+## so objects get a synthetic key (a Vector2i can never be a JS value).
+func _k(x):
+	var t = typeof(x)
+	if t == TYPE_INT: return float(x)
+	if t == TYPE_DICTIONARY or t == TYPE_ARRAY:
+		for i in _objs.size():
+			if is_same(_objs[i], x): return Vector2i(-1, i)
+		_objs.append(x)
+		return Vector2i(-1, _objs.size() - 1)
+	return x
 
 func has(x) -> bool: return _d.has(_k(x))
 func add(x) -> JSSet:

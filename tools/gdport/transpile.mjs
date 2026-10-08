@@ -18,7 +18,7 @@ import { fileURLToPath } from 'url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '../..');
-const OUT = path.join(REPO, 'port/godot/gen');
+const OUT = process.env.GDPORT_OUT ? path.resolve(process.env.GDPORT_OUT) : path.join(REPO, 'port/godot/gen');
 
 // ------------------------------------------------------------------ program
 
@@ -90,10 +90,10 @@ function kindOfType(t, depth = 0) {
   }
   const sym = t.getSymbol() ?? t.aliasSymbol;
   const name = sym?.getName();
-  if (name === 'Set' || name === 'ReadonlySet') return 'set';
-  if (name === 'Map' || name === 'ReadonlyMap') return 'map';
+  if (name === 'Set' || name === 'ReadonlySet' || name === 'WeakSet') return 'set';
+  if (name === 'Map' || name === 'ReadonlyMap' || name === 'WeakMap') return 'map';
   if (name === 'RegExp') return 'regexp';
-  if (name === 'Array' || name === 'ReadonlyArray') return 'array';
+  if (name === 'Array' || name === 'ReadonlyArray' || name === 'RegExpMatchArray' || name === 'RegExpExecArray') return 'array';
   if (name === 'String') return 'string';
   if (name === 'Number') return 'number';
   if (name === 'Date') return 'any';
@@ -104,9 +104,19 @@ function kindOfType(t, depth = 0) {
   if (t.flags & F.Object && t.objectFlags & ts.ObjectFlags.Class) return 'class';
   return 'dict';
 }
-const kindOf = (n) => kindOfType(checker.getTypeAtLocation(n));
-function nullable(n) {
+/** type at a location, but undo narrowing to null/never for identifiers (closures can reassign them) */
+function typeAt(n) {
   const t = checker.getTypeAtLocation(n);
+  if (ts.isIdentifier(n) && (t.flags & (F.Null | F.Undefined | F.Never))) {
+    const sym = checker.getSymbolAtLocation(n);
+    const d = declOf(sym);
+    if (d && ts.isVariableDeclaration(d)) return checker.getTypeOfSymbolAtLocation(sym, d);
+  }
+  return t;
+}
+const kindOf = (n) => kindOfType(typeAt(n));
+function nullable(n) {
+  const t = typeAt(n);
   if (t.flags & (F.Any | F.Unknown | F.Null | F.Undefined)) return true;
   if (t.isUnion()) return t.types.some((m) => m.flags & (F.Null | F.Undefined | F.Void | F.Any));
   return false;
@@ -1210,9 +1220,11 @@ class ModuleEmitter {
     }
     const k = kindOf(n);
     const v = this.E(n, pre);
-    if (k === 'boolean') return nullable(n) ? `(${v} == true)` : v;
-    if (k === 'number') return nullable(n) ? `JS.truthy(${v})` : `(${v} != 0.0)`;
-    if (k === 'string') return nullable(n) ? `JS.truthy(${v})` : `(${v} != "")`;
+    // reads from records/arrays can be missing even when the type says otherwise
+    const maybe = nullable(n) || ts.isElementAccessExpression(n) || ts.isPropertyAccessExpression(n);
+    if (k === 'boolean') return maybe ? `(${v} == true)` : v;
+    if (k === 'number') return maybe ? `JS.truthy(${v})` : `(${v} != 0.0)`;
+    if (k === 'string') return maybe ? `JS.truthy(${v})` : `(${v} != "")`;
     if (['dict', 'class', 'array', 'func', 'set', 'map', 'regexp'].includes(k)) return `(${v} != null)`;
     if (k === 'null') return 'false';
     return `JS.truthy(${v})`;
@@ -1666,6 +1678,7 @@ class ModuleEmitter {
           case 'WeakMap':
             return `JSMap.new(${a[0] ?? ''})`;
           case 'WeakSet':
+            return `JSSet.new(${a[0] ?? ''})`;
           case 'Error':
             return a[0] ?? '""';
           case 'RegExp':
@@ -1680,8 +1693,24 @@ class ModuleEmitter {
       }
       if (d && fromNodeModules(d)) return `PX.${c.text}.new(${a.join(', ')})`;
       if (d && ts.isClassDeclaration(d)) {
-        const ctor = d.members.find((m) => ts.isConstructorDeclaration(m) && m.body);
-        return `${this.typeRefForClass(d)}.new(${(ctor ? this.trimArgs(ctor, a) : []).join(', ')})`;
+        // the constructor may be inherited (from a user class, or Error's message)
+        let args = [];
+        for (let k = d; k; ) {
+          const ctor = k.members.find((m) => ts.isConstructorDeclaration(m) && m.body);
+          if (ctor) {
+            args = this.trimArgs(ctor, a);
+            break;
+          }
+          const h = k.heritageClauses?.find((c) => c.token === ts.SyntaxKind.ExtendsKeyword)?.types[0];
+          if (!h) break;
+          const bd = declOf(resolve(checker.getSymbolAtLocation(h.expression)));
+          if (bd && isLibDecl(bd)) {
+            if (h.expression.getText() === 'Error') args = a.slice(0, 1);
+            break;
+          }
+          k = bd && ts.isClassDeclaration(bd) ? bd : null;
+        }
+        return `${this.typeRefForClass(d)}.new(${args.join(', ')})`;
       }
     }
     report(n, 'new of ' + c.getText());
@@ -1984,8 +2013,8 @@ const STRING_METHODS = {
   trimStart: (em, r) => `${r}.strip_edges(true, false)`,
   trimEnd: (em, r) => `${r}.strip_edges(false, true)`,
   includes: (em, r, a, p) => `JS.includes(${r}, ${lst(em, a, p)})`,
-  startsWith: (em, r, a, p) => `${r}.begins_with(${em.S_(a[0], p)})`,
-  endsWith: (em, r, a, p) => `${r}.ends_with(${em.S_(a[0], p)})`,
+  startsWith: (em, r, a, p) => (a.length > 1 ? `JS.starts_with(${r}, ${lst(em, a, p)})` : `${r}.begins_with(${em.S_(a[0], p)})`),
+  endsWith: (em, r, a, p) => (a.length > 1 ? `JS.ends_with(${r}, ${lst(em, a, p)})` : `${r}.ends_with(${em.S_(a[0], p)})`),
   indexOf: (em, r, a, p) => `JS.index_of(${r}, ${lst(em, a, p)})`,
   lastIndexOf: (em, r, a, p) => `JS.last_index_of(${r}, ${a1(em, a, p)})`,
   slice: (em, r, a, p) => `JS.s_slice(${r}${a.length ? ', ' + lst(em, a, p) : ''})`,

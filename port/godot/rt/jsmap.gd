@@ -11,8 +11,19 @@ func _init(items = null) -> void:
 	if items != null:
 		for e in JS.iter(items): set_(e[0], e[1])
 
-static func _k(x):
-	return float(x) if typeof(x) == TYPE_INT else x
+var _objs: Array = []
+
+## JS compares object keys by identity; Godot hashes dictionaries/arrays by content,
+## so objects get a synthetic key (a Vector2i can never be a JS value).
+func _k(x):
+	var t = typeof(x)
+	if t == TYPE_INT: return float(x)
+	if t == TYPE_DICTIONARY or t == TYPE_ARRAY:
+		for i in _objs.size():
+			if is_same(_objs[i], x): return Vector2i(-1, i)
+		_objs.append(x)
+		return Vector2i(-1, _objs.size() - 1)
+	return x
 
 func has(k) -> bool: return _vals.has(_k(k))
 func get_(k): return _vals.get(_k(k))

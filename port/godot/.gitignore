@@ -3,3 +3,4 @@ data/
 tests/golden/
 .godot/
 *.import
+tests/tmp/

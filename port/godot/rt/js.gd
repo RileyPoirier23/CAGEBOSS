@@ -322,6 +322,13 @@ static func substr_(s: String, a, l = null) -> String:
 	if ln <= 0: return ""
 	return s.substr(i, ln)
 
+static func starts_with(s: String, x, pos = 0.0) -> bool:
+	return s.substr(clampi(int(num(pos)), 0, s.length())).begins_with(str_(x))
+
+static func ends_with(s: String, x, end_ = null) -> bool:
+	var e = s.length() if end_ == null else clampi(int(num(end_)), 0, s.length())
+	return s.substr(0, e).ends_with(str_(x))
+
 static func index_of(s, x, from = null) -> float:
 	if s is Array:
 		var st = 0 if from == null else _norm_index(from, s.size(), 0)
@@ -389,13 +396,32 @@ static func split(s: String, sep = null, limit = null) -> Array:
 	if limit != null: out = out.slice(0, int(num(limit)))
 	return out
 
+## ICU root collation (what String#localeCompare uses), for ASCII: punctuation < digits < letters,
+## letters case-insensitive first, then lowercase before uppercase.
+const _COLL_PUNCT = "\t\n\r _-,;:!?.'\"()[]{}@*/\\&#%`^+<=>|~$"
+
+static func _coll_primary(c: int) -> int:
+	if c >= 48 and c <= 57: return 100 + c
+	if c >= 97 and c <= 122: return 200 + c - 97
+	if c >= 65 and c <= 90: return 200 + c - 65
+	var i = _COLL_PUNCT.find(char(c))
+	if i >= 0: return i
+	return 1000 + c
+
 static func locale_compare(a: String, b: String) -> float:
-	var la = a.to_lower()
-	var lb = b.to_lower()
-	if la < lb: return -1.0
-	if la > lb: return 1.0
-	if a < b: return 1.0
-	if a > b: return -1.0
+	var n = mini(a.length(), b.length())
+	for i in n:
+		var pa = _coll_primary(a.unicode_at(i))
+		var pb = _coll_primary(b.unicode_at(i))
+		if pa != pb: return -1.0 if pa < pb else 1.0
+	if a.length() != b.length(): return -1.0 if a.length() < b.length() else 1.0
+	for i in n:
+		var ca = a.unicode_at(i)
+		var cb = b.unicode_at(i)
+		if ca != cb:
+			var ua = ca >= 65 and ca <= 90
+			var ub = cb >= 65 and cb <= 90
+			if ua != ub: return 1.0 if ua else -1.0
 	return 0.0
 
 static func to_upper(s: String) -> String: return s.to_upper()
@@ -944,6 +970,7 @@ static func log_(args: Array) -> void:
 	print(" ".join(parts))
 
 static func error(msg) -> void:
+	if msg is Object and "message" in msg: msg = "%s: %s" % [msg.get_script().get_global_name() if msg.get_script() else "Error", msg.message]
 	push_error(str_(msg))
 
 static func is_integer(v) -> bool:
@@ -959,10 +986,10 @@ static func to_precision(x, p) -> String:
 
 ## obj.method(args) when obj may be a Dictionary of functions or an Object
 static func invoke(o, m: String, args: Array = []):
-	if o is Dictionary: return call_(o.get(m), args)
+	if o is Dictionary and o.get(m) is Callable: return call_(o.get(m), args)
 	if o is Object and o != null:
 		if o.has_method(m): return call_(Callable(o, m), args)
-		return call_(o.get(m), args)
+		if o.get(m) is Callable: return call_(o.get(m), args)
 	if o is String: return _string_method(o, m, args)
 	if o is Array: return _array_method(o, m, args)
 	if typeof(o) == TYPE_FLOAT or typeof(o) == TYPE_INT:
@@ -982,9 +1009,9 @@ static func _string_method(s: String, m: String, args: Array):
 		"toLowerCase": return s.to_lower()
 		"trim": return s.strip_edges()
 		"includes": return includes(s, _a(args, 0))
-		"startsWith": return s.begins_with(str_(_a(args, 0)))
-		"endsWith": return s.ends_with(str_(_a(args, 0)))
-		"indexOf": return index_of(s, _a(args, 0))
+		"startsWith": return starts_with(s, _a(args, 0), _a(args, 1) if args.size() > 1 else 0.0)
+		"endsWith": return ends_with(s, _a(args, 0), _a(args, 1))
+		"indexOf": return index_of(s, _a(args, 0), _a(args, 1))
 		"slice": return s_slice(s, _a(args, 0), _a(args, 1))
 		"substring": return substring(s, _a(args, 0), _a(args, 1))
 		"split": return split(s, _a(args, 0), _a(args, 1))

@@ -23,26 +23,28 @@ and has no web export), and console middleware supports it first.
 ## Keeping the gameplay identical
 
 A port is only acceptable if fights, careers and the story come out **exactly** the same.
-How we guarantee it:
+So the rules are not rewritten by hand. They are **translated automatically**:
 
-1. **The random numbers match bit for bit. Already proven:** `port/godot/core/rng.gd`
-   (the port of `src/core/rng.ts`) produces the identical sequence over 100,000 draws
-   (`port/godot/tests/rng_check.gd` vs `tools/port-check.mjs`).
-2. **The few math functions that differ between machines** (sin, pow, log, exp, about 24
-   uses in the rules) move into one tiny deterministic math module, used the same way by the
-   TypeScript game and the port.
-3. **Golden tests:** the TypeScript game plays thousands of seeded fights and a full
-   900-week career and saves the results. The Godot port must reproduce them exactly before
-   anything ships. Any difference is a porting bug, found by a test, not by a player.
-4. The port goes in this order: the rules (`src/sim`, `src/core`, about 15,500 lines, no
-   graphics), checked against the golden tests; then drawing and screens (`src/ui`,
-   `src/art`, about 20,000 lines), checked by screenshots side by side.
+1. **One source of truth.** The TypeScript game stays the master copy. The translator
+   (`tools/gdport/transpile.mjs`) reads it with the TypeScript compiler and writes the
+   matching GDScript into `port/godot/gen/`. Every change to the rules reaches both
+   versions with one command: `tools/gdport/build.sh`.
+2. **JavaScript behaviour in Godot.** `port/godot/rt/js.gd` reproduces the JavaScript
+   details the rules depend on, such as 32-bit integer maths for the random numbers, number
+   formatting, stable sorting, key order and string handling.
+3. **Golden tests.** `tools/golden/scenarios.ts` holds seeded scenarios: the random numbers,
+   content, fighter generation, a new career, 20 weeks of a career, 200 sim fights, live
+   fights with AI on both sides, and a Road To Champion run. `tools/golden/run.sh` runs each
+   one in Node and in Godot and checks the outputs are identical, value for value. **All of
+   them match today.** Any difference is a porting bug, found by a test, not by a player.
+4. **The screens come next.** The drawing code (`src/ui`, `src/art`) goes through the same
+   translator against a small Godot stand-in for the PixiJS calls it uses. Screens are
+   checked side by side with screenshots.
 
 ## What happens to the current version
 
-The TypeScript game stays the live PC/web version until the Godot version matches it. Then
-Godot becomes the only codebase, and PC, Mac, Linux and phones update to it too. That way
-there's one game to maintain, not two.
+The TypeScript game stays the live PC/web version and the master copy. The Godot build is
+made from it for consoles and phones, so there is still one game to maintain, not two.
 
 ## Costs and accounts
 

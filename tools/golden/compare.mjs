@@ -3,7 +3,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const dir = join(dirname(fileURLToPath(import.meta.url)), '../../port/godot/tests/golden');
-const names = process.argv[2] ? process.argv[2].split(',') : ['rng', 'content', 'generate', 'newgame', 'weeks', 'fights', 'live', 'road'];
+const names = process.argv[2] ? process.argv[2].split(',') : ['rng', 'content', 'generate', 'newgame', 'eligible', 'startweek', 'weeks', 'fights', 'live', 'road'];
 let bad = 0;
 for (const n of names) {
   const a = join(dir, `${n}.node.json`), b = join(dir, `${n}.godot.json`);
