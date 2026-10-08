@@ -634,10 +634,15 @@ const burn = (s: GameState, lbs: number) => {
 };
 
 /** Training result scaled by a mini game score (0..1); null = no mini game. */
+/** Skills top out here. */
+export const SKILL_MAX = 99;
+export const isMaxed = (v: number): boolean => v >= SKILL_MAX - 0.05;
+
 export function trainSkill(s: GameState, k: keyof Skills, rng: Rng, score: number | null = null): string {
   const st = fm(s);
   const f = me(s);
   if (st.ap <= 0) return 'No time left this week.';
+  if (isMaxed(f.skills[k])) return `${k.toUpperCase()} is already maxed out. Train something else.`;
   st.ap--;
   const cond = condition(s);
   const perf = score === null ? 1 : 0.55 + score * 0.95;
@@ -692,7 +697,9 @@ export function allocateSpar(s: GameState, alloc: Partial<Record<keyof Skills, n
   let left = st.sparPoints ?? 0;
   const done: string[] = [];
   for (const [k, n] of Object.entries(alloc) as [keyof Skills, number][]) {
-    const use = Math.min(left, Math.max(0, Math.floor(n)));
+    // never spend points past the cap
+    const room = Math.max(0, Math.ceil(SKILL_MAX - f.skills[k]));
+    const use = Math.min(left, room, Math.max(0, Math.floor(n)));
     if (!use || k === 'weightCut') continue;
     f.skills[k] = clamp(Math.round((f.skills[k] + use) * 10) / 10, 10, 99);
     left -= use;
@@ -953,7 +960,7 @@ export function callOut(s: GameState, targetId: string, rng: Rng): string {
   // a good callout sometimes gets you the fight
   const r = rankOf(s, t.id) ?? 16;
   const mine = rankOf(s, f.id) ?? 16;
-  if (!st.fight && rng.chance(0.18 + f.hype / 300) && mine - r <= 6) {
+  if (!st.fight && !isSuspended(s) && rng.chance(0.18 + f.hype / 300) && mine - r <= 6) {
     st.offers.unshift(offerVs(s, t, rng, 'The callout worked. The matchmaker saw it.'));
   }
   return `You called out ${fullName(t)}. ${reply ? 'He answered.' : 'He left you on read.'}`;
@@ -1079,11 +1086,15 @@ export function offerVs(s: GameState, opp: Fighter, rng: Rng, why: string, title
   return { opp: opp.id, week: s.week + rng.int(4, 7), purse, win: purse, rounds: title ? 5 : 3, title, why, expires: s.week + 2 };
 }
 
+/** Suspended fighters get no sanctioned fights: no offers, nothing to sign. */
+export const isSuspended = (s: GameState): boolean => s.week < fm(s).suspendedUntil;
+
 export function makeOffers(s: GameState, rng: Rng, force = false): void {
   const st = fm(s);
   const f = me(s);
   st.offers = st.offers.filter((o) => o.expires >= s.week && s.fighters[o.opp]?.status === 'active');
-  if (st.fight || s.week < st.suspendedUntil || st.retired) return;
+  if (isSuspended(s)) st.offers = [];
+  if (st.fight || isSuspended(s) || st.retired) return;
   if (!force && !rng.chance((st.tier === 'of' ? 0.45 : 0.65) + st.staff.manager * 0.12)) return;
   if (st.tier !== 'of') {
     // climb the local ladder: somebody a few rungs up (or the champ, if you're next in line)
@@ -1130,7 +1141,7 @@ export function makeOffers(s: GameState, rng: Rng, force = false): void {
 export function acceptOffer(s: GameState, i: number): void {
   const st = fm(s);
   const o = st.offers[i];
-  if (!o) return;
+  if (!o || isSuspended(s)) return;
   st.fight = { ...o, eventId: 'fm' + o.week };
   st.offers = [];
   st.roundPlans = {};
@@ -1328,7 +1339,7 @@ function resolveFightNight(s: GameState, ev: FMEvent, choice: string, rng: Rng):
       if (t) {
         heatUp(s, f.id, t.id, 20);
         post(s, '@' + t.last.toLowerCase(), rng.pick(['saw that. sign the paper then.', 'lmao who', 'Be careful what you ask for.', 'Get in line, kid.']));
-        if (!st.fight && rng.chance(0.4)) st.offers.unshift(offerVs(s, t, rng, 'Your callout at the presser landed. The matchmaker wants it.'));
+        if (!st.fight && !isSuspended(s) && rng.chance(0.4)) st.offers.unshift(offerVs(s, t, rng, 'Your callout at the presser landed. The matchmaker wants it.'));
       }
     }
     return out;
@@ -1362,7 +1373,7 @@ function resolveFightNight(s: GameState, ev: FMEvent, choice: string, rng: Rng):
     case 'fnfan:hug': hype(3); mor(4); return 'You hug him back. Security waits. He says you changed his life. It goes viral (the good kind).';
     case 'fnfan:selfie': hype(4); return 'The selfie is incredible. He posts it with 40 fire emojis.';
     case 'fnfan:security': hype(-1); return 'Security drags him off. He is still waving. You feel a bit bad.';
-    case 'fndoc:rest': st.suspendedUntil = Math.max(st.suspendedUntil, s.week + 4); for (const p of BODY_PARTS) st.body[p.id] = clamp(st.body[p.id] + 8, 0, p.id === 'head' ? st.headCap : 100); return 'Four weeks on the shelf. Your brain thanks you.';
+    case 'fndoc:rest': st.suspendedUntil = Math.max(st.suspendedUntil, s.week + 4); st.offers = []; for (const p of BODY_PARTS) st.body[p.id] = clamp(st.body[p.id] + 8, 0, p.id === 'head' ? st.headCap : 100); return 'Four weeks on the shelf. Your brain thanks you.';
     case 'fndoc:sign': st.headCap = Math.max(55, st.headCap - 2); return 'You sign. You feel great. Your brain files a quiet complaint (head ceiling -2).';
   }
   return null;
@@ -1381,7 +1392,7 @@ export function cagesideReact(s: GameState, winner: string, loser: string, choic
       f.hype = clamp(f.hype + 3, 0, 100);
       post(s, '@cageside_carl', `The camera caught ${f.last} STARING A HOLE through ${w.last} after that fight. We need this.`);
       const same = w.division === f.division && w.status === 'active' && w.promotion === f.promotion;
-      if (same && !st.fight && rng.chance(0.45)) st.offers.unshift(offerVs(s, w, rng, 'The staredown went viral. Matchmaker wants it.'));
+      if (same && !st.fight && !isSuspended(s) && rng.chance(0.45)) st.offers.unshift(offerVs(s, w, rng, 'The staredown went viral. Matchmaker wants it.'));
       return `You stood up and stared ${w.last} down. He saw it. Everybody saw it.`;
     }
     case 'clap':
@@ -1414,14 +1425,14 @@ export function resolveEvent(s: GameState, choice: string, rng: Rng): string {
       if (st.money < 3000) { st.pending.unshift(ev); return 'You do not have $3,000.'; }
       st.money -= 3000; log(s, 'Charges dropped. Your lawyer high-fived you in the lobby.', 0); rapSheet(s, 'ARREST', 'Arrested outside a nightclub. Charges dropped (lawyer: $3,000).'); return 'Charges dropped.';
     case 'barfight:plead': rapSheet(s, 'CHARGE', 'Disorderly conduct outside a nightclub. Pled out: 40 hours community service.'); hype(-3); mor(-6); st.ap = Math.max(0, st.ap - 1); log(s, 'Community service: picking up litter in a hi-vis vest. Someone filmed it.', -1); return '40 hours of community service.';
-    case 'barfight:tough': hype(6); mor(-2); rapSheet(s, 'ARREST', 'Arrested outside a nightclub. Posted a defiant video about it.'); if (rng.chance(0.4)) { st.suspendedUntil = s.week + 6; rapSheet(s, 'SUSPENSION', '6 weeks: "conduct unbecoming of a man in a cage".'); log(s, 'The Commission suspended you for 6 weeks for "conduct unbecoming of a man in a cage".', -2); return 'The video went viral. So did the suspension.'; } return 'The video went viral. Fans love it. Lawyers hate it.';
+    case 'barfight:tough': hype(6); mor(-2); rapSheet(s, 'ARREST', 'Arrested outside a nightclub. Posted a defiant video about it.'); if (rng.chance(0.2)) { st.suspendedUntil = Math.max(st.suspendedUntil, s.week + 4); st.offers = []; rapSheet(s, 'SUSPENSION', '4 weeks: "conduct unbecoming of a man in a cage".'); log(s, 'The Commission suspended you for 4 weeks for "conduct unbecoming of a man in a cage".', -2); return 'The video went viral. So did the suspension.'; } return 'The video went viral. Fans love it. Lawyers hate it.';
     case 'ex:respond': hype(4); mor(-6); return 'You responded. Then she responded. Then her mom responded. Week ruined, hype up.';
     case 'ex:ignore': hype(-2); mor(-3); return 'You stayed silent. The internet took that as confirmation.';
     case 'ex:pay': st.money -= 400; mor(4); return 'You Venmo\'d $400 with the note "for the PlayStation". She posted it. Respect, somehow.';
     case 'sponsor:take': st.money += 2000; if (rng.chance(0.35)) { st.taint = 6; } return '+$2,000. The powder tastes like a battery.';
     case 'sponsor:pass': mor(2); return 'You passed. Probably smart. Definitely broke.';
     case 'test:pee': return drugTest(s, rng);
-    case 'test:run': rapSheet(s, 'DOPING', 'Refused / dodged a drug test. Counted as a failure: 26-week suspension.'); st.suspendedUntil = s.week + 26; cancelFight(s, 'You dodged a test: an automatic 6-month suspension.'); hype(-8); return 'Dodging a test counts as failing it. Six months on the shelf.';
+    case 'test:run': rapSheet(s, 'DOPING', 'Refused / dodged a drug test. Counted as a failure: 26-week suspension.'); st.suspendedUntil = s.week + 26; st.offers = []; cancelFight(s, 'You dodged a test: an automatic 6-month suspension.'); hype(-8); return 'Dodging a test counts as failing it. Six months on the shelf.';
     case 'calledout:fire': { const by = s.fighters[String(ev.data?.by)]; if (by) { heatUp(s, f.id, by.id, 20); hype(5); if (!st.fight && rng.chance(0.4)) st.offers.unshift(offerVs(s, by, rng, 'The beef sells. The matchmaker wants it.')); } return 'You fired back. It got ugly. The matchmaker is smiling.'; }
     case 'calledout:ignore': hype(-1); mor(2); return 'You ignored it. Classy. Boring.';
     case 'calledout:money': hype(3); return '"Pay me" is now your catchphrase. Merch incoming.';
@@ -1464,10 +1475,24 @@ export function resolveEvent(s: GameState, choice: string, rng: Rng): string {
 function drugTest(s: GameState, rng: Rng): string {
   const st = fm(s);
   const f = me(s);
-  const dirty = st.ped.on || st.ped.weeks > 0 || st.taint > 0;
-  if (dirty && rng.chance(st.ped.on ? 0.75 : 0.35)) {
+  const doping = st.ped.on || st.ped.weeks > 0;
+  // a contaminated supplement (sketchy sponsor, Jimmy's "vitamins") shows up less often and
+  // gets a reduced sanction: 8 weeks, and it doesn't count as a doping strike
+  if (!doping && st.taint > 0 && rng.chance(0.15)) {
+    st.suspendedUntil = Math.max(st.suspendedUntil, s.week + 8);
+    st.offers = [];
+    st.taint = 0;
+    rapSheet(s, 'DOPING', 'Adverse finding from a contaminated supplement. Reduced sanction: 8 weeks.');
+    f.hype = clamp(f.hype - 4, 0, 100);
+    st.morale = clamp(st.morale - 8, 0, 100);
+    cancelFight(s, 'CONTAMINATED SUPPLEMENT: suspended 8 weeks.');
+    post(s, '@MMAJunkie_ish', `${fullName(f)} flagged for a contaminated supplement. Reduced 8-week sanction. Says the sponsor "seemed legit".`);
+    return 'Your sponsor\'s powder had something in it. The commission believes you, mostly: 8 weeks on the shelf.';
+  }
+  if (doping && rng.chance(st.ped.on ? 0.75 : 0.35)) {
     st.ped.caught++;
     st.suspendedUntil = s.week + 26 * st.ped.caught;
+    st.offers = [];
     rapSheet(s, 'DOPING', `Failed drug test (adverse finding #${st.ped.caught}). Suspended ${26 * st.ped.caught} weeks.`);
     f.hype = clamp(f.hype - 10, 0, 100);
     st.morale = clamp(st.morale - 15, 0, 100);
@@ -1979,7 +2004,7 @@ export function endWeek(s: GameState, rng: Rng): string[] {
       const by = calloutTargets(s).filter((x) => x.traits.includes('Trash Talker') || rng.chance(0.4));
       if (by.length) st.pending.push(EVENTS.callout(s, rng, rng.pick(by)));
     }
-    const testP = (st.fight && st.fight.week - s.week <= 4 ? 0.22 : 0.06) + (rankOf(s, f.id) !== null && rankOf(s, f.id)! <= 5 ? 0.06 : 0);
+    const testP = (st.fight && st.fight.week - s.week <= 4 ? 0.12 : 0.04) + (rankOf(s, f.id) !== null && rankOf(s, f.id)! <= 5 ? 0.04 : 0);
     if (rng.chance(testP)) st.pending.push(EVENTS.test(s));
   }
   st.partied = Math.max(0, st.partied - 1);

@@ -12,6 +12,17 @@ import { openHelp } from './help';
 /** Newest first. Keep each version to a few lines. */
 export const NOTES: { v: string; lines: string[] }[] = [
   {
+    v: '2.0.1',
+    lines: [
+      'Fixes: cutscene sets no longer vanish mid-scene.',
+      'Skills stop at 99: training and sparring show MAX.',
+      'Suspended means suspended: no fight offers until it ends.',
+      'Suspensions are rarer. Tainted supplements: 8 weeks, not 26.',
+      'Fewer random drug tests. This card no longer shows every launch.',
+      'Smoother fights and HUD (faster text and crowd drawing).',
+    ],
+  },
+  {
     v: '2.0.0',
     lines: [
       'Road To Champion: you are Han "Pride Of The Maritimes" Tibular.',

@@ -31,7 +31,7 @@ import {
   fm, me, BODY_PARTS, STAFF_ROLES, PLANS, doAction, treat, clinicCost, weeklyStaffCost, calloutTargets, callOut, humblePost,
   startPeds, stopPeds, bareknuckle, gamble, acceptOffer, resolveEvent, endWeek, fightThisWeek, weighInInfo, doWeighIn, fightEvent,
   afterFight, postFightCallout, weightLimit, contractLimit, fightReadySkills, type ActionId, type StaffId, type BodyPart,
-  ensureFM, condition, trainSkill, trainPreview, cutWindow, allocateSpar, cutWeight, hire, fire, fightWeekPaperwork, cagesideReact, bkNext, bkPurse, bkSpot,
+  ensureFM, condition, trainSkill, trainPreview, isMaxed, SKILL_MAX, cutWindow, allocateSpar, cutWeight, hire, fire, fightWeekPaperwork, cagesideReact, bkNext, bkPurse, bkSpot,
   ladderSpot, stage, BKB_NAME, BRADIE, bradieOnYou, askOnlyFighters, postContent, cardSlot, SLOT_NAME, type CutMethod,
 } from '../../sim/fighter';
 import { FightNightScene } from './fightnight';
@@ -299,20 +299,25 @@ export class FMHubScene extends Scene {
       const y = 12 + i * 14;
       const v = f.skills[k];
       const pv = trainPreview(s, k);
-      const trainable = k !== 'heart';
+      const maxed = isMaxed(v);
+      const trainable = k !== 'heart' && !maxed;
       win.body.addChild(text(label, 6, y + 3, { small: true, color: PAL.bone }));
       // the bar: what you have, and (gold) what one session adds
       const bar = new Graphics().rect(60, y + 3, 86, 6).fill(0x1a1820).rect(60, y + 3, Math.round(86 * v / 100), 6).fill(PAL.steel);
       if (trainable) bar.rect(60 + Math.round(86 * v / 100), y + 3, Math.max(1, Math.round(86 * pv.gain / 100)), 6).fill(PAL.gold);
       win.body.addChild(bar);
       win.body.addChild(text(String(Math.round(v)), 150, y + 3, { small: true, color: PAL.bone }));
-      win.body.addChild(text(trainable ? `${(v + pv.gain).toFixed(1)}  (+${pv.gain}${pv.buddy ? `, ${NAME[pv.buddy] ?? pv.buddy} +${pv.buddyGain}` : ''})` : 'comes from real fights', 176, y + 3, { small: true, color: trainable ? PAL.gold : PAL.ash, width: 98, maxLines: 1 }));
-      if (trainable) win.body.addChild(button('TRAIN', 276, y, 38, 12, () => { win.close(); after(k, null); }, { small: true, fill: PAL.steel, disabled: fm(s).ap <= 0 }));
+      const after1 = Math.min(SKILL_MAX, v + pv.gain);
+      win.body.addChild(text(maxed ? 'MAX' : trainable ? `${after1.toFixed(1)}  (+${pv.gain}${pv.buddy ? `, ${NAME[pv.buddy] ?? pv.buddy} +${pv.buddyGain}` : ''})` : 'comes from real fights', 176, y + 3, { small: true, color: maxed ? PAL.moss : trainable ? PAL.gold : PAL.ash, width: 98, maxLines: 1 }));
+      if (maxed && k !== 'heart') win.body.addChild(button('MAX', 276, y, 38, 12, () => {}, { small: true, fill: PAL.shadow, disabled: true }));
+      else if (trainable) win.body.addChild(button('TRAIN', 276, y, 38, 12, () => { win.close(); after(k, null); }, { small: true, fill: PAL.steel, disabled: fm(s).ap <= 0 }));
     });
     const my = 12 + keys.length * 14 + 2;
     win.body.addChild(text('MINI GAMES (a good score beats a normal session):', 6, my, { small: true, color: PAL.gold }));
-    win.body.addChild(button('JUMP ROPE: cardio', 6, my + 10, 150, 13, () => { win.close(); openJumpRope(this.g, (sc) => after('cardio', sc)); }, { small: true, fill: PAL.moss }));
-    win.body.addChild(button('TYRE CHOP: power', 162, my + 10, 150, 13, () => { win.close(); openTyreChop(this.g, (sc) => after('power', sc)); }, { small: true, fill: PAL.moss }));
+    const ropeMax = isMaxed(f.skills.cardio);
+    const chopMax = isMaxed(f.skills.power);
+    win.body.addChild(button(ropeMax ? 'JUMP ROPE: cardio MAX' : 'JUMP ROPE: cardio', 6, my + 10, 150, 13, () => { win.close(); openJumpRope(this.g, (sc) => after('cardio', sc)); }, { small: true, fill: PAL.moss, disabled: ropeMax || fm(s).ap <= 0 }));
+    win.body.addChild(button(chopMax ? 'TYRE CHOP: power MAX' : 'TYRE CHOP: power', 162, my + 10, 150, 13, () => { win.close(); openTyreChop(this.g, (sc) => after('power', sc)); }, { small: true, fill: PAL.moss, disabled: chopMax || fm(s).ap <= 0 }));
     win.body.addChild(text(`Condition: ${cond.label} (x${cond.mult} gains). Training burns a little weight; the real cut is the last two weeks of camp.`, 6, my + 26, { small: true, width: 306, color: cond.label === 'PEAK CONDITION' ? PAL.gold : PAL.ash, maxLines: 2 }));
   }
 
@@ -334,11 +339,14 @@ export class FMHubScene extends Scene {
       keys.forEach(([k, label], i) => {
         const y = 12 + i * 14;
         const n = alloc[k] ?? 0;
+        const now = f.skills[k];
+        // points can't take a skill past the cap: at the cap the row reads MAX
+        const atCap = isMaxed(now + n);
         win.body.addChild(text(label, 6, y + 3, { small: true, color: PAL.bone }));
-        win.body.addChild(text(`${Math.round(f.skills[k])}${n ? `  ->  ${Math.round(f.skills[k] + n)}` : ''}`, 80, y + 3, { small: true, color: n ? PAL.gold : PAL.ash }));
+        win.body.addChild(text(isMaxed(now) ? 'MAX' : `${Math.round(now)}${n ? `  ->  ${atCap ? 'MAX' : Math.round(now + n)}` : ''}`, 80, y + 3, { small: true, color: isMaxed(now) ? PAL.moss : n ? PAL.gold : PAL.ash }));
         win.body.addChild(button('-', 160, y, 16, 12, () => { if (n > 0) { alloc[k] = n - 1; draw(); } }, { small: true, fill: PAL.shadow, disabled: n <= 0 }));
         win.body.addChild(text(String(n), 180, y + 3, { small: true, color: PAL.bone, width: 14, align: 'center' }));
-        win.body.addChild(button('+', 196, y, 16, 12, () => { if (left > 0) { alloc[k] = n + 1; draw(); } }, { small: true, fill: PAL.steel, disabled: left <= 0 }));
+        win.body.addChild(button(atCap ? 'MAX' : '+', 196, y, atCap ? 26 : 16, 12, () => { if (left > 0 && !atCap) { alloc[k] = n + 1; draw(); } }, { small: true, fill: PAL.steel, disabled: left <= 0 || atCap }));
       });
       win.body.addChild(button(left ? 'SAVE THE REST FOR LATER' : 'DONE', 6, 128, 236, 14, () => {
         this.msg = allocateSpar(s, alloc);

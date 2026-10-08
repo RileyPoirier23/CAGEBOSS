@@ -107,6 +107,12 @@ export class Game {
       resolution: 1,
       roundPixels: true,
       preference: 'webgl',
+      // Pixi's GPU garbage collectors unload graphics/textures that look unused; static art (a
+      // cutscene's set, a screen's backdrop) could vanish while the moving parts kept drawing.
+      // The game's GPU footprint is small, so nothing is unloaded behind its back.
+      gcActive: false,
+      renderableGCActive: false,
+      textureGCActive: false,
     });
     parent.appendChild(this.app.canvas);
     this.app.stage.addChild(this.stage);
