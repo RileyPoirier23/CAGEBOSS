@@ -57,15 +57,14 @@ with the same gameplay.
 
 ## Technical note
 
-There's no browser engine on PlayStation, so the PC build (TypeScript + WebGL in Electron)
-can't just be wrapped. The plan in `ENGINE.md` keeps the gameplay code identical and swaps
-only the platform layer, through a porting partner with PlayStation experience. Say this
-plainly in the application: Sony will ask how the game gets onto the console.
+The console version is a **Godot 4** port (W4 Games' PS5 middleware), with automated tests
+that check it plays exactly like the PC version. Say this in the application: Sony will ask
+how the game gets onto the console.
 
 ## After approval: checklist
 
 1. Sign the GDPA. Get the PS Partners portal, docs and the dev kit order form.
-2. Choose and contract the porting partner (`ENGINE.md`), with a feasibility study first.
+2. Buy W4 Consoles (PS5) and set up the Godot port's PlayStation build (`ENGINE.md`).
 3. Wire trophies (the 34 achievements), saves, user accounts, suspend/resume, DualSense
    rumble, and the Technical Requirements Checklist (TRC).
 4. IARC rating, store page (art, description, price, age rating).

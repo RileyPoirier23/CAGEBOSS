@@ -1,73 +1,63 @@
-# How CAGE BOSS gets onto consoles without changing the gameplay
+# The engine: Godot 4 (consoles and phones)
 
-## The rule
+**Decision: port CAGE BOSS to Godot 4, written in GDScript.** One codebase then ships
+everywhere: Windows, Mac, Linux, iPhone, Android, Xbox Series X|S, PlayStation 5 (and
+Switch if we want it).
 
-The game must play exactly the same everywhere. So we **don't rewrite it** in another
-engine (Unity, Godot, Unreal): a rewrite means re-tuning every fight, every number and every
-animation, and some of it would drift. We keep the TypeScript code and only change what sits
-under it.
+## Why Godot
 
-## What the game is made of
+| | Godot 4 | Unity | GameMaker | Defold | Keep TypeScript + a custom console host |
+|---|---|---|---|---|---|
+| Xbox | Yes (W4 Consoles; Microsoft documents Godot with its GDK) | Yes | Yes | **No** (on hold) | Unclear (WebView2 for games unconfirmed) |
+| PlayStation 5 | Yes (W4 Consoles) | Yes | Yes | Yes | Custom C++ host by a porting studio |
+| iPhone / Android | Built in, free | Built in | Built in | Built in | Already works (Capacitor) |
+| Cost for consoles | **W4 Starter: about US$2,000/yr for all three consoles** (US$800/yr for one), for small studios under US$300k revenue | Unity **Pro** required for consoles (about US$2,000+/yr per seat, 12-month minimum) | Enterprise about US$800/yr + Professional US$100 | Free | A porting studio contract (much more) |
+| Engine cost | Free, open source, no royalties | Free under US$200k, then paid | Paid | Free | n/a |
+| Fits this game | **Best:** 2D pixel art, and its drawing calls (polygons, circles, lines) map almost one-to-one onto how CAGE BOSS draws everything | Good, heavier | Good for 2D, weak for a 37,000-line typed codebase | Lua; no Xbox | Same code, but the riskiest and most expensive host |
 
-| Layer | Where | Portable? |
-|---|---|---|
-| Rules: fights, story, careers, money, AI | `src/sim`, `src/core` | **Pure TypeScript.** No browser APIs. Runs in any JavaScript engine as is. Covered by the tests. |
-| Drawing | PixiJS (WebGL) in `src/ui`, `src/art` | Needs WebGL (or a WebGL-compatible layer) |
-| Sound | HTML audio (`src/audio`) | Needs an audio bridge |
-| Input | Gamepad API + keyboard (`src/core/input.ts`) | Needs a pad bridge (pad only on consoles) |
-| Saves | a key/value store mirrored to files (`setStorage`) | Needs a file bridge (console save APIs) |
+Godot wins: it reaches every platform you want, it's the cheapest route to consoles, it's
+built for 2D pixel art, and its drawing model is the closest to what the game already does.
+GDScript rather than C#: GDScript runs on every Godot platform (C# is experimental on phones
+and has no web export), and console middleware supports it first.
 
-So the work on each console is a **host**: something that runs JavaScript and provides
-WebGL, audio, pads and save files. Everything above it is the same code as the PC game.
+## Keeping the gameplay identical
 
-## Xbox: two routes, in order of preference
+A port is only acceptable if fights, careers and the story come out **exactly** the same.
+How we guarantee it:
 
-1. **WebView2 host (zero changes).** A small native shell that shows the built game
-   (`npm run build` → `dist/`) in WebView2, injects `cagebossHost = { platform: 'xbox' }`,
-   and bridges saves, achievements and sign-in. This is the cheapest route **if Microsoft
-   supports WebView2 for GDK games on Xbox at the time we apply**. Public information is
-   mixed and dated (WebView2 has been available to Xbox apps; tool makers have reported that
-   it was UWP-only, not Win32/GDK). **Ask ID@Xbox directly** (the question is written in
-   `XBOX.md`).
-2. **The native host (same as PlayStation, below).** If WebView2 isn't allowed for games,
-   Xbox uses the same native host as PlayStation, so we only build it once.
+1. **The random numbers match bit for bit. Already proven:** `port/godot/core/rng.gd`
+   (the port of `src/core/rng.ts`) produces the identical sequence over 100,000 draws
+   (`port/godot/tests/rng_check.gd` vs `tools/port-check.mjs`).
+2. **The few math functions that differ between machines** (sin, pow, log, exp, about 24
+   uses in the rules) move into one tiny deterministic math module, used the same way by the
+   TypeScript game and the port.
+3. **Golden tests:** the TypeScript game plays thousands of seeded fights and a full
+   900-week career and saves the results. The Godot port must reproduce them exactly before
+   anything ships. Any difference is a porting bug, found by a test, not by a player.
+4. The port goes in this order: the rules (`src/sim`, `src/core`, about 15,500 lines, no
+   graphics), checked against the golden tests; then drawing and screens (`src/ui`,
+   `src/art`, about 20,000 lines), checked by screenshots side by side.
 
-## PlayStation (and Xbox route 2): a native host
+## What happens to the current version
 
-PlayStation has no browser engine, so the PC build can't be wrapped. The minimal-change route:
+The TypeScript game stays the live PC/web version until the Godot version matches it. Then
+Godot becomes the only codebase, and PC, Mac, Linux and phones update to it too. That way
+there's one game to maintain, not two.
 
-- **A small C++ host** with an embedded JavaScript engine (for example QuickJS, which is
-  plain C and portable to console SDKs), running our bundled game file.
-- **A WebGL-compatible drawing layer** on the console's graphics API. PixiJS only uses a
-  small part of WebGL (textured quads, a few shaders), so this is a contained job. A
-  simpler alternative: give PixiJS a custom renderer that calls the host's own 2D draw
-  calls.
-- **Audio, pad and save bridges** behind the same interfaces the game already uses
-  (`src/audio`, `src/core/input.ts`, `setStorage`).
+## Costs and accounts
 
-This is specialist work that needs the console SDKs (only available after approval) and dev
-kits. A solo developer should **contract a porting studio** for the host and certification,
-starting with a paid **feasibility study**. Tell them the codebase is TypeScript/WebGL and
-the gameplay must not change. Ask each studio for:
-- shipped PS5 / Xbox titles, and their certification record (TRC / XR);
-- any experience bringing web-based (HTML5/JavaScript) games to consoles;
-- a fixed quote for the host, plus a separate one for certification support.
+- Godot: free. W4 Consoles Starter: about US$2,000/yr for Xbox + PlayStation + Switch
+  (or US$800/yr for one console), bought once the console programs approve you.
+- ID@Xbox and PlayStation Partners: free to join (drafts in `XBOX.md`, `PLAYSTATION.md`).
+  Dev kits are arranged through each program.
+- Apple US$99/yr, Google US$25 once (`MOBILE.md`).
 
-There is precedent for HTML5 games reaching consoles through a native pipeline instead of
-a browser (CrossCode went through a JavaScript-to-C++ route for Switch).
+## Sources
 
-## What I'll do in the code meanwhile (no gameplay changes)
-
-- Keep `src/sim` free of browser APIs (it already is; the tests run it in Node).
-- Keep every platform call behind one small module per concern, so a host only has to
-  implement those.
-- The pad-only console mode is done: `?platform=xbox` / `?platform=playstation`.
-- Performance pass for TV resolutions (1080p and 4K output; the game renders at 480×270 and
-  scales up, so the GPU cost is small).
-
-## Cost and time (rough)
-
-- Programs: free (ID@Xbox and PlayStation Partners). Dev kits: loaned or bought, depending on
-  the program and the year.
-- Porting partner: a feasibility study first, then a quote. Budget months, not weeks.
-- IARC rating: free.
+- W4 Games console pricing: https://www.w4games.com/w4consoles and
+  https://gamefromscratch.com/w4-games-release-godot-w4-console-pricing/
+- Godot console support: https://docs.godotengine.org/en/4.5/tutorials/platform/consoles.html
+- Microsoft GDK and Godot: https://devdocs.xbox.com/build/gdk-and-engines/godot
+- Unity Pro needed for consoles: https://unity.com/products/unity-personal
+- GameMaker console exports: https://gamemaker.io/get
+- Defold and Xbox: https://defold.com/manuals/microsoft-xbox

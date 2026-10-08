@@ -25,7 +25,7 @@ Everything below is written to paste in. Fill in the `[brackets]`.
 | Country | Canada |
 | Team size | 1 (solo developer; music licensed from local artists) |
 | Previously shipped titles | CAGE BOSS (Windows, Mac, Linux, free on 506clicks.ca, v2.0, October 2026) |
-| Engine / technology | TypeScript + WebGL (PixiJS). Runs in a browser engine on PC; see the runtime question below |
+| Engine / technology | Godot 4 for console (W4 Consoles middleware); the PC version is TypeScript/WebGL |
 
 ## The game
 
@@ -66,13 +66,11 @@ the same gameplay.
 **Media to attach:** the 2.0 trailer, 5 to 8 screenshots (fight, story cutscene, desk,
 title screen, trophy case), and a link to the free PC build so they can play it.
 
-## Technical question: how it runs on Xbox
+## Technical approach
 
-> CAGE BOSS is written in TypeScript and renders with WebGL. The PC version ships in
-> Electron. For Xbox we'd like to keep the game code identical and host it in a
-> WebView2-based shell. We'd appreciate guidance on the currently supported path for a
-> WebGL/HTML5 game under the GDK (WebView2 under Win32 GDK, or UWP packaging). If a native
-> runtime is required, we plan to work with a porting partner (see `ENGINE.md`).
+> The PC version is TypeScript/WebGL. The console version is being ported to **Godot 4**
+> (GDScript), using W4 Games' console middleware, with automated tests that check the port
+> plays exactly like the PC version.
 
 ## Content and rating (IARC questionnaire answers)
 

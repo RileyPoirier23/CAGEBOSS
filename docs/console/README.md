@@ -8,7 +8,7 @@ send them: they need his studio details and signatures.
 |---|---|---|
 | 1. Apply to ID@Xbox (Microsoft) | Riley | Draft ready: `XBOX.md` |
 | 2. Register on PlayStation Partners (Sony) | Riley | Draft ready: `PLAYSTATION.md` |
-| 3. Pick the console runtime (keeps the gameplay identical) | Riley + porting partner | Plan: `ENGINE.md` |
+| 3. Engine: **Godot 4** (consoles + phones, gameplay kept identical) | code | Chosen: `ENGINE.md`; port started in `port/godot` |
 | 4. Console build flag: pad-only prompts, PlayStation button names | code | **Done** (see below) |
 | 5. Age ratings (IARC questionnaire, free on both stores) | Riley | Answers drafted in `XBOX.md` |
 | 6. Certification (Xbox XR / PlayStation TRC), dev kits, store pages | Riley + partner | After approval |
