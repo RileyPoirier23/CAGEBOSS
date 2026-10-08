@@ -29,7 +29,8 @@ import { TouchFightPad } from './fightpad';
 import { setPadUiMode } from './controller';
 import { fighterPortrait } from './sprites';
 import { sfx } from '../audio/sfx';
-import { LiveFight, LiveAI, GPOS_NAME, type LiveEvent, type Side } from '../sim/live';
+import { LiveFight, LiveAI, GPOS_NAME, type LiveEvent, type LiveRules, type Side } from '../sim/live';
+import type { Look2 } from './rig';
 import { openHelp } from './help';
 import { liveTutorial } from './tutorial';
 import type { GamePlan } from '../sim/fight';
@@ -58,6 +59,9 @@ export interface LiveFightOpts {
   ev?: FightEvent;
   /** local 2-player versus: each player's controller (-1 = none) and share of the keyboard */
   versus?: { p1: { pad?: number; kb: KeyboardShare }; p2: { pad?: number; kb: KeyboardShare } };
+  /** special rules for this fight (the story's boss fights), and a referee who looks like himself */
+  rules?: LiveRules;
+  refLook?: Look2;
   done: (r: FightResult) => void;
 }
 
@@ -76,6 +80,7 @@ const TIE_NAME = { collar: 'COLLAR TIE', under: 'DOUBLE UNDERHOOKS', plum: 'THAI
 
 export function openLiveFight(g: Game, o: LiveFightOpts): void {
   const L = new LiveFight(o.A, o.B, o.skills[0], o.skills[1], o.bout.rounds, o.seed);
+  if (o.rules) L.rules = { referee: o.referee, ...o.rules };
   (window as unknown as { __live?: LiveFight }).__live = L; // debug / automated testing hook
   const P = o.player;
   const O = (1 - P) as Side;
@@ -95,7 +100,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
 
   const root = new Container();
   root.addChild(new Graphics().rect(0, 0, W, H).fill(0x0c0a10));
-  const arena = new ArenaView(o.A, o.B, o.bout.rounds, { event: o.event, eventKey: o.bout.id, sponsors: o.sponsors, canvas: o.canvas, bare: o.bare });
+  const arena = new ArenaView(o.A, o.B, o.bout.rounds, { event: o.event, eventKey: o.bout.id, sponsors: o.sponsors, canvas: o.canvas, bare: o.bare, refLook: o.refLook });
   (window as unknown as { __liveArena?: ArenaView }).__liveArena = arena;
   arena.manual = [L.F[0].x, L.F[1].x];
   arena.startFight();
@@ -375,6 +380,10 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         break;
       }
       case 'miss':
+        if (e.name === 'STAND AND BANG') {
+          if (a === P) arena.showCallout('STAND AND BANG ONLY!');
+          break;
+        }
         sfx('whoosh');
         break;
       case 'block':

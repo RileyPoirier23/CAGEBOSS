@@ -153,8 +153,23 @@ const LINE_KEY: Record<string, string> = {
   round_start: 'round_start', bell: 'round_end', tap: 'tap', ko: 'ko_live', tko: 'tko_live', getup: 'standup', standup: 'standup', idle: 'clinch_work',
 };
 
+/** Special rules for one fight (the story's boss fights). */
+export interface LiveRules {
+  /** nobody can be finished before this round: they beat the count, they escape, the doctor waves it on */
+  protectUntil?: number;
+  /** this side throws a disqualifying blow at this point (round, seconds into it) */
+  dq?: { side: Side; round: number; at: number; text: string };
+  /** no takedowns, no clinch: stand and bang */
+  noGrappling?: boolean;
+  /** the referee is bought: this side fouls more and never gets called; the other side always does */
+  bought?: Side;
+  referee?: string;
+}
+
 export class LiveFight {
   F: [LiveFighter, LiveFighter];
+  rules: LiveRules = {};
+  private dqDone = false;
   round = 1;
   clock = ROUND_SECONDS;
   phase: 'fight' | 'break' | 'over' = 'fight';
@@ -176,7 +191,7 @@ export class LiveFight {
   events: LiveEvent[] = [];
   /** per round, per side: points for the cards */
   rpts: [number, number][] = [[0, 0]];
-  result: { winner: Side | -1; method: 'KO' | 'TKO' | 'SUB' | 'DEC' | 'DRAW' | 'NC' | 'DOC'; detail: string; round: number; time: string } | null = null;
+  result: { winner: Side | -1; method: 'KO' | 'TKO' | 'SUB' | 'DEC' | 'DRAW' | 'NC' | 'DOC' | 'DQ'; detail: string; round: number; time: string } | null = null;
   /** in-fight injuries (fighter side, name, weeks out) and fouls, like the sim keeps */
   injuries: { side: Side; name: string; weeks: number }[] = [];
   fouls: { side: Side; text: string; penalized: boolean }[] = [];
@@ -250,7 +265,48 @@ export class LiveFight {
     if (this.pos === 'clinch') this.tickClinch(dt);
     if (this.pos === 'ground') this.tickGround(dt);
     if (this.clock <= 0 && !this.result) this.endRound();
+    this.checkRules();
     this.checkEnd();
+  }
+
+  /** Scripted moments (boss fights). */
+  private checkRules(): void {
+    const d = this.rules.dq;
+    if (!d || this.dqDone || this.result || this.round !== d.round) return;
+    if (300 - (this.clock / ROUND_SECONDS) * 300 < d.at) return;
+    this.dqDone = true;
+    const v = (1 - d.side) as Side;
+    this.F[d.side].act = null;
+    this.F[v].act = null;
+    this.F[v].stun = 2;
+    this.F[v].hp = Math.max(1, this.F[v].hp - 6);
+    this.pos = 'stand';
+    this.sub = null;
+    this.fouls.push({ side: d.side, text: 'Low blow (intentional)', penalized: true });
+    this.ev({ type: 'foul', side: d.side, name: 'LOW BLOW' });
+    this.line(d.side, 'foul', d.text, 3);
+    this.log[this.log.length - 1].key = 'foul_groin';
+    this.line(v, 'stop', `That's it. The referee waves it off: ${this.name(d.side)} is DISQUALIFIED!`, 3);
+    this.log[this.log.length - 1].key = 'cannot_continue';
+    this.result = { winner: v, method: 'DQ', detail: 'Disqualification (intentional low blow)', round: this.round, time: this.clockElapsed() };
+    this.phase = 'over';
+    this.ev({ type: 'tko', side: v });
+  }
+
+  /** Too early to finish this one (boss fights): he survives instead. */
+  private protectedNow(loser: Side): boolean {
+    if (!this.rules.protectUntil || this.round >= this.rules.protectUntil) return false;
+    const f = this.F[loser];
+    f.hp = Math.max(f.hp, 18);
+    f.down = 0;
+    f.getup = 0;
+    f.stun = Math.max(f.stun, 0.8);
+    this.sub = null;
+    if (this.pos === 'ground') this.pos = 'stand';
+    this.fixGap();
+    this.ev({ type: 'getup', side: loser });
+    this.line(loser, 'getup', `${this.name(loser)} is somehow still in this. He will NOT go away.`, 2);
+    return true;
   }
 
   private tickFighter(i: Side, dt: number): void {
@@ -387,6 +443,7 @@ export class LiveFight {
       case 'clinch':
         if (this.pos === 'clinch') return this.clinchMove(i, 'break');
         if (this.pos !== 'stand' || this.dist > 54) return;
+        if (this.rules.noGrappling) return this.ev({ type: 'miss', side: i, name: 'STAND AND BANG' });
         f.gas = Math.max(0, f.gas - 3);
         if (this.rng.chance(clamp(0.45 + (f.sk.wrestling - o.sk.wrestling) / 120 + (o.stun > 0 ? 0.3 : 0) + (o.act ? 0.15 : 0), 0.1, 0.9))) {
           this.pos = 'clinch';
@@ -403,6 +460,7 @@ export class LiveFight {
       case 'shoot':
         if (this.pos === 'ground') return;
         if (this.pos === 'stand' && this.dist > 70) return;
+        if (this.rules.noGrappling) return this.ev({ type: 'miss', side: i, name: 'STAND AND BANG' });
         this.startAct(f, { kind: 'shoot', name: 'shoot', wind: this.pos === 'clinch' ? 0.3 : 0.42, rec: 0.35, dmg: 0, reach: 70, target: 'body', heavy: false }, 5);
         this.shooting = i;
         this.ev({ type: 'shoot', side: i });
@@ -751,7 +809,8 @@ export class LiveFight {
       }
     }
     // accidents happen: eye pokes off a jab, low blows off a front or leg kick, knees to a downed man
-    if (this.pos === 'stand' && this.rng.chance(a.name === 'jab' || a.name === 'cross' ? 0.006 : a.name === 'front kick' || a.name === 'legkick' ? 0.012 : 0)) {
+    const dirty = this.rules.bought === i ? 6 : 1;
+    if (this.pos === 'stand' && this.rng.chance((a.name === 'jab' || a.name === 'cross' ? 0.006 : a.name === 'front kick' || a.name === 'legkick' ? 0.012 : 0) * dirty)) {
       return this.foul(i, a.name === 'jab' || a.name === 'cross' ? 'eyepoke' : 'groin');
     }
     if (o.parryT > 0 && a.target === 'head' && a.kind === 'punch' && o.stun <= 0) {
@@ -1129,7 +1188,9 @@ export class LiveFight {
     const f = this.F[i];
     const label = { eyepoke: 'Eye poke', groin: 'Low blow', fence: 'Grabbing the fence' }[kind];
     const prior = this.fouls.filter((x) => x.side === i).length;
-    const penalized = kind === 'fence' ? prior >= 1 : prior >= 1 && this.rng.chance(0.6);
+    // a bought referee: his man never gets called, the other man always does
+    const bought = this.rules.bought;
+    const penalized = bought === i ? false : bought !== undefined ? true : kind === 'fence' ? prior >= 1 : prior >= 1 && this.rng.chance(0.6);
     this.fouls.push({ side: i, text: label, penalized });
     f.act = null;
     o.act = null;
@@ -1149,8 +1210,12 @@ export class LiveFight {
       this.line(i, 'foul', `The referee takes a point from ${this.name(i)}.`, 2);
       this.log[this.log.length - 1].key = 'deduction';
     }
-    // sometimes he can't continue
-    if (kind !== 'fence' && this.rng.chance(0.06)) {
+    if (bought === i) {
+      this.line(-1, 'idle', `${this.rules.referee ?? 'The referee'} saw nothing. He was adjusting his glasses. "Keep it clean, boys," he says, to one of them.`, 2);
+      this.log[this.log.length - 1].key = 'ref_blind';
+    }
+    // sometimes he can't continue (not in the boss fights: those go to the script)
+    if (kind !== 'fence' && bought === undefined && !this.rules.protectUntil && this.rng.chance(0.06)) {
       const early = this.round === 1 || (this.round === 2 && this.clock > ROUND_SECONDS / 2);
       this.line((1 - i) as Side, 'stop', `${this.name((1 - i) as Side)} can't continue.`, 3);
       this.log[this.log.length - 1].key = 'cannot_continue';
@@ -1193,6 +1258,10 @@ export class LiveFight {
     const c = this.F[i].cut;
     this.ev({ type: 'doctor', side: i });
     this.line(-1, 'doctor', `The referee brings in the doctor to look at ${this.name(i)}'s cut.`, 2);
+    if (this.rules.protectUntil && this.round < this.rules.protectUntil) {
+      this.line(-1, 'idle', 'The doctor lets it continue. The crowd roars.', 2);
+      return;
+    }
     if (!midRound || this.rng.chance(clamp((c - 4) * 0.25, 0.15, 0.8))) {
       this.line((1 - i) as Side, 'stop', `The doctor waves it off! ${this.name(i)} can't see out of that eye.`, 3);
       this.log[this.log.length - 1].key = 'doctor';
@@ -1207,6 +1276,7 @@ export class LiveFight {
 
   private finish(winner: Side, method: 'KO' | 'TKO' | 'SUB', detail: string): void {
     if (this.result) return;
+    if (this.protectedNow((1 - winner) as Side)) return;
     // a knockout costs the loser time off (concussion protocol)
     if (method === 'KO' || (method === 'TKO' && !/Injury|Doctor/.test(detail))) this.injuries.push({ side: (1 - winner) as Side, name: 'concussion', weeks: method === 'KO' ? this.rng.int(6, 10) : this.rng.int(3, 6) });
     this.result = { winner, method, detail, round: this.round, time: this.clockElapsed() };
@@ -1223,6 +1293,7 @@ export class LiveFight {
 
   /** The doctor or the corner can stop it between rounds. */
   stopBetweenRounds(loser: Side, why: string): void {
+    if (this.rules.protectUntil && this.round < this.rules.protectUntil) return;
     this.result = { winner: (1 - loser) as Side, method: 'TKO', detail: why, round: this.round, time: '5:00' };
     this.phase = 'over';
   }

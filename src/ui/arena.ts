@@ -138,6 +138,9 @@ interface Actor {
   spin: number; // >0 while doing the Buffer 360
 }
 
+/** Very short and very tall fighters look it (everybody else is drawn the same size). */
+export const sizeFor = (f: Fighter): number => (f.height < 165 || f.height > 193 ? Math.max(0.74, Math.min(1.14, f.height / 180)) : 1);
+
 const REF_LOOK: Look2 = {
   skin: 0x8d5a3b, hairStyle: 0, hairColor: 0x1a1412, beard: 2, build: 1, trunks: 0x111111, trim: 0x111111, glove: 0x2a5aa8,
   stance: 'upright', female: false, tattoo: 0,
@@ -260,7 +263,7 @@ export class ArenaView extends Container {
     public A: Fighter,
     public B: Fighter,
     public rounds: number,
-    private info: { network?: string; event?: string; promo?: string; champs?: [boolean, boolean]; eventKey?: string; sponsors?: { name: string; color: number }[]; canvas?: CanvasInfo; bare?: boolean } = {},
+    private info: { network?: string; event?: string; promo?: string; champs?: [boolean, boolean]; eventKey?: string; sponsors?: { name: string; color: number }[]; canvas?: CanvasInfo; bare?: boolean; refLook?: Look2 } = {},
   ) {
     super();
     const key = info.eventKey ?? info.event ?? '';
@@ -275,7 +278,7 @@ export class ArenaView extends Container {
       { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: CORNERS[0], lunge: 0, recoil: 0, facing: 1 },
       { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: CORNERS[1], lunge: 0, recoil: 0, facing: -1 },
     ];
-    this.ref = { rig: { ...POSES.stand }, pose: 'stand', x: AW / 2 + 70, tx: AW / 2 + 70, facing: -1, look: REF_LOOK, visible: true, spin: 0 };
+    this.ref = { rig: { ...POSES.stand }, pose: 'stand', x: AW / 2 + 70, tx: AW / 2 + 70, facing: -1, look: info.refLook ?? REF_LOOK, visible: true, spin: 0 };
     this.butler = { rig: { ...POSES.mic }, pose: 'mic', x: AW / 2, tx: AW / 2, facing: 1, look: BUTLER_LOOK, visible: false, spin: 0 };
     this.worldInner.addChild(this.bg, this.matLogo, this.stainG, this.crowd, this.ads, this.lights, this.fighters, this.fx, this.front);
     this.buildAds();
@@ -1666,7 +1669,7 @@ export class ArenaView extends Container {
       const x = f.x + (f.lunge - f.recoil) * f.facing + shake;
       if (ground && this.subAnim?.tapped && i !== this.subAnim.atk && Math.floor(this.t * 8) % 2 === 0) f.rig = { ...f.rig, haB: [f.rig.haB[0], Math.min(0, f.rig.haB[1] + 4)] };
       this.L[i].faceUp = SUPINE.has(this.drawPose[i]);
-      drawRig(g, this.stepped(f), Math.round(x), FLOOR, f.facing, this.L[i]);
+      drawRig(g, this.stepped(f), Math.round(x), FLOOR, f.facing, this.L[i], sizeFor(i === 0 ? this.A : this.B));
     }
     // particles
     const p = this.fx;

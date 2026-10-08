@@ -197,6 +197,20 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
   // ------------------------------------------------------------ long hair behind the head
   const hs = look.hair;
   const recede = age >= 33 && !female ? Math.min(4, Math.floor((age - 31) / 3)) : 0;
+  if (hs === 9) {
+    // long waves past the shoulders, middle part: a full mane behind the head and neck
+    for (let y = top + 3; y < P; y++) {
+      const wave = Math.round(Math.sin(y / 3.2) * 1.5);
+      const grow = Math.min(5, (y - top - 3) * 0.8);
+      const hw = Math.round(Math.max(hwAt(Math.min(y, chinY)), shape.temple) + grow + (y > chinY ? Math.min(6, (y - chinY) / 2) : 0) + wave);
+      for (let x = CX - hw; x < CX + hw; x++) {
+        const curl = ((x * 5 + y * 3 + rnd(x & 31)) % 7 === 0) ? 0.22 : ((x + y * 2) % 9 === 0 ? -0.15 : 0);
+        b.set(x, y, ramp(HR, 0.3 + 0.45 * (1 - (x - (CX - hw)) / (2 * hw)) + curl - (y - top) / 200, x, y));
+      }
+      b.set(CX - hw - 1, y, shade(HR[0], -0.4));
+      b.set(CX + hw, y, shade(HR[0], -0.4));
+    }
+  }
   if (hs === 5 || (female && (hs === 6 || hs === 7))) {
     const len = female ? 58 : 50;
     for (let y = top + 4; y < len; y++) {
@@ -244,14 +258,26 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
       b.set(CX + 2 + i, 61 - Math.floor(i / 4), SK[1]);
     }
     for (let y = shoulderY + 4; y < P; y++) b.set(CX, y, SK[2]);
-    if (!female && look.beard >= 3 && rnd(5) % 2) for (let i = 0; i < 18; i++) b.set(CX - 6 + (rnd(i + 40) % 12), shoulderY + 5 + (rnd(i + 60) % 8), HR[1]);
+    if (!female && (look.beard === 3 || look.beard === 4) && rnd(5) % 2) for (let i = 0; i < 18; i++) b.set(CX - 6 + (rnd(i + 40) % 12), shoulderY + 5 + (rnd(i + 60) % 8), HR[1]);
     if (female) {
       // sports bra
       for (let y = 58; y < P; y++) b.hline(CX - 14, CX + 13, y, y === 58 ? 0x121214 : 0x26262c);
       b.hline(CX - 12, CX - 8, 55, 0x26262c);
       b.hline(CX + 7, CX + 11, 55, 0x26262c);
     }
-    if (look.tattoo >= 2) {
+    if (look.inkArt === 1) {
+      // koi on the shoulder: a curved black body, red scales, a flicked tail
+      const ink = shade(skin, -0.62);
+      const red = 0xb0302a;
+      const kx = CX + 19;
+      const ky = shoulderY + 2;
+      const body: [number, number][] = [[0, 0], [1, 0], [2, 1], [3, 1], [4, 2], [5, 3], [5, 4], [4, 5], [3, 6], [2, 6], [1, 7], [0, 8]];
+      for (const [dx, dy] of body) b.set(kx + dx, ky + dy, ink);
+      for (const [dx, dy] of [[1, 1], [2, 2], [3, 2], [4, 3], [3, 4], [2, 5]]) b.set(kx + dx, ky + dy, red);
+      b.set(kx - 1, ky + 8, ink); b.set(kx - 1, ky + 9, ink); b.set(kx + 1, ky + 9, ink); // tail
+      b.set(kx + 6, ky + 3, ink); b.set(kx - 1, ky + 1, ink); // fins
+      b.set(kx + 1, ky + 1, 0x101010); // eye
+    } else if (look.tattoo >= 2) {
       // shoulder / chest piece
       for (let i = 0; i < 22; i++) {
         const tx = CX - 20 + (rnd(i) % 9);
@@ -469,6 +495,30 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
       for (let x = CX - 6; x < CX + 6; x += 2) b.set(x, top + 5 + ((x + rnd(x & 15)) % 2), HR[1]);
       break;
     }
+    case 9: { // long waves, middle part: curtains framing the face, locks falling over the shoulders
+      capRows(7, 0, 4, false);
+      // the middle part, and the hair sweeping away from it on both sides
+      for (let y = top - 3; y < top + 6; y++) b.set(CX - 1, y, shade(HR[0], -0.25));
+      for (let k = 1; k < 7; k++) {
+        b.set(CX - 1 - k, top - 3 + Math.floor(k / 2), HR[3]);
+        b.set(CX + k, top - 3 + Math.floor(k / 2), HR[2]);
+      }
+      for (const side of [-1, 1]) {
+        for (let y = top + 4; y < P; y++) {
+          const face = y <= chinY ? hwAt(y) : neckW + 2;
+          const wave = Math.round(Math.sin(y / 2.6 + (side > 0 ? 1.4 : 0)) * 1.2);
+          const w0 = y < eyeY ? 4 : y < chinY ? 3 : 5 + Math.min(3, Math.floor((y - chinY) / 4));
+          for (let k = 0; k < w0; k++) {
+            const x = side < 0 ? CX - face - 1 - k + wave : CX + face + k + wave;
+            const strand = (x * 3 + y) % 5 === 0 ? 0.2 : (x + y) % 7 === 0 ? -0.18 : 0;
+            b.set(x, y, ramp(HR, (side < 0 ? 0.62 : 0.4) - k * 0.05 + strand - (y - top) / 180, x, y));
+          }
+          // a soft fringe falling across the temples
+          if (y < eyeY - 1) for (let k = 0; k < 2; k++) b.set(side < 0 ? CX - face + k : CX + face - 1 - k, y, HR[side < 0 ? 2 : 1]);
+        }
+      }
+      break;
+    }
     case 7: // man bun / ponytail
       capRows(6, 0, 2);
       for (let y = top - 7; y < top - 1; y++) for (let x = CX - 3; x < CX + 4; x++) if (Math.hypot(x - CX, y - (top - 4)) < 3.6) b.set(x, y, ramp(HR, 0.6 - (x - CX) / 8, x, y));
@@ -478,6 +528,45 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
   if (grey > 0.3 && hs !== 0) for (let y = eyeY - 6; y < eyeY; y++) {
     b.set(CX - hwAt(y), y, 0xb8b5ae);
     b.set(CX + hwAt(y) - 1, y, 0xb8b5ae);
+  }
+
+  if (look.hat === 1) {
+    // cowboy hat: brown felt crown with a pinch, a band, and a wide curled brim
+    const felt = [0x3a2616, 0x5a3c22, 0x7a5432, 0x96703e];
+    const brimY = top + 4;
+    for (let y = top - 9; y < brimY; y++) {
+      const hw = 10 - (y < top - 6 ? 1 : 0);
+      for (let x = CX - hw; x < CX + hw; x++) {
+        if (y === top - 9 && Math.abs(x - CX + 0.5) < 3) continue; // the pinch
+        b.set(x, y, ramp(felt, 0.7 - (x - CX) / 26 - (y - top) / 40, x, y));
+      }
+      b.set(CX - hw - 1, y, 0x1a1008);
+      b.set(CX + hw, y, 0x1a1008);
+    }
+    b.hline(CX - 10, CX + 9, brimY - 3, 0x2a1a0e);
+    b.hline(CX - 10, CX + 9, brimY - 2, 0x4a3018);
+    for (let x = CX - 22; x < CX + 22; x++) {
+      const curl = Math.abs(x - CX + 0.5) > 17 ? -1 : 0;
+      b.set(x, brimY + curl, ramp(felt, 0.75 - (x - CX) / 50, x, brimY));
+      b.set(x, brimY + 1 + curl, felt[0]);
+    }
+  } else if (look.hat === 2) {
+    // leprechaun top hat: green, black band, gold buckle, cocked to one side
+    const G = [0x14401e, 0x1e5a2a, 0x2a7a38, 0x3a9a48];
+    const brimY = top + 2;
+    for (let y = top - 9; y < brimY; y++) {
+      const tilt = Math.round((brimY - y) / 6);
+      for (let x = CX - 8 + tilt; x < CX + 8 + tilt; x++) b.set(x, y, ramp(G, 0.7 - (x - CX - tilt) / 20, x, y));
+      b.set(CX - 9 + tilt, y, 0x08200c);
+      b.set(CX + 8 + tilt, y, 0x08200c);
+      if (y >= brimY - 5 && y < brimY - 1) for (let x = CX - 8 + tilt; x < CX + 8 + tilt; x++) b.set(x, y, 0x101010);
+    }
+    b.rect(CX - 2, brimY - 5, 4, 4, 0xd8b040);
+    b.rect(CX - 1, brimY - 4, 2, 2, 0x101010);
+    for (let x = CX - 14; x < CX + 14; x++) {
+      b.set(x, brimY, G[2]);
+      b.set(x, brimY + 1, G[0]);
+    }
   }
 
   if (look.beanie) {
@@ -515,7 +604,7 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
   }
 
   // ------------------------------------------------------------ eyes
-  const IRIS = [0x3a2a1c, 0x4a3420, 0x2c4a6a, 0x3a5a3a, 0x5a4428][rnd(3) % 5];
+  const IRIS = [0x3a2a1c, 0x4a3420, 0x2c4a6a, 0x3a5a3a, 0x5a4428, 0x6a8698][look.iris ?? rnd(3) % 5];
   const drawEye = (cx: number, shut: boolean, squint: boolean) => {
     // socket shadow
     for (let i = -3; i <= 3; i++) b.set(cx + i, eyeY - 2, SK[1]);
@@ -655,6 +744,25 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
       });
       for (let i = -mw - 1; i <= mw + 1; i++) b.set(CX + i, mouthY - 2, BR[1]);
       for (let y = chinY + 1; y < chinY + 4; y++) for (let x = CX - 6 + (y - chinY); x < CX + 6 - (y - chinY); x++) b.set(x, y, BR[(x + y) % 2]);
+    } else if (look.beard === 6) {
+      // a beard to the belt: full on the jaw, then a long ginger waterfall down the chest
+      jawRows(eyeY + 3, (x, y) => {
+        const rel = (x - CX) / hwAt(y);
+        if (!(Math.abs(rel) > 0.55 || y > mouthY - 3)) return;
+        if (Math.abs(x - CX) <= mw && Math.abs(y - mouthY) <= 1) return;
+        b.set(x, y, ramp(BR, 0.6 - rel * 0.25 + ((x * 5 + y * 3) % 4 === 0 ? 0.25 : 0), x, y));
+      });
+      for (let i = -mw - 1; i <= mw + 1; i++) b.set(CX + i, mouthY - 2, BR[2]);
+      for (let y = chinY + 1; y < P; y++) {
+        const hw = Math.max(2, Math.round(hwAt(chinY) - (y - chinY) * 0.35));
+        for (let x = CX - hw; x < CX + hw; x++) b.set(x, y, ramp(BR, 0.55 - (x - CX) / 14 + ((x * 3 + y) % 4 === 0 ? 0.22 : 0) + (y % 5 === 0 ? -0.1 : 0), x, y));
+        b.set(CX - hw - 1, y, shade(BR[0], -0.3));
+        b.set(CX + hw, y, shade(BR[0], -0.3));
+      }
+    } else if (look.beard === 5) {
+      // young guy's fuzz: a thin moustache, a patch under the lip, a shadow along the jaw
+      for (let i = -mw; i <= mw; i++) if ((i + 32) % 3 !== 0) b.set(CX + i, mouthY - 2, BR[1]);
+      for (let y = mouthY + 2; y <= mouthY + 4; y++) for (let x = CX - 1; x <= CX; x++) b.set(x, y, BR[(x + y) % 2 ? 1 : 0]);
     } else if (look.beard === 4) {
       // moustache (handlebar if the seed says so)
       for (let i = -mw - 1; i <= mw + 1; i++) {
@@ -680,7 +788,8 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
     b.set(eyeR + 3, eyeY + 4, shade(skin, -0.65));
     b.set(eyeR + 2, eyeY + 4, shade(skin, -0.5));
   }
-  if (look.skin <= 1 && rnd(12) % 3 === 0) for (let i = 0; i < 8; i++) b.set(CX - 8 + (rnd(i + 70) % 16), noseY - 2 + (rnd(i + 80) % 3), shade(skin, -0.2)); // freckles
+  if (look.freckles) for (let i = 0; i < 10; i++) b.set(CX - 9 + (rnd(i + 90) % 18), noseY - 3 + (rnd(i + 110) % 3), shade(skin, -0.1));
+  else if (look.skin <= 1 && rnd(12) % 3 === 0) for (let i = 0; i < 8; i++) b.set(CX - 8 + (rnd(i + 70) % 16), noseY - 2 + (rnd(i + 80) % 3), shade(skin, -0.2)); // freckles
 
   // ------------------------------------------------------------ fight damage
   if (w) {
@@ -776,7 +885,10 @@ export function drawPortrait(inp: PortraitInput): PixelBuf {
     }
     b.hline(eyeL + 4, eyeR - 5, eyeY - 2, 0x1a1a1a);
   }
-  if ((variant === 'press' || variant === 'belt') && !female && rnd(21) % 4 === 0) {
+  if (look.chain) {
+    // thin gold chain, resting on the collarbones
+    for (let i = -10; i <= 10; i++) b.set(CX + i, shoulderY + 2 + Math.round((i * i) / 16), (i % 2 ? 0xe8c868 : 0xa8862a));
+  } else if ((variant === 'press' || variant === 'belt') && !female && rnd(21) % 4 === 0) {
     // gold chain
     for (let i = -9; i <= 9; i++) b.set(CX + i, shoulderY + 3 + Math.round((i * i) / 20), (i % 2 ? 0xe0c060 : 0xa8862a));
   }

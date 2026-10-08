@@ -212,6 +212,12 @@ export interface Look2 {
   brows?: number;
   scar?: number;
   glasses?: number;
+  /** 1 = cowboy hat, 2 = leprechaun top hat */
+  hat?: number;
+  /** thin gold chain */
+  chain?: boolean;
+  /** 1 = koi on the shoulder */
+  inkArt?: number;
   /** clothing for non-fighters (referee, ring announcer, cutmen) */
   outfit?: { top: number; bottom: number; shirt?: number; tie?: number; bulk?: number; mic?: boolean; shortSleeves?: boolean; hands?: number; patch?: number };
 }
@@ -285,6 +291,10 @@ export function lookFor(f: Fighter, corner: 0 | 1, champ = false): Look2 {
     ears: Math.min(3, f.look.ears + (f.styles.includes('Wrestler') || f.styles.includes('Sub Hunter') ? 1 : 0)),
     brows: f.look.brows,
     scar: f.look.scar,
+    hat: f.look.hat,
+    chain: !!f.look.chain,
+    inkArt: f.look.inkArt,
+    glasses: f.look.glasses === 2 ? 2 : undefined,
   };
 }
 
@@ -574,6 +584,13 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
           break;
       }
     }
+    if (L.inkArt === 1) {
+      // koi on the shoulder: dark body, red scales
+      line(P(0.04, tw * 0.28), P(0.2, tw * 0.46), ink, 1.3);
+      g.circle(...T(P(0.1, tw * 0.38)), 0.8 * s).fill(0xb0302a);
+      g.circle(...T(P(0.16, tw * 0.43)), 0.6 * s).fill(0xb0302a);
+    }
+    if (L.chain) line(P(0.06, tw * 0.4), P(0.14, -tw * 0.05), 0xe0c060, 0.6);
     if (L.tattoo >= 2) {
       // rib piece: a little script + star
       line(P(0.3, -tw * 0.18), P(0.62, -tw * 0.26), shade(skin, -0.45), 0.8);
@@ -744,6 +761,20 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
       g.poly(poly([[-4, -2], [-7.8, -1.5], [-9 - sw, fem ? 13 : 9], [-5.5 - sw * 0.6, fem ? 12 : 8], [-3.5, 3]])).fill(hc).stroke({ color: OUT, width: 1 * s });
       hl([-6.5, 1], [-7.5 - sw * 0.7, fem ? 10 : 7], hcD, 0.6);
       break;
+    case 8:
+      // curly mop: a big cloud of curls
+      capFill(-20, -215, 3.4, hc, 1.2);
+      for (let k = 0; k < 7; k++) g.circle(...hpt(-7 + k * 2.2, -9.5 + Math.abs(k - 3) * 0.7), 1.6 * s).fill(k % 2 ? hc : hcD);
+      break;
+    case 9:
+      // long waves: a big mane falling past the shoulders, swinging
+      capFill(-30, -210, 2.8, hc, 0.4);
+      g.poly(poly([[-3.5, -3], [-8.4, -2.5], [-10.5 - sw, 6], [-10 - sw * 1.1, 13], [-6 - sw * 0.7, 12.5], [-6.5 - sw * 0.5, 6], [-3.5, 3]])).fill(hc).stroke({ color: OUT, width: 1 * s });
+      hl([-7, 0], [-8.5 - sw * 0.8, 9], hcD, 0.6);
+      hl([-5.2, 2], [-7 - sw * 0.6, 11], hcD, 0.5);
+      // a lock in front of the ear
+      g.poly(poly([[0.5, -5.5], [2.2, -4.5], [1.8, 2.5], [0, 4]])).fill(hc);
+      break;
     case 6:
       // braids / cornrows: tight lanes over the crown; women keep a long braid that swings
       capFill(-45, -200, 1.4, hc);
@@ -761,16 +792,41 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
       capFill(-40, -200, 1.9, hc, 0.3);
       g.poly(poly([[-1.5, -1], [-2, 2.5], [0.2, 1]])).fill(hc); // sideburn
   }
-  if (L.beard === 3) {
+  if (L.beard === 6) {
+    // a beard to the belt
+    g.poly(poly([[-2.4, 3], [3, 7.6], [5, 14], [3.5, 19], [1.5, 13], [0.5, 8], [0.5, 1.4]])).fill(hc).stroke({ color: OUT, width: 0.7 * s });
+    g.poly(poly([[3, 6], [7, 5.4], [7.3, 3.6], [4.6, 4.4]])).fill(hc);
+    hl([2, 7], [3.6, 15], hcD, 0.6);
+  } else if (L.beard === 3) {
     g.poly(poly([[-2.4, 3], [3, 7.6], [7, 5.4], [7.3, 3.6], [4.6, 4.4], [0.5, 1.4]])).fill(hc); // full beard
     hl([1, 5], [5, 6.6], hcD, 0.6);
   } else if (L.beard === 2 || L.beard === 4) {
     hl([4.4, 2.6], [6.8, 2.4], hc, 1.3); // moustache
     if (L.beard === 2) g.circle(...hpt(5.6, 5.8), 1.4 * s).fill(hc); // goatee
+  } else if (L.beard === 5) {
+    hl([4.8, 2.6], [6.6, 2.5], hc, 0.8); // thin moustache
+    g.circle(...hpt(5.4, 5.2), 0.8 * s).fill(hc); // chin patch
   } else if (L.beard === 1) {
     for (let i = 0; i < 5; i++) g.circle(...hpt(0.6 + i * 1.5, 4.2 + (i % 2)), 0.5 * s).fill(shade(skin, -0.32)); // stubble
   }
   if (L.glasses === 1) hl([3.2, -1.4], [7.2, -1.4], 0x101014, 1.6); // shades (announcers, not fighters)
+  else if (L.glasses === 2) {
+    // nerd frames (a certain referee)
+    g.circle(...hpt(5.4, -1.2), 1.5 * s).stroke({ color: 0x101014, width: 0.6 * s });
+    hl([3.9, -1.4], [1.5, -1.8], 0x101014, 0.5);
+  }
+  if (L.hat === 1) {
+    // cowboy hat: crown and a wide brim
+    g.poly(poly([[-5.5, -7], [-4.5, -12.5], [-1, -11.5], [1.5, -12.8], [4.5, -12], [5.5, -7]])).fill(0x5a3c22).stroke({ color: OUT, width: 0.8 * s });
+    hl([-5.4, -8], [5.4, -8], 0x2a1a0e, 1.1);
+    g.poly(poly([[-11, -6.4], [-9, -7.4], [9, -7.4], [11, -6.4], [9.5, -5.6], [-9.5, -5.6]])).fill(0x7a5432).stroke({ color: OUT, width: 0.7 * s });
+  } else if (L.hat === 2) {
+    // leprechaun top hat
+    g.poly(poly([[-5, -7], [-4.4, -17], [4.6, -16], [5, -7]])).fill(0x1e5a2a).stroke({ color: OUT, width: 0.8 * s });
+    hl([-5, -8.5], [5, -8.5], 0x101010, 1.6);
+    g.rect(...hpt(-0.8, -9.5), 1.8 * s, 1.8 * s).fill(0xd8b040);
+    g.poly(poly([[-9, -6.4], [9, -6.4], [9, -5.4], [-9, -5.4]])).fill(0x2a7a38).stroke({ color: OUT, width: 0.6 * s });
+  }
 
   // ------------------------------------------------------------ near arm (+ glove)
   group(

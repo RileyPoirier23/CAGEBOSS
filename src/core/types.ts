@@ -45,6 +45,11 @@ export interface Look {
   widow?: number; // 1 = widow's peak hairline
   stoned?: number; // 1 = bloodshot, half-shut eyes
   beanie?: number; // 1 = knit beanie (Jimmy Quavo)
+  hat?: number; // 1 = cowboy hat, 2 = leprechaun top hat
+  iris?: number; // eye colour (IRIS index; 5 = blue-grey)
+  freckles?: number; // 1 = freckles across the nose and cheeks
+  chain?: number; // 1 = thin gold chain, always on
+  inkArt?: number; // 1 = koi on the shoulder (black and red)
 }
 
 export interface Contract {

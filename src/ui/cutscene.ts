@@ -74,6 +74,12 @@ export const CAST: Record<string, Look2> = {
   mateo: base({ skin: 0xb07a52, hairStyle: 1, hairColor: 0x1a1412, beard: 0, build: 0, outfit: { top: 0xb8733a, bottom: 0x2a2a44, bulk: 2, hands: 0xb07a52 } }),
   // a regional promoter: slicked hair, a shirt you can hear
   promoter: base({ skin: 0xe0a882, hairStyle: 2, hairColor: 0x161412, beard: 1, build: 2, outfit: { top: 0xb8402a, bottom: 0x2a2a30, shirt: 0xf0e0a0, bulk: 2, hands: 0xe0a882 } }),
+  // Xavier "Allstar" Cockett: cowboy hat, big beard, pearl-snap shirt, boots
+  xavier: base({ skin: 0xdcae88, hairStyle: 2, hairColor: 0x3b2a1e, beard: 3, build: 1, hat: 1, outfit: { top: 0xc8b8a0, bottom: 0x2a3a5a, bulk: 1, hands: 0xdcae88 } }),
+  // "Dirty" Daniel Stinkovich: curly mop, a bit pudgy, glasses, referee black
+  daniel: base({ skin: 0xf0cfae, hairStyle: 8, hairColor: 0x3b2a1e, beard: 0, build: 2, glasses: 2, outfit: { top: 0x141418, bottom: 0x1c1c22, bulk: 2, shortSleeves: true, hands: 0xf0cfae, patch: 0xd8d8d8 } }),
+  // Zac's manager: Lenny Pratt. Bad suit, worse intentions
+  lenny: base({ skin: 0xe0b090, hairStyle: 3, hairColor: 0x1a1412, beard: 4, build: 2, outfit: { top: 0x5a4a2a, bottom: 0x3a3020, shirt: 0xd8c890, tie: 0x8a6a1a, bulk: 2, hands: 0xe0b090 } }),
   // a reporter
   reporter: base({ skin: 0xe0b090, hairStyle: 4, hairColor: 0x6a3a1a, beard: 0, build: 0, female: true, outfit: { top: 0x6a4c72, bottom: 0x222228, mic: true, hands: 0xe0b090 } }),
 };

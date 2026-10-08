@@ -27,6 +27,7 @@ import { LOCAL_SPONSORS, REGIONAL_SPONSORS } from './sponsorship';
 import type { FMMoment, StoryState, FMStats } from './fmstory';
 import { gymWeek, gymTrainBonus } from './legacy';
 import { SCRUM } from './onetonlines';
+import { HAN } from './cast';
 import { pushMoment, signingMoment, storyPromote, storyWeek, storyOffers, storyResult, startStory, staffCheckin, interviewMoment, storyPurse, stats, isLegacy } from './fmstory';
 
 export type BodyPart = 'head' | 'jaw' | 'body' | 'larm' | 'rarm' | 'lhand' | 'rhand' | 'legs';
@@ -278,6 +279,8 @@ export interface CreateOpts {
   look: Fighter['look'];
   /** Legacy Mode: no storyline, more chaos, start anywhere on the road */
   legacy?: boolean;
+  /** Road To Champion: you are Han "The Pride Of The Maritimes" Tibular */
+  han?: boolean;
   startTier?: Tier;
 }
 
@@ -316,6 +319,12 @@ export function createFighterGame(o: CreateOpts): GameState {
   f.scout = 3;
   f.lastFightWeek = -10;
   f.careerLog = ['Walked into an amateur gym with a dream and a gym bag that smells like soup.'];
+  if (o.han) {
+    Object.assign(f, { height: HAN.height, reach: HAN.reach, age: HAN.age, hometown: HAN.hometown, country: HAN.country, gym: "Ray's Boxing & Soup" });
+    f.potential = 99;
+    f.traits = ['Hungry', 'Family First'];
+    f.careerLog = ["Twenty-one. Moncton born, Shediac summers, his uncle Ray's gym every day after school since he was nine. Everybody back home already calls him the Pride of the Maritimes. He hasn't had a single amateur fight."];
+  }
   f.cutman = { name: 'Guy with a towel', rating: 25 };
   f.manager = '';
   f.starPower = computeStarPower(s, f);

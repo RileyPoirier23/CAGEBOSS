@@ -15,6 +15,7 @@ import { makeLook } from '../../sim/generate';
 import { DIVISION_ORDER, divisionName, DIVISION_LIMITS } from '../../sim/divisions';
 import { createFighterGame, type Archetype, type Tier } from '../../sim/fighter';
 import { FMHubScene } from './fmhub';
+import { HAN } from '../../sim/cast';
 import { sfx } from '../../audio/sfx';
 
 const COUNTRY_NAMES: Record<string, string> = {
@@ -58,6 +59,7 @@ export class FMCreateScene extends Scene {
   }
 
   build(): void {
+    if (!this.legacy) return this.buildHan();
     const r = this.root;
     const bg = new Graphics().rect(0, 0, W, H).fill(0x15121a);
     for (let y = 0; y < H; y += 6) bg.rect(0, y, W, 1).fill({ color: 0x000000, alpha: 0.25 });
@@ -139,6 +141,39 @@ export class FMCreateScene extends Scene {
     r.addChild(button('STEP INTO THE CAGE →', W - 160, H - 21, 150, 16, () => this.start(), { fill: PAL.blood }));
   }
 
+  /** Road To Champion: you're Han. Meet him, pick his style, go. */
+  private buildHan(): void {
+    const r = this.root;
+    const bg = new Graphics().rect(0, 0, W, H).fill(0x15121a);
+    for (let y = 0; y < H; y += 6) bg.rect(0, y, W, 1).fill({ color: 0x000000, alpha: 0.25 });
+    r.addChild(bg);
+    r.addChild(bigTitle('ROAD TO CHAMPION', 6, PAL.gold));
+    r.addChild(text('This is you.', 0, 26, { width: W, align: 'center', small: true, color: PAL.ash }));
+    const p = new Container();
+    p.position.set(14, 40);
+    r.addChild(p);
+    p.addChild(box(452, 180, PAL.night, PAL.gold, { bevel: true }));
+    const por = portrait({ id: 'han-card', look: HAN.look, gender: 'M', age: HAN.age, variant: 'plain', attire: 'shirtless' }, 64);
+    por.scale.set(2);
+    por.position.set(10, 10);
+    p.addChild(por);
+    p.addChild(text('HAN', 152, 10, { color: PAL.bone, scale: 2 }));
+    p.addChild(text('"THE PRIDE OF THE MARITIMES"', 152, 30, { small: true, color: PAL.gold }));
+    p.addChild(text('TIBULAR', 152, 40, { color: PAL.bone, scale: 2 }));
+    const tape: [string, string][] = [['AGE', '21'], ['HEIGHT', '6\'0"'], ['DIVISION', 'Lightweight (155)'], ['FROM', 'Moncton, New Brunswick'], ['GYM', "Uncle Ray's Boxing & Soup"], ['RECORD', '0-0 (amateur)']];
+    tape.forEach(([k, v], i) => {
+      p.addChild(text(k, 152, 64 + i * 10, { small: true, color: PAL.ash }));
+      p.addChild(text(v, 210, 64 + i * 10, { small: true, color: PAL.bone }));
+    });
+    p.addChild(text("A lightweight prodigy who's never had a real fight. Everybody back home already calls him the Pride of the Maritimes, which is a lot to live up to when you mop floors for a living.", 152, 128, { small: true, width: 290, color: PAL.ash, maxLines: 4 }));
+    // the one thing you choose: how he fights
+    r.addChild(text('HOW HE FIGHTS', 14, 226, { small: true, color: PAL.ash }));
+    r.addChild(selector(90, 223, 150, ARCHES.map((a) => ({ value: a.value, label: a.label })), this.arch, (v) => { this.arch = v; this.refresh(); }));
+    r.addChild(text(ARCHES.find((a) => a.value === this.arch)!.blurb, 248, 226, { small: true, width: 216, color: PAL.bone, maxLines: 2 }));
+    r.addChild(button('← BACK', 10, H - 20, 60, 14, () => { this.exit(); void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g))); }, { small: true }));
+    r.addChild(button('STEP INTO THE CAGE →', W - 160, H - 21, 150, 16, () => this.start(), { fill: PAL.blood }));
+  }
+
   private drawPreview(): void {
     if (this.preview.destroyed) return;
     this.preview.removeChildren().forEach((c) => c.destroy({ children: true }));
@@ -146,6 +181,16 @@ export class FMCreateScene extends Scene {
   }
 
   private start(): void {
+    if (!this.legacy) {
+      this.exit();
+      this.g.loading('Signing your first contract', () => {
+        const s = createFighterGame({ seed: this.seed, first: HAN.first, last: HAN.last, nick: HAN.nick, gender: 'M', culture: HAN.culture, division: HAN.division, archetype: this.arch, look: { ...HAN.look }, han: true });
+        this.g.state = s;
+        this.g.goto(new FMHubScene(this.g));
+        this.g.autosave();
+      }, 1.2);
+      return;
+    }
     const first = this.first.trim();
     const last = this.last.trim();
     if (!last) return this.g.toast('Every fighter needs a last name. It goes on the shorts.', PAL.ember);
