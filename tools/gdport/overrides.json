@@ -1,0 +1,21 @@
+{
+  "_doc": "Functions replaced by hand-written GDScript in port/godot/hand/ (class H_<module>): platform code with no Godot equivalent in the TypeScript (Web Audio synthesis, DOM text inputs, file download/upload).",
+  "src/audio/sfx.ts": [
+    "ac",
+    "unlock",
+    "tone",
+    "noise"
+  ],
+  "src/audio/music.ts": [
+    "base"
+  ],
+  "src/ui/widgets.ts": [
+    "domInput",
+    "removeAllDomInputs",
+    "downloadText",
+    "pickTextFile"
+  ],
+  "src/core/platform.ts": [
+    "detect"
+  ]
+}

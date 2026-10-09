@@ -9,6 +9,8 @@ import type { Game } from './app';
 import { PAL } from '../art/palette';
 import { text, button, box, ScrollBox } from './kit';
 import { openWindow } from './widgets';
+import { isConsole } from '../core/platform';
+import { CLICK, hint } from './hints';
 import { padGlyph, keyGlyph, type GlyphName } from './glyphs';
 import { POSES, drawRig, type Look2, type Pose } from './rig';
 
@@ -47,37 +49,38 @@ const PAGES: Record<HelpTopic, Block[]> = {
   start: [
     { h: 'THREE WAYS TO PLAY' },
     { icon: 'money', p: 'CAREER: you are the promoter. Work the desk, build cards, sign fighters, keep the money, the fans and the Commission happy, and stay out of prison.' },
-    { icon: 'belt', p: "ROAD TO CHAMPION: you are the fighter, with a story. Uncle Ray's soup-kitchen gym is drowning in back rent, a trust-fund rival is always one league ahead, and the CBFC title is a long way off." },
+    { icon: 'belt', p: 'ROAD TO CHAMPION: you are Han "The Pride Of The Maritimes" Tibular, with a story in five chapters. Uncle Ray\'s soup-kitchen gym is drowning in back rent, a trust-fund rival is always one league ahead, every league has a boss, and at the end of the road a six-foot-seven undefeated champion is waiting.' },
     { icon: 'glove', p: 'LEGACY MODE (unlocks when you finish Road To Champion): the fighter career with no script. Start in any league, change weight class, open your own gym, then retire and run your own promotion.' },
-    { icon: 'glove', p: 'QUICK FIGHT: any two fighters from the roster, hands-on. Against the CPU or a friend (two controllers, a controller and the keyboard, or one shared keyboard).' },
+    { icon: 'glove', p: `QUICK FIGHT: any two fighters from the roster, hands-on. Against the CPU or a friend ${hint('(two controllers, a controller and the keyboard, or one shared keyboard)', '(two controllers)')}.` },
     { icon: 'cal', p: 'SANDBOX: career mode with the rules off. Edit fighters, money and meters, and book whatever you like.' },
     { h: 'MENUS & SAVING' },
     { keys: [['A', 'Enter', 'Confirm / click'], ['B', 'Esc', 'Back / close'], ['Menu', 'Esc', 'Pause / menu'], ['View', 'F1', 'This HELP screen'], ['LStick', null, 'Move the cursor (pad)']] },
     { p: 'Every mode autosaves each week and has three save slots of its own (MENU > SAVE). LOAD has a tab per mode. CONTINUE on the title screen picks up your latest save. Ironman careers only keep the autosave.' },
-    { p: 'ACHIEVEMENTS (title screen and menus) tracks what you have unlocked across every save.' },
+    { p: 'MODES on the title screen has every way to play. The TROPHY CASE (title screen and menus) has an object for every achievement, lit up once you win it, across every save.' },
     { p: 'Settings has text speed, the swear bleep, fight speed, hands-on fights on/off, controller remapping (CONTROLS) and audio.' },
     { p: 'This page lives above SETTINGS in every menu and in the fight pause menu. When the game updates, WHAT\'S NEW tells you what changed.' },
   ],
   fight: [
     { h: 'THE BASICS' },
-    { p: 'Hands-on fights put you in the cage in Road To Champion and Legacy Mode (turn them off in Settings to sim instead). Move with the left stick / A-D. The full broadcast comes with it: tale of the tape, the Juiced Butler, the booth and Bleeter.' },
+    { p: `Hands-on fights put you in the cage in Road To Champion and Legacy Mode (turn them off in Settings to sim instead). Move with the left stick${hint(' / A-D', '')}. The full broadcast comes with it: tale of the tape, the Juiced Butler, the booth and Bleeter.` },
     { keys: [['View', 'C', 'Change camera: side / TV / top-down'], ['Menu', 'Esc', 'Pause: HELP, autopilot, sim the rest']] },
-    { keys: [['RB', 'J', 'Lead hand'], ['RT', 'K', 'Rear hand'], ['A', 'L', 'Kick'], ['LB', 'I', 'Block (tap = parry)'], ['B', 'Space', 'Grab: clinch / shoot / sprawl'], ['Y', 'U', 'Feint'], ['LT', 'O', 'Hold: strikes go to the body']] },
+    { keys: [['RB', 'J', 'Lead hand'], ['RT', 'K', 'Rear hand'], ['A', 'L', 'Kick'], ['LB', 'I', 'Block (tap = parry)'], ['B', 'Space', 'Grab: clinch / shoot / sprawl'], ['Y', 'U', 'Feint'], ['X', 'T', 'Taunt (everybody has his own)'], ['LT', 'O', 'Hold: strikes go to the body']] },
     { h: 'DIRECTIONAL STRIKES' },
     { p: 'Where the stick points when you PRESS the button picks the strike. How long you HOLD it picks the power: tap = light and fast, hold = medium, long hold = heavy (slow, big damage, big gas). On a pad a full trigger squeeze adds power.' },
     { keys: [[null, null, 'NEUTRAL: jab (lead) / straight (rear)'], [null, null, 'TOWARD: hooks'], [null, null, 'UP: lead hook / OVERHAND (rear)'], [null, null, 'DOWN: body jab / body straight'], [null, null, 'DOWN + TOWARD: uppercuts'], [null, null, 'AWAY: pull-counter jab / SPINNING BACKFIST (rear)']] },
     { pic: { stand: ['overhand', 'guard'] }, cap: 'Up + rear hand: the overhand.' },
-    { p: 'Hold the body button (LT / O) and jabs, straights and hooks all go downstairs. Body shots get through a high guard far better than head shots, drain his gas and can fold him over.' },
+    { p: `Hold the body button ${hint('(LT / O)', '({LT})')} and jabs, straights and hooks all go downstairs. Body shots get through a high guard far better than head shots, drain his gas and can fold him over.` },
     { h: 'KICKS' },
     { keys: [[null, null, 'NEUTRAL + kick: body kick'], [null, null, 'UP + kick: head kick (slow, huge)'], [null, null, 'DOWN + kick: leg kick (wrecks his movement)'], [null, null, 'TOWARD + kick: front kick (shoves him off, stops his attack)'], [null, null, 'AWAY + kick: spinning back kick (big, very punishable)']] },
     { pic: { stand: ['frontKick', 'guard'] }, cap: 'Toward + kick: the teep. Great against a man walking you down.' },
     { h: 'COMBOS & COUNTERS' },
     { p: 'Land something and the next strike comes out faster for a moment: chain jab, straight, hook. Press the next strike while one is still out and it is buffered, never lost.' },
     { p: 'Make him miss (slip, roll, pull, parry) and your next shot is a COUNTER: 1.5x damage. A good feint makes him flinch and also opens a counter.' },
+    { p: 'TAUNT from range to get a breath back and get in his head: he comes forward reckless for a few seconds and stops reading your shots. Your hands are down while you do it, and some fighters flip him off.' },
   ],
   clinch: [
     { h: 'GETTING IN' },
-    { p: 'HOLD grab (B / Space) close to him to tie up. Stick TOWARD while holding grab shoots a takedown instead. Whoever starts the clinch gets the first tie: a collar tie.' },
+    { p: `HOLD grab ${hint('(B / Space)', '({B})')} close to him to tie up. Stick TOWARD while holding grab shoots a takedown instead. Whoever starts the clinch gets the first tie: a collar tie.` },
     { h: 'GRIP FIGHTING (TAP GRAB + STICK)' },
     { keys: [[null, null, 'UP + grab: THAI PLUM (head control: knees to the face)'], [null, null, 'TOWARD + grab: DOUBLE UNDERHOOKS (body lock, drive to the fence)'], [null, null, 'NEUTRAL + grab: PUMMEL (break his tie back to even)'], [null, null, 'DOWN + grab: TRIP / TAKEDOWN'], [null, null, 'AWAY + grab: BREAK AWAY']] },
     { pic: { stand: ['plum', 'clinchDef'] }, cap: 'Red has the plum. Blue is eating knees until he pummels out.' },
@@ -109,7 +112,7 @@ const PAGES: Record<HelpTopic, Block[]> = {
     { h: 'BLOCK, PARRY, MOVE YOUR HEAD' },
     { p: 'Hold block for a high guard: it stops most of a head shot but less of a body shot or a leg kick (checked leg kicks hurt the kicker). Tap block just before a punch lands to PARRY: he is stunned, you counter.' },
     { keys: [['RStick', 'Up', 'Flick up: SLIP (beats jabs, straights, overhands)'], ['RStick', 'Down', 'Flick down: ROLL (beats hooks, overhands, head kicks; NOT body shots)'], ['RStick', null, 'Flick away: PULL (beats almost everything)'], ['RStick', null, 'Flick toward: LEAN IN']] },
-    { p: 'On the keyboard the arrow keys do the same (left/right follow which way you face).' },
+    ...(isConsole ? [] : [{ p: 'On the keyboard the arrow keys do the same (left/right follow which way you face).' }]),
     { h: 'SPRAWL' },
     { p: 'When he shoots, TAP grab to sprawl. Stuff it and he is stunned and you score.' },
     { h: 'THE HUD' },
@@ -145,7 +148,8 @@ const PAGES: Record<HelpTopic, Block[]> = {
     { p: 'Bigger fights come with a PRESS CONFERENCE (a reporter\'s question, three answers) and a FACE-OFF at the weigh-in: stare him down, talk back, shove him (and pay the fine) or touch fists. Title fights always get both.' },
     { icon: 'heart', p: 'In the cage: eye pokes, low blows and fence grabs happen, and can cost a point. Bad cuts bring the doctor in. Hands break, ribs crack, legs get checked: injuries follow you out of the fight.' },
     { h: 'THE STORY' },
-    { p: 'Road To Champion is four chapters and an epilogue. The big moments play as cutscenes (click, Enter or A to move on; SKIP jumps to the choice). Your choices stick: what you tell the landlord, what you do in the parking lot, who you call when the rent comes due. Story fights (the grudge match, the title shot, the rematch) are offered to you when it\'s time.' },
+    { p: 'Road To Champion is five chapters and an epilogue, with a boss in every league: Tyler Vance at the local circuit, Wyatt "LeproClepto" Smitt at the regionals (nobody finishes him), Zac "The Attacker" Buna at the Lounge (his manager made it stand-up only), and Spadam "The White Beast" Biggs at the very end. Finish a chapter and its boss is playable in QUICK FIGHT.' },
+    { p: `The big moments play as cutscenes: ${hint('click, Enter or A', '{A}')} for the next line, BACK (or ${hint('Left / LB', '{LB}')}) to read the last one again, SKIP to jump to the choice. Your choices stick: what you tell the landlord, what you do in the parking lot, who you call when the rent comes due. Story fights (the grudge match, the title shot, the rematch, the superfight) are offered to you when it\'s time. Zac Buna becomes your sparring partner: SPAR with him to build your grappling.` },
   ],
   career: [
     { h: 'THE JOB' },
@@ -163,7 +167,7 @@ const PAGES: Record<HelpTopic, Block[]> = {
     { h: 'INSPECTION' },
     { icon: 'paper', p: 'Fighters, managers and promoters bring documents: licences, medicals, bout agreements, visas, sponsor forms. Your job is to catch what is wrong.' },
     { keys: [[null, 'I', 'Inspect mode: click two things that disagree'], [null, 'R', 'Open the rulebook (drag it, zoom it, highlight)']] },
-    { p: 'Compare every field against the file card and the rulebook: names, dates, weights, expiry dates, signatures, stamps. Click the mismatch and CITE IT.' },
+    { p: `Compare every field against the file card and the rulebook: names, dates, weights, expiry dates, signatures, stamps. ${CLICK === 'click' ? 'Click' : 'Select'} the mismatch and CITE IT.` },
     { icon: 'stamp', p: 'Then stamp: APPROVE, DENY, ESCALATE or BURY. Wrong calls cost Commission trust, money, or worse. Citations show up at the end of the day.' },
     { p: 'The clock is always running. Faster, cleaner days mean more time for everything else.' },
   ],
@@ -264,7 +268,7 @@ function keyRow(k: Keys): Container {
     c.addChild(p);
     x += Math.ceil(p.width) + 2;
   }
-  if (k[1]) {
+  if (k[1] && !isConsole) {
     const kg = keyGlyph(k[1]);
     kg.x = x;
     c.addChild(kg);
@@ -289,6 +293,7 @@ function renderPage(sb: ScrollBox, topic: HelpTopic): void {
       y += 12;
     } else if ('keys' in b) {
       for (const k of b.keys) {
+        if (isConsole && !k[0] && k[1]) continue; // a keyboard-only shortcut
         const r = keyRow(k);
         r.position.set(2, y);
         sb.content.addChild(r);

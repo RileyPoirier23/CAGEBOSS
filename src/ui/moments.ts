@@ -20,6 +20,7 @@ import { answerStory, answerInterview, type FMMoment } from '../sim/fmstory';
 import { playCutscene } from './cutscene';
 import { storyScene } from './storyscenes';
 import type { Rng } from '../core/rng';
+import { unlockFighter } from '../sim/cast';
 
 const ROLE: Record<string, string> = { coach: 'HEAD COACH', nutrition: 'NUTRITIONIST', manager: 'MANAGER', cutman: 'CUTMAN' };
 
@@ -33,6 +34,10 @@ function speakerPortrait(who: string, size: 64 | 32, s?: GameState): Container {
   if (/producer/i.test(who)) return namedPortrait('lounge_producer', size)!;
   if (/mateo/i.test(who)) return namedPortrait('mateo', size)!;
   if (/jimmy/i.test(who)) return namedPortrait('jimmy_quavo', size)!;
+  if (/xavier|allstar/i.test(who)) return namedPortrait('xavier_cockett', size)!;
+  if (/daniel|stinkovich/i.test(who)) return namedPortrait('dirty_daniel', size)!;
+  if (/lenny/i.test(who)) return namedPortrait('lenny_pratt', size)!;
+  for (const [re, id] of [[/wyatt/i, 'wyatt'], [/zac/i, 'zac'], [/spadam|beast/i, 'spadam']] as const) if (re.test(who) && s?.fighters[id]) return fighterPortrait(s.fighters[id], size);
   return npcPortrait(who, 'manager', size);
 }
 
@@ -47,6 +52,8 @@ export function showMoment(g: Game, s: GameState, m: FMMoment, rng: () => Rng, d
       return story(g, s, m, done);
     case 'credits':
       return openEndCredits(g, done);
+    case 'chapter':
+      return chapterComplete(g, s, m, done);
     case 'interview': {
       const rep = content().reporters.find((r) => r.name === m.reporter);
       const face = rep ? reporterPortrait(rep, 32) : npcPortrait(m.reporter, 'fan', 32);
@@ -56,6 +63,47 @@ export function showMoment(g: Game, s: GameState, m: FMMoment, rng: () => Rng, d
       }, PAL.gold);
     }
   }
+}
+
+/** A chapter is done: congratulations, and the chapter's boss is now playable in Quick Fight. */
+function chapterComplete(g: Game, s: GameState, m: Extract<FMMoment, { kind: 'chapter' }>, done: () => void): void {
+  unlockFighter(m.boss);
+  unlockFighter('han'); // you can always play as Han once the road has started paying off
+  const root = new Container();
+  const wrap = g.modal(root, { dim: 0.9 });
+  const rays = new Graphics();
+  root.addChild(rays);
+  const bw = 300;
+  const bh = 168;
+  const bx = (W - bw) / 2;
+  const by = (H - bh) / 2;
+  root.addChild(box(bw, bh, PAL.night, PAL.gold, { bevel: true })).position.set(bx, by);
+  root.addChild(text(`CHAPTER ${m.n} COMPLETE`, bx, by + 8, { width: bw, align: 'center', small: true, color: PAL.ember }));
+  root.addChild(text(m.title, bx, by + 18, { width: bw, align: 'center', color: PAL.gold, scale: 2 }));
+  const f = m.boss === 'han' ? me(s) : s.fighters[m.boss];
+  if (f) {
+    const por = fighterPortrait(f, 64);
+    por.position.set(W / 2 - 32, by + 42);
+    root.addChild(por);
+  }
+  root.addChild(text('NOW PLAYABLE IN QUICK FIGHT', bx, by + 112, { width: bw, align: 'center', small: true, color: PAL.ash }));
+  root.addChild(text(m.bossName, bx + 10, by + 122, { width: bw - 20, align: 'center', color: PAL.bone, maxLines: 2 }));
+  let t = 0;
+  const tick = (tk: Ticker) => {
+    t += tk.deltaMS / 1000;
+    rays.clear();
+    for (let k = 0; k < 12; k++) {
+      const ang = t * 0.4 + (k * Math.PI) / 6;
+      rays.poly([W / 2, H / 2, W / 2 + Math.cos(ang) * 300, H / 2 + Math.sin(ang) * 300, W / 2 + Math.cos(ang + 0.14) * 300, H / 2 + Math.sin(ang + 0.14) * 300]).fill({ color: PAL.gold, alpha: 0.06 });
+    }
+  };
+  g.app.ticker.add(tick);
+  wrap.once('destroyed', () => g.app.ticker.remove(tick));
+  root.addChild(button('CONTINUE', W / 2 - 40, by + bh - 20, 80, 14, () => {
+    g.closeModal(wrap);
+    done();
+  }, { small: true, fill: PAL.moss }));
+  sfx('roar');
 }
 
 /** A message card with a portrait and buttons. */

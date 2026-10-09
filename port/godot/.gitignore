@@ -1,0 +1,8 @@
+gen/
+data/
+tests/golden/
+.godot/
+*.import
+tests/tmp/
+public/
+build/

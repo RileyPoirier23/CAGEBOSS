@@ -75,6 +75,7 @@ describe('fighter mode', () => {
       doAction(s, 'rest', null, rng);
       endWeek(s, rng);
     }
+    if (process.env.STORYDBG) console.log(s.week, fm(s).tier, fm(s).ladder.slice(0, 6), fm(s).ladder.indexOf(fm(s).player), fm(s).history.slice(-6).map((h) => h.opp + ':' + h.result + ':' + h.title), JSON.stringify((fm(s) as any).story?.flags));
     expect(tiers.has('regional')).toBe(true);
     expect(tiers.has('pfl')).toBe(true);
     expect(fm(s).tier).toBe('of');
@@ -120,11 +121,11 @@ describe('road to champion story & legacy mode', () => {
     expect(st.legacy).toBeFalsy();
   });
   it('the whole road: chapters, the grudge match, the title, the credits, the rematch', () => {
-    const s = createFighterGame({ seed: 33, first: 'Road', last: 'Runner', nick: 'Soup', gender: 'M', culture: 'mexico', division: 'light', archetype: 'striker', look: look() });
+    const s = createFighterGame({ seed: 33, first: 'Han', last: 'Tibular', nick: 'The Pride Of The Maritimes', gender: 'M', culture: 'canada', division: 'light', archetype: 'striker', look: look(), han: true });
     const st = fmx(s);
     const rng = new Rng(3);
     const why: string[] = [];
-    for (let w = 0; w < 700 && !st.story?.seen.includes('e_end'); w++) {
+    for (let w = 0; w < 900 && !st.story?.seen.includes('e_end'); w++) {
       // a fighter who's very, very good (this tests the story, not the balance)
       for (const k of Object.keys(me(s).skills) as (keyof ReturnType<typeof me>['skills'])[]) me(s).skills[k] = 97;
       for (const m of st.moments ?? []) if (m.kind === 'story' && m.choices) answerStory(s, m.id, m.choices[0].id);
@@ -151,11 +152,22 @@ describe('road to champion story & legacy mode', () => {
     }
     const seen = st.story!.seen;
     if (process.env.STORYDBG) console.log(s.week, seen.join(' '), JSON.stringify(st.story!.flags));
-    for (const id of ['c1_open', 'c1_landlord', 'c1_mateo', 'c1_vance_booked', 'c2_signed', 'c2_jimmy', 'c3_lounge', 'c3_confessional', 'c4_cbfc', 'c4_grudge_booked', 'c4_champ', 'e_plaque', 'e_rematch_booked', 'e_end']) expect(seen, id).toContain(id);
-    expect(why.some((x) => x.startsWith('GRUDGE MATCH'))).toBe(true);
+    for (const id of ['c1_open', 'c1_tv', 'c1_allstar', 'c1_landlord', 'c1_mateo', 'c1_vance_booked', 'c2_signed', 'c2_wyatt', 'c2_jimmy', 'c2_wyatt_booked', 'c2_wyatt_done',
+      'c3_lounge', 'c3_zac', 'c3_spadam', 'c3_confessional', 'c3_zac_booked', 'c3_zac_done', 'c4_cbfc', 'c4_grudge_booked', 'c4_champ', 'e_plaque', 'e_rematch_booked',
+      'c5_callout', 'c5_tape', 'c5_superfight', 'c5_presser', 'c5_won', 'e_end']) expect(seen, id).toContain(id);
+    expect(st.story!.flags.grudgeDone).toBe(1);
     expect(why.some((x) => x.startsWith('TITLE DEFENCE'))).toBe(true);
+    expect(why.some((x) => x.startsWith('SUPERFIGHT'))).toBe(true);
     expect(st.story!.flags.rematchDone).toBe(1);
     expect(st.story!.gymSaved).toBe(true);
+    // the bosses: Wyatt gets himself disqualified in round 3, the Lounge final has no takedowns, the Beast falls
+    const wy = st.history.find((h) => h.opp === 'wyatt' && h.title);
+    expect(wy?.method).toMatch(/^DQ/);
+    expect(wy?.round).toBe(3);
+    expect(st.history.some((h) => h.opp === 'spadam' && h.result === 'W')).toBe(true);
+    expect(me(s).division).toBe('welter');
+    expect(st.partner?.stage).toBe(99);
+    for (let n = 1; n <= 5; n++) expect(st.story!.flags['chShown' + n], 'chapter ' + n).toBe(1);
   });
   it('Legacy Mode skips the story and can start in the CBFC', () => {
     const s = createFighterGame({ seed: 32, first: 'Legacy', last: 'Mode', nick: 'Chaos', gender: 'M', culture: 'mexico', division: 'light', archetype: 'wrestler', look: look(), legacy: true, startTier: 'of' });

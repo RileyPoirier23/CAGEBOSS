@@ -24,10 +24,10 @@ const MIN_GAP = 34;
 export interface LiveEvent {
   type:
     | 'punch' | 'kick' | 'hit' | 'miss' | 'block' | 'parry' | 'evade' | 'feint' | 'counter'
-    | 'kd' | 'getup' | 'ko' | 'tko' | 'clinch' | 'break' | 'knee' | 'shoot' | 'sprawl' | 'td'
+    | 'kd' | 'getup' | 'pounce' | 'ko' | 'tko' | 'clinch' | 'break' | 'knee' | 'shoot' | 'sprawl' | 'td'
     | 'gnp' | 'advance' | 'sweep' | 'standup' | 'sub' | 'tap' | 'escape' | 'bell' | 'rocked' | 'cut'
     | 'tie' | 'pummel' | 'fence' | 'trip' | 'pass' | 'scramble'
-    | 'foul' | 'deduction' | 'injury' | 'doctor';
+    | 'foul' | 'deduction' | 'injury' | 'doctor' | 'taunt';
   side: Side;
   /** strike name (jab, hook, headkick...) */
   name?: string;
@@ -73,6 +73,8 @@ export interface LiveFighter {
   stun: number;
   /** >0 while on the canvas: seconds of the count elapsed */
   down: number;
+  /** seconds left of being wound up by a taunt (comes forward reckless) */
+  tilt?: number;
   getup: number;
   kdsRound: number;
   counterT: number;
@@ -153,8 +155,25 @@ const LINE_KEY: Record<string, string> = {
   round_start: 'round_start', bell: 'round_end', tap: 'tap', ko: 'ko_live', tko: 'tko_live', getup: 'standup', standup: 'standup', idle: 'clinch_work',
 };
 
+/** Special rules for one fight (the story's boss fights). */
+export interface LiveRules {
+  /** nobody can be finished before this round: they beat the count, they escape, the doctor waves it on */
+  protectUntil?: number;
+  /** this side throws a disqualifying blow at this point (round, seconds into it) */
+  dq?: { side: Side; round: number; at: number; text: string };
+  /** no takedowns, no clinch: stand and bang */
+  noGrappling?: boolean;
+  /** the referee is bought: this side fouls more and never gets called; the other side always does */
+  bought?: Side;
+  referee?: string;
+  /** knockdowns: 'mma' (no count: jump on him and finish it, or let him up) or 'count' (bareknuckle, amateur smokers) */
+  koRules?: 'mma' | 'count';
+}
+
 export class LiveFight {
   F: [LiveFighter, LiveFighter];
+  rules: LiveRules = {};
+  private dqDone = false;
   round = 1;
   clock = ROUND_SECONDS;
   phase: 'fight' | 'break' | 'over' = 'fight';
@@ -176,7 +195,7 @@ export class LiveFight {
   events: LiveEvent[] = [];
   /** per round, per side: points for the cards */
   rpts: [number, number][] = [[0, 0]];
-  result: { winner: Side | -1; method: 'KO' | 'TKO' | 'SUB' | 'DEC' | 'DRAW' | 'NC' | 'DOC'; detail: string; round: number; time: string } | null = null;
+  result: { winner: Side | -1; method: 'KO' | 'TKO' | 'SUB' | 'DEC' | 'DRAW' | 'NC' | 'DOC' | 'DQ'; detail: string; round: number; time: string } | null = null;
   /** in-fight injuries (fighter side, name, weeks out) and fouls, like the sim keeps */
   injuries: { side: Side; name: string; weeks: number }[] = [];
   fouls: { side: Side; text: string; penalized: boolean }[] = [];
@@ -250,7 +269,48 @@ export class LiveFight {
     if (this.pos === 'clinch') this.tickClinch(dt);
     if (this.pos === 'ground') this.tickGround(dt);
     if (this.clock <= 0 && !this.result) this.endRound();
+    this.checkRules();
     this.checkEnd();
+  }
+
+  /** Scripted moments (boss fights). */
+  private checkRules(): void {
+    const d = this.rules.dq;
+    if (!d || this.dqDone || this.result || this.round !== d.round) return;
+    if (300 - (this.clock / ROUND_SECONDS) * 300 < d.at) return;
+    this.dqDone = true;
+    const v = (1 - d.side) as Side;
+    this.F[d.side].act = null;
+    this.F[v].act = null;
+    this.F[v].stun = 2;
+    this.F[v].hp = Math.max(1, this.F[v].hp - 6);
+    this.pos = 'stand';
+    this.sub = null;
+    this.fouls.push({ side: d.side, text: 'Low blow (intentional)', penalized: true });
+    this.ev({ type: 'foul', side: d.side, name: 'LOW BLOW' });
+    this.line(d.side, 'foul', d.text, 3);
+    this.log[this.log.length - 1].key = 'foul_groin';
+    this.line(v, 'stop', `That's it. The referee waves it off: ${this.name(d.side)} is DISQUALIFIED!`, 3);
+    this.log[this.log.length - 1].key = 'cannot_continue';
+    this.result = { winner: v, method: 'DQ', detail: 'Disqualification (intentional low blow)', round: this.round, time: this.clockElapsed() };
+    this.phase = 'over';
+    this.ev({ type: 'tko', side: v });
+  }
+
+  /** Too early to finish this one (boss fights): he survives instead. */
+  private protectedNow(loser: Side): boolean {
+    if (!this.rules.protectUntil || this.round >= this.rules.protectUntil) return false;
+    const f = this.F[loser];
+    f.hp = Math.max(f.hp, 18);
+    f.down = 0;
+    f.getup = 0;
+    f.stun = Math.max(f.stun, 0.8);
+    this.sub = null;
+    if (this.pos === 'ground') this.pos = 'stand';
+    this.fixGap();
+    this.ev({ type: 'getup', side: loser });
+    this.line(loser, 'getup', `${this.name(loser)} is somehow still in this. He will NOT go away.`, 2);
+    return true;
   }
 
   private tickFighter(i: Side, dt: number): void {
@@ -268,6 +328,7 @@ export class LiveFight {
     f.parryT = Math.max(0, f.parryT - dt);
     f.grip = Math.max(0, f.grip - dt);
     f.stun = Math.max(0, f.stun - dt);
+    if (f.tilt) f.tilt = Math.max(0, f.tilt - dt);
     f.counterT = Math.max(0, f.counterT - dt);
     f.sinceHit += dt;
     if (f.evade) {
@@ -375,6 +436,15 @@ export class LiveFight {
         }
         this.ev({ type: 'feint', side: i });
         return;
+      case 'taunt':
+        // showboating: hands down for a beat, a breath back, and it gets in his head
+        if (this.pos !== 'stand' || this.dist < 46) return;
+        this.startAct(f, { kind: 'feint', name: 'taunt', wind: 0.55, rec: 0.45, dmg: 0, reach: 0, target: 'head', heavy: false }, 0);
+        f.block = false;
+        f.gas = Math.min(100, f.gas + 4);
+        o.tilt = 3 + this.rng.float(0, 1.5) - o.sk.fightIQ / 60;
+        this.ev({ type: 'taunt', side: i });
+        return;
       case 'evade':
         if (this.pos !== 'stand') return;
         f.evade = { kind: it.kind, t: 0 };
@@ -387,6 +457,7 @@ export class LiveFight {
       case 'clinch':
         if (this.pos === 'clinch') return this.clinchMove(i, 'break');
         if (this.pos !== 'stand' || this.dist > 54) return;
+        if (this.rules.noGrappling) return this.ev({ type: 'miss', side: i, name: 'STAND AND BANG' });
         f.gas = Math.max(0, f.gas - 3);
         if (this.rng.chance(clamp(0.45 + (f.sk.wrestling - o.sk.wrestling) / 120 + (o.stun > 0 ? 0.3 : 0) + (o.act ? 0.15 : 0), 0.1, 0.9))) {
           this.pos = 'clinch';
@@ -403,6 +474,7 @@ export class LiveFight {
       case 'shoot':
         if (this.pos === 'ground') return;
         if (this.pos === 'stand' && this.dist > 70) return;
+        if (this.rules.noGrappling) return this.ev({ type: 'miss', side: i, name: 'STAND AND BANG' });
         this.startAct(f, { kind: 'shoot', name: 'shoot', wind: this.pos === 'clinch' ? 0.3 : 0.42, rec: 0.35, dmg: 0, reach: 70, target: 'body', heavy: false }, 5);
         this.shooting = i;
         this.ev({ type: 'shoot', side: i });
@@ -751,7 +823,8 @@ export class LiveFight {
       }
     }
     // accidents happen: eye pokes off a jab, low blows off a front or leg kick, knees to a downed man
-    if (this.pos === 'stand' && this.rng.chance(a.name === 'jab' || a.name === 'cross' ? 0.006 : a.name === 'front kick' || a.name === 'legkick' ? 0.012 : 0)) {
+    const dirty = this.rules.bought === i ? 6 : 1;
+    if (this.pos === 'stand' && this.rng.chance((a.name === 'jab' || a.name === 'cross' ? 0.006 : a.name === 'front kick' || a.name === 'legkick' ? 0.012 : 0) * dirty)) {
       return this.foul(i, a.name === 'jab' || a.name === 'cross' ? 'eyepoke' : 'groin');
     }
     if (o.parryT > 0 && a.target === 'head' && a.kind === 'punch' && o.stun <= 0) {
@@ -874,10 +947,37 @@ export class LiveFight {
 
   /** The man on the canvas has to beat the count: 10 counts, about 7 seconds. */
   private tickCount(dt: number, intents: [FightIntent[], FightIntent[]]): void {
+    const mma = (this.rules.koRules ?? 'mma') === 'mma';
     for (const i of [0, 1] as Side[]) {
       const o = this.F[i];
       if (o.down <= 0) continue;
       o.down += dt;
+      if (mma) {
+        const a = (1 - i) as Side;
+        // out cold: there's no count in MMA, the referee dives in
+        if (o.hp <= 0 && o.down > 0.6) {
+          o.down = 0;
+          this.finish(a, 'KO', 'knocked out cold');
+          return;
+        }
+        // the man standing jumps on him: straight to the mount (or side control) to finish it
+        if (!this.rules.noGrappling && intents[a].some((it) => it.type === 'punch' || it.type === 'kick' || it.type === 'shoot' || it.type === 'clinch' || it.type === 'ground')) {
+          this.pounce(a);
+          return;
+        }
+        for (const it of intents[i]) if (it.type === 'getup') o.getup += 0.09 * (0.4 + it.rhythm) * (0.6 + o.sk.heart / 150) * (0.5 + Math.max(0, o.hp + 20) / 120);
+        // nobody followed him down: he gets back to his feet (the referee doesn't count in MMA)
+        if (o.getup >= 1 || o.down >= 3.2) {
+          o.down = 0;
+          o.hp = Math.max(o.hp, 12 + o.sk.heart / 8);
+          o.stun = 0.5;
+          this.F[a].x = clamp(this.F[a].x + (i === 0 ? 30 : -30), ARENA_L, ARENA_R);
+          this.fixGap();
+          this.ev({ type: 'getup', side: i });
+          this.line(i, 'getup', `${this.name(a)} lets him up. ${this.name(i)} is back on his feet, on wobbly legs.`, 2);
+        }
+        continue;
+      }
       for (const it of intents[i]) {
         if (it.type === 'getup') o.getup += 0.075 * (0.4 + it.rhythm) * (0.6 + o.sk.heart / 150) * (0.5 + Math.max(0, o.hp + 20) / 120);
         if (it.type === 'getupFumble') o.getup = Math.max(0, o.getup - 0.05);
@@ -895,6 +995,26 @@ export class LiveFight {
         this.finish((1 - i) as Side, 'KO', 'counted out');
       }
     }
+  }
+
+  /** MMA knockdown: follow him to the mat and finish it. */
+  private pounce(a: Side): void {
+    const d = (1 - a) as Side;
+    const o = this.F[d];
+    o.down = 0;
+    o.getup = 0;
+    // he's hurt, not finished: a tough man can survive the storm (heart buys him time)
+    o.stun = Math.max(o.stun, 0.7);
+    o.hp = Math.max(o.hp, 12 + o.sk.heart / 6);
+    this.pos = 'ground';
+    this.top = a;
+    this.gpos = this.rng.chance(0.55) ? 'mount' : 'side';
+    this.gprog = this.standProg = 0;
+    this.gKey = this.sKey = '';
+    this.groundIdle = 0;
+    this.F[a].act = null;
+    this.ev({ type: 'pounce', side: a });
+    this.line(a, 'pounce', `${this.name(a)} jumps on him! ${this.gpos === 'mount' ? 'FULL MOUNT' : 'Side control'}, and the hammers are coming!`, 3);
   }
 
   /** Count shown to the player: 1..10 */
@@ -1058,6 +1178,7 @@ export class LiveFight {
     // the doctor looks at cuts before the bell; a good cutman buys you another round
     for (const i of [0, 1] as Side[]) {
       const c = this.F[i].cut;
+      if (this.rules.protectUntil && this.round < this.rules.protectUntil) break; // boss fights: the doctor waves it on
       if (c >= 4 && this.rng.chance(clamp((c - 3) * 0.16 * (1 - aid[i] * 0.6), 0, 0.85))) {
         this.doctor(i, false);
         return;
@@ -1129,7 +1250,9 @@ export class LiveFight {
     const f = this.F[i];
     const label = { eyepoke: 'Eye poke', groin: 'Low blow', fence: 'Grabbing the fence' }[kind];
     const prior = this.fouls.filter((x) => x.side === i).length;
-    const penalized = kind === 'fence' ? prior >= 1 : prior >= 1 && this.rng.chance(0.6);
+    // a bought referee: his man never gets called, the other man always does
+    const bought = this.rules.bought;
+    const penalized = bought === i ? false : bought !== undefined ? true : kind === 'fence' ? prior >= 1 : prior >= 1 && this.rng.chance(0.6);
     this.fouls.push({ side: i, text: label, penalized });
     f.act = null;
     o.act = null;
@@ -1149,8 +1272,12 @@ export class LiveFight {
       this.line(i, 'foul', `The referee takes a point from ${this.name(i)}.`, 2);
       this.log[this.log.length - 1].key = 'deduction';
     }
-    // sometimes he can't continue
-    if (kind !== 'fence' && this.rng.chance(0.06)) {
+    if (bought === i) {
+      this.line(-1, 'idle', `${this.rules.referee ?? 'The referee'} saw nothing. He was adjusting his glasses. "Keep it clean, boys," he says, to one of them.`, 2);
+      this.log[this.log.length - 1].key = 'ref_blind';
+    }
+    // sometimes he can't continue (not in the boss fights: those go to the script)
+    if (kind !== 'fence' && bought === undefined && !this.rules.protectUntil && this.rng.chance(0.06)) {
       const early = this.round === 1 || (this.round === 2 && this.clock > ROUND_SECONDS / 2);
       this.line((1 - i) as Side, 'stop', `${this.name((1 - i) as Side)} can't continue.`, 3);
       this.log[this.log.length - 1].key = 'cannot_continue';
@@ -1193,6 +1320,10 @@ export class LiveFight {
     const c = this.F[i].cut;
     this.ev({ type: 'doctor', side: i });
     this.line(-1, 'doctor', `The referee brings in the doctor to look at ${this.name(i)}'s cut.`, 2);
+    if (this.rules.protectUntil && this.round < this.rules.protectUntil) {
+      this.line(-1, 'idle', 'The doctor lets it continue. The crowd roars.', 2);
+      return;
+    }
     if (!midRound || this.rng.chance(clamp((c - 4) * 0.25, 0.15, 0.8))) {
       this.line((1 - i) as Side, 'stop', `The doctor waves it off! ${this.name(i)} can't see out of that eye.`, 3);
       this.log[this.log.length - 1].key = 'doctor';
@@ -1207,6 +1338,7 @@ export class LiveFight {
 
   private finish(winner: Side, method: 'KO' | 'TKO' | 'SUB', detail: string): void {
     if (this.result) return;
+    if (this.protectedNow((1 - winner) as Side)) return;
     // a knockout costs the loser time off (concussion protocol)
     if (method === 'KO' || (method === 'TKO' && !/Injury|Doctor/.test(detail))) this.injuries.push({ side: (1 - winner) as Side, name: 'concussion', weeks: method === 'KO' ? this.rng.int(6, 10) : this.rng.int(3, 6) });
     this.result = { winner, method, detail, round: this.round, time: this.clockElapsed() };
@@ -1223,6 +1355,7 @@ export class LiveFight {
 
   /** The doctor or the corner can stop it between rounds. */
   stopBetweenRounds(loser: Side, why: string): void {
+    if (this.rules.protectUntil && this.round < this.rules.protectUntil) return;
     this.result = { winner: (1 - loser) as Side, method: 'TKO', detail: why, round: this.round, time: '5:00' };
     this.phase = 'over';
   }
@@ -1287,6 +1420,11 @@ export class LiveAI {
       if (this.rng.chance(dt * (3 + sk.heart / 25))) out.push({ type: 'getup', side: this.rng.chance(0.5) ? 'left' : 'right', rhythm: this.rng.float(0.5, 1) });
       return { intents: out, move: 0 };
     }
+    if (op.down > 0) {
+      // he's hurt on the canvas: jump on him (the killer instinct varies)
+      if ((L.rules.koRules ?? 'mma') === 'mma' && op.down > 0.25 && this.rng.chance(dt * (2 + sk.fightIQ / 40 + (this.plan === 'pressure' ? 2 : 0)))) out.push({ type: 'shoot' });
+      return { intents: out, move: 0 };
+    }
     if (L.sub) {
       const atk = L.sub.atk === this.side;
       // defending a hold is instinct: everybody fights hands, the better grappler/wrestler fights them better
@@ -1295,7 +1433,7 @@ export class LiveAI {
     }
     // reactive defence: read the other man's strike while it winds up
     if (op.act && !op.act.done && op.act.kind !== 'feint' && op.act.kind !== 'shoot' && op.act.t > 0.04) {
-      if (!this.blockT && this.rng.chance(dt * 9 * (0.25 + iq * 0.7))) {
+      if (!this.blockT && this.rng.chance(dt * 9 * (0.25 + iq * 0.7) * ((me.tilt ?? 0) > 0 ? 0.6 : 1))) {
         const r = this.rng.next();
         if (L.pos === 'stand' && r < 0.25 + iq * 0.15) out.push({ type: 'evade', kind: op.act.name === 'hook' ? 'roll' : op.act.name === 'legkick' ? 'pull' : 'slip', source: 'button' });
         else if (r < 0.35 + iq * 0.2) out.push({ type: 'parry' });
@@ -1394,6 +1532,9 @@ export class LiveAI {
     const pressure = this.plan === 'pressure';
     const survive = this.plan === 'survive' || me.hp < 25;
     this.want = survive ? 75 : pressure ? 40 : this.plan === 'counter' ? 58 : wrestle ? 52 : 50;
+    // wound up by a taunt: walks straight in swinging
+    const tilted = (me.tilt ?? 0) > 0 && !survive;
+    if (tilted) this.want = 38;
     const d = L.dist;
     let move = 0;
     if (me.stun <= 0.2) {
@@ -1405,6 +1546,7 @@ export class LiveAI {
     this.think -= dt;
     if (this.think <= 0 && !me.act && me.stun <= 0) {
       this.think = this.rng.float(0.18, 0.55) * (this.plan === 'counter' ? 1.4 : pressure ? 0.8 : 1) * (1.25 - iq * 0.4) * (me.gas < 25 ? 1.6 : 1);
+      if (tilted) this.think *= 0.7;
       const r = this.rng.next();
       const opening = me.counterT > 0 || op.stun > 0;
       if (wrestle && d < 66 && r < 0.12 + sk.wrestling / 500) out.push({ type: 'shoot' });
@@ -1428,7 +1570,8 @@ export class LiveAI {
           const lead = punch === 'jab' || punch === 'bodyJab' || (punch === 'hook' && this.rng.chance(0.6)) || (punch === 'bodyHook' && this.rng.chance(0.5));
           out.push({ type: 'punch', hand: lead ? 'lead' : 'rear', punch, weight, hold: 0.2, pressure: 1, grounded: false });
         }
-      } else if (r > 0.92) out.push({ type: 'feint' });
+      } else if (r > 0.985 && d > 64 && me.hp > op.hp + 20 && me.gas > 40) out.push({ type: 'taunt' });
+      else if (r > 0.92) out.push({ type: 'feint' });
     }
     return { intents: out, move };
   }

@@ -12,6 +12,33 @@ import { openHelp } from './help';
 /** Newest first. Keep each version to a few lines. */
 export const NOTES: { v: string; lines: string[] }[] = [
   {
+    v: '2.0.1',
+    lines: [
+      'Fixes: cutscene sets no longer vanish mid-scene.',
+      'Skills stop at 99: training and sparring show MAX.',
+      'Suspended means suspended: no fight offers until it ends.',
+      'Suspensions are rarer. Tainted supplements: 8 weeks, not 26.',
+      'Fewer random drug tests. This card no longer shows every launch.',
+      'Smoother fights and HUD (faster text and crowd drawing).',
+    ],
+  },
+  {
+    v: '2.0.0',
+    lines: [
+      'Road To Champion: you are Han "Pride Of The Maritimes" Tibular.',
+      'Five chapters, a boss in every league, a superfight at the end.',
+      'New title screen, a MODES tunnel, a TROPHY CASE for achievements.',
+      'New fighter models: real hair, more muscle, their own moves.',
+      'TAUNT (T / X): everybody has his own. Some flip you off.',
+      'Knockdowns: in MMA you jump on him and finish it.',
+      'Camp: the real weight cut is the last two weeks. Spar for points.',
+      'Beat a chapter: its boss is playable in QUICK FIGHT.',
+      'Cutscenes with BACK. Settings > Text for Clear or Bold lettering.',
+      'Four new songs: SANDOTHERAPPER x Jayson, and $cott.',
+      'CREDITS plays the full roll. SUPPORT THE DEV if you want to help.',
+    ],
+  },
+  {
     v: '1.7.0',
     lines: [
       'Road To Champion: a much longer story, with cutscenes.',
