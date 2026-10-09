@@ -1,0 +1,15 @@
+{
+  "name": "CAGE BOSS",
+  "short_name": "CAGE BOSS",
+  "description": "A satirical pixel MMA game: run the promotion, or fight your way to the belt.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0d0b0c",
+  "theme_color": "#0d0b0c",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
