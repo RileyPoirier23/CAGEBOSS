@@ -168,3 +168,26 @@ jobs:
             out/latest.yml
             out/latest-mac.yml
             out/latest-linux.yml
+      # posts the new version in the 506Studios Discord (#announcements); skipped until the
+      # DISCORD_RELEASE_WEBHOOK secret is set. DISCORD_PING_ROLE_ID (optional) pings that role.
+      - name: Announce on Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          PING: ${{ secrets.DISCORD_PING_ROLE_ID }}
+          TAG: ${{ needs.check.outputs.tag }}
+          URL: https://github.com/${{ github.repository }}/releases/tag/${{ needs.check.outputs.tag }}
+        run: |
+          [ -z "$WEBHOOK" ] && { echo "No DISCORD_RELEASE_WEBHOOK secret; skipping"; exit 0; }
+          notes=$(tail -n +2 release-notes.md | sed '/^\s*$/d' | head -c 3500)
+          jq -n --arg tag "$TAG" --arg notes "$notes" --arg url "$URL" --arg ping "$PING" '{
+            username: "CAGE BOSS",
+            content: (if $ping == "" then null else "<@&\($ping)>" end),
+            allowed_mentions: { roles: (if $ping == "" then [] else [$ping] end) },
+            embeds: [{
+              title: "CAGE BOSS \($tag) is out",
+              url: $url,
+              color: 13120556,
+              description: ($notes + "\n\n**Download:** https://www.506clicks.ca/projects/cage-boss/ (Windows installs update themselves)")
+            }]
+          }' > discord.json
+          curl -sS -f -H 'Content-Type: application/json' -d @discord.json "$WEBHOOK" || echo "::warning::Discord announcement failed"
