@@ -4,8 +4,21 @@ name: Godot build
 # the TypeScript (tools/gdport), checks the rules against the TypeScript game (golden tests),
 # then exports Windows, Linux, macOS and Android builds as downloadable artifacts
 # (Actions tab -> the run -> Artifacts). The Electron desktop builds are desktop.yml.
+# The Android APK also goes onto the GitHub release for package.json's version (the website's
+# Android button downloads it from the latest release): the first time that version has a
+# release, or whenever this is run by hand with "publish" ticked.
+#
+# Android signing: with the ANDROID_KEYSTORE_BASE64 and ANDROID_KEYSTORE_PASSWORD secrets set
+# (alias "cageboss"), the APK is release-signed with that key, so every update installs over the
+# previous one. Without them it falls back to a throwaway key (each build then needs
+# uninstalling the old one first).
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Put the Android APK on the latest release even if it already has one
+        type: boolean
+        default: false
   push:
     branches: ['main', 'master', 'claude/**']
     paths: ['src/**', 'data/**', 'public/**', 'port/godot/**', 'tools/gdport/**', 'tools/golden/**', '.github/workflows/godot.yml']
@@ -13,6 +26,10 @@ on:
 concurrency:
   group: godot-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: write
+  actions: read
 
 env:
   GODOT_VERSION: '4.5'
@@ -47,6 +64,9 @@ jobs:
       - name: Golden tests (the Godot rules match the TypeScript game)
         run: T=1800 tools/golden/run.sh
       - name: Android SDK / signing for the editor
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           keytool -genkeypair -v -keystore "$HOME/debug.keystore" -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
           mkdir -p "$HOME/.config/godot"
@@ -60,6 +80,28 @@ jobs:
           export/android/debug_keystore_user = "androiddebugkey"
           export/android/debug_keystore_pass = "android"
           EOF
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASS" ]; then
+            printf '%s' "$KEYSTORE_B64" | base64 -d > "$HOME/release.keystore"
+            {
+              echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=$HOME/release.keystore"
+              echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=cageboss"
+              echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=$KEYSTORE_PASS"
+            } >> "$GITHUB_ENV"
+          else
+            echo "::warning::No Android release key (ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD secrets): the APK is signed with a throwaway key"
+            {
+              echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=$HOME/debug.keystore"
+              echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=androiddebugkey"
+              echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=android"
+            } >> "$GITHUB_ENV"
+          fi
+      - name: Android version from package.json
+        working-directory: port/godot
+        run: |
+          v=$(node -p "require('../../package.json').version")
+          code=$(node -p "const [a,b,c]=require('../../package.json').version.split('.').map(Number); a*10000+b*100+c")
+          sed -i "s/^version\/name=.*/version\/name=\"$v\"/; s/^version\/code=.*/version\/code=$code/" export_presets.cfg
+          grep -n '^version/' export_presets.cfg
       - name: Export
         working-directory: port/godot
         run: |
@@ -67,7 +109,8 @@ jobs:
           "$GODOT" --headless --path . --export-release "Windows" "build/windows/CAGE BOSS.exe"
           "$GODOT" --headless --path . --export-release "Linux" build/linux/cageboss.x86_64
           "$GODOT" --headless --path . --export-release "macOS" "build/macos/CAGE BOSS.zip"
-          "$GODOT" --headless --path . --export-debug "Android" build/android/cageboss-debug.apk || echo "::warning::Android export failed (see log)"
+          "$GODOT" --headless --path . --export-release "Android" build/android/CAGE-BOSS-Android.apk
+          test -s build/android/CAGE-BOSS-Android.apk
           ls -la build/*
       - uses: actions/upload-artifact@v4
         with:
@@ -85,4 +128,25 @@ jobs:
         with:
           name: cageboss-godot-android
           path: port/godot/build/android
-          if-no-files-found: ignore
+          if-no-files-found: error
+      - name: Android APK onto the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORCE: ${{ inputs.publish }}
+        run: |
+          v="v$(node -p "require('./package.json').version")"
+          apk=port/godot/build/android/CAGE-BOSS-Android.apk
+          # a version bump: desktop.yml is making the release right now, so wait for it (or for
+          # that run to end without one)
+          for i in $(seq 1 60); do
+            if gh release view "$v" >/dev/null 2>&1; then break; fi
+            st=$(gh run list --workflow desktop.yml --commit "$GITHUB_SHA" --json status -q '.[0].status' 2>/dev/null || true)
+            if [ "$st" = completed ] && ! gh release view "$v" >/dev/null 2>&1; then echo "No release $v for this commit"; exit 0; fi
+            [ -z "$st" ] && [ "$i" -gt 4 ] && { echo "No release $v and no desktop build for this commit"; exit 0; }
+            sleep 30
+          done
+          gh release view "$v" >/dev/null 2>&1 || { echo "Release $v didn't appear"; exit 0; }
+          has=$(gh release view "$v" --json assets -q 'any(.assets[]; .name == "CAGE-BOSS-Android.apk")')
+          if [ "$has" = true ] && [ "$FORCE" != true ]; then echo "$v already has an APK"; exit 0; fi
+          gh release upload "$v" "$apk" --clobber
+          echo "Uploaded CAGE-BOSS-Android.apk to $v"

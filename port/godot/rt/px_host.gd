@@ -31,6 +31,15 @@ func _ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_PREDELETE:
 		PX.alive = false
+	elif what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		# Android back button = Escape (backs out of menus; the game's own QUIT stays the way out)
+		for down in [true, false]:
+			var k = InputEventKey.new()
+			k.keycode = KEY_ESCAPE
+			k.physical_keycode = KEY_ESCAPE
+			k.pressed = down
+			DOM.dispatch(DOM.key_event(k))
+		JS.flush_microtasks()
 
 func _exit_tree() -> void:
 	PX.alive = false
