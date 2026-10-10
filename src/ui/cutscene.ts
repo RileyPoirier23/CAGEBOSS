@@ -10,7 +10,7 @@ import { Container, Graphics, type Ticker } from 'pixi.js';
 import type { Game } from './app';
 import type { Fighter } from '../core/types';
 import { PAL } from '../art/palette';
-import { W, H, text, button, box } from './kit';
+import { W, H, SW, OX, text, button, box } from './kit';
 import { POSES, drawRig, lookFor, type Look2, type Pose } from './rig';
 import { input } from '../core/input';
 import { sfx } from '../audio/sfx';
@@ -210,7 +210,7 @@ function drawBg(g: Graphics, bg: Bg): void {
       break;
     }
     case 'black':
-      g.rect(0, 0, W, H).fill(0x060508);
+      g.rect(-OX, 0, SW, H).fill(0x060508);
       break;
   }
 }
@@ -349,7 +349,7 @@ export function playCutscene(g: Game, scene: Cutscene, done: (choice: string | n
     end();
   }, { small: true, fill: PAL.shadow });
   root.addChild(skipBtn);
-  const hit = new Graphics().rect(0, 0, W, H).fill({ color: 0, alpha: 0.001 });
+  const hit = new Graphics().rect(-OX, 0, SW, H).fill({ color: 0, alpha: 0.001 });
   hit.eventMode = 'static';
   hit.on('pointertap', advance);
   root.addChildAt(hit, 1);
@@ -361,7 +361,7 @@ export function playCutscene(g: Game, scene: Cutscene, done: (choice: string | n
   const titleC = new Container();
   root.addChild(titleC);
   if (scene.title) {
-    titleC.addChild(new Graphics().rect(0, 0, W, H).fill(0x060508));
+    titleC.addChild(new Graphics().rect(-OX, 0, SW, H).fill(0x060508));
     titleC.addChild(text(scene.title, 0, H / 2 - 8, { width: W, align: 'center', color: PAL.gold, scale: 2 }));
   }
   startShot(0);
@@ -402,7 +402,7 @@ export function playCutscene(g: Game, scene: Cutscene, done: (choice: string | n
     if (bg === 'gym') for (let k = 0; k < 4; k++) fx.circle(400 + Math.sin(t * 1.5 + k) * 6, 110 - ((t * 14 + k * 9) % 36), 3).fill({ color: 0xffffff, alpha: 0.15 });
     if ((bg === 'presser' || bg === 'stage') && Math.random() < dt * 3) fx.rect(Math.random() * W, H - 40 + Math.random() * 20, 6, 6).fill(0xffffff);
     if (flash > 0) {
-      fx.rect(0, 0, W, H).fill({ color: 0xffffff, alpha: Math.min(0.6, flash) });
+      fx.rect(-OX, 0, SW, H).fill({ color: 0xffffff, alpha: Math.min(0.6, flash) });
       flash -= dt;
     }
     drawDialog();

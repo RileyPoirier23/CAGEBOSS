@@ -5,7 +5,8 @@
 import { Container, Graphics } from 'pixi.js';
 import type { Game } from './app';
 import { PAL } from '../art/palette';
-import { W, H, box, text, button, btn, paper, PaperKind, hoverTip } from './kit';
+import { isTouchDevice } from '../core/platform';
+import { W, H, SW, OX, box, text, button, btn, paper, PaperKind, hoverTip } from './kit';
 import { sfx } from '../audio/sfx';
 
 export interface WindowOpts {
@@ -77,6 +78,17 @@ export function selector<T>(
     label.setText(options[idx].label);
     onChange(options[idx].value);
   };
+  // phones: the whole box is the control, left half back, right half forward
+  if (isTouchDevice()) {
+    const hit = new Container();
+    hit.eventMode = 'static';
+    hit.hitArea = { contains: (px: number, py: number) => px >= 12 && px < w - 12 && py >= -2 && py < 15 };
+    hit.on('pointertap', (e) => {
+      sfx('click');
+      set(hit.toLocal(e.global).x < w / 2 ? -1 : 1);
+    });
+    c.addChild(hit);
+  }
   c.addChild(button('<', 0, 0, 12, 13, () => set(-1), { small: true }));
   c.addChild(button('>', w - 12, 0, 12, 13, () => set(1), { small: true }));
   return c;
@@ -149,10 +161,10 @@ export function domInput(
   overlay.appendChild(el);
   const place = () => {
     const r = g.overlayRect();
-    const s = r.width / W;
+    const s = r.height / H;
     overlay.style.left = r.left + 'px';
     overlay.style.top = r.top + 'px';
-    el.style.left = x * s + 'px';
+    el.style.left = (x + OX) * s + 'px';
     el.style.top = y * s + 'px';
     el.style.width = w * s + 'px';
     el.style.height = h * s + 'px';

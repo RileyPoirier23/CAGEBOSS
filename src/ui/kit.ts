@@ -8,8 +8,20 @@ import { PixelText, TextOpts, measure } from './text';
 import { sfx } from '../audio/sfx';
 import { isTouchDevice } from '../core/platform';
 
+/** Design size: every screen is laid out for 480x270. */
 export const W = 480;
 export const H = 270;
+/**
+ * Screen width in game pixels. Phones widen the canvas to the screen's shape (no black bars):
+ * the 480-wide design is centred OX pixels in, and backgrounds bleed into the margins.
+ * Elsewhere SW = W and OX = 0. Full-width screens import `SW as W` and sit at x = -OX.
+ */
+export let SW = W;
+export let OX = 0;
+export function setScreenWidth(sw: number): void {
+  SW = sw;
+  OX = Math.floor((sw - W) / 2);
+}
 
 export function box(
   w: number, h: number, fill: number, border?: number, opts: { alpha?: number; shadow?: boolean; bevel?: boolean } = {},
@@ -155,7 +167,11 @@ export class Button extends Container {
     this.eventMode = 'static';
     this.cursor = this.disabled ? 'default' : 'pointer';
     // phones: a little slop around the button for thumbs (2px up/down so stacked menus don't overlap)
-    if (isTouchDevice()) this.hitArea = { contains: (x: number, y: number) => x >= -3 && y >= -2 && x < this.w + 3 && y < this.h + 2 };
+    if (isTouchDevice()) {
+      // tiny buttons (selector arrows, X boxes) reach at least 20 wide
+      const sx = Math.max(3, (20 - w) / 2);
+      this.hitArea = { contains: (x: number, y: number) => x >= -sx && y >= -2 && x < this.w + sx && y < this.h + 2 };
+    }
     this.on('pointerover', () => {
       this.hovered = true;
       this.draw();
@@ -358,7 +374,7 @@ class Tooltip {
     const b = this.node.getLocalBounds();
     let x = this.pos.x + 8;
     let y = this.pos.y + 10;
-    if (x + b.width > W - 2) x = this.pos.x - b.width - 4;
+    if (x + b.width > SW - 2) x = this.pos.x - b.width - 4;
     if (y + b.height > H - 2) y = this.pos.y - b.height - 4;
     this.node.x = Math.max(1, Math.round(x));
     this.node.y = Math.max(1, Math.round(y));
@@ -386,7 +402,7 @@ export function clearChildren(c: Container): void {
 
 /** Simple blocking dim layer for modals. */
 export function dimmer(alpha = 0.6, onClick?: () => void): Graphics {
-  const g = new Graphics().rect(0, 0, W, H).fill({ color: 0x000000, alpha });
+  const g = new Graphics().rect(-OX, 0, SW, H).fill({ color: 0x000000, alpha });
   g.eventMode = 'static';
   if (onClick) g.on('pointertap', onClick);
   return g;

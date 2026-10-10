@@ -11,10 +11,11 @@ import type { GameState } from '../core/types';
 import { loadJSON, storeJSON, saveToSlot, autoSlot } from '../core/save';
 import { setColorblind, PAL } from '../art/palette';
 import { setMuted, setMusic, setVolumes, sfx, unlock as sfxUnlock } from '../audio/sfx';
-import { W, H, tooltip, clearChildren, dimmer, box, text } from './kit';
+import { W, H, SW, OX, setScreenWidth, tooltip, clearChildren, dimmer, box, text } from './kit';
 import { bus } from '../core/events';
 import { setTextResolution, setBleep } from './text';
 import { desktop } from '../desktop';
+import { isTouchDevice } from '../core/platform';
 import { LoadingScreen } from './loading';
 import { configureMusic, setMusicContext, skipTrack, unlockMusic, onTrackChange, type MusicContext } from '../audio/music';
 
@@ -78,6 +79,8 @@ export abstract class Scene {
 
 export class Game {
   app!: Application;
+  /** the 480-wide design, centred on a wider phone screen (x = OX) */
+  frame = new Container();
   stage = new Container(); // shaken
   sceneLayer = new Container();
   modalLayer = new Container();
@@ -108,7 +111,8 @@ export class Game {
       preference: 'webgl',
     });
     parent.appendChild(this.app.canvas);
-    this.app.stage.addChild(this.stage);
+    this.app.stage.addChild(this.frame);
+    this.frame.addChild(this.stage);
     this.stage.addChild(this.sceneLayer, this.toastLayer, this.modalLayer, this.feedbackLayer);
     this.app.stage.addChild(this.tipLayer, this.loadLayer);
     tooltip.attach(this.tipLayer);
@@ -146,7 +150,16 @@ export class Game {
     const ah = (host?.clientHeight || window.innerHeight) * safe;
     const dpr = window.devicePixelRatio || 1;
     let s = this.settings.uiScale;
-    if (!s) {
+    // phones: fill the screen. The game takes the full height and the canvas widens to the
+    // screen's shape (up to 640 game pixels), so there are no black bars at the sides.
+    const phone = !s && isTouchDevice() && matchMedia('(pointer: coarse)').matches;
+    let sw = W;
+    if (phone) {
+      sw = Math.max(W, Math.min(640, Math.floor(aw / Math.min(ah / H, aw / W))));
+      // browser bars coming and going nudge the size: don't re-lay-out the screen for a few pixels
+      if (SW > W && Math.abs(sw - SW) < 8) sw = SW;
+      s = Math.min(ah / H, aw / sw);
+    } else if (!s) {
       // whole *device* pixels per game pixel keeps nearest-neighbour sharp on high-DPI screens
       const fit = Math.min((aw * dpr) / W, (ah * dpr) / H);
       let dev = Math.max(1, Math.floor(fit + 1e-6));
@@ -156,10 +169,16 @@ export class Game {
     }
     this.scale = s;
     const res = s * dpr;
-    this.app.renderer.resize(W, H, res);
+    const widthChanged = sw !== SW;
+    if (widthChanged) setScreenWidth(sw);
+    this.frame.x = OX;
+    this.loadLayer.x = OX;
+    this.app.renderer.resize(SW, H, res);
     setTextResolution(res);
-    c.style.width = W * s + 'px';
+    c.style.width = SW * s + 'px';
     c.style.height = H * s + 'px';
+    // the screen got wider or narrower (rotation, browser bars): lay the current screen out again
+    if (widthChanged && this.scene) this.scene.refresh();
     bus.emit('resize', s);
   }
 
@@ -256,7 +275,7 @@ export class Game {
     const c = new Container();
     c.addChild(box(w, h, PAL.night, PAL.ash, { shadow: true }));
     c.addChild(t);
-    c.x = opts.top ? Math.floor((W - w) / 2) : W - w - 4;
+    c.x = opts.top ? Math.floor((W - w) / 2) : SW - OX - w - 4;
     c.y = opts.top ? 2 : H - 4 - h - this.toasts.length * (h + 2);
     (this.modals.length && !opts.background ? this.feedbackLayer : this.toastLayer).addChild(c);
     this.toasts.push({ node: c, t: 2.6 });
@@ -290,7 +309,7 @@ export class Game {
     const IN = 0.35, HOLD = 3, OUT = 0.6;
     const a = np.t < IN ? np.t / IN : np.t < IN + HOLD ? 1 : 1 - (np.t - IN - HOLD) / OUT;
     np.node.alpha = Math.max(0, Math.min(1, a));
-    np.node.x = 4 - Math.round((1 - np.node.alpha) * 6);
+    np.node.x = 4 - OX - Math.round((1 - np.node.alpha) * 6);
     if (np.t > IN + HOLD + OUT) {
       np.node.destroy({ children: true });
       this.nowPlaying = null;
@@ -370,7 +389,7 @@ export class Game {
 }
 
 export function fullBg(color: number): Graphics {
-  return new Graphics().rect(0, 0, W, H).fill(color);
+  return new Graphics().rect(-OX, 0, SW, H).fill(color);
 }
 
 export { clearChildren };

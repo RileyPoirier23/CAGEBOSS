@@ -6,7 +6,7 @@ import { Container, Graphics } from 'pixi.js';
 import { Scene } from '../app';
 import type { Look } from '../../core/types';
 import { PAL } from '../../art/palette';
-import { W, H, text, button, box } from '../kit';
+import { W, H, SW, OX, text, button, box } from '../kit';
 import { selector, domInput, removeAllDomInputs, bigTitle } from '../widgets';
 import { portrait } from '../sprites';
 import { content } from '../../core/content';
@@ -59,7 +59,7 @@ export class FMCreateScene extends Scene {
 
   build(): void {
     const r = this.root;
-    const bg = new Graphics().rect(0, 0, W, H).fill(0x15121a);
+    const bg = new Graphics().rect(-OX, 0, SW, H).fill(0x15121a);
     for (let y = 0; y < H; y += 6) bg.rect(0, y, W, 1).fill({ color: 0x000000, alpha: 0.25 });
     r.addChild(bg);
     r.addChild(bigTitle(this.legacy ? 'LEGACY MODE' : 'ROAD TO CHAMPION', 6, PAL.gold));

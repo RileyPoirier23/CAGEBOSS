@@ -15,6 +15,7 @@ import { alertBox } from './widgets';
 import { sfx } from '../audio/sfx';
 import { Rng } from '../core/rng';
 import { fm, resolveDoc, comparePair, type FMDoc } from '../sim/fighter';
+import { isTouchDevice } from '../core/platform';
 
 const DOC_X = 122;
 const DOC_Y = 40;
@@ -261,7 +262,7 @@ export function openFMDesk(g: Game, onDone: () => void): void {
     const w = 150;
     const c = new Container();
     const body = text(sl.body, 6, 22, { small: true, width: w - 12, color: PAL.ink, maxLines: 4 });
-    const more = text('CLICK TO READ IT ALL', 6, 0, { small: true, color: sl.good ? PAL.moss : PAL.blood });
+    const more = text(isTouchDevice() ? 'TAP TO READ IT ALL' : 'CLICK TO READ IT ALL', 6, 0, { small: true, color: sl.good ? PAL.moss : PAL.blood });
     const h = 30 + body.textHeight + 10;
     more.y = h - 12;
     c.addChild(paper(w, h, sl.good ? 'white' : 'pink', 77));

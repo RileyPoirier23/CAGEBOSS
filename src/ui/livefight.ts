@@ -20,12 +20,12 @@ import { boothOpen, commentate, butlerIntro, butlerDecision, butlerFinish, weigh
 import { boutLabel } from '../sim/events';
 import { rankLabel } from '../sim/rankings';
 import { PAL } from '../art/palette';
-import { W, H, text, button, box } from './kit';
+import { W, H, SW, OX, text, button, box } from './kit';
 import { ArenaView, AH, AW, type CanvasInfo } from './arena';
 import { input } from '../core/input';
 import { isTouchDevice } from '../core/platform';
 import { FightInput, sampleFight, rumbleForHit, type FightIntent, type KeyboardShare } from '../core/fightinput';
-import { TouchFightPad } from './fightpad';
+import { TouchFightPad, fightPadLayout } from './fightpad';
 import { setPinchZoom } from './touch';
 import { setPadUiMode } from './controller';
 import { fighterPortrait } from './sprites';
@@ -94,13 +94,19 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   let lastLine = '';
   let lineT = 0;
 
+  // the fight spans the whole screen: on a wide phone the arena sits in the middle and the
+  // HUD panel (and the thumbs) get the full width. FW = screen width, AX = the arena's x.
+  const FW = SW;
+  const AX = Math.floor((FW - AW) / 2);
   const root = new Container();
-  root.addChild(new Graphics().rect(0, 0, W, H).fill(0x0c0a10));
+  root.x = -OX;
+  root.addChild(new Graphics().rect(0, 0, FW, H).fill(0x0c0a10));
   const arena = new ArenaView(o.A, o.B, o.bout.rounds, { event: o.event, eventKey: o.bout.id, sponsors: o.sponsors, canvas: o.canvas, bare: o.bare });
   (window as unknown as { __liveArena?: ArenaView }).__liveArena = arena;
   arena.manual = [L.F[0].x, L.F[1].x];
   arena.startFight();
   arena.manualRound();
+  arena.x = AX;
   root.addChild(arena);
   arena.setMode(g.settings.fightCam ?? 'side');
   /** C / View: side -> TV -> top-down */
@@ -136,15 +142,17 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       stage = 'tape';
       arena.startIntro();
       tape = new TaleOfTape(o.A, o.B, AW, boutLabel(S, o.bout), weighInWeight(o.A, o.bout, 1), weighInWeight(o.B, o.bout, 2), [rankLabel(S, o.A.id), rankLabel(S, o.B.id)]);
+      tape.x = AX;
       root.addChild(tape);
       sfx('crowd');
     }
     if (g.settings.bleets !== false) {
       feed = new BleetFeed();
-      feed.position.set(AW - 146, 36);
+      feed.position.set(AX + AW - 146, 36);
       root.addChild(feed);
     }
   }
+  subtitle.x = AX;
   root.addChild(subtitle);
   const say = (line: AnnounceLine | null) => {
     subtitle.removeChildren().forEach((c) => c.destroy({ children: true }));
@@ -199,17 +207,17 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   // so both fighters' readouts squeeze into the middle (TX0..TX1) and PAUSE / CAM go on screen
   const touchUi = isTouchDevice() && !o.versus;
   const TX0 = 124;
-  const TX1 = 326;
+  const TX1 = FW - 154;
   let pad: TouchFightPad | null = null;
   let skipCatch: Container | null = null;
   if (touchUi) {
-    pad = new TouchFightPad();
+    pad = new TouchFightPad(fightPadLayout(FW));
     root.addChild(pad);
   }
 
   // static HUD: portraits and names
   const y0 = AH + 2;
-  hud.addChild(box(W, H - AH, PAL.ink, PAL.shadow));
+  hud.addChild(box(FW, H - AH, PAL.ink, PAL.shadow));
   hud.position.set(0, 0);
   hud.children[0].position.set(0, AH);
   const tag = (i: Side) => (o.versus ? (i === P ? 'P1: ' : 'P2: ') : i === P ? 'YOU: ' : '');
@@ -221,10 +229,10 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     const pA = fighterPortrait(o.A, 32, 'plain');
     pA.position.set(4, y0 + 4);
     const pB = fighterPortrait(o.B, 32, 'plain');
-    pB.position.set(W - 36, y0 + 4);
+    pB.position.set(FW - 36, y0 + 4);
     hud.addChild(pA, pB);
     hud.addChild(text(tag(0) + o.A.last.toUpperCase(), 40, y0 + 3, { small: true, color: P === 0 || o.versus ? PAL.gold : PAL.bone }));
-    hud.addChild(text(tag(1) + o.B.last.toUpperCase(), W - 140, y0 + 3, { small: true, color: P === 1 || o.versus ? PAL.gold : PAL.bone, width: 100, align: 'right' }));
+    hud.addChild(text(tag(1) + o.B.last.toUpperCase(), FW - 140, y0 + 3, { small: true, color: P === 1 || o.versus ? PAL.gold : PAL.bone, width: 100, align: 'right' }));
   }
 
   if (touchUi) {
@@ -232,14 +240,14 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     root.addChild(button('CAM', 4, AH + 4, 34, 14, () => {
       if (!paused && !resultShown) cycleCam();
     }, { small: true, fill: PAL.shadow }));
-    root.addChild(button('PAUSE', W - 44, AH + 4, 40, 14, () => {
+    root.addChild(button('PAUSE', FW - 44, AH + 4, 40, 14, () => {
       if (!paused && !resultShown && g.modals[g.modals.length - 1] === wrap) pause();
     }, { small: true, fill: PAL.shadow }));
     // tap the cage to skip the tale of the tape / Juiced Butler (a catcher over the tape card, gone once the fight starts)
     if ((stage as string) !== 'fight') {
       skipCatch = new Container();
       skipCatch.eventMode = 'static';
-      skipCatch.hitArea = { contains: (x: number, y: number) => x >= 0 && y >= 0 && x < AW && y < AH };
+      skipCatch.hitArea = { contains: (x: number, y: number) => x >= AX && y >= 0 && x < AX + AW && y < AH };
       skipCatch.on('pointertap', () => {
         if ((stage === 'tape' || stage === 'intro') && !paused) endIntro();
       });
@@ -323,7 +331,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     dyn.removeChildren().forEach((c) => c.destroy({ children: true }));
     // left / right panels (touch: two columns in the middle, the arena's top bar has the clock)
     const cx0 = touchUi ? TX0 : 112; // the centre column the text below lives in
-    const cx1 = touchUi ? TX1 : W - 112;
+    const cx1 = touchUi ? TX1 : FW - 112;
     for (const i of [0, 1] as Side[]) {
       const left = i === 0;
       if (touchUi) {
@@ -334,28 +342,28 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         bar(x, y0 + 30, 46, L.F[i].hp / 100, L.F[i].hp > 40 ? PAL.moss : PAL.blood, 'HEAD', !left);
         continue;
       }
-      const x = left ? 40 : W - 140;
-      bodyOutline(left ? 12 : W - 28, y0 + 42, i);
+      const x = left ? 40 : FW - 140;
+      bodyOutline(left ? 12 : FW - 28, y0 + 42, i);
       heart(x, y0 + 14, i);
       bar(left ? x : x + 26, y0 + 25, 50, L.F[i].gas / 100, PAL.steel, 'GAS', !left);
       bar(left ? x : x + 26, y0 + 31, 50, L.F[i].hp / 100, L.F[i].hp > 40 ? PAL.moss : PAL.blood, 'HEAD', !left);
     }
     // centre: clock + control prompts
-    if (!touchUi) dyn.addChild(text(`ROUND ${L.round}/${L.rounds}   ${L.clockText()}`, 0, y0 + 3, { width: W, align: 'center', color: PAL.gold }));
+    if (!touchUi) dyn.addChild(text(`ROUND ${L.round}/${L.rounds}   ${L.clockText()}`, 0, y0 + 3, { width: FW, align: 'center', color: PAL.gold }));
     const sy = touchUi ? y0 + 40 : y0 + 14;
     if (autopilot) dyn.addChild(text(touchUi ? 'AUTOPILOT (PAUSE to take over)' : 'AUTOPILOT (ESC to take over)', cx0, sy, { width: cx1 - cx0, align: 'center', small: true, color: PAL.ember }));
     const sit = situation();
     if (sit) {
-      dyn.addChild(text(sit.text, touchUi ? cx0 : 150, sy + (autopilot ? 11 : touchUi ? 0 : 2), { width: touchUi ? cx1 - cx0 : W - 300, align: 'center', small: true, color: sit.color, maxLines: 2 }));
+      dyn.addChild(text(sit.text, touchUi ? cx0 : 150, sy + (autopilot ? 11 : touchUi ? 0 : 2), { width: touchUi ? cx1 - cx0 : FW - 300, align: 'center', small: true, color: sit.color, maxLines: 2 }));
       // progress on the mat: your passing / escape work
       if (L.pos === 'ground' && !L.sub) {
         const v = Math.max(0, Math.min(1, L.top === P ? L.gprog : L.standProg));
         const py = touchUi ? sy + (autopilot ? 31 : 20) : y0 + 38;
-        hudG.rect(W / 2 - 40, py, 80, 3).fill(PAL.night).rect(W / 2 - 40, py, Math.round(80 * v), 3).fill(PAL.gold);
+        hudG.rect(FW / 2 - 40, py, 80, 3).fill(PAL.night).rect(FW / 2 - 40, py, Math.round(80 * v), 3).fill(PAL.gold);
       }
     }
     // the booth and the play-by-play, newest at the bottom
-    if (stage === 'tape' || stage === 'intro') dyn.addChild(text(touchUi ? 'TAP THE CAGE TO SKIP THE INTROS' : 'ENTER / A: SKIP THE INTROS', 0, H - 11, { small: true, color: PAL.grey, width: W, align: 'center' }));
+    if (stage === 'tape' || stage === 'intro') dyn.addChild(text(touchUi ? 'TAP THE CAGE TO SKIP THE INTROS' : 'ENTER / A: SKIP THE INTROS', 0, H - 11, { small: true, color: PAL.grey, width: FW, align: 'center' }));
     else {
       const speakers = content().commentary.speakers;
       const rows: { t: string; c: number }[] = booth.slice(-3).map((l) => ({ t: `{#${speakers[l.speaker!]?.color ?? 'c4a04a'}}${speakers[l.speaker!]?.short ?? l.speaker!.toUpperCase()}:{/} ${l.text}`, c: PAL.fog }));
@@ -382,16 +390,16 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     // overlays: the count, submission struggle
     for (const i of [0, 1] as Side[]) {
       if (L.F[i].down <= 0) continue;
-      dyn.addChild(text(`${L.countOf(i)}`, 0, 40, { width: W, align: 'center', color: PAL.bone, scale: 3, shadow: PAL.ink }));
+      dyn.addChild(text(`${L.countOf(i)}`, 0, 40, { width: FW, align: 'center', color: PAL.bone, scale: 3, shadow: PAL.ink }));
       if (i === P && !autopilot) {
-        hudG.rect(W / 2 - 60, 78, 120, 6).fill(PAL.night).rect(W / 2 - 59, 79, Math.round(118 * Math.min(1, L.F[i].getup)), 4).fill(PAL.gold);
-        dyn.addChild(text('GET UP!', 0, 88, { width: W, align: 'center', small: true, color: PAL.gold, shadow: PAL.ink }));
+        hudG.rect(FW / 2 - 60, 78, 120, 6).fill(PAL.night).rect(FW / 2 - 59, 79, Math.round(118 * Math.min(1, L.F[i].getup)), 4).fill(PAL.gold);
+        dyn.addChild(text('GET UP!', 0, 88, { width: FW, align: 'center', small: true, color: PAL.gold, shadow: PAL.ink }));
       }
     }
     if (L.sub) {
       const v = Math.max(0, Math.min(1, L.sub.prog));
-      hudG.rect(W / 2 - 80, 30, 160, 8).fill(PAL.night).rect(W / 2 - 79, 31, Math.round(158 * v), 6).fill(L.sub.atk === P ? PAL.moss : PAL.blood);
-      dyn.addChild(text(L.sub.name.toUpperCase(), 0, 20, { width: W, align: 'center', small: true, color: PAL.gold, shadow: PAL.ink }));
+      hudG.rect(FW / 2 - 80, 30, 160, 8).fill(PAL.night).rect(FW / 2 - 79, 31, Math.round(158 * v), 6).fill(L.sub.atk === P ? PAL.moss : PAL.blood);
+      dyn.addChild(text(L.sub.name.toUpperCase(), 0, 20, { width: FW, align: 'center', small: true, color: PAL.gold, shadow: PAL.ink }));
     }
   };
 
@@ -635,7 +643,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     const fr = new Container();
     const bw = 300;
     const bh = r.method === 'DEC' || r.method === 'DRAW' ? 92 : 70;
-    const bx = (W - bw) / 2;
+    const bx = (FW - bw) / 2;
     const by = 40;
     fr.addChild(box(bw, bh, PAL.night, won ? PAL.gold : PAL.slate, { bevel: true })).position.set(bx, by);
     fr.addChild(text(won ? 'YOU WIN' : lost ? 'YOU LOSE' : 'DRAW', bx, by + 8, { width: bw, align: 'center', color: won ? PAL.gold : lost ? PAL.blood : PAL.bone, scale: 2 }));

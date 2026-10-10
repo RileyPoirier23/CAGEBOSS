@@ -4,7 +4,7 @@
  */
 import { Container, Graphics } from 'pixi.js';
 import { PAL } from '../art/palette';
-import { W, H, text } from './kit';
+import { W, H, SW, OX, text } from './kit';
 import { pixelArtResolution, type PixelText } from './text';
 import { POSES, drawRig, lerpRig, type Rig, type Look2, type Pose } from './rig';
 import { expandPop } from '../sim/popculture';
@@ -86,7 +86,7 @@ export class LoadingScreen extends Container {
     super();
     this.eventMode = 'static';
     this.hitArea = { contains: () => true };
-    const bg = new Graphics().rect(0, 0, W, H).fill(0x0e0b0f);
+    const bg = new Graphics().rect(-OX, 0, SW, H).fill(0x0e0b0f);
     for (let y = 0; y < H; y += 3) bg.rect(0, y, W, 1).fill({ color: 0x000000, alpha: 0.25 });
     this.addChild(bg);
     this.addChild(text('CAGE BOSS', 0, 34, { width: W, align: 'center', scale: 3, color: PAL.gold, shadow: PAL.blood }));

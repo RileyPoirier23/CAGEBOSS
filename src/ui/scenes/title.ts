@@ -3,9 +3,11 @@
  */
 import { FMCreateScene } from './fmcreate';
 import { Container, Graphics } from 'pixi.js';
-import { Scene, fullBg } from '../app';
+import { Scene } from '../app';
 import { PAL, shade } from '../../art/palette';
-import { W, H, text, button } from '../kit';
+// full-width screen: on a phone it spans the whole (wider) canvas
+import { SW as W, OX, H, text, button } from '../kit';
+import { isTouchDevice } from '../../core/platform';
 import { sfx } from '../../audio/sfx';
 import type { PixelText } from '../text';
 import { openSettings } from './settings';
@@ -75,9 +77,10 @@ export class TitleScene extends Scene {
 
   build(): void {
     const r = this.root;
+    r.x = -OX;
     this.rain = new Graphics();
     this.marquee = new Graphics();
-    r.addChild(fullBg(0x15121a));
+    r.addChild(new Graphics().rect(0, 0, W, H).fill(0x15121a));
     r.addChild(this.drawFacade());
     r.addChild(this.buildTiles());
     r.addChild(this.marquee);
@@ -106,13 +109,25 @@ export class TitleScene extends Scene {
       ['CREDITS', () => openCredits(this.g)],
     ];
     if (desktop) items.push(['QUIT GAME', () => desktop!.quit()]);
-    items.forEach(([label, fn], i) => {
-      menu.addChild(button(label, 0, i * 14, 116, 12, fn, { fill: label === 'CONTINUE' ? PAL.moss : label === 'HELP' ? PAL.shadow : PAL.night, border: label === 'HELP' || label === 'CONTINUE' ? PAL.gold : PAL.ash }));
-    });
-    menu.x = Math.floor((W - 116) / 2);
-    menu.y = Math.max(80, H - 14 - items.length * 14);
+    const style = (label: string) => ({ fill: label === 'CONTINUE' ? PAL.moss : label === 'HELP' ? PAL.shadow : PAL.night, border: label === 'HELP' || label === 'CONTINUE' ? PAL.gold : PAL.ash });
+    if (isTouchDevice()) {
+      // phones: two columns of taller buttons (thumb-sized), the modes on the left
+      const rows = Math.ceil(items.length / 2);
+      items.forEach(([label, fn], i) => {
+        const col = i < rows ? 0 : 1;
+        menu.addChild(button(label, col * 132, (i % rows) * 19, 126, 16, fn, style(label)));
+      });
+      menu.x = Math.floor((W - 258) / 2);
+      menu.y = H - 14 - rows * 19;
+    } else {
+      items.forEach(([label, fn], i) => {
+        menu.addChild(button(label, 0, i * 14, 116, 12, fn, style(label)));
+      });
+      menu.x = Math.floor((W - 116) / 2);
+      menu.y = Math.max(80, H - 14 - items.length * 14);
+    }
     r.addChild(menu);
-    r.addChild(text(`V${__APP_VERSION__}  •  M = MUTE  •  ALL CHARACTERS ARE FICTIONAL. ANY RESEMBLANCE IS A LAWSUIT WAITING TO HAPPEN.`, 0, H - 9, { small: true, width: W, align: 'center', color: PAL.grey }));
+    r.addChild(text(`V${__APP_VERSION__}  •  ${isTouchDevice() ? '' : 'M = MUTE  •  '}ALL CHARACTERS ARE FICTIONAL. ANY RESEMBLANCE IS A LAWSUIT WAITING TO HAPPEN.`, 0, H - 9, { small: true, width: W, align: 'center', color: PAL.grey }));
     setTimeout(() => maybeWhatsNew(this.g), 400);
   }
 
@@ -133,26 +148,26 @@ export class TitleScene extends Scene {
         for (let wx = x + 3; wx < x + bw - 3; wx += 5) if (rnd() < 0.25) g.rect(wx, wy, 2, 2).fill(0x5a4a3a);
       x += bw + 2;
     }
-    // arena building
-    g.rect(60, 92, 360, 130).fill(0x2b2530);
-    g.rect(60, 92, 360, 4).fill(0x3c3442);
-    for (let i = 0; i < 9; i++) g.rect(72 + i * 40, 100, 28, 40).fill(0x221d27);
+    // arena building (the 480-wide design, centred on a wider phone screen)
+    g.rect(OX + 60, 92, 360, 130).fill(0x2b2530);
+    g.rect(OX + 60, 92, 360, 4).fill(0x3c3442);
+    for (let i = 0; i < 9; i++) g.rect(OX + 72 + i * 40, 100, 28, 40).fill(0x221d27);
     // entrance & awning
-    g.rect(170, 170, 140, 52).fill(0x1b1720);
-    g.rect(160, 160, 160, 10).fill(PAL.blood);
-    g.rect(160, 168, 160, 2).fill(shade(PAL.blood, -0.4));
-    for (let i = 0; i < 4; i++) g.rect(182 + i * 32, 178, 20, 44).fill(0x3a3122);
+    g.rect(OX + 170, 170, 140, 52).fill(0x1b1720);
+    g.rect(OX + 160, 160, 160, 10).fill(PAL.blood);
+    g.rect(OX + 160, 168, 160, 2).fill(shade(PAL.blood, -0.4));
+    for (let i = 0; i < 4; i++) g.rect(OX + 182 + i * 32, 178, 20, 44).fill(0x3a3122);
     // ground & puddles
     g.rect(0, 222, W, 48).fill(0x141116);
-    g.rect(40, 236, 90, 3).fill(0x2a2433);
-    g.rect(300, 246, 120, 3).fill(0x2a2433);
-    g.rect(200, 256, 60, 2).fill(0x3b2a2a);
+    g.rect(OX + 40, 236, 90, 3).fill(0x2a2433);
+    g.rect(OX + 300, 246, 120, 3).fill(0x2a2433);
+    g.rect(OX + 200, 256, 60, 2).fill(0x3b2a2a);
     c.addChild(g);
     // marquee board
     const board = new Graphics();
-    board.rect(120, 76, 240, 20).fill(PAL.night).stroke({ color: PAL.gold, width: 1 });
+    board.rect(OX + 120, 76, 240, 20).fill(PAL.night).stroke({ color: PAL.gold, width: 1 });
     c.addChild(board);
-    this.marqueeText = text(MARQUEE[this.marqueeIdx], 120, 83, { small: true, width: 240, align: 'center', color: PAL.gold, maxLines: 1 });
+    this.marqueeText = text(MARQUEE[this.marqueeIdx], OX + 120, 83, { small: true, width: 240, align: 'center', color: PAL.gold, maxLines: 1 });
     c.addChild(this.marqueeText);
     return c;
   }
@@ -219,8 +234,8 @@ export class TitleScene extends Scene {
     m.clear();
     for (let i = 0; i < 24; i++) {
       const on = (Math.floor(this.t * 6) + i) % 3 !== 0 && (this.flicker || i % 5);
-      m.rect(122 + i * 10, 73, 2, 2).fill(on ? PAL.gold : 0x4a3a20);
-      m.rect(122 + i * 10, 97, 2, 2).fill(on ? PAL.gold : 0x4a3a20);
+      m.rect(OX + 122 + i * 10, 73, 2, 2).fill(on ? PAL.gold : 0x4a3a20);
+      m.rect(OX + 122 + i * 10, 97, 2, 2).fill(on ? PAL.gold : 0x4a3a20);
     }
     if (Math.random() < 0.002) sfx('thud');
   }

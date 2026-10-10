@@ -9,7 +9,7 @@
  */
 import { Container, Graphics, type FederatedPointerEvent } from 'pixi.js';
 import { PAL } from '../art/palette';
-import { text, W, H } from './kit';
+import { text, W as DESIGN_W, H } from './kit';
 import { AH } from './arena';
 import type { TouchFightButton, TouchPadState } from '../core/fightinput';
 
@@ -27,12 +27,16 @@ export interface FightPadButton {
 }
 
 export interface FightPadLayout {
+  /** the width it's laid out for (480, or a phone's wider screen) */
+  w: number;
   stick: { x: number; y: number; r: number; zone: { x: number; y: number; w: number; h: number } };
   buttons: FightPadButton[];
 }
 
-export const FIGHT_PAD_LAYOUT: FightPadLayout = {
-  // the live fight HUD keeps x 0..120 and 330..480 of its panel clear for the thumbs
+/** The pad for a screen `W` game pixels wide: the live fight HUD keeps x 0..122 and the last 150 clear for the thumbs. */
+export function fightPadLayout(W = DESIGN_W): FightPadLayout {
+  return {
+  w: W,
   stick: { x: 58, y: H - 54, r: 28, zone: { x: 0, y: AH - 40, w: 122, h: H - AH + 40 } },
   buttons: [
     { id: 'LEAD', x: W - 100, y: H - 62, r: 17, color: PAL.steel, labels: { stand: 'LEAD', clinch: 'LEAD', ground: 'LEAD' } },
@@ -47,7 +51,10 @@ export const FIGHT_PAD_LAYOUT: FightPadLayout = {
     { id: 'UPL', x: 64, y: H - 56, r: 30, color: PAL.gold, labels: { down: 'GET UP' } },
     { id: 'UPR', x: W - 64, y: H - 56, r: 30, color: PAL.gold, labels: { down: 'GET UP' } },
   ],
-};
+  };
+}
+
+export const FIGHT_PAD_LAYOUT: FightPadLayout = fightPadLayout();
 
 function pixelCircle(g: Graphics, cx: number, cy: number, r: number, color: number, alpha: number): void {
   for (let y = -r; y <= r; y++) {
@@ -123,7 +130,7 @@ export class TouchFightPad extends Container {
     }
     const hint = this.mode === 'sub' ? 'ROLL THE STICK' : this.mode === 'down' ? 'ALTERNATE LEFT / RIGHT' : '';
     // under the arena's submission bar / GET UP! meter
-    if (hint) this.labels.addChild(text(hint, 0, this.mode === 'sub' ? 41 : 98, { small: true, color: PAL.gold, width: W, align: 'center', shadow: PAL.ink }));
+    if (hint) this.labels.addChild(text(hint, 0, this.mode === 'sub' ? 41 : 98, { small: true, color: PAL.gold, width: this.layout.w, align: 'center', shadow: PAL.ink }));
   }
 
   private hit(x: number, y: number): 'stick' | TouchFightButton | null {

@@ -17,7 +17,7 @@ import type { Game } from './app';
 import type { CornerReport, Fighter, Wounds } from '../core/types';
 import type { GamePlan } from '../sim/fight';
 import { PAL } from '../art/palette';
-import { W, H, text, box, button } from './kit';
+import { W, H, SW, OX, text, box, button } from './kit';
 import { portrait, portraitInputForFighter } from './sprites';
 import { FACE_ANCHORS } from '../art/portrait';
 import { PLANS } from '../sim/fighter';
@@ -25,6 +25,7 @@ import { input } from '../core/input';
 import { setPadUiMode } from './controller';
 import { prompt } from './glyphs';
 import { sfx } from '../audio/sfx';
+import { isTouchDevice } from '../core/platform';
 
 type Tool = 'ice' | 'enswell' | 'gauze' | 'vaseline';
 const TOOLS: { id: Tool; name: string; call: string; wearRate: number }[] = [
@@ -121,7 +122,7 @@ export function openCorner(
 
   // ---------------------------------------------------------------- scene
   const bg = new Graphics();
-  bg.rect(0, 0, W, H).fill(0x0c0a10);
+  bg.rect(-OX, 0, SW, H).fill(0x0c0a10);
   for (let i = 0; i < 160; i++) bg.rect((i * 53) % W, (i * 31) % 140, 2, 2).fill({ color: [0xffffff, 0xd8c070, 0x8090c0][i % 3], alpha: 0.25 });
   // ropes
   for (const [y, c] of [[150, 0xb02020], [176, 0xe8e8e8], [202, 0x2040b0]] as const) bg.rect(0, y, W, 4).fill(c).rect(0, y + 4, W, 1).fill({ color: 0x000000, alpha: 0.4 });
@@ -174,7 +175,7 @@ export function openCorner(
 
   const zoneScreen = (p: Problem) => ({ x: FACE_X + p.x * S, y: FACE_Y + p.y * S });
 
-  const hit = new Graphics().rect(0, 0, W, H).fill({ color: 0xffffff, alpha: 0.001 });
+  const hit = new Graphics().rect(-OX, 0, SW, H).fill({ color: 0xffffff, alpha: 0.001 });
   hit.eventMode = 'static';
   hit.cursor = 'none';
   hit.on('pointermove', (e) => { const p = frame.toLocal(e.global); tx = p.x; ty = p.y; });
@@ -221,7 +222,7 @@ export function openCorner(
 
   const drawHud = () => {
     hud.removeChildren().forEach((c) => c.destroy({ children: true }));
-    hud.addChild(prompt({ pad: 'B', key: 'Esc' }, 'TO SKIP MINI GAME', 6, 6, PAL.bone));
+    if (!touch) hud.addChild(prompt({ pad: 'B', key: 'Esc' }, 'TO SKIP MINI GAME', 6, 6, PAL.bone));
     // tools
     TOOLS.forEach((t, i) => {
       const ic = toolIcon(t.id, t.id === tool);
@@ -256,12 +257,36 @@ export function openCorner(
     if (msg) hud.addChild(text(msg, 148, 38, { small: true, color: PAL.bone, width: 170 }));
     // controls
     const cy = H - 44;
+    if (touch) {
+      hud.addChild(new Graphics().rect(-OX, cy - 4, 196 + OX, 24).fill({ color: 0x000000, alpha: 0.7 }));
+      hud.addChild(text('HOLD A FINGER ON THE FACE TO WORK IT', 6, cy, { small: true, color: PAL.bone }));
+      hud.addChild(text('TAP A TOOL ABOVE TO SWITCH', 6, cy + 10, { small: true, color: PAL.ash }));
+      return;
+    }
     hud.addChild(new Graphics().rect(0, cy - 4, 170, 48).fill({ color: 0x000000, alpha: 0.7 }));
     hud.addChild(prompt({ pad: 'LStick', key: 'Mouse' }, 'MOVE TOOL', 6, cy));
     hud.addChild(prompt({ pad: 'LB', key: 'Q/E' }, 'SWITCH TOOL', 6, cy + 10));
     hud.addChild(prompt({ pad: 'Y', key: 'Hold' }, 'APPLY PRESSURE', 6, cy + 20));
     hud.addChild(prompt({ pad: 'X', key: 'R' }, 'REFRESH TOOL', 6, cy + 30));
   };
+
+  // phones: no keys, so SKIP / REFRESH buttons and tappable tools (made once: the HUD redraws every frame)
+  const touch = isTouchDevice();
+  if (touch) {
+    TOOLS.forEach((t, i) => {
+      const tap = new Container();
+      tap.eventMode = 'static';
+      tap.hitArea = { contains: (x: number, y: number) => x >= 4 + i * 34 && x < 38 + i * 34 && y >= 17 && y < 52 };
+      tap.on('pointerdown', (e) => {
+        e.stopPropagation();
+        tool = t.id;
+        sfx('click');
+      });
+      frame.addChild(tap);
+    });
+    frame.addChild(button('SKIP', 6, 3, 44, 13, () => skip(), { small: true, fill: PAL.shadow }));
+    frame.addChild(button('REFRESH TOOL', 6, H - 18, 80, 14, () => refresh(), { small: true, fill: PAL.steel }));
+  }
 
   const nearest = (): Problem | null => {
     let best: Problem | null = null;

@@ -16,6 +16,7 @@ import { input } from '../core/input';
 import { setPadUiMode } from './controller';
 import { prompt } from './glyphs';
 import { sfx } from '../audio/sfx';
+import { isTouchDevice } from '../core/platform';
 
 interface Run {
   frame: Container;
@@ -150,7 +151,7 @@ export function openJumpRope(g: Game, done: (score: number) => void): void {
   const notes: { t: number; judged: boolean }[] = [];
   const lineX = 70;
   const speed = 110; // px / s
-  shell(g, 'JUMP ROPE', 'Press when the marker hits the line. It speeds up. (A / SPACE / click)', done, (r, dt, press) => {
+  shell(g, 'JUMP ROPE', `Press when the marker hits the line. It speeds up. ${isTouchDevice() ? '(tap)' : '(A / SPACE / click)'}`, done, (r, dt, press) => {
     t += dt;
     // spawn beats ahead of time so they scroll in from the right
     while (beat < N && notes.length < 6) {
@@ -219,7 +220,7 @@ export function openTyreChop(g: Game, done: (score: number) => void): void {
   let slam = 0;
   let flash = '';
   let flashT = 0;
-  shell(g, 'TYRE & SLEDGEHAMMER', 'Hold to raise the hammer, release when the needle is in the green. (A / SPACE / click)', done, (r, dt, _press, held, release) => {
+  shell(g, 'TYRE & SLEDGEHAMMER', `Hold to raise the hammer, release when the needle is in the green. ${isTouchDevice() ? '(hold a finger down)' : '(A / SPACE / click)'}`, done, (r, dt, _press, held, release) => {
     const speed = 1.3 + swings * 0.12;
     if (held) {
       raise = Math.min(1, raise + dt * 3);

@@ -7,7 +7,7 @@ import { Graphics } from 'pixi.js';
 import { Scene } from '../app';
 import type { Bout, FightEvent, Fighter, GameState } from '../../core/types';
 import { PAL } from '../../art/palette';
-import { W, H, text, button, box } from '../kit';
+import { W, H, SW, OX, text, button, box } from '../kit';
 import { selector, alertBox } from '../widgets';
 import { fighterPortrait } from '../sprites';
 import { createNewGame } from '../../sim/newgame';
@@ -54,7 +54,7 @@ export class QuickFightScene extends Scene {
 
   build(): void {
     const r = this.root;
-    const bg = new Graphics().rect(0, 0, W, H).fill(0x15121a);
+    const bg = new Graphics().rect(-OX, 0, SW, H).fill(0x15121a);
     for (let y = 0; y < H; y += 6) bg.rect(0, y, W, 1).fill({ color: 0x000000, alpha: 0.25 });
     r.addChild(bg);
     r.addChild(text('QUICK FIGHT', 0, 6, { width: W, align: 'center', color: PAL.gold, scale: 2 }));
