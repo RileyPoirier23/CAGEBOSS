@@ -38,6 +38,7 @@ import { openRoster } from './roster';
 import { openCorkboard } from './corkboard';
 import { openRankings } from './rankings';
 import { openInbox, openTvOffer } from './inbox';
+import { isTouchDevice } from '../../core/platform';
 import { openGameMenu } from './gamemenu';
 import { openLedgerPeek } from './ledger';
 import { Rng } from '../../core/rng';
@@ -952,7 +953,7 @@ export class DeskScene extends Scene {
     }, 'Click to read the whole citation.');
     const w = 150;
     const body = text(sl.reason, 6, 22, { small: true, width: w - 12, color: PAL.ink, maxLines: 4 });
-    const more = text('CLICK TO READ IT ALL', 6, 0, { small: true, color: PAL.slate });
+    const more = text(isTouchDevice() ? 'TAP TO READ IT ALL' : 'CLICK TO READ IT ALL', 6, 0, { small: true, color: PAL.slate });
     const foot = text(sl.warning ? 'WARNING. Next time it comes out of your pay.' : `PENALTY: -${money(sl.fine, false)} from your pay`, 6, 0, { small: true, color: sl.warning ? PAL.slate : PAL.blood, width: w - 12 });
     const h = 40 + body.textHeight + foot.textHeight;
     foot.y = h - foot.textHeight - 14;

@@ -12,7 +12,7 @@
 import { Assets, Container, Graphics, Sprite, type Texture, type Ticker } from 'pixi.js';
 import type { Game } from './app';
 import { PAL } from '../art/palette';
-import { W, H, text, button } from './kit';
+import { W, H, SW, OX, text, button } from './kit';
 import { setMusicContext } from '../audio/music';
 
 type Kind = 'h' | 'n' | 'g' | 's' | 'b';
@@ -56,7 +56,7 @@ const THANKS = 'From a bingo-hall smoker to the CBFC belt. Thank you for playing
 export function openEndCredits(g: Game, done: () => void): void {
   const root = new Container();
   const wrap = g.modal(root, { dim: 1 });
-  root.addChild(new Graphics().rect(0, 0, W, H).fill(0x060508));
+  root.addChild(new Graphics().rect(-OX, 0, SW, H).fill(0x060508));
   setMusicContext('title');
   // no Esc / back out of this one
   const popKeys = g.pushKeyHandler((e) => e.key === 'Escape' || e.key === 'Backspace');
@@ -130,7 +130,7 @@ export function openEndCredits(g: Game, done: () => void): void {
 /** In Memoriam. `waitSec`: how long before CONTINUE appears. */
 export function buildMemorial(g: Game, close: () => void, waitSec = 0): Container {
   const c = new Container();
-  c.addChild(new Graphics().rect(0, 0, W, H).fill(0x060508));
+  c.addChild(new Graphics().rect(-OX, 0, SW, H).fill(0x060508));
   // her headshot medallion, centred at the top
   const size = 104;
   const photo = new Sprite();

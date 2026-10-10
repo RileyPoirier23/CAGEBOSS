@@ -10,7 +10,7 @@
  * its window capture listeners see pointer events first.
  */
 import { input } from '../core/input';
-import { isTouchDevice } from '../core/platform';
+import { isTouchDevice, platform } from '../core/platform';
 
 const MAX_ZOOM = 3;
 
@@ -20,6 +20,19 @@ let pan = { x: 0, y: 0 };
 const touches = new Map<number, { x: number; y: number }>();
 let gesture: { d0: number; z0: number; u: { x: number; y: number } } | null = null;
 let ui: HTMLDivElement | null = null;
+/** off during hands-on fights: two thumbs (stick + a button) are not a pinch */
+let pinchOn = true;
+
+/** Hands-on fights turn the magnifier off (and reset it) while they run. */
+export function setPinchZoom(on: boolean): void {
+  pinchOn = on;
+  if (!on) {
+    touches.clear();
+    gesture = null;
+    resetZoom();
+  }
+  updateUi();
+}
 
 function center(): { x: number; y: number } {
   // untransformed canvas centre in client coordinates
@@ -73,7 +86,7 @@ function startGesture(): void {
 }
 
 function onPointer(e: PointerEvent): void {
-  if (!e.isTrusted || e.pointerType !== 'touch') return;
+  if (!e.isTrusted || e.pointerType !== 'touch' || !pinchOn) return;
   const onCanvas = e.target === canvas;
   if (e.type === 'pointerdown') {
     if (!onCanvas && !gesture) return;
@@ -116,7 +129,7 @@ function onPointer(e: PointerEvent): void {
 
 function updateUi(): void {
   if (!ui || !canvas) return;
-  const show = input.lastDevice === 'touch' && !document.body.classList.contains('portrait');
+  const show = pinchOn && input.lastDevice === 'touch' && !document.body.classList.contains('portrait');
   ui.style.display = show ? 'flex' : 'none';
   if (!show) return;
   (ui.querySelector('[data-z="reset"]') as HTMLElement).style.visibility = zoom > 1 ? 'visible' : 'hidden';
@@ -133,9 +146,13 @@ function updateUi(): void {
     ui.style.left = `${Math.round((left - 34) / 2)}px`;
     ui.style.opacity = '1';
   } else {
+    // no margin (phones fill the screen): pinch does the zooming; only 1:1 shows, once zoomed in
     ui.style.left = `${Math.round(left + canvas.offsetWidth - 36)}px`;
-    ui.style.opacity = '0.6';
+    ui.style.opacity = '0.8';
   }
+  const room = right >= 40 || left >= 40;
+  for (const k of ['in', 'out']) (ui.querySelector(`[data-z="${k}"]`) as HTMLElement).style.display = room ? '' : 'none';
+  if (!room && zoom <= 1) ui.style.display = 'none';
 }
 
 function buildUi(): void {
@@ -184,6 +201,54 @@ function checkOrientation(): void {
   updateUi();
 }
 
+// ------------------------------------------------------------ full screen (web version on phones)
+
+const isIOS = (): boolean => /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+const standalone = (): boolean =>
+  (navigator as Navigator & { standalone?: boolean }).standalone === true || matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches;
+
+/**
+ * Phones in a browser tab lose a strip of screen to the browser's bars.
+ * Android (and anything with the Fullscreen API): the first tap goes full screen, landscape.
+ * iPhone Safari can't do that for a page: a one-time tip to add the game to the Home Screen,
+ * which launches it full screen like an app.
+ */
+function installFullscreen(): void {
+  if (platform !== 'web' || !isTouchDevice() || standalone()) return;
+  const el = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => void };
+  if (!isIOS() && (document.fullscreenEnabled || el.webkitRequestFullscreen)) {
+    const go = () => {
+      window.removeEventListener('pointerup', go, true);
+      if (document.fullscreenElement) return;
+      const p = el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : (el.webkitRequestFullscreen?.(), Promise.resolve());
+      p?.then(() => (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.('landscape')).catch(() => {});
+    };
+    window.addEventListener('pointerup', go, true);
+    return;
+  }
+  if (!isIOS()) return;
+  try {
+    if (localStorage.getItem('cageboss.a2hs') === 'no') return;
+  } catch {
+    /* storage off: show it */
+  }
+  const tip = document.createElement('div');
+  tip.id = 'a2hs';
+  tip.innerHTML = `<span><b>FULL SCREEN:</b> tap <svg viewBox="0 0 16 16" width="13" height="13" aria-label="Share"><path d="M8 1v9M5 4l3-3 3 3M3 7v7h10V7" fill="none" stroke="currentColor" stroke-width="1.6"/></svg> then <b>Add to Home Screen</b></span><button aria-label="Close">X</button>`;
+  tip.querySelector('button')!.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    tip.remove();
+    try {
+      localStorage.setItem('cageboss.a2hs', 'no');
+    } catch {
+      /* fine */
+    }
+  });
+  setTimeout(() => document.body.appendChild(tip), 1200);
+  setTimeout(() => tip.remove(), 16000);
+}
+
 // ------------------------------------------------------------ install
 
 export function installTouch(): void {
@@ -202,9 +267,12 @@ export function installTouch(): void {
 
   buildRotate();
   buildUi();
+  installFullscreen();
   window.addEventListener('resize', () => {
     checkOrientation();
     resetZoom();
+    // the game re-sizes its canvas on the same event: place the buttons once it has
+    requestAnimationFrame(() => updateUi());
   });
   window.addEventListener('orientationchange', checkOrientation);
   input.on('device', () => updateUi());

@@ -8,7 +8,7 @@
 import { Container, Graphics } from 'pixi.js';
 import type { Game } from './app';
 import { PAL } from '../art/palette';
-import { W, H, text, box, button } from './kit';
+import { W, H, SW, OX, text, box, button } from './kit';
 import { npcPortrait } from './sprites';
 import { sfx } from '../audio/sfx';
 
@@ -140,9 +140,9 @@ function run(g: Game, key: string): void {
     const dim = new Graphics();
     if (st.rect) {
       const [x, y, w, h] = st.rect;
-      dim.rect(0, 0, W, y).rect(0, y + h, W, H - y - h).rect(0, y, x, h).rect(x + w, y, W - x - w, h).fill({ color: 0x000000, alpha: 0.6 });
+      dim.rect(-OX, 0, SW, y).rect(-OX, y + h, SW, H - y - h).rect(-OX, y, x + OX, h).rect(x + w, y, SW - OX - x - w, h).fill({ color: 0x000000, alpha: 0.6 });
       dim.rect(x - 1, y - 1, w + 2, h + 2).stroke({ color: PAL.gold, width: 1 });
-    } else dim.rect(0, 0, W, H).fill({ color: 0x000000, alpha: 0.55 });
+    } else dim.rect(-OX, 0, SW, H).fill({ color: 0x000000, alpha: 0.55 });
     dim.eventMode = 'static';
     frame.addChild(dim);
     // the card goes wherever the highlight isn't

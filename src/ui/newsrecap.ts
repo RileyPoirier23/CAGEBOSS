@@ -8,7 +8,7 @@ import { Container, Graphics } from 'pixi.js';
 import type { Game } from './app';
 import type { Bout, EventFinancials, FightEvent, TickerLine } from '../core/types';
 import { PAL } from '../art/palette';
-import { W, H, text, box, button } from './kit';
+import { W, H, SW as SCREEN_W, OX, text, box, button } from './kit';
 import type { PixelText } from './text';
 import { reporterPortrait } from './sprites';
 import { ArenaView } from './arena';
@@ -48,7 +48,7 @@ export class NewsRecap extends Container {
     this.rng = new Rng((s.rng ^ 0x5c3a) >>> 0);
     // the TV set
     const tv = new Graphics();
-    tv.rect(0, 0, W, H).fill(0x0c0a0e);
+    tv.rect(-OX, 0, SCREEN_W, H).fill(0x0c0a0e);
     tv.roundRect(SX - 8, SY - 6, SW + 16, SH + 12, 6).fill(0x1a1a1e).stroke({ color: 0x2c2c32, width: 2 });
     tv.rect(SX, SY, SW, SH).fill(0x0e1a34);
     // studio: gradient & light bars

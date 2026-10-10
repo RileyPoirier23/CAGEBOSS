@@ -7,7 +7,7 @@ import { Container, Graphics } from 'pixi.js';
 import { Scene } from '../app';
 import type { Skills } from '../../core/types';
 import { PAL } from '../../art/palette';
-import { W, H, text, button, box, ScrollBox } from '../kit';
+import { W, H, SW, OX, text, button, box, ScrollBox } from '../kit';
 import { openWindow, confirm, alertBox, selector } from '../widgets';
 import { openHelp } from '../help';
 import { openSettings } from './settings';
@@ -131,7 +131,7 @@ export class FMHubScene extends Scene {
     const st = fm(s);
     const f = me(s);
     const r = this.root;
-    const bg = new Graphics().rect(0, 0, W, H).fill(0x17141c);
+    const bg = new Graphics().rect(-OX, 0, SW, H).fill(0x17141c);
     bg.rect(0, 0, W, 18).fill(0x0f0d13);
     r.addChild(bg);
     r.addChild(text(`WEEK ${s.week + 1}  •  ${fmtDate(s.week)}`, 6, 5, { color: PAL.gold }));
