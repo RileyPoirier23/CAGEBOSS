@@ -20,6 +20,19 @@ let pan = { x: 0, y: 0 };
 const touches = new Map<number, { x: number; y: number }>();
 let gesture: { d0: number; z0: number; u: { x: number; y: number } } | null = null;
 let ui: HTMLDivElement | null = null;
+/** off during hands-on fights: two thumbs (stick + a button) are not a pinch */
+let pinchOn = true;
+
+/** Hands-on fights turn the magnifier off (and reset it) while they run. */
+export function setPinchZoom(on: boolean): void {
+  pinchOn = on;
+  if (!on) {
+    touches.clear();
+    gesture = null;
+    resetZoom();
+  }
+  updateUi();
+}
 
 function center(): { x: number; y: number } {
   // untransformed canvas centre in client coordinates
@@ -73,7 +86,7 @@ function startGesture(): void {
 }
 
 function onPointer(e: PointerEvent): void {
-  if (!e.isTrusted || e.pointerType !== 'touch') return;
+  if (!e.isTrusted || e.pointerType !== 'touch' || !pinchOn) return;
   const onCanvas = e.target === canvas;
   if (e.type === 'pointerdown') {
     if (!onCanvas && !gesture) return;
@@ -116,7 +129,7 @@ function onPointer(e: PointerEvent): void {
 
 function updateUi(): void {
   if (!ui || !canvas) return;
-  const show = input.lastDevice === 'touch' && !document.body.classList.contains('portrait');
+  const show = pinchOn && input.lastDevice === 'touch' && !document.body.classList.contains('portrait');
   ui.style.display = show ? 'flex' : 'none';
   if (!show) return;
   (ui.querySelector('[data-z="reset"]') as HTMLElement).style.visibility = zoom > 1 ? 'visible' : 'hidden';

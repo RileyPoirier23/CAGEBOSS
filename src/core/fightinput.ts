@@ -25,7 +25,7 @@ export type FightButton =
   | 'getupLeft' | 'getupRight';
 
 /** Buttons on the on-screen touch fight pad (src/ui/fightpad.ts). */
-export type TouchFightButton = 'LEAD' | 'REAR' | 'KICK' | 'BLOCK' | 'GRAB' | 'EVADE' | 'BODY';
+export type TouchFightButton = 'LEAD' | 'REAR' | 'KICK' | 'BLOCK' | 'GRAB' | 'EVADE' | 'BODY' | 'FEINT' | 'UPL' | 'UPR';
 
 export interface FightBinding {
   pad?: PadButton[];
@@ -47,7 +47,7 @@ export const DEFAULT_FIGHT_BINDINGS: Record<FightButton, FightBinding> = {
   kick: { pad: ['A'], keys: ['KeyL'], touch: ['KICK'] },
   block: { pad: ['LB'], keys: ['ShiftLeft', 'KeyI'], touch: ['BLOCK'] },
   grab: { pad: ['B'], keys: ['Space'], touch: ['GRAB'] },
-  feint: { pad: ['Y'], keys: ['KeyU'] },
+  feint: { pad: ['Y'], keys: ['KeyU'], touch: ['FEINT'] },
   // hold to send strikes to the body (the stick also works: down + punch)
   body: { pad: ['LT'], keys: ['KeyO'], touch: ['BODY'] },
   // right-stick flicks are read from the stick; these are the digital equivalents
@@ -55,8 +55,8 @@ export const DEFAULT_FIGHT_BINDINGS: Record<FightButton, FightBinding> = {
   evadeDown: { keys: ['ArrowDown'] },
   evadeAway: { keys: [] }, // arrows are resolved against facing, see sampleFight()
   evadeToward: { keys: [] },
-  getupLeft: { pad: ['LT'], keys: ['KeyQ'] },
-  getupRight: { pad: ['RT'], keys: ['KeyE'] },
+  getupLeft: { pad: ['LT'], keys: ['KeyQ'], touch: ['UPL'] },
+  getupRight: { pad: ['RT'], keys: ['KeyE'], touch: ['UPR'] },
 };
 
 export const FIGHT_ACTIONS: Record<FightButton, FightActionInfo> = {

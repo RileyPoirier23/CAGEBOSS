@@ -6,6 +6,7 @@ import { Container, Graphics, Sprite, Texture, FederatedPointerEvent, FederatedW
 import { PAL, C, shade } from '../art/palette';
 import { PixelText, TextOpts, measure } from './text';
 import { sfx } from '../audio/sfx';
+import { isTouchDevice } from '../core/platform';
 
 export const W = 480;
 export const H = 270;
@@ -153,6 +154,8 @@ export class Button extends Container {
     this.addChild(this.labelNode);
     this.eventMode = 'static';
     this.cursor = this.disabled ? 'default' : 'pointer';
+    // phones: a little slop around the button for thumbs (2px up/down so stacked menus don't overlap)
+    if (isTouchDevice()) this.hitArea = { contains: (x: number, y: number) => x >= -3 && y >= -2 && x < this.w + 3 && y < this.h + 2 };
     this.on('pointerover', () => {
       this.hovered = true;
       this.draw();
