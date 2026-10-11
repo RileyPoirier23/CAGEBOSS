@@ -12,6 +12,21 @@ import { openHelp } from './help';
 /** Newest first. Keep each version to a few lines. */
 export const NOTES: { v: string; lines: string[] }[] = [
   {
+    v: '2.1.0',
+    lines: [
+      'THE FINAL ROUND: the last update before the full release.',
+      'Fighters read the fight: what keeps landing gets rolled, checked or slipped.',
+      'They read the cards and the tank: behind late they come forward; gassed they rest.',
+      'The chin goes: every knockdown makes the next one easier. Body work saps the power.',
+      'A knockdown round is a 10-8. Cut men don\'t see the head shots coming.',
+      'The models wear the fight: sweat, swelling, cuts, blood, bruised ribs, a gassed mouth.',
+      'Heavyweights are big. Flyweights aren\'t.',
+      'Big shots coil, snap out and land with a beat. Leg kicks buckle the knee.',
+      'Three ways to go out: on your back, in a heap, or on your face.',
+      'COMING SOON: DRIVEBOSS, the next game in the Boss series (title menu).',
+    ],
+  },
+  {
     v: '2.0.1',
     lines: [
       'Fixes: cutscene sets no longer vanish mid-scene.',

@@ -72,6 +72,14 @@ python3 tools/commentary_src.py            # rebuild commentary & ring announcer
 python3 tools/popculture_src.py            # rebuild the pop-culture parody bank
 ```
 
+## The final round (2.1.0)
+
+The last update before the full release, all of it in the cage:
+- **Fights that read themselves.** The AI tallies what lands on it (hooks, straights, kicks, body shots, takedowns) and what of its own is working: hooks that keep catching it get rolled under, kicks checked, straights slipped, a man who's been shot on sprawls sooner, and what lands gets thrown more. It reads the cards and the tank too: behind in the last round it comes forward and swings for the head, ahead and tired it cruises, on an empty tank it rests behind the jab, and a hurt man gets hunted. A losing plan changes at the bell.
+- **Damage that adds up.** Every knockdown makes the next one likelier. A body that's been worked over has no snap left in its punches. Landing in a row builds momentum. A cut man doesn't see the head shots coming, and bad legs make the slip late. A knockdown round is a 10-8 unless the other man answered.
+- **Models that wear the fight.** Weight classes show in the frame. Sweat with the rounds, the eye swelling shut, a cut over it, blood down the face, bruised ribs, and a gassed man's mouth open with his hands coming down.
+- **Shots that land.** Big strikes coil first, snap out, stop the frame for a beat and shake it by how hard they hit. Leg kicks buckle the knee. Three ways out: on your back, in a heap, or on your face.
+
 ## Controls
 
 - Mouse for everything. `M` mutes, `N` skips to the next soundtrack song, `F11` fullscreen (desktop).
