@@ -12,6 +12,7 @@ import { openSettings } from './settings';
 import { openHelp } from '../help';
 import { openAchievements } from '../achievements';
 import { maybeWhatsNew } from '../whatsnew';
+import { maybeComingSoon, openComingSoon } from '../comingsoon';
 import { openLoad, latestSave, continueLatest } from './loadmenu';
 import { ModesScene } from './modes';
 import { buildStreet, STREET_W, type Street } from '../menuworld';
@@ -75,6 +76,7 @@ export class TitleScene extends Scene {
       ['HELP', () => openHelp(this.g)],
       // the credits roll, the thank-you, and the memorial
       ['CREDITS', () => openEndCredits(this.g, () => {}, { menu: true })],
+      ['COMING SOON: DRIVEBOSS', () => openComingSoon(this.g)],
     ];
     if (desktop) items.push(['QUIT GAME', () => desktop!.quit()]);
     items.forEach(([label, fn, fill], i) => {
@@ -87,6 +89,7 @@ export class TitleScene extends Scene {
     // a solo dev: the support screen (desktop and web builds only)
     if (supportAvailable()) r.addChild(button('SUPPORT THE DEV', W - 96, H - 20, 90, 13, () => openSupport(this.g), { small: true, fill: PAL.blood, border: PAL.gold }));
     setTimeout(() => maybeWhatsNew(this.g), 400);
+    setTimeout(() => maybeComingSoon(this.g), 900);
   }
 
   /** The night sky and a far skyline that drifts slower than the street (parallax). */
