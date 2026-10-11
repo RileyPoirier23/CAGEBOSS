@@ -16,6 +16,8 @@ export type Pose =
   | 'shoot' | 'sprawl' | 'clinch' | 'top' | 'topPunch' | 'bottom' | 'bottomSub' | 'hurt' | 'rocked' | 'down' | 'ko' | 'celebrate'
   | 'taunt' | 'stool' | 'walk1' | 'walk2' | 'block' | 'slip' | 'lifted'
   | 'doubled' | 'touch'
+  // the final round: the other ways down, the knee that goes, the coil before a big shot
+  | 'koFace' | 'koCrumple' | 'legBuckle' | 'coil'
   // directional strikes
   | 'bodyJab' | 'leadHook' | 'bodyHook' | 'overhand' | 'frontKick' | 'spinKick'
   // the clinch: dominant ties, the man in them, the fence, knees and trips
@@ -153,6 +155,14 @@ export const POSES: Record<Pose, Rig> = {
   rocked: P({ neck: [-4, -62], head: [-8, -68], hip: [-3, -36], haF: [8, -46], haB: [2, -44], elF: [8, -48], elB: [0, -46], knF: [8, -16], knB: [-8, -14], ftF: [10, 0], ftB: [-12, 0] }),
   down: P({ hip: [-6, -8], neck: [-18, -30], head: [-22, -38], shF: [-14, -30], shB: [-20, -28], elF: [-8, -18], haF: [-2, -6], elB: [-24, -16], haB: [-26, -4], knF: [10, -14], ftF: [20, 0], knB: [6, -10], ftB: [16, 0] }),
   ko: P({ hip: [0, -4], neck: [-26, -5], head: [-35, -6], shF: [-24, -6], shB: [-26, -4], elF: [-30, -12], haF: [-40, -14], elB: [-20, -2], haB: [-12, -2], knF: [14, -8], ftF: [28, -2], knB: [12, -4], ftB: [26, -1] }),
+  // face first: he goes forward onto his chest, arms under him
+  koFace: P({ hip: [4, -4], neck: [26, -5], head: [36, -5], shF: [22, -7], shB: [26, -3], elF: [34, -11], haF: [40, -6], elB: [20, -2], haB: [28, -2], knF: [-10, -6], ftF: [-24, -2], knB: [-8, -3], ftB: [-22, -1] }),
+  // the legs go and he folds into a heap, knees under him
+  koCrumple: P({ hip: [-4, -10], neck: [-10, -28], head: [-14, -34], shF: [-6, -26], shB: [-14, -24], elF: [2, -16], haF: [8, -8], elB: [-20, -14], haB: [-18, -4], knF: [8, -10], ftF: [4, 0], knB: [-12, -8], ftB: [-18, 0] }),
+  // a leg kick lands: the knee dips, the hands come out for balance
+  legBuckle: P({ hip: [-4, -32], neck: [0, -60], head: [-2, -67], shF: [4, -58], shB: [-5, -57], elF: [12, -50], haF: [18, -44], elB: [-6, -48], haB: [-10, -40], knF: [10, -10], ftF: [14, 0], knB: [-10, -12], ftB: [-16, 0] }),
+  // the coil before a big shot: shoulders back, weight on the rear leg
+  coil: P({ shF: [2, -60], shB: [-8, -60], elF: [6, -52], elB: [-12, -50], haF: [6, -66], haB: [-12, -62], hip: [-4, -40], neck: [-2, -66], head: [-3, -73] }),
   celebrate: P({ elF: [12, -84], haF: [16, -100], elB: [-6, -84], haB: [-10, -100], head: [3, -78] }),
   taunt: P({ elF: [20, -58], haF: [30, -54], elB: [-14, -58], haB: [-24, -54], head: [6, -77] }),
   stool: P({ hip: [0, -26], neck: [2, -52], head: [3, -60], shF: [6, -50], shB: [-2, -50], elF: [16, -38], haF: [22, -32], elB: [-10, -38], haB: [-14, -30], knF: [16, -24], ftF: [16, 0], knB: [12, -22], ftB: [10, 0] }),
@@ -246,6 +256,14 @@ export interface Look2 {
   lean?: number;
   /** his taunt */
   taunt?: TauntStyle;
+  /** the weight class in the frame: flyweights slight, heavyweights thick (1 = a lightweight) */
+  frame?: number;
+  /** sweat sheen, 0..1 (builds with the rounds and the damage) */
+  sweat?: number;
+  /** the fight on his face and body: cuts over the eye, swelling, blood running, a bruised body (0..1s, cuts a count) */
+  wear?: { cuts: number; swell: number; blood: number; body: number };
+  /** how gassed he is, 0..1: the mouth hangs open and the hands come down */
+  gassed?: number;
   /** clothing for non-fighters (referee, ring announcer, cutmen) */
   outfit?: { top: number; bottom: number; shirt?: number; tie?: number; bulk?: number; mic?: boolean; shortSleeves?: boolean; hands?: number; patch?: number };
 }
@@ -267,6 +285,20 @@ const COUNTRY_KIT: Record<string, [number, number]> = {
 };
 /** Personalities that wouldn't be caught dead in national colours. */
 const LOUD_TRAITS = ['Showman', 'Diva', 'Clout Chaser', 'Streamer', 'Prankster'];
+
+/** How big a man of this division is on the screen, next to a lightweight. */
+export function frameFor(division: string): number {
+  const d = division.toLowerCase();
+  if (d.includes('straw')) return 0.84;
+  if (d.includes('fly')) return 0.87;
+  if (d.includes('bantam')) return 0.91;
+  if (d.includes('feather')) return 0.95;
+  if (d.includes('lightheavy') || d.includes('light heavy')) return 1.1;
+  if (d.includes('heavy')) return 1.16;
+  if (d.includes('welter')) return 1.02;
+  if (d.includes('middle')) return 1.06;
+  return 1;
+}
 
 export interface Kit {
   trunks: number;
@@ -325,6 +357,7 @@ export function lookFor(f: Fighter, corner: 0 | 1, champ = false): Look2 {
     glasses: f.look.glasses === 2 ? 2 : undefined,
     beanie: !!f.look.beanie,
     freckles: !!f.look.freckles,
+    frame: frameFor(f.division),
     ...styleFor(f),
   };
 }
@@ -384,8 +417,20 @@ export function tauntRig(L: Look2, t: number): Rig {
 }
 
 /** Stance tweaks applied to the guard pose. */
+/** The three ways a man goes out, by what put him there: an uppercut or a head kick drops him on his back, a hook folds him in a heap, body and leg work put him on his face. */
+export const KO_POSES = new Set<Pose>(['ko', 'koFace', 'koCrumple']);
+export function koPoseFor(act: string): Pose {
+  const a = act.toLowerCase();
+  if (/upper|knee|head ?kick|high kick|flying/.test(a)) return 'ko';
+  if (/hook|overhand|spin|backfist|elbow|cross/.test(a)) return 'koCrumple';
+  if (/body|leg|gnp|ground|liver|kick/.test(a)) return 'koFace';
+  return 'ko';
+}
+/** Big shots are telegraphed: these get a moment's coil before they come. */
+export const HEAVY_POSES = new Set<Pose>(['overhand', 'headkick', 'spinKick', 'uppercut', 'flyknee', 'spin', 'bodykick']);
+
 export function stanceGuard(L: Look2, t: number): Rig {
-  t *= L.tempo ?? 1;
+  t *= (L.tempo ?? 1) * (1 - 0.35 * (L.gassed ?? 0)); // a gassed man's bounce goes
   const r: Rig = { ...GUARD };
   const add = (j: Joint, dx: number, dy: number) => (r[j] = [r[j][0] + dx, r[j][1] + dy]);
   switch (L.stance) {
@@ -433,8 +478,8 @@ export function stanceGuard(L: Look2, t: number): Rig {
     r[j] = [r[j][0] + (['head', 'neck'].includes(j) ? sway : sway * 0.4), r[j][1] + bob * k];
   }
   // his own guard: hands a little higher or lower, leaning in or sitting back
-  const gy = L.guardY ?? 0;
-  const ln = L.lean ?? 0;
+  const gy = (L.guardY ?? 0) + (L.gassed ?? 0) * 6;
+  const ln = (L.lean ?? 0) + (L.gassed ?? 0) * 1.5;
   if (gy) for (const j of ['haF', 'haB', 'elF', 'elB'] as Joint[]) add(j, 0, j[0] === 'h' ? gy : gy * 0.5);
   if (ln) for (const j of ['head', 'neck', 'shF', 'shB', 'elF', 'elB', 'haF', 'haB'] as Joint[]) add(j, ln * (j === 'head' ? 1 : 0.7), Math.abs(ln) * 0.3);
   // hands breathe
@@ -523,12 +568,21 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
     for (const q of segs) limbShade(q.a, q.b, q.wa, q.wm, q.wb, q.shadow);
   };
 
-  // widths
-  const bw = build * (fem ? 0.6 : 1);
-  const UA = { a: 6.4 + bw, m: 7.6 + bw * 1.4, b: 5 + bw * 0.6 }; // upper arm (bicep bulge)
-  const FA = { a: 5.4 + bw * 0.6, m: 5.2 + bw * 0.5, b: 4 }; // forearm
-  const TH = { a: 9.5 + bw * 1.3, m: 9.8 + bw * 1.4, b: 6.4 + bw * 0.4 }; // thigh
-  const CA = { a: 6 + bw * 0.4, m: 7 + bw * 0.6, b: 3.8 }; // calf
+  // widths: the build, and the weight class in the frame
+  const fr = L.frame ?? 1;
+  const bw = build * (fem ? 0.6 : 1) * fr;
+  const UA = { a: 6.4 * fr + bw, m: 7.6 * fr + bw * 1.4, b: 5 * fr + bw * 0.6 }; // upper arm (bicep bulge)
+  const FA = { a: 5.4 * fr + bw * 0.6, m: 5.2 * fr + bw * 0.5, b: 4 * fr }; // forearm
+  const TH = { a: 9.5 * fr + bw * 1.3, m: 9.8 * fr + bw * 1.4, b: 6.4 * fr + bw * 0.4 }; // thigh
+  const CA = { a: 6 * fr + bw * 0.4, m: 7 * fr + bw * 0.6, b: 3.8 * fr }; // calf
+  const wear = L.wear ?? { cuts: 0, swell: 0, blood: 0, body: 0 };
+  const sweat = L.sweat ?? 0;
+  const gassed = L.gassed ?? 0;
+  /** a bead of sweat / a sheen: a soft white dot */
+  const sheen = (p: V, r: number, a: number) => {
+    const Q = T(p);
+    g.circle(Q[0], Q[1], r * s).fill({ color: 0xffffff, alpha: a });
+  };
   const armC = o ? o.top : skin;
   const armFarC = o ? shade(o.top, -0.25) : skinFar;
   // short-sleeved shirts (referees) show the forearms
@@ -625,7 +679,7 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
   const len = Math.hypot(hp[0] - nk[0], hp[1] - nk[1]) || 1;
   const u: V = [(hp[0] - nk[0]) / len, (hp[1] - nk[1]) / len]; // spine, downward
   const f: V = [-u[1], u[0]].map((v) => -v) as V; // forward (toward facing)
-  const tw = (fem ? 11 : 12.5) + build * 2.4;
+  const tw = ((fem ? 11 : 12.5) + build * 2.4) * fr;
   const P = (along: number, fwd: number): V => add(add(nk, u, len * along), f, fwd);
   const belly = build >= 2 ? 1.6 : 0;
   const torso: V[] = [
@@ -672,6 +726,22 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
       for (let i = 0; i < 2; i++) line(P(0.6 + i * 0.12, tw * 0.22), P(0.6 + i * 0.12, tw * 0.38), dk, 0.8);
     }
     g.circle(...T(P(0.86, tw * 0.3)), 0.7 * s).fill(dk); // navel
+    // the fight on the body: red on the ribs where the body shots went, then purple
+    if (wear.body > 0.25) {
+      const k = Math.min(1, (wear.body - 0.25) * 1.3);
+      g.circle(...T(P(0.5, tw * 0.34)), (1.8 + k * 1.2) * s).fill({ color: k > 0.6 ? 0x6a3050 : 0xa83a3a, alpha: 0.22 + k * 0.35 });
+      g.circle(...T(P(0.62, tw * 0.42)), (1.2 + k) * s).fill({ color: 0x8a3040, alpha: 0.18 + k * 0.3 });
+    }
+    // sweat: a sheen on the shoulders and the chest, beads on the collarbone
+    if (sweat > 0.15) {
+      sheen(P(0.12, tw * 0.3), 1.2, 0.3 * sweat);
+      sheen(P(0.26, tw * 0.5), 0.9, 0.26 * sweat);
+      sheen(P(0.08, -tw * 0.34), 1.1, 0.22 * sweat);
+      if (sweat > 0.5) {
+        sheen(P(0.05, tw * 0.42), 0.5, 0.6);
+        sheen(P(0.34, tw * 0.56), 0.45, 0.55);
+      }
+    }
     const ink = shade(skin, -0.5);
     if (L.tattoo >= 1 && L.ink !== undefined) {
       switch (L.ink % 6) {
@@ -808,9 +878,34 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
   if (L.tattoo === 3 && !o) g.circle(...hpt(4.4, 0.6), 0.55 * s).fill(shade(skin, -0.65)); // teardrop ink, as on the contract photo
   // scar across the brow
   if ((L.scar ?? 0) > 0) hl([3, -5], [6, -1.6], shade(skin, 0.22), 0.6);
-  // mouth (+ mouthguard flash for fighters)
-  hl([4.6, 3.6], [6.6, 3.2], shade(skin, -0.5), 0.9);
-  if (!o) hl([5.2, 3.4], [6.4, 3.2], L.glove === 0x8e1e1e ? 0xd04040 : 0x3a6ad0, 0.7);
+  // mouth (+ mouthguard flash for fighters); gassed, it hangs open
+  if (!o && gassed > 0.45) {
+    g.circle(...hpt(5.6, 3.6), (0.9 + gassed * 0.5) * s).fill(0x2a1216);
+    hl([5.0, 3.0], [6.4, 2.9], L.glove === 0x8e1e1e ? 0xd04040 : 0x3a6ad0, 0.7);
+  } else {
+    hl([4.6, 3.6], [6.6, 3.2], shade(skin, -0.5), 0.9);
+    if (!o) hl([5.2, 3.4], [6.4, 3.2], L.glove === 0x8e1e1e ? 0xd04040 : 0x3a6ad0, 0.7);
+  }
+  if (!o) {
+    // the fight on his face: the eye swells shut, a cut over it, blood down the cheek, sweat on the brow
+    if (wear.swell > 0.25) {
+      const k = Math.min(1, (wear.swell - 0.25) * 1.2);
+      g.circle(...hpt(3.9, -1.6), (1.5 + k * 1.3) * s).fill({ color: k > 0.6 ? 0x5a2a4a : 0x8a3a52, alpha: 0.25 + k * 0.5 });
+      if (k > 0.5) g.circle(...hpt(4.4, 1.2), (1 + k) * s).fill({ color: 0x7a3048, alpha: 0.2 + k * 0.3 }); // the cheek too
+    }
+    if (wear.cuts >= 1) {
+      hl([3.0, -4.6], [4.8, -3.2], 0xa01818, 0.8 + Math.min(3, wear.cuts) * 0.3);
+      if (wear.cuts >= 3) hl([5.4, -3.6], [6.6, -2.4], 0xa01818, 1); // and the other brow
+    }
+    if (wear.blood > 0.05) {
+      hl([4.4, -3.0], [4.9, 1.6 + wear.blood * 2.4], 0x8a1414, 0.7); // running down past the eye
+      if (wear.blood > 0.5) hl([6.2, 0.4], [6.8, 3.0], 0x8a1414, 0.6); // off the nose
+    }
+    if (sweat > 0.3) {
+      g.circle(...hpt(3.2, -4.4), 0.5 * s).fill({ color: 0xffffff, alpha: 0.5 * sweat });
+      g.circle(...hpt(5.6, -3.8), 0.4 * s).fill({ color: 0xffffff, alpha: 0.45 * sweat });
+    }
+  }
   // hair
   const hc = L.hairColor;
   const hcD = shade(hc, -0.25);

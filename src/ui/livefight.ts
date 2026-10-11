@@ -872,6 +872,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     if (stage === 'fight') arena.manual = L.pos === 'clinch' ? [mid - 6, mid + 6] : [L.F[0].x, L.F[1].x];
     arena.clinchTie = { dom: L.clinch.dom, tie: L.clinch.tie, fence: L.clinch.fence };
     arena.hp = [Math.max(0, L.F[0].hp), Math.max(0, L.F[1].hp)];
+    arena.vitals = [{ gas: L.F[0].gas, cut: L.F[0].cut }, { gas: L.F[1].gas, cut: L.F[1].cut }];
     arena.round = L.round;
     arena.sec = 300 - (L.clock / 75) * 300;
     if (stage === 'fight' && (L.phase === 'fight' || L.phase === 'over')) arena.setMat(L.pos === 'ground' ? (L.top === 0 ? 'atop' : 'btop') : L.pos, L.gpos, L.sub);

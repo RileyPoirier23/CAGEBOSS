@@ -13,7 +13,7 @@ import { PixelText, pixelArtResolution } from './text';
 import { portrait } from './sprites';
 import { sfx } from '../audio/sfx';
 import { heightStr } from '../core/format';
-import { Rig, Pose, POSES, drawRig, lerpRig, mirrorRig, lookFor, stanceGuard, tauntRig, TAUNT_CALL, Look2 } from './rig';
+import { Rig, Pose, POSES, drawRig, lerpRig, mirrorRig, lookFor, stanceGuard, tauntRig, TAUNT_CALL, Look2, KO_POSES, HEAVY_POSES, koPoseFor } from './rig';
 
 export const AW = 480;
 export const AH = 150;
@@ -47,6 +47,9 @@ interface FState {
   footT?: number;
   /** head snap after taking a shot (decays) */
   snap?: number;
+  /** how long the current pose was given, and the pose queued behind it (the coil before a big shot) */
+  poseDur?: number;
+  next?: { pose: Pose; dur: number } | null;
 }
 
 /** Blood on the canvas lasts the whole event; a new event gets a fresh mat. */
@@ -209,6 +212,11 @@ export class ArenaView extends Container {
   intensity = 1;
   flash = 0;
   shakeT = 0;
+  shakeAmp = 4;
+  /** a big shot stops the frame for a beat (hit-stop), so it reads */
+  hitStop = 0;
+  /** the fighters' tanks and cuts, from the engine (hands-on fights) or the lines (spectated): the models wear them */
+  vitals: [{ gas: number; cut: number }, { gas: number; cut: number }] = [{ gas: 100, cut: 0 }, { gas: 100, cut: 0 }];
   round = 1;
   sec = 0;
   private lowerTop = false;
@@ -938,8 +946,19 @@ export class ArenaView extends Container {
   // ------------------------------------------------------------ cues
 
   private setPose(i: 0 | 1, p: Pose, dur = 0.35): void {
-    this.F[i].pose = p;
-    this.F[i].poseT = dur;
+    const f = this.F[i];
+    // a big shot is telegraphed: a moment's coil, then it comes
+    if (HEAVY_POSES.has(p) && (f.pose === 'guard' || f.poseT <= 0) && (this.ground === 'stand' || this.ground === 'clinch')) {
+      f.pose = 'coil';
+      f.poseT = 0.06;
+      f.poseDur = 0.06;
+      f.next = { pose: p, dur };
+      return;
+    }
+    f.pose = p;
+    f.poseT = dur;
+    f.poseDur = dur;
+    f.next = null;
   }
 
   private handPos(i: 0 | 1, which: 'haF' | 'haB' | 'ftB' | 'knB' | 'elB' = 'haF'): [number, number] {
@@ -955,23 +974,25 @@ export class ArenaView extends Container {
     }
   }
 
-  private impact(attacker: 0 | 1, joint: 'haF' | 'haB' | 'ftB' | 'knB' | 'elB', big: boolean, bloody: boolean, body = false): void {
+  private impact(attacker: 0 | 1, joint: 'haF' | 'haB' | 'ftB' | 'knB' | 'elB', big: boolean, bloody: boolean, body = false, legs = false): void {
     const def = (1 - attacker) as 0 | 1;
     this.F[attacker].lunge = 7;
     this.F[def].recoil = big ? 9 : 5;
     // the man who got hit reacts: head snaps, he's knocked back a step, body shots fold him,
-    // big ones buckle the knees
+    // leg kicks buckle the knee, big ones rock him
     const D = this.F[def];
-    const head = joint !== 'ftB' && joint !== 'knB' && !body;
+    const head = joint !== 'ftB' && joint !== 'knB' && !body && !legs;
     if (head) D.snap = big ? 1.6 : 0.8;
     if (this.ground === 'stand' || this.ground === 'clinch') {
-      D.v = (D.v ?? 0) - D.facing * (big ? 120 : 60);
+      D.v = (D.v ?? 0) - D.facing * (legs ? 25 : big ? 120 : 60);
       if (D.poseT <= 0 || D.pose === 'guard') {
-        if (joint === 'knB' || (!head && (big || body))) this.setPose(def, 'doubled', 0.4); // folded over
+        if (legs) this.setPose(def, 'legBuckle', big ? 0.45 : 0.3); // the knee goes
+        else if (joint === 'knB' || (!head && (big || body))) this.setPose(def, 'doubled', 0.4); // folded over
         else if (big) this.setPose(def, 'rocked', 0.45);
         else if (Math.random() < 0.5) this.setPose(def, 'hurt', 0.2);
       }
     }
+    if (big) this.hitStop = 0.055;
     const [x, y] = this.handPos(attacker, joint);
     this.burst(x, y, big ? 16 : 7, big ? PAL.gold : 0xffffff, big ? 110 : 60, 0.3, big ? 2 : 1);
     this.burst(x, y, 4, 0xbfe0ff, 40, 0.5, 1, 120); // sweat
@@ -980,7 +1001,13 @@ export class ArenaView extends Container {
     const [hx, hy] = this.topPos(def);
     this.burst(hx, hy, big ? 12 : 5, big ? PAL.gold : 0xffffff, big ? 60 : 35, 0.3, big ? 2 : 1, 0, true);
     if (bloody) this.burst(hx, hy, 5, 0xa01818, 25, 1.5, 2, 0, true);
-    if (big) this.shakeT = 0.25;
+    if (big) {
+      this.shakeT = 0.25;
+      this.shakeAmp = 5;
+    } else if (this.shakeT <= 0) {
+      this.shakeT = 0.06;
+      this.shakeAmp = 2;
+    }
     if (big && this.mode === 'tv') this.cutTo('close', 0.25);
   }
 
@@ -1167,7 +1194,7 @@ export class ArenaView extends Container {
         break;
       case 'legkick':
         this.setPose(A, 'legkick', 0.35);
-        this.impact(A, 'ftB', false, false);
+        this.impact(A, 'ftB', line.intensity >= 2, false, false, true);
         sfx('kick');
         break;
       case 'kick':
@@ -1204,11 +1231,16 @@ export class ArenaView extends Container {
         if (this.mode === 'tv') this.cutTo('close', 0.6, true);
         sfx('roar');
         break;
-      case 'ko':
-        this.setPose(A, Math.random() < 0.4 ? 'headkick' : 'hook', 0.6);
-        this.setPose(D, 'ko', 9999);
-        this.impact(A, Math.random() < 0.4 ? 'ftB' : 'haB', true, true);
-        this.F[D].recoil = 22;
+      case 'ko': {
+        // how he goes depends on what put him there
+        const kop = koPoseFor(`${line.key ?? ''} ${line.act} ${line.text}`);
+        this.setPose(A, kop === 'ko' ? (Math.random() < 0.5 ? 'headkick' : 'uppercut') : kop === 'koCrumple' ? (Math.random() < 0.5 ? 'hook' : 'overhand') : Math.random() < 0.5 ? 'bodykick' : 'body', 0.6);
+        this.setPose(D, kop, 9999);
+        this.impact(A, kop === 'ko' && Math.random() < 0.5 ? 'ftB' : 'haB', true, true);
+        this.F[D].recoil = kop === 'koFace' ? -10 : 22;
+        this.shakeT = 0.45;
+        this.shakeAmp = 8;
+        this.hitStop = 0.12;
         this.flash = 0.6;
         this.winnerSide = A;
         this.finished = true;
@@ -1218,6 +1250,7 @@ export class ArenaView extends Container {
         if (this.mode === 'tv') this.cutTo('close', 1.5, true);
         sfx('roar');
         break;
+      }
       case 'tko':
         this.setPose(D, ground ? 'bottom' : 'down', 9999);
         this.setPose(A, 'celebrate', 9999);
@@ -1277,6 +1310,7 @@ export class ArenaView extends Container {
         this.setPose(A, 'taunt', 1.0);
         break;
       case 'cut':
+        this.vitals[D].cut++;
         this.burst(this.F[D].x + 6 * this.F[D].facing, FLOOR - 74, 10, 0xa01818, 50, 1.0, 2);
         break;
       case 'injury':
@@ -1534,6 +1568,10 @@ export class ArenaView extends Container {
       this.slowT -= real;
       dt *= 0.3;
     }
+    if (this.hitStop > 0) {
+      this.hitStop -= real;
+      dt *= 0.08;
+    }
     if (!this.walkIn) this.touchT -= dt * this.pace;
     this.t += dt;
     this.drawCrowd();
@@ -1632,7 +1670,7 @@ export class ArenaView extends Container {
         } else tx = f.x;
         f.foot = 0;
       }
-      if (this.scene === 'fight' && this.finished && this.winnerSide === i && (o.pose === 'ko' || o.pose === 'down') && !ground) {
+      if (this.scene === 'fight' && this.finished && this.winnerSide === i && (KO_POSES.has(o.pose) || o.pose === 'down') && !ground) {
         // walk off and celebrate away from the man on the canvas
         tx = o.x + (f.x < o.x ? -1 : 1) * 56;
         maxV = 90;
@@ -1653,14 +1691,22 @@ export class ArenaView extends Container {
       f.recoil *= Math.pow(0.003, dt);
       if (f.poseT > 0) {
         f.poseT -= dt;
-        if (f.poseT <= 0 && f.pose !== 'ko') f.pose = this.scene === 'ceremony' ? 'stand' : 'guard';
+        if (f.poseT <= 0) {
+          if (f.next) {
+            // the coil's done: the shot comes
+            f.pose = f.next.pose;
+            f.poseT = f.next.dur;
+            f.poseDur = f.next.dur;
+            f.next = null;
+          } else if (!KO_POSES.has(f.pose)) f.pose = this.scene === 'ceremony' ? 'stand' : 'guard';
+        }
       }
       let pose = f.pose;
       if (this.scene === 'fight') {
-        if (ground && pose !== 'ko' && pose !== 'celebrate') pose = i === lay.aIdx ? lay.a : lay.d;
+        if (ground && !KO_POSES.has(pose) && pose !== 'celebrate') pose = i === lay.aIdx ? lay.a : lay.d;
         if (this.ground === 'clinch' && (pose === 'guard' || pose === 'clinch')) pose = this.clinchPose(i);
         if (this.ground === 'clinch' && pose === 'knee' && this.clinchTie.dom === i && this.clinchTie.tie === 'plum') pose = 'plumKnee';
-        if (this.tdT > 0.3 && ground && pose !== 'ko') {
+        if (this.tdT > 0.3 && ground && !KO_POSES.has(pose)) {
           const ph = 1 - this.tdT / 0.95;
           if (this.tdKind === 'trip') pose = i === this.tdAtk ? (ph < 0.5 ? 'trip' : 'sprawl') : ph < 0.45 ? 'falling' : 'down';
           else pose = i === this.tdAtk ? (ph < 0.45 ? 'shoot' : 'sprawl') : ph < 0.4 ? 'lifted' : 'down';
@@ -1668,7 +1714,7 @@ export class ArenaView extends Container {
         if (this.winnerSide === i && this.finished && f.poseT <= 0) pose = 'celebrate';
       }
       // walking (not fighting): turn and walk where you're going
-      const walking = Math.abs(tx - f.x) > 3 && (this.scene !== 'fight' || this.roundOver) && pose !== 'ko' && pose !== 'down';
+      const walking = Math.abs(tx - f.x) > 3 && (this.scene !== 'fight' || this.roundOver) && !KO_POSES.has(pose) && pose !== 'down';
       if (walking) facing = tx > f.x ? 1 : -1;
       if (facing !== f.facing) {
         // turning round: mirror the current joints so the body doesn't jump, then tween from there
@@ -1679,11 +1725,22 @@ export class ArenaView extends Container {
       // his own taunt (the bird gets a finger)
       this.L[i].bird = pose === 'taunt' && this.L[i].taunt === 'flipoff' && !walking;
       const target = walking ? (Math.floor(this.t * 6) % 2 ? POSES.walk1 : POSES.walk2) : pose === 'guard' ? stanceGuard(this.L[i], this.t + i * 1.3) : pose === 'taunt' ? tauntRig(this.L[i], this.t) : POSES[pose as Pose] ?? POSES.guard;
-      const rate = ground && this.scene === 'fight' ? (this.tdT > 0 ? 9 : 5.5) : f.poseT > 0 ? 22 : 12;
+      // a strike snaps out (quick to arrive) and comes back at the old pace
+      const fresh = f.poseT > 0 && f.poseDur !== undefined && f.poseT > f.poseDur - 0.12;
+      const rate = ground && this.scene === 'fight' ? (this.tdT > 0 ? 9 : 5.5) : f.poseT > 0 ? (fresh ? 34 : 22) : 12;
       f.rig = lerpRig(f.rig, pose === 'celebrate' && this.finished && !walking ? this.celebration(i, target) : target, Math.min(1, dt * rate));
       f.snap = (f.snap ?? 0) * Math.exp(-dt * 7);
       // long hair swings with movement and with shots to the head
       this.L[i].sway = Math.max(-4, Math.min(4, ((f.v ?? 0) * f.facing) / 30 + (f.snap ?? 0) * 4 + Math.sin(this.t * 3 + i) * 0.5));
+      // the fight wears on him: sweat with the rounds, the face and body with the damage, the hands down when he's gassed
+      if (this.scene === 'fight') {
+        const Lk = this.L[i];
+        const hurt = 1 - Math.max(0, Math.min(100, this.hp[i])) / 100;
+        Lk.sweat = Math.min(1, 0.1 + (this.round - 1) * 0.28 + hurt * 0.35);
+        const cut = this.vitals[i].cut;
+        Lk.wear = { cuts: cut, swell: hurt, blood: cut > 0 ? Math.min(1, 0.3 + cut * 0.22) : 0, body: hurt * 0.8 };
+        Lk.gassed = Math.max(Math.max(0, Math.min(1, (45 - this.vitals[i].gas) / 35)), this.round >= 3 ? Math.min(0.5, (this.round - 2) * 0.2 + hurt * 0.3) : 0);
+      }
     }
     if (this.walkIn && this.walkT > 0.3 && this.F.every((f, i) => Math.abs(f.x - (this.center + (i === 0 ? -1 : 1) * (this.touchT > 0 ? TOUCH_GAP : gap))) < 5 && Math.abs(f.v ?? 0) < 25)) this.walkIn = false;
     if (this.walkIn && this.walkT > 6) this.walkIn = false;
@@ -1732,7 +1789,7 @@ export class ArenaView extends Container {
   private drawSide(dt: number, ground: boolean): void {
     const g = this.fighters;
     g.clear();
-    const shake = this.shakeT > 0 ? Math.round((Math.random() - 0.5) * 4) : 0;
+    const shake = this.shakeT > 0 ? Math.round((Math.random() - 0.5) * this.shakeAmp) : 0;
     this.shakeT -= dt;
     // ref & announcer stand behind the fighters
     for (const a of [this.ref, this.butler]) {
@@ -1937,12 +1994,12 @@ export class ArenaView extends Container {
     const bulk = L.build === 2 ? 2 : L.build === 1 ? 1 : 0;
     // the same pose the side view is drawing (clinch ties, takedowns, ground frames), not just the last cue
     const pose = this.drawPose[i] === 'walk' ? f.pose : this.drawPose[i];
-    const lying = pose === 'down' || pose === 'ko' || (this.ground !== 'stand' && this.ground !== 'clinch' && !this.isTop(i)) || pose === 'bottom' || pose === 'bottomSub';
+    const lying = pose === 'down' || KO_POSES.has(pose as Pose) || (this.ground !== 'stand' && this.ground !== 'clinch' && !this.isTop(i)) || pose === 'bottom' || pose === 'bottomSub';
     // shadow
     g.ellipse(x + 2, y + 3, 11, 8).fill({ color: 0, alpha: 0.28 });
     if (lying) {
       // flat on the mat: body stretched back along the facing axis
-      const back = pose === 'ko' ? -1 : -0.6;
+      const back = pose === 'ko' ? -1 : pose === 'koFace' ? 0.8 : pose === 'koCrumple' ? -0.4 : -0.6;
       const [hx, hy] = P(back * 22, 0);
       const [fx1, fy1] = P(back * -14, -5);
       const [fx2, fy2] = P(back * -14, 5);
