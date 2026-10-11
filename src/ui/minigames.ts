@@ -9,6 +9,7 @@
  * Controls: A / Space / click. B / Esc skips (scores 40%).
  */
 import { Container, Graphics, type Ticker } from 'pixi.js';
+import { hint } from './hints';
 import type { Game } from './app';
 import { PAL } from '../art/palette';
 import { W, H, text, box } from './kit';
@@ -150,7 +151,7 @@ export function openJumpRope(g: Game, done: (score: number) => void): void {
   const notes: { t: number; judged: boolean }[] = [];
   const lineX = 70;
   const speed = 110; // px / s
-  shell(g, 'JUMP ROPE', 'Press when the marker hits the line. It speeds up. (A / SPACE / click)', done, (r, dt, press) => {
+  shell(g, 'JUMP ROPE', `Press when the marker hits the line. It speeds up. ${hint('(A / SPACE / click)', '({A})')}`, done, (r, dt, press) => {
     t += dt;
     // spawn beats ahead of time so they scroll in from the right
     while (beat < N && notes.length < 6) {
@@ -219,7 +220,7 @@ export function openTyreChop(g: Game, done: (score: number) => void): void {
   let slam = 0;
   let flash = '';
   let flashT = 0;
-  shell(g, 'TYRE & SLEDGEHAMMER', 'Hold to raise the hammer, release when the needle is in the green. (A / SPACE / click)', done, (r, dt, _press, held, release) => {
+  shell(g, 'TYRE & SLEDGEHAMMER', `Hold to raise the hammer, release when the needle is in the green. ${hint('(A / SPACE / click)', '({A})')}`, done, (r, dt, _press, held, release) => {
     const speed = 1.3 + swings * 0.12;
     if (held) {
       raise = Math.min(1, raise + dt * 3);

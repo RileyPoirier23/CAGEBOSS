@@ -13,7 +13,7 @@ import { PixelText, pixelArtResolution } from './text';
 import { portrait } from './sprites';
 import { sfx } from '../audio/sfx';
 import { heightStr } from '../core/format';
-import { Rig, Pose, POSES, drawRig, lerpRig, mirrorRig, lookFor, stanceGuard, Look2 } from './rig';
+import { Rig, Pose, POSES, drawRig, lerpRig, mirrorRig, lookFor, stanceGuard, tauntRig, TAUNT_CALL, Look2, KO_POSES, HEAVY_POSES, koPoseFor } from './rig';
 
 export const AW = 480;
 export const AH = 150;
@@ -47,6 +47,9 @@ interface FState {
   footT?: number;
   /** head snap after taking a shot (decays) */
   snap?: number;
+  /** how long the current pose was given, and the pose queued behind it (the coil before a big shot) */
+  poseDur?: number;
+  next?: { pose: Pose; dur: number } | null;
 }
 
 /** Blood on the canvas lasts the whole event; a new event gets a fresh mat. */
@@ -138,6 +141,9 @@ interface Actor {
   spin: number; // >0 while doing the Buffer 360
 }
 
+/** Very short and very tall fighters look it (everybody else is drawn the same size). */
+export const sizeFor = (f: Fighter): number => (f.height < 165 || f.height > 193 ? Math.max(0.74, Math.min(1.14, f.height / 180)) : 1);
+
 const REF_LOOK: Look2 = {
   skin: 0x8d5a3b, hairStyle: 0, hairColor: 0x1a1412, beard: 2, build: 1, trunks: 0x111111, trim: 0x111111, glove: 0x2a5aa8,
   stance: 'upright', female: false, tattoo: 0,
@@ -206,6 +212,11 @@ export class ArenaView extends Container {
   intensity = 1;
   flash = 0;
   shakeT = 0;
+  shakeAmp = 4;
+  /** a big shot stops the frame for a beat (hit-stop), so it reads */
+  hitStop = 0;
+  /** the fighters' tanks and cuts, from the engine (hands-on fights) or the lines (spectated): the models wear them */
+  vitals: [{ gas: number; cut: number }, { gas: number; cut: number }] = [{ gas: 100, cut: 0 }, { gas: 100, cut: 0 }];
   round = 1;
   sec = 0;
   private lowerTop = false;
@@ -260,7 +271,7 @@ export class ArenaView extends Container {
     public A: Fighter,
     public B: Fighter,
     public rounds: number,
-    private info: { network?: string; event?: string; promo?: string; champs?: [boolean, boolean]; eventKey?: string; sponsors?: { name: string; color: number }[]; canvas?: CanvasInfo; bare?: boolean } = {},
+    private info: { network?: string; event?: string; promo?: string; champs?: [boolean, boolean]; eventKey?: string; sponsors?: { name: string; color: number }[]; canvas?: CanvasInfo; bare?: boolean; refLook?: Look2 } = {},
   ) {
     super();
     const key = info.eventKey ?? info.event ?? '';
@@ -275,7 +286,7 @@ export class ArenaView extends Container {
       { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: CORNERS[0], lunge: 0, recoil: 0, facing: 1 },
       { rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x: CORNERS[1], lunge: 0, recoil: 0, facing: -1 },
     ];
-    this.ref = { rig: { ...POSES.stand }, pose: 'stand', x: AW / 2 + 70, tx: AW / 2 + 70, facing: -1, look: REF_LOOK, visible: true, spin: 0 };
+    this.ref = { rig: { ...POSES.stand }, pose: 'stand', x: AW / 2 + 70, tx: AW / 2 + 70, facing: -1, look: info.refLook ?? REF_LOOK, visible: true, spin: 0 };
     this.butler = { rig: { ...POSES.mic }, pose: 'mic', x: AW / 2, tx: AW / 2, facing: 1, look: BUTLER_LOOK, visible: false, spin: 0 };
     this.worldInner.addChild(this.bg, this.matLogo, this.stainG, this.crowd, this.ads, this.lights, this.fighters, this.fx, this.front);
     this.buildAds();
@@ -341,14 +352,7 @@ export class ArenaView extends Container {
     g.clear();
     // arena darkness with a warm gradient toward the cage
     for (let y = 0; y < AH; y += 2) g.rect(0, y, AW, 2).fill(lerpColor(0x0c090d, 0x1d151b, y / AH));
-    // rafters & lighting rig
-    g.rect(0, 14, AW, 2).fill(0x2a2228);
-    for (let i = 0; i < 10; i++) {
-      g.rect(18 + i * 48, 10, 12, 5).fill(0x3a3032);
-      g.rect(21 + i * 48, 15, 6, 2).fill(0xe8d8a0);
-    }
-    // big screens
-    g.rect(150, 1, 60, 8).fill(0x0e1420).rect(270, 1, 60, 8).fill(0x0e1420);
+    this.drawVenue(g);
     // ---- the octagon in perspective: canvas, apron, eight fence panels
     const cx = AW / 2;
     const cy = FLOOR + 1;
@@ -418,6 +422,74 @@ export class ArenaView extends Container {
   }
   private matName: PixelText | null = null;
 
+  /** Where the fight is: every league has its own room behind the cage. */
+  private drawVenue(g: Graphics): void {
+    const style = this.canvasStyle;
+    const rig = (n: number, col = 0xe8d8a0) => {
+      g.rect(0, 14, AW, 2).fill(0x2a2228);
+      for (let i = 0; i < n; i++) {
+        const x = 18 + i * (AW / n);
+        g.rect(x, 10, 12, 5).fill(0x3a3032).rect(x + 3, 15, 6, 2).fill(col);
+      }
+    };
+    if (style === 'local') {
+      // a bingo hall on fight night: wood panelling, the number board, strip lights, folding chairs
+      g.rect(0, 0, AW, 60).fill(0x3a2a1a);
+      for (let x = 0; x < AW; x += 12) g.rect(x, 0, 1, 60).fill(0x2e2114);
+      g.rect(0, 58, AW, 3).fill(0x24180e);
+      g.rect(AW / 2 - 70, 2, 140, 18).fill(0x0c0c0e);
+      for (let c = 0; c < 15; c++) for (let r = 0; r < 3; r++) g.rect(AW / 2 - 66 + c * 9, 5 + r * 5, 7, 3).fill((c * 3 + r * 7) % 5 === 0 ? 0xffd860 : 0x2a2a20);
+      for (const x of [60, 180, 300, 420]) g.rect(x, 1, 50, 2).fill(0xe8f0ff).rect(x, 3, 50, 1).fill(0x8a9098);
+      g.rect(30, 24, 70, 14).fill(0x8e2f2f).rect(AW - 100, 24, 70, 14).fill(0x2a4a86); // paper banners
+      return;
+    }
+    if (style === 'bk') {
+      // a warehouse: brick, roller doors, bare bulbs on cords, a forklift nobody moved
+      g.rect(0, 0, AW, 60).fill(0x3a2420);
+      for (let y = 0; y < 60; y += 6) for (let x = (y / 6) % 2 ? -8 : 0; x < AW; x += 16) g.rect(x + 1, y + 1, 14, 4).fill(((x + y) % 5) ? 0x4a2c26 : 0x40261f);
+      for (const x of [40, AW - 120]) {
+        g.rect(x, 10, 80, 50).fill(0x5a5a62);
+        for (let y = 12; y < 60; y += 4) g.rect(x, y, 80, 1).fill(0x46464e);
+      }
+      for (let i = 0; i < 8; i++) {
+        const x = 30 + i * 60;
+        g.rect(x, 0, 1, 12 + (i % 3) * 4).fill(0x1a1a1a).circle(x, 13 + (i % 3) * 4, 2).fill(0xffe8a0);
+      }
+      return;
+    }
+    if (style === 'regional') {
+      // a casino ballroom: chandeliers, swagged curtains, a carpet only a casino could love
+      g.rect(0, 0, AW, 60).fill(0x3a1424);
+      for (let x = 0; x < AW; x += 20) g.rect(x, 0, 10, 60).fill(0x42182a);
+      for (let x = 0; x < AW; x += 40) g.poly([x, 0, x + 40, 0, x + 20, 8]).fill(0x8a2a3a);
+      for (const cx of [80, AW / 2, AW - 80]) {
+        g.rect(cx, 0, 1, 6).fill(0xc4a04a);
+        for (let k = -3; k <= 3; k++) g.circle(cx + k * 5, 9 + Math.abs(k), 1.5).fill(0xfff2c8);
+        g.rect(cx - 14, 8, 28, 1).fill(0xc4a04a);
+      }
+      g.rect(150, 14, 60, 9).fill(0x0e1420).rect(270, 14, 60, 9).fill(0x0e1420); // rented screens
+      return;
+    }
+    if (style === 'pfl') {
+      // the Lounge: smaller room, purple neon, a VIP couch row, cameras everywhere
+      g.rect(0, 0, AW, 60).fill(0x140a1c);
+      g.rect(0, 18, AW, 1).fill(0xb04aff).rect(0, 46, AW, 1).fill(0x4a2aff);
+      for (let x = 20; x < AW; x += 70) g.roundRect(x, 48, 40, 10, 3).fill(0x5a2a6a);
+      for (const x of [100, AW - 110]) g.rect(x, 22, 10, 7).fill(0x2a2a30).rect(x + 10, 24, 5, 3).fill(0x1a1a1e).circle(x + 3, 25, 1).fill(0xff2020);
+      rig(8, 0xd8b0ff);
+      g.rect(150, 1, 60, 8).fill(0x0e1420).rect(270, 1, 60, 8).fill(0x0e1420);
+      return;
+    }
+    // the CBFC: a proper arena. Championship banners in the rafters, the lighting rig, the big screens
+    rig(10);
+    for (let i = 0; i < 6; i++) {
+      const x = 22 + i * 82 + (i > 2 ? 40 : 0);
+      if (x > 140 && x < 340) continue;
+      g.rect(x, 0, 14, 12).fill(i % 2 ? 0x8e2f2f : 0x1a2a4a).rect(x + 4, 4, 6, 3).fill(0xc4a04a).poly([x, 12, x + 14, 12, x + 7, 15]).fill(i % 2 ? 0x8e2f2f : 0x1a2a4a);
+    }
+    g.rect(150, 1, 60, 8).fill(0x0e1420).rect(270, 1, 60, 8).fill(0x0e1420);
+  }
+
   private get canvasStyle(): CanvasStyle {
     return this.info.canvas?.style ?? 'cbfc';
   }
@@ -481,32 +553,55 @@ export class ArenaView extends Container {
     });
   }
 
+  /** The crowd's seats (positions and colours) for this room: fixed, so worked out once. */
+  private crowdSeats: { x: number; y: number; v: number; head: number; body: number; fist: number }[] | null = null;
+  private crowdKey = '';
+
   private drawCrowd(): void {
     const g = this.crowd;
-    g.clear();
-    for (let r = 0; r < 4; r++) {
-      const y = 22 + r * 7;
-      for (let x = (r % 2) * 4; x < AW; x += 8) {
-        const n = Math.sin(x * 12.9898 + r * 78.233) * 43758.5453;
-        const v = n - Math.floor(n);
-        const excite = this.intensity >= 3 ? Math.round(Math.abs(Math.sin(this.t * 9 + x)) * -2) : 0;
-        const head = lerpColor(0x1e171c, 0x4a3a40, v * 0.7);
-        g.circle(x + 3, y + excite, 2.5).fill(head);
-        g.rect(x, y + 2 + excite, 7, 5).fill(shade(head, -0.2));
-        if (this.intensity >= 2 && v > 0.93) g.rect(x + 2, y - 4 + excite, 2, 4).fill(shade(head, 0.2)); // fist up
-        if (v > 0.97 && Math.sin(this.t * 2 + x) > 0) g.rect(x + 3, y - 2, 1, 2).fill(0xbfd8ff); // phone screen
+    // smaller rooms, smaller crowds: a bingo hall is half empty, the CBFC is sold out
+    const style = this.canvasStyle;
+    if (!this.crowdSeats) {
+      const fill = { local: 0.45, bk: 0.55, regional: 0.8, pfl: 0.85, cbfc: 1 }[style];
+      const rows = style === 'local' || style === 'bk' ? 2 : 4;
+      this.crowdSeats = [];
+      for (let r = 0; r < rows; r++) {
+        const y = 22 + r * 7 + (rows === 2 ? 14 : 0);
+        for (let x = (r % 2) * 4; x < AW; x += 8) {
+          const n = Math.sin(x * 12.9898 + r * 78.233) * 43758.5453;
+          const v = n - Math.floor(n);
+          if (((n * 7) % 1 + 1) % 1 > fill) continue;
+          const head = lerpColor(0x1e171c, 0x4a3a40, v * 0.7);
+          this.crowdSeats.push({ x, y, v, head, body: shade(head, -0.2), fist: shade(head, 0.2) });
+        }
       }
     }
-    if (this.intensity >= 2 && Math.random() < 0.06 * this.intensity) {
-      const fx = Math.random() * AW;
-      g.circle(fx, 24 + Math.random() * 20, 2).fill(0xffffff);
+    // the crowd only moves when it's on its feet (and phones blink): redraw when the picture changes
+    const bouncing = this.intensity >= 3;
+    const key = `${this.intensity >= 2 ? 1 : 0}|${bouncing ? Math.floor(this.t * 60) : 0}`;
+    if (key !== this.crowdKey) {
+      this.crowdKey = key;
+      g.clear();
+      for (const s of this.crowdSeats) {
+        const excite = bouncing ? Math.round(Math.abs(Math.sin(this.t * 9 + s.x)) * -2) : 0;
+        g.circle(s.x + 3, s.y + excite, 2.5).fill(s.head);
+        g.rect(s.x, s.y + 2 + excite, 7, 5).fill(s.body);
+        if (this.intensity >= 2 && s.v > 0.93) g.rect(s.x + 2, s.y - 4 + excite, 2, 4).fill(s.fist); // fist up
+      }
     }
-    // jumbotrons show the action
-    const sc = this.scene === 'intro' ? 0x3a2a14 : this.intensity >= 3 ? 0x5a1a1a : 0x1a2a40;
-    g.rect(152, 2, 56, 6).fill(sc).rect(272, 2, 56, 6).fill(sc);
-    // spotlights over the cage
+    // what changes every frame goes on the lights layer (cleared each frame)
     const l = this.lights;
     l.clear();
+    for (const s of this.crowdSeats) if (s.v > 0.97 && Math.sin(this.t * 2 + s.x) > 0) l.rect(s.x + 3, s.y - 2, 1, 2).fill(0xbfd8ff); // phone screens
+    if (this.intensity >= 2 && Math.random() < 0.06 * this.intensity) {
+      const fx = Math.random() * AW;
+      l.circle(fx, 24 + Math.random() * 20, 2).fill(0xffffff);
+    }
+    // jumbotrons show the action (no jumbotrons in a bingo hall or a warehouse)
+    const sc = this.scene === 'intro' ? 0x3a2a14 : this.intensity >= 3 ? 0x5a1a1a : 0x1a2a40;
+    if (style === 'regional') l.rect(152, 15, 56, 7).fill(sc).rect(272, 15, 56, 7).fill(sc);
+    else if (style !== 'local' && style !== 'bk') l.rect(152, 2, 56, 6).fill(sc).rect(272, 2, 56, 6).fill(sc);
+    // spotlights over the cage
     l.poly([AW / 2 - 30, 16, AW / 2 + 30, 16, AW / 2 + 150, FLOOR, AW / 2 - 150, FLOOR]).fill({ color: 0xfff2d0, alpha: 0.05 + this.intensity * 0.01 });
     // moving heads: four coloured beams sweeping the cage, wilder for walkouts and big moments
     const hype = this.scene === 'intro' ? 1 : this.intensity >= 3 ? 0.8 : this.scene === 'ceremony' ? 0.7 : 0.25;
@@ -519,9 +614,9 @@ export class ArenaView extends Container {
       l.poly([ox - 2, 14, ox + 2, 14, tx + 22, FLOOR + 6, tx - 22, FLOOR + 6]).fill({ color: col, alpha: 0.035 + hype * 0.05 });
       l.ellipse(tx, FLOOR + 4, 22, 3).fill({ color: col, alpha: 0.05 + hype * 0.07 });
     }
-    // LED strip along the top of the back fence: a chase that speeds up with the crowd
+    // LED strip along the top of the back fence: a chase that speeds up with the crowd (the big leagues only)
     const rail = 236;
-    for (let i = 0; i < 46; i++) {
+    for (let i = 0; i < (style === 'local' || style === 'bk' ? 0 : 46); i++) {
       const x = AW / 2 - rail + 22 + i * 9.8;
       const on = (i + Math.floor(this.t * (4 + this.intensity * 3))) % 6 < 2;
       l.rect(Math.round(x), FLOOR - 88 + Math.round(Math.abs(x - AW / 2) / 30), 3, 1).fill({ color: on ? (this.intensity >= 3 ? 0xff4040 : 0xffd27a) : 0x3a2a20, alpha: on ? 0.9 : 0.5 });
@@ -694,6 +789,11 @@ export class ArenaView extends Container {
   }
 
   /** Play a pose on one fighter (hands-on fights). */
+  /** The broadcast's line for this fighter's taunt. */
+  tauntCall(i: 0 | 1): string {
+    return TAUNT_CALL[this.L[i].taunt ?? 'arms'];
+  }
+
   play(i: 0 | 1, pose: string, dur = 0.3, lunge = 0): void {
     this.setPose(i, (POSES as Record<string, unknown>)[pose] ? (pose as Pose) : 'guard', dur);
     if (lunge) this.F[i].lunge = lunge;
@@ -846,8 +946,19 @@ export class ArenaView extends Container {
   // ------------------------------------------------------------ cues
 
   private setPose(i: 0 | 1, p: Pose, dur = 0.35): void {
-    this.F[i].pose = p;
-    this.F[i].poseT = dur;
+    const f = this.F[i];
+    // a big shot is telegraphed: a moment's coil, then it comes
+    if (HEAVY_POSES.has(p) && (f.pose === 'guard' || f.poseT <= 0) && (this.ground === 'stand' || this.ground === 'clinch')) {
+      f.pose = 'coil';
+      f.poseT = 0.06;
+      f.poseDur = 0.06;
+      f.next = { pose: p, dur };
+      return;
+    }
+    f.pose = p;
+    f.poseT = dur;
+    f.poseDur = dur;
+    f.next = null;
   }
 
   private handPos(i: 0 | 1, which: 'haF' | 'haB' | 'ftB' | 'knB' | 'elB' = 'haF'): [number, number] {
@@ -863,23 +974,25 @@ export class ArenaView extends Container {
     }
   }
 
-  private impact(attacker: 0 | 1, joint: 'haF' | 'haB' | 'ftB' | 'knB' | 'elB', big: boolean, bloody: boolean, body = false): void {
+  private impact(attacker: 0 | 1, joint: 'haF' | 'haB' | 'ftB' | 'knB' | 'elB', big: boolean, bloody: boolean, body = false, legs = false): void {
     const def = (1 - attacker) as 0 | 1;
     this.F[attacker].lunge = 7;
     this.F[def].recoil = big ? 9 : 5;
     // the man who got hit reacts: head snaps, he's knocked back a step, body shots fold him,
-    // big ones buckle the knees
+    // leg kicks buckle the knee, big ones rock him
     const D = this.F[def];
-    const head = joint !== 'ftB' && joint !== 'knB' && !body;
+    const head = joint !== 'ftB' && joint !== 'knB' && !body && !legs;
     if (head) D.snap = big ? 1.6 : 0.8;
     if (this.ground === 'stand' || this.ground === 'clinch') {
-      D.v = (D.v ?? 0) - D.facing * (big ? 120 : 60);
+      D.v = (D.v ?? 0) - D.facing * (legs ? 25 : big ? 120 : 60);
       if (D.poseT <= 0 || D.pose === 'guard') {
-        if (joint === 'knB' || (!head && (big || body))) this.setPose(def, 'doubled', 0.4); // folded over
+        if (legs) this.setPose(def, 'legBuckle', big ? 0.45 : 0.3); // the knee goes
+        else if (joint === 'knB' || (!head && (big || body))) this.setPose(def, 'doubled', 0.4); // folded over
         else if (big) this.setPose(def, 'rocked', 0.45);
         else if (Math.random() < 0.5) this.setPose(def, 'hurt', 0.2);
       }
     }
+    if (big) this.hitStop = 0.055;
     const [x, y] = this.handPos(attacker, joint);
     this.burst(x, y, big ? 16 : 7, big ? PAL.gold : 0xffffff, big ? 110 : 60, 0.3, big ? 2 : 1);
     this.burst(x, y, 4, 0xbfe0ff, 40, 0.5, 1, 120); // sweat
@@ -888,7 +1001,13 @@ export class ArenaView extends Container {
     const [hx, hy] = this.topPos(def);
     this.burst(hx, hy, big ? 12 : 5, big ? PAL.gold : 0xffffff, big ? 60 : 35, 0.3, big ? 2 : 1, 0, true);
     if (bloody) this.burst(hx, hy, 5, 0xa01818, 25, 1.5, 2, 0, true);
-    if (big) this.shakeT = 0.25;
+    if (big) {
+      this.shakeT = 0.25;
+      this.shakeAmp = 5;
+    } else if (this.shakeT <= 0) {
+      this.shakeT = 0.06;
+      this.shakeAmp = 2;
+    }
     if (big && this.mode === 'tv') this.cutTo('close', 0.25);
   }
 
@@ -1075,7 +1194,7 @@ export class ArenaView extends Container {
         break;
       case 'legkick':
         this.setPose(A, 'legkick', 0.35);
-        this.impact(A, 'ftB', false, false);
+        this.impact(A, 'ftB', line.intensity >= 2, false, false, true);
         sfx('kick');
         break;
       case 'kick':
@@ -1112,11 +1231,16 @@ export class ArenaView extends Container {
         if (this.mode === 'tv') this.cutTo('close', 0.6, true);
         sfx('roar');
         break;
-      case 'ko':
-        this.setPose(A, Math.random() < 0.4 ? 'headkick' : 'hook', 0.6);
-        this.setPose(D, 'ko', 9999);
-        this.impact(A, Math.random() < 0.4 ? 'ftB' : 'haB', true, true);
-        this.F[D].recoil = 22;
+      case 'ko': {
+        // how he goes depends on what put him there
+        const kop = koPoseFor(`${line.key ?? ''} ${line.act} ${line.text}`);
+        this.setPose(A, kop === 'ko' ? (Math.random() < 0.5 ? 'headkick' : 'uppercut') : kop === 'koCrumple' ? (Math.random() < 0.5 ? 'hook' : 'overhand') : Math.random() < 0.5 ? 'bodykick' : 'body', 0.6);
+        this.setPose(D, kop, 9999);
+        this.impact(A, kop === 'ko' && Math.random() < 0.5 ? 'ftB' : 'haB', true, true);
+        this.F[D].recoil = kop === 'koFace' ? -10 : 22;
+        this.shakeT = 0.45;
+        this.shakeAmp = 8;
+        this.hitStop = 0.12;
         this.flash = 0.6;
         this.winnerSide = A;
         this.finished = true;
@@ -1126,6 +1250,7 @@ export class ArenaView extends Container {
         if (this.mode === 'tv') this.cutTo('close', 1.5, true);
         sfx('roar');
         break;
+      }
       case 'tko':
         this.setPose(D, ground ? 'bottom' : 'down', 9999);
         this.setPose(A, 'celebrate', 9999);
@@ -1185,6 +1310,7 @@ export class ArenaView extends Container {
         this.setPose(A, 'taunt', 1.0);
         break;
       case 'cut':
+        this.vitals[D].cut++;
         this.burst(this.F[D].x + 6 * this.F[D].facing, FLOOR - 74, 10, 0xa01818, 50, 1.0, 2);
         break;
       case 'injury':
@@ -1442,6 +1568,10 @@ export class ArenaView extends Container {
       this.slowT -= real;
       dt *= 0.3;
     }
+    if (this.hitStop > 0) {
+      this.hitStop -= real;
+      dt *= 0.08;
+    }
     if (!this.walkIn) this.touchT -= dt * this.pace;
     this.t += dt;
     this.drawCrowd();
@@ -1540,7 +1670,7 @@ export class ArenaView extends Container {
         } else tx = f.x;
         f.foot = 0;
       }
-      if (this.scene === 'fight' && this.finished && this.winnerSide === i && (o.pose === 'ko' || o.pose === 'down') && !ground) {
+      if (this.scene === 'fight' && this.finished && this.winnerSide === i && (KO_POSES.has(o.pose) || o.pose === 'down') && !ground) {
         // walk off and celebrate away from the man on the canvas
         tx = o.x + (f.x < o.x ? -1 : 1) * 56;
         maxV = 90;
@@ -1561,14 +1691,22 @@ export class ArenaView extends Container {
       f.recoil *= Math.pow(0.003, dt);
       if (f.poseT > 0) {
         f.poseT -= dt;
-        if (f.poseT <= 0 && f.pose !== 'ko') f.pose = this.scene === 'ceremony' ? 'stand' : 'guard';
+        if (f.poseT <= 0) {
+          if (f.next) {
+            // the coil's done: the shot comes
+            f.pose = f.next.pose;
+            f.poseT = f.next.dur;
+            f.poseDur = f.next.dur;
+            f.next = null;
+          } else if (!KO_POSES.has(f.pose)) f.pose = this.scene === 'ceremony' ? 'stand' : 'guard';
+        }
       }
       let pose = f.pose;
       if (this.scene === 'fight') {
-        if (ground && pose !== 'ko' && pose !== 'celebrate') pose = i === lay.aIdx ? lay.a : lay.d;
+        if (ground && !KO_POSES.has(pose) && pose !== 'celebrate') pose = i === lay.aIdx ? lay.a : lay.d;
         if (this.ground === 'clinch' && (pose === 'guard' || pose === 'clinch')) pose = this.clinchPose(i);
         if (this.ground === 'clinch' && pose === 'knee' && this.clinchTie.dom === i && this.clinchTie.tie === 'plum') pose = 'plumKnee';
-        if (this.tdT > 0.3 && ground && pose !== 'ko') {
+        if (this.tdT > 0.3 && ground && !KO_POSES.has(pose)) {
           const ph = 1 - this.tdT / 0.95;
           if (this.tdKind === 'trip') pose = i === this.tdAtk ? (ph < 0.5 ? 'trip' : 'sprawl') : ph < 0.45 ? 'falling' : 'down';
           else pose = i === this.tdAtk ? (ph < 0.45 ? 'shoot' : 'sprawl') : ph < 0.4 ? 'lifted' : 'down';
@@ -1576,7 +1714,7 @@ export class ArenaView extends Container {
         if (this.winnerSide === i && this.finished && f.poseT <= 0) pose = 'celebrate';
       }
       // walking (not fighting): turn and walk where you're going
-      const walking = Math.abs(tx - f.x) > 3 && (this.scene !== 'fight' || this.roundOver) && pose !== 'ko' && pose !== 'down';
+      const walking = Math.abs(tx - f.x) > 3 && (this.scene !== 'fight' || this.roundOver) && !KO_POSES.has(pose) && pose !== 'down';
       if (walking) facing = tx > f.x ? 1 : -1;
       if (facing !== f.facing) {
         // turning round: mirror the current joints so the body doesn't jump, then tween from there
@@ -1584,12 +1722,25 @@ export class ArenaView extends Container {
         f.facing = facing;
       }
       this.drawPose[i] = walking ? 'walk' : pose;
-      const target = walking ? (Math.floor(this.t * 6) % 2 ? POSES.walk1 : POSES.walk2) : pose === 'guard' ? stanceGuard(this.L[i], this.t + i * 1.3) : POSES[pose as Pose] ?? POSES.guard;
-      const rate = ground && this.scene === 'fight' ? (this.tdT > 0 ? 9 : 5.5) : f.poseT > 0 ? 22 : 12;
+      // his own taunt (the bird gets a finger)
+      this.L[i].bird = pose === 'taunt' && this.L[i].taunt === 'flipoff' && !walking;
+      const target = walking ? (Math.floor(this.t * 6) % 2 ? POSES.walk1 : POSES.walk2) : pose === 'guard' ? stanceGuard(this.L[i], this.t + i * 1.3) : pose === 'taunt' ? tauntRig(this.L[i], this.t) : POSES[pose as Pose] ?? POSES.guard;
+      // a strike snaps out (quick to arrive) and comes back at the old pace
+      const fresh = f.poseT > 0 && f.poseDur !== undefined && f.poseT > f.poseDur - 0.12;
+      const rate = ground && this.scene === 'fight' ? (this.tdT > 0 ? 9 : 5.5) : f.poseT > 0 ? (fresh ? 34 : 22) : 12;
       f.rig = lerpRig(f.rig, pose === 'celebrate' && this.finished && !walking ? this.celebration(i, target) : target, Math.min(1, dt * rate));
       f.snap = (f.snap ?? 0) * Math.exp(-dt * 7);
       // long hair swings with movement and with shots to the head
       this.L[i].sway = Math.max(-4, Math.min(4, ((f.v ?? 0) * f.facing) / 30 + (f.snap ?? 0) * 4 + Math.sin(this.t * 3 + i) * 0.5));
+      // the fight wears on him: sweat with the rounds, the face and body with the damage, the hands down when he's gassed
+      if (this.scene === 'fight') {
+        const Lk = this.L[i];
+        const hurt = 1 - Math.max(0, Math.min(100, this.hp[i])) / 100;
+        Lk.sweat = Math.min(1, 0.1 + (this.round - 1) * 0.28 + hurt * 0.35);
+        const cut = this.vitals[i].cut;
+        Lk.wear = { cuts: cut, swell: hurt, blood: cut > 0 ? Math.min(1, 0.3 + cut * 0.22) : 0, body: hurt * 0.8 };
+        Lk.gassed = Math.max(Math.max(0, Math.min(1, (45 - this.vitals[i].gas) / 35)), this.round >= 3 ? Math.min(0.5, (this.round - 2) * 0.2 + hurt * 0.3) : 0);
+      }
     }
     if (this.walkIn && this.walkT > 0.3 && this.F.every((f, i) => Math.abs(f.x - (this.center + (i === 0 ? -1 : 1) * (this.touchT > 0 ? TOUCH_GAP : gap))) < 5 && Math.abs(f.v ?? 0) < 25)) this.walkIn = false;
     if (this.walkIn && this.walkT > 6) this.walkIn = false;
@@ -1638,7 +1789,7 @@ export class ArenaView extends Container {
   private drawSide(dt: number, ground: boolean): void {
     const g = this.fighters;
     g.clear();
-    const shake = this.shakeT > 0 ? Math.round((Math.random() - 0.5) * 4) : 0;
+    const shake = this.shakeT > 0 ? Math.round((Math.random() - 0.5) * this.shakeAmp) : 0;
     this.shakeT -= dt;
     // ref & announcer stand behind the fighters
     for (const a of [this.ref, this.butler]) {
@@ -1666,7 +1817,7 @@ export class ArenaView extends Container {
       const x = f.x + (f.lunge - f.recoil) * f.facing + shake;
       if (ground && this.subAnim?.tapped && i !== this.subAnim.atk && Math.floor(this.t * 8) % 2 === 0) f.rig = { ...f.rig, haB: [f.rig.haB[0], Math.min(0, f.rig.haB[1] + 4)] };
       this.L[i].faceUp = SUPINE.has(this.drawPose[i]);
-      drawRig(g, this.stepped(f), Math.round(x), FLOOR, f.facing, this.L[i]);
+      drawRig(g, this.stepped(f), Math.round(x), FLOOR, f.facing, this.L[i], sizeFor(i === 0 ? this.A : this.B));
     }
     // particles
     const p = this.fx;
@@ -1843,12 +1994,12 @@ export class ArenaView extends Container {
     const bulk = L.build === 2 ? 2 : L.build === 1 ? 1 : 0;
     // the same pose the side view is drawing (clinch ties, takedowns, ground frames), not just the last cue
     const pose = this.drawPose[i] === 'walk' ? f.pose : this.drawPose[i];
-    const lying = pose === 'down' || pose === 'ko' || (this.ground !== 'stand' && this.ground !== 'clinch' && !this.isTop(i)) || pose === 'bottom' || pose === 'bottomSub';
+    const lying = pose === 'down' || KO_POSES.has(pose as Pose) || (this.ground !== 'stand' && this.ground !== 'clinch' && !this.isTop(i)) || pose === 'bottom' || pose === 'bottomSub';
     // shadow
     g.ellipse(x + 2, y + 3, 11, 8).fill({ color: 0, alpha: 0.28 });
     if (lying) {
       // flat on the mat: body stretched back along the facing axis
-      const back = pose === 'ko' ? -1 : -0.6;
+      const back = pose === 'ko' ? -1 : pose === 'koFace' ? 0.8 : pose === 'koCrumple' ? -0.4 : -0.6;
       const [hx, hy] = P(back * 22, 0);
       const [fx1, fy1] = P(back * -14, -5);
       const [fx2, fy2] = P(back * -14, 5);

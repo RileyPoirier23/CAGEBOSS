@@ -1,6 +1,6 @@
 /**
- * The CAGE BOSS soundtrack: tracks by local artists (SANDO, RUIN143, F.O.K.,
- * Hope Nikku, prod. Miler), played from public/music with HTMLAudio.
+ * The CAGE BOSS soundtrack: tracks by local artists (SANDOTHERAPPER, RUIN143, Zuddha, F.O.K.,
+ * Hope Nikku, prod. Miler, $cott, Jayson, EYE-V), played from public/music with HTMLAudio.
  *
  * Contexts pick what plays:
  *   title      - "Champion" to open the game
@@ -16,21 +16,27 @@ export interface Track {
   artist: string;
   file: string;
   hype: boolean; // suitable for fight nights / walkouts
+  /** loudness levelling: the hot masters are turned down to sit with the rest (measured mean volume vs -13 dB) */
+  gain?: number;
 }
 
 export const TRACKS: Track[] = [
-  { id: 'champion', title: 'Champion', artist: 'SANDO', file: 'champion-sando.m4a', hype: true },
-  { id: 'doin_shit', title: 'Doin Shit', artist: 'SANDO x RUIN', file: 'doin-shit-sando-x-ruin.m4a', hype: true },
-  { id: 'bag', title: 'BAG', artist: 'F.O.K. ft. Hope Nikku (prod. Miler)', file: 'bag-fok-ft-hope-nikku.mp3', hype: true },
-  { id: 'fu2', title: 'fu2', artist: 'SANDO', file: 'fu2-sando.mp3', hype: false },
-  { id: 'ossa', title: 'ossa', artist: 'RUIN143', file: 'ossa-ruin143.mp3', hype: false },
-  { id: 'your_mom', title: 'Your Mom Hates Me', artist: 'SANDO', file: 'your-mom-hates-me-sando.mp3', hype: true },
+  { id: 'champion', title: 'Champion', artist: 'SANDOTHERAPPER', file: 'champion-sando.m4a', hype: true },
+  { id: 'doin_shit', title: 'Doin Shit', artist: 'SANDOTHERAPPER x RUIN143', file: 'doin-shit-sando-x-ruin.m4a', hype: true, gain: 0.86 },
+  { id: 'bag', title: 'BAG', artist: 'F.O.K. ft. Hope Nikku (prod. Miler)', file: 'bag-fok-ft-hope-nikku.mp3', hype: true, gain: 0.97 },
+  { id: 'fu2', title: 'fu2', artist: 'SANDOTHERAPPER', file: 'fu2-sando.mp3', hype: false },
+  { id: 'ossa', title: 'ossa', artist: 'RUIN143', file: 'ossa-ruin143.mp3', hype: false, gain: 0.44 },
+  { id: 'your_mom', title: 'Your Mom Hates Me', artist: 'SANDOTHERAPPER', file: 'your-mom-hates-me-sando.mp3', hype: true, gain: 0.82 },
   { id: 'bloodhound', title: 'Bloodhound for You', artist: 'RUIN143', file: 'bloodhound-for-you-ruin143.mp3', hype: true },
-  { id: 'come_closer', title: 'Come Closer', artist: 'RUIN143 feat. SANDO', file: 'come-closer-ruin143-ft-sando.mp3', hype: false },
+  { id: 'come_closer', title: 'Come Closer', artist: 'RUIN143 feat. SANDOTHERAPPER', file: 'come-closer-ruin143-ft-sando.mp3', hype: false, gain: 0.95 },
   { id: 'gen_apathy', title: 'Gen Apathy', artist: 'EYE-V', file: 'gen-apathy-eye-v.mp3', hype: false },
   { id: 'all_hustle', title: 'All Hustle', artist: 'Zuddha', file: 'all-hustle-zuddha.mp3', hype: true },
   { id: 'moment_grace', title: 'A Moment w/ Grace', artist: 'Zuddha ft. FTB VON', file: 'a-moment-w-grace-zuddha-ft-ftb-von.mp3', hype: false },
   { id: 'open_to_you', title: 'Open to You', artist: 'Zuddha', file: 'open-to-you-zuddha.mp3', hype: false },
+  { id: 'blicky_dance', title: 'Blicky Dance', artist: 'Jayson x SANDOTHERAPPER', file: 'blicky-dance-jayson-x-sando.m4a', hype: true, gain: 0.56 },
+  { id: 'make_me_bleed', title: 'Make Me Bleed', artist: '$cott', file: 'make-me-bleed-scott.m4a', hype: true },
+  { id: 'maybe_its_me', title: 'Maybe Its Me', artist: '$cott', file: 'maybe-its-me-scott.m4a', hype: false },
+  { id: 'tony', title: 'TONY', artist: '$cott', file: 'tony-scott.m4a', hype: true },
   { id: 'some_interlude', title: 'some interlude', artist: 'Zuddha', file: 'some-interlude-zuddha.mp3', hype: false },
 ];
 
@@ -63,7 +69,7 @@ function tick(): void {
   let busy = false;
   const dt = 1 / 60;
   if (current) {
-    const want = targetVolume();
+    const want = targetVolume() * (current.track.gain ?? 1);
     const v = current.el.volume;
     const nv = Math.abs(want - v) < 0.02 ? want : v + Math.sign(want - v) * dt * 0.9;
     current.el.volume = Math.max(0, Math.min(1, nv));

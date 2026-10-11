@@ -9,6 +9,9 @@ import { clamp } from '../core/format';
 import { fullName } from './fighters';
 import { adjustMeter } from './econ';
 import { expandPop } from './popculture';
+import { PRESSER, type OnetonAnswer, type OnetonKind, type Reply } from './onetonlines';
+
+export type { OnetonAnswer } from './onetonlines';
 
 export const ONETON = 'oneton';
 export const ONETON_HANDLE = '@1ton';
@@ -37,46 +40,70 @@ function rel(s: GameState) {
 }
 
 export interface OnetonQuestion {
-  kind: 'ask_card' | 'ask_roster' | 'ask_none' | 'ask_other' | 'ask_broken';
+  kind: OnetonKind;
   text: string;
   fighter: string | null;
+  /** which conversation (its answers belong to this question) */
+  convo: number;
+  /** the placeholders, for filling the answers the same way */
+  opp?: string | null;
+  where?: string;
+}
+
+/** Pick one of his conversations of this kind, not one he used recently. */
+function pickConvo(s: GameState, kind: OnetonKind, rng: Rng): number {
+  const list = PRESSER[kind];
+  const recent = String(s.flags.oneton_convos ?? '').split('|').filter(Boolean);
+  const open = list.map((_, i) => i).filter((i) => !recent.includes(`${kind}:${i}`));
+  const i = open.length ? rng.pick(open) : rng.int(0, list.length - 1);
+  recent.push(`${kind}:${i}`);
+  s.flags.oneton_convos = recent.slice(-8).join('|');
+  return i;
+}
+
+/** Fill a line of his (or yours) with the names. */
+function fillLine(s: GameState, t: string, f?: Fighter | null, opp?: Fighter | null, where = ''): string {
+  const pres = s.president.name.split(' ').slice(-1)[0];
+  const promises = Number(s.flags.oneton_promises) || 0;
+  return expandPop(
+    t.replace(/\{f\}/g, f ? fullName(f) : 'him').replace(/\{opp\}/g, opp?.last ?? 'the other guy')
+      .replace(/\{presidentLast\}/g, pres).replace(/\{promotion\}/g, s.promotion.name).replace(/\{where\}/g, where).replace(/\{n\}/g, String(promises)),
+  );
 }
 
 /** What 1ton asks at this event's presser. It is always about Mexican fighters. */
 export function onetonQuestion(s: GameState, ev: FightEvent, rng: Rng): OnetonQuestion {
-  const pres = s.president.name.split(' ').slice(-1)[0];
   const promises = Number(s.flags.oneton_promises) || 0;
-  const fill = (t: string, f?: Fighter, opp?: Fighter, where = '') => expandPop(
-    t.replace(/\{f\}/g, f ? fullName(f) : 'him').replace(/\{opp\}/g, opp?.last ?? 'the other guy')
-      .replace(/\{presidentLast\}/g, pres).replace(/\{promotion\}/g, s.promotion.name).replace(/\{where\}/g, where).replace(/\{n\}/g, String(promises)),
-  );
-  const ask = (k: string) => fresh(s, k, rng, '1ton. Mexican fighters. When?');
+  const make = (kind: OnetonKind, f: Fighter | null = null, opp: Fighter | null = null, where = ''): OnetonQuestion => {
+    const convo = pickConvo(s, kind, rng);
+    return { kind, convo, text: fillLine(s, PRESSER[kind][convo].q, f, opp, where), fighter: f?.id ?? null, opp: opp?.id ?? null, where };
+  };
   // he keeps count: promises with no Mexican main event to show for them come back to haunt you
   const mexMain = ev.card.some((b) => b.position === 0 && b.status !== 'cancelled' && (isMexican(s.fighters[b.a]) || isMexican(s.fighters[b.b])));
-  if (promises >= 2 && !mexMain && rng.chance(0.4)) return { kind: 'ask_broken', text: fill(ask('ask_broken')), fighter: null };
+  if (promises >= 2 && !mexMain && rng.chance(0.4)) return make('ask_broken');
   const live = ev.card.filter((b) => b.status !== 'cancelled');
   for (const b of live.slice().sort((x, y) => x.position - y.position)) {
     for (const [id, other] of [[b.a, b.b], [b.b, b.a]] as const) {
       const f = s.fighters[id];
-      if (isMexican(f)) return { kind: 'ask_card', text: fill(ask('ask_card'), f, s.fighters[other]), fighter: f.id };
+      if (isMexican(f)) return make('ask_card', f, s.fighters[other]);
     }
   }
   const roster = Object.values(s.fighters).filter((f) => f.promotion === 'us' && f.status === 'active' && isMexican(f));
-  if (roster.length) {
-    const f = rng.pick(roster);
-    return { kind: 'ask_roster', text: fill(ask('ask_roster'), f), fighter: f.id };
-  }
+  if (roster.length) return make('ask_roster', rng.pick(roster));
   const elsewhere = Object.values(s.fighters).filter((f) => (f.status === 'free-agent' || (f.status === 'active' && f.promotion && f.promotion !== 'us')) && isMexican(f));
   if (elsewhere.length && rng.chance(0.55)) {
     const f = rng.pick(elsewhere);
     const rival = f.promotion ? content().rivals.find((r) => r.id === f.promotion)?.name : null;
-    const where = rival ? `fighting for ${rival} right now` : 'unsigned, training in a garage in Tijuana';
-    return { kind: 'ask_other', text: fill(ask('ask_other'), f, undefined, where), fighter: f.id };
+    return make('ask_other', f, null, rival ? `fighting for ${rival} right now` : 'unsigned, training in a garage in Tijuana');
   }
-  return { kind: 'ask_none', text: fill(ask('ask_none')), fighter: null };
+  return make('ask_none');
 }
 
-export type OnetonAnswer = 'promise' | 'deflect' | 'joke' | 'honest' | 'roast';
+/** The answers to this question (labels for the buttons). */
+export function onetonReplies(q: OnetonQuestion): Record<OnetonAnswer, Reply> {
+  return (PRESSER[q.kind][q.convo] ?? PRESSER[q.kind][0]).a;
+}
+
 
 /** The president answers; returns [what you said, how 1ton takes it]. */
 export function answerOneton(s: GameState, q: OnetonQuestion, a: OnetonAnswer, rng: Rng): [string, string] {
@@ -109,12 +136,10 @@ export function answerOneton(s: GameState, q: OnetonQuestion, a: OnetonAnswer, r
       break;
   }
   s.stats.onetonQuestions = (s.stats.onetonQuestions ?? 0) + 1;
-  const pres = s.president.name.split(' ').slice(-1)[0];
-  const said = fresh(s, 'answer_' + a, rng, 'Next question.');
-  // broken promises sting more
-  const react = (q.kind === 'ask_broken' && a === 'promise' ? '"That makes ' + (Number(s.flags.oneton_promises) || 0) + '," says 1ton, adding a tally mark to his notebook. ' : '')
-    + fresh(s, 'react_' + a, rng, '1ton keeps his hand up.').replace(/\{presidentLast\}/g, pres);
-  return [said, react];
+  // the answer and his reaction belong to the question he asked
+  const reply = onetonReplies(q)[a];
+  const opp = q.opp ? s.fighters[q.opp] : null;
+  return [fillLine(s, reply.said, f, opp, q.where), fillLine(s, reply.react, f, opp, q.where)];
 }
 
 /** A live bleet from @1ton: hype for Mexican fighters, contempt for everyone else. */

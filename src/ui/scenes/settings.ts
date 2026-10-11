@@ -6,6 +6,7 @@ import { openJukebox } from './jukebox';
 import { desktop } from '../../desktop';
 import { isTenFoot } from '../../core/platform';
 import { openWindow, selector, checkbox, stepper } from '../widgets';
+import type { FontMode } from '../text';
 
 export function openSettings(g: Game, onClose?: () => void): void {
   const win = openWindow(g, 'Settings', 260, desktop ? 262 : isTenFoot ? 266 : 250, { onClose });
@@ -72,4 +73,7 @@ export function openSettings(g: Game, onClose?: () => void): void {
     y += 17;
   }
   b.addChild(button('JUKEBOX...', 8, y, 80, 13, () => openJukebox(g), { small: true, fill: PAL.plum }));
+  // readability: the pixel look, clear fine print, or heavier letters
+  b.addChild(text('TEXT', 96, y + 3, { small: true, color: PAL.ash }));
+  b.addChild(selector(118, y, 132, [{ value: 'pixel' as FontMode, label: 'Pixel' }, { value: 'clear' as FontMode, label: 'Clear (easier)' }, { value: 'bold' as FontMode, label: 'Bold (easiest)' }], s.font ?? 'pixel', (v) => { s.font = v; save(); }));
 }

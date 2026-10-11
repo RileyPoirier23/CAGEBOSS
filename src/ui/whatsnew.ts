@@ -12,6 +12,48 @@ import { openHelp } from './help';
 /** Newest first. Keep each version to a few lines. */
 export const NOTES: { v: string; lines: string[] }[] = [
   {
+    v: '2.1.0',
+    lines: [
+      'THE FINAL ROUND: the last update before the full release.',
+      'Fighters read the fight: what keeps landing gets rolled, checked or slipped.',
+      'They read the cards and the tank: behind late they come forward; gassed they rest.',
+      'The chin goes: every knockdown makes the next one easier. Body work saps the power.',
+      'A knockdown round is a 10-8. Cut men don\'t see the head shots coming.',
+      'The models wear the fight: sweat, swelling, cuts, blood, bruised ribs, a gassed mouth.',
+      'Heavyweights are big. Flyweights aren\'t.',
+      'Big shots coil, snap out and land with a beat. Leg kicks buckle the knee.',
+      'Three ways to go out: on your back, in a heap, or on your face.',
+      'COMING SOON: DRIVEBOSS, the next game in the Boss series (title menu).',
+    ],
+  },
+  {
+    v: '2.0.1',
+    lines: [
+      'Fixes: cutscene sets no longer vanish mid-scene.',
+      'Skills stop at 99: training and sparring show MAX.',
+      'Suspended means suspended: no fight offers until it ends.',
+      'Suspensions are rarer. Tainted supplements: 8 weeks, not 26.',
+      'Fewer random drug tests. This card no longer shows every launch.',
+      'Smoother fights and HUD (faster text and crowd drawing).',
+    ],
+  },
+  {
+    v: '2.0.0',
+    lines: [
+      'Road To Champion: you are Han "Pride Of The Maritimes" Tibular.',
+      'Five chapters, a boss in every league, a superfight at the end.',
+      'New title screen, a MODES tunnel, a TROPHY CASE for achievements.',
+      'New fighter models: real hair, more muscle, their own moves.',
+      'TAUNT (T / X): everybody has his own. Some flip you off.',
+      'Knockdowns: in MMA you jump on him and finish it.',
+      'Camp: the real weight cut is the last two weeks. Spar for points.',
+      'Beat a chapter: its boss is playable in QUICK FIGHT.',
+      'Cutscenes with BACK. Settings > Text for Clear or Bold lettering.',
+      'Four new songs: SANDOTHERAPPER x Jayson, and $cott.',
+      'CREDITS plays the full roll. SUPPORT THE DEV if you want to help.',
+    ],
+  },
+  {
     v: '1.7.0',
     lines: [
       'Road To Champion: a much longer story, with cutscenes.',

@@ -187,7 +187,11 @@ function migrate(save: SaveFile): SaveFile {
 export function loadJSON<T>(k: string, fallback: T): T {
   try {
     const raw = kv.getItem(k);
-    return raw ? { ...fallback, ...JSON.parse(raw) } : fallback;
+    if (!raw) return fallback;
+    const v = JSON.parse(raw);
+    // objects are merged over the defaults; anything else (a version string, a list) is the value
+    const isObj = (x: unknown) => !!x && typeof x === 'object' && !Array.isArray(x);
+    return (isObj(fallback) && isObj(v) ? { ...fallback, ...v } : v) as T;
   } catch {
     return fallback;
   }

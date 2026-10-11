@@ -13,7 +13,7 @@ import { setColorblind, PAL } from '../art/palette';
 import { setMuted, setMusic, setVolumes, sfx, unlock as sfxUnlock } from '../audio/sfx';
 import { W, H, tooltip, clearChildren, dimmer, box, text } from './kit';
 import { bus } from '../core/events';
-import { setTextResolution, setBleep } from './text';
+import { setTextResolution, setBleep, setFontMode, type FontMode } from './text';
 import { desktop } from '../desktop';
 import { LoadingScreen } from './loading';
 import { configureMusic, setMusicContext, skipTrack, unlockMusic, onTrackChange, type MusicContext } from '../audio/music';
@@ -33,6 +33,7 @@ export interface Settings {
   soundtrackV?: number; // settings migration marker
   intros?: boolean; // Juiced Butler introductions before watched bouts
   bleep?: boolean; // streamer mode: grawlix instead of swears
+  font?: FontMode; // readability: pixel / clear / bold
   fullscreen?: boolean; // desktop build only
   bleets?: boolean; // live Bleeter feed while watching fights
   tutorial?: boolean; // offer the tutorial on new careers
@@ -106,6 +107,12 @@ export class Game {
       resolution: 1,
       roundPixels: true,
       preference: 'webgl',
+      // Pixi's GPU garbage collectors unload graphics/textures that look unused; static art (a
+      // cutscene's set, a screen's backdrop) could vanish while the moving parts kept drawing.
+      // The game's GPU footprint is small, so nothing is unloaded behind its back.
+      gcActive: false,
+      renderableGCActive: false,
+      textureGCActive: false,
     });
     parent.appendChild(this.app.canvas);
     this.app.stage.addChild(this.stage);
@@ -165,6 +172,7 @@ export class Game {
 
   applySettings(): void {
     setBleep(!!this.settings.bleep);
+    setFontMode(this.settings.font ?? 'pixel');
     desktop?.setFullscreen(this.settings.fullscreen !== false);
     // the old chiptune setting defaulted to off; the soundtrack defaults to on
     if (this.settings.soundtrackV !== 1) {
@@ -243,7 +251,11 @@ export class Game {
     while (this.modals.length) this.closeModal();
   }
 
+  /** Called on every shake (the controller turns big ones into rumble). */
+  onShake: ((mag: number, dur: number) => void) | null = null;
+
   shake(mag = 2, dur = 0.2): void {
+    this.onShake?.(mag, dur);
     if (this.settings.reduceShake) return;
     this.shakeMag = Math.max(this.shakeMag, mag);
     this.shakeT = Math.max(this.shakeT, dur);

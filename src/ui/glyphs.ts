@@ -10,6 +10,7 @@ import { Container, Graphics } from 'pixi.js';
 import { PAL } from '../art/palette';
 import { text } from './kit';
 import { input, type PadButton } from '../core/input';
+import { isConsole, padStyle } from '../core/platform';
 
 export type GlyphName = PadButton | 'LStick' | 'RStick' | 'DPad';
 
@@ -45,6 +46,15 @@ export function padGlyph(name: GlyphName): Container {
     case 'X':
     case 'Y': {
       disk(g, 0, 1, 0x000000); // drop shadow
+      if (padStyle === 'playstation') {
+        // PlayStation face buttons: a dark disk with the shape on it
+        disk(g, 0, 0, 0x2a2a34);
+        if (name === 'A') g.moveTo(2.5, 2.5).lineTo(6.5, 6.5).moveTo(6.5, 2.5).lineTo(2.5, 6.5).stroke({ color: 0x7aa8e8, width: 1 }); // cross
+        if (name === 'B') g.circle(4.5, 4.5, 2.3).stroke({ color: 0xe86a6a, width: 1 }); // circle
+        if (name === 'X') g.rect(2.5, 2.5, 4, 4).stroke({ color: 0xe88ad8, width: 1 }); // square
+        if (name === 'Y') g.poly([4.5, 2, 7, 6.5, 2, 6.5]).stroke({ color: 0x6ad8b8, width: 1 }); // triangle
+        break;
+      }
       disk(g, 0, 0, FACE[name]!);
       g.rect(2, 1, 2, 1).fill({ color: 0xffffff, alpha: 0.35 }); // shine
       centered(c, name, 9, 9, PAL.bone);
@@ -54,14 +64,14 @@ export function padGlyph(name: GlyphName): Container {
     case 'RB': {
       g.rect(1, 0, 13, 8).fill(PAL.slate).rect(0, 1, 15, 6).fill(PAL.slate);
       g.rect(1, 7, 13, 1).fill(PAL.shadow);
-      centered(c, name, 15, 8, PAL.bone);
+      centered(c, padStyle === 'playstation' ? (name === 'LB' ? 'L1' : 'R1') : name, 15, 8, PAL.bone);
       break;
     }
     case 'LT':
     case 'RT': {
       g.rect(3, 0, 9, 1).fill(PAL.slate).rect(1, 1, 13, 1).fill(PAL.slate).rect(0, 2, 15, 7).fill(PAL.slate);
       g.rect(0, 8, 15, 1).fill(PAL.shadow);
-      centered(c, name, 15, 9, PAL.bone);
+      centered(c, padStyle === 'playstation' ? (name === 'LT' ? 'L2' : 'R2') : name, 15, 9, PAL.bone);
       break;
     }
     case 'View': {
@@ -132,7 +142,8 @@ export interface PromptSpec {
  */
 export function prompt(spec: PromptSpec, label: string, x = 0, y = 0, color: number = PAL.bone): Container {
   const c = new Container();
-  const usePad = spec.pad && (input.lastDevice === 'gamepad' || !spec.key);
+  // consoles never show a keyboard key
+  const usePad = spec.pad && (isConsole || input.lastDevice === 'gamepad' || !spec.key);
   const glyph = usePad ? padGlyph(spec.pad!) : spec.key ? keyGlyph(spec.key) : null;
   let gx = 0;
   if (glyph) {
