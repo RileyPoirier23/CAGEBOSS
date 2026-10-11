@@ -664,6 +664,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       const intents: [FightIntent[], FightIntent[]] = P === 0 ? [a.intents, b.intents] : [b.intents, a.intents];
       const moves: [number, number] = P === 0 ? [a.move, b.move] : [b.move, a.move];
       L.update(1 / 30, intents, moves);
+      auto.noteEvents(L);
+      ai.noteEvents(L);
       L.events.length = 0;
       steps++;
     }
@@ -815,6 +817,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         const logLen = L.log.length;
         L.update(dt, intents, moves);
         for (const e of L.events) handle(e);
+        ai.noteEvents(L); // he learns what's landing on him
         L.events.length = 0;
         if (L.log.length > logLen) {
           for (const ln of L.log.slice(logLen)) react(ln);
