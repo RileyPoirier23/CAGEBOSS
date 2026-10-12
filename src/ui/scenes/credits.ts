@@ -1,14 +1,16 @@
 import type { Game } from '../app';
 import { PAL } from '../../art/palette';
-import { text } from '../kit';
+import { text, button, ScrollBox } from '../kit';
 import { openWindow } from '../widgets';
-import { button } from '../kit';
-import { hasAchievement } from '../achievements';
 import { openMemorial } from '../endcredits';
 
 export function openCredits(g: Game): void {
   const win = openWindow(g, 'Credits', 300, 262, { paper: 'cream' });
-  win.body.addChild(text(
+  // the words scroll; the memorial has its own row under them
+  const sb = new ScrollBox(292, 214);
+  sb.position.set(4, 2);
+  win.body.addChild(sb);
+  sb.content.addChild(text(
     'CAGE BOSS\n\n' +
     'Created by Riley "Monkey Man" Poirier\n' +
     'Instagram: rpoirier07\n' +
@@ -26,7 +28,8 @@ export function openCredits(g: Game): void {
     'Every fighter, promoter, journalist, outlet, company, commission and event in this game is fictional. ' +
     'Characters are satirical archetypes. If you think one of them is about you, that says more about you than about us.\n\n' +
     'No energy drinks were harmed. Several were consumed.',
-    8, 6, { width: 284, color: PAL.ink }));
-  // finished the road: the memorial stays here
-  if (hasAchievement('rtc_epilogue')) win.body.addChild(button('IN MEMORIAM', 196, 232, 96, 13, () => openMemorial(g), { small: true, fill: 0x2a262c }));
+    4, 4, { width: 278, color: PAL.ink }));
+  sb.refresh();
+  // the memorial is always here, on every device (the end of Road To Champion plays it too)
+  win.body.addChild(button('IN MEMORIAM', 150 - 60, 222, 120, 20, () => openMemorial(g), { fill: 0x2a262c, border: PAL.gold }));
 }
