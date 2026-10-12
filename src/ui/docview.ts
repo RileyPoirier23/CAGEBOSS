@@ -11,6 +11,9 @@ import { text, paper, PaperKind, box } from './kit';
 import { signatureSprite, barcodeSprite, reporterPortrait, portrait, portraitInputForFighter } from './sprites';
 import { content } from '../core/content';
 import { ruleActive } from '../sim/rules';
+import { isTouchDevice } from '../core/platform';
+
+const TOUCH = isTouchDevice();
 
 export interface FieldSpot {
   key: string;
@@ -32,6 +35,8 @@ export class Inspector {
     const n = spot.node;
     n.eventMode = 'static';
     n.cursor = 'pointer';
+    // phones: a field reaches a couple of pixels past its text (fields sit close together, so only a little)
+    if (TOUCH && !n.hitArea) n.hitArea = { contains: (x: number, y: number) => x >= -2 && y >= -2 && x < spot.w + 2 && y < spot.h + 2 };
     n.on('pointertap', (e: FederatedPointerEvent) => {
       if (!this.active) return;
       e.stopPropagation();

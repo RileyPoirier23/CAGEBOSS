@@ -140,9 +140,22 @@ function fmhubPhone(): (typeof STEPS)[string] {
   ];
 }
 
+/** The desk on a phone (DeskScene.phone): same x positions on a full-width screen; the right column is wider. */
+function deskPhone(): (typeof STEPS)[string] {
+  const RW = SW - 366 - 4;
+  return STEPS.desk.map((st) => {
+    if (!st.rect) return st;
+    let [x, y, w, h] = st.rect;
+    if (x >= 390 && y < 80) w = SW - x - 4; // the nav
+    else if (x >= 360) w = RW; // inbox / stamps
+    const tap = st.text.replace(/Click one/g, 'Tap one').replace(/Press INSPECT \(I\), click a field, then the field/g, 'Tap INSPECT, tap a field, then the field').replace(/\bclick\b/g, 'tap');
+    return { ...st, text: tap, rect: [x - OX, y, w, h] as [number, number, number, number] };
+  });
+}
+
 function run(g: Game, key: string): void {
   const s = g.state!;
-  const steps = isTouchDevice() && key === 'fmhub' ? fmhubPhone() : STEPS[key];
+  const steps = isTouchDevice() && key === 'fmhub' ? fmhubPhone() : isTouchDevice() && key === 'desk' ? deskPhone() : STEPS[key];
   s.flags['tut_' + key] = 1;
   const frame = new Container();
   const wrap = g.modal(frame, { dim: 0 });
