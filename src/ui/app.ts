@@ -8,7 +8,7 @@ import { openHelp } from './help';
 import { input } from '../core/input';
 import { Application, Container, TextureStyle, Graphics, Ticker, UPDATE_PRIORITY } from 'pixi.js';
 import type { GameState } from '../core/types';
-import { loadJSON, storeJSON, saveToSlot, autoSlot } from '../core/save';
+import { loadJSON, storeJSON, saveToSlotSoon, autoSlot } from '../core/save';
 import { setColorblind, PAL } from '../art/palette';
 import { setMuted, setMusic, setVolumes, sfx, unlock as sfxUnlock } from '../audio/sfx';
 import { W, H, SW, OX, setScreenWidth, tooltip, clearChildren, dimmer, box, text } from './kit';
@@ -331,7 +331,7 @@ export class Game {
   }
 
   autosave(): void {
-    if (this.state) saveToSlot(this.state, autoSlot(this.state));
+    if (this.state) saveToSlotSoon(this.state, autoSlot(this.state));
   }
 
   /** a hands-on fight is running (View / F1 cycles its camera instead of opening HELP) */

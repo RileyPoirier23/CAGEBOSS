@@ -11,6 +11,26 @@ export interface NativeHooks {
   onBack: () => void;
 }
 
+/**
+ * Android: the app was a Godot build before 2.1 (same app id), which kept its localStorage as
+ * files. The first launch of this build copies them in (android/.../LegacySavesPlugin.java), so
+ * an update keeps your careers. Anything already in this localStorage wins.
+ */
+export async function importLegacySaves(): Promise<void> {
+  if (platform !== 'android') return;
+  try {
+    const { registerPlugin } = await import('@capacitor/core');
+    const plugin = registerPlugin<{ read(): Promise<Record<string, string>>; done(): Promise<void> }>('LegacySaves');
+    const old = await plugin.read();
+    const keys = Object.keys(old);
+    if (!keys.length) return;
+    for (const k of keys) if (localStorage.getItem(k) === null) localStorage.setItem(k, old[k]);
+    await plugin.done();
+  } catch (e) {
+    console.warn('Old saves not imported', e);
+  }
+}
+
 export async function installNative(hooks: NativeHooks): Promise<void> {
   if (isNativeMobile) {
     try {

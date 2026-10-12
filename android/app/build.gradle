@@ -4,11 +4,14 @@ android {
     namespace = "ca.clicks506.cageboss"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "ca.clicks506.cageboss"
+        // the id the Android APK has always shipped under (the Godot build before 2.1), so this
+        // one installs over it as an update (same signing key) and finds its saves (LegacySaves)
+        applicationId "com.fiveohsixclicks.cageboss"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // CI passes these from package.json (.github/workflows/mobile.yml)
+        versionCode((project.findProperty('cbVersionCode') ?: '1') as int)
+        versionName(project.findProperty('cbVersionName') ?: '1.0')
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +19,20 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            // -PcbKeystore=... -PcbKeystorePassword=... -PcbKeyAlias=... (CI); unsigned otherwise
+            if (project.hasProperty('cbKeystore')) {
+                storeFile file(project.property('cbKeystore'))
+                storePassword project.property('cbKeystorePassword')
+                keyAlias project.property('cbKeyAlias')
+                keyPassword project.property('cbKeystorePassword')
+            }
+        }
+    }
     buildTypes {
         release {
+            if (project.hasProperty('cbKeystore')) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

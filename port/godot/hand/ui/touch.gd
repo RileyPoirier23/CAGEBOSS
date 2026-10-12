@@ -6,6 +6,8 @@ class_name M_ui_touch
 const MAX_ZOOM := 3.0
 static var zoom := 1.0
 static var pan := Vector2.ZERO
+## off during a hands-on fight: two thumbs on the pad aren't a pinch
+static var pinch := true
 
 static func _apply() -> void:
 	zoom = clampf(zoom, 1.0, MAX_ZOOM)
@@ -33,12 +35,17 @@ static func resetZoom() -> void:
 static func getZoom() -> float:
 	return zoom
 
+static func setPinchZoom(on) -> void:
+	pinch = bool(on)
+	if not pinch: resetZoom()
+
 static func installTouch() -> void: pass
 
 static func attachTouchCanvas(_c) -> void: pass
 
 ## PXHost forwards pinch / two-finger pan gestures here
 static func gesture(e: InputEvent) -> bool:
+	if not pinch: return false
 	if e is InputEventMagnifyGesture:
 		zoomBy(e.factor)
 		return true
