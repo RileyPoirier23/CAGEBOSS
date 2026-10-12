@@ -6,9 +6,11 @@
  * resets it for the current save.
  */
 import { Container, Graphics } from 'pixi.js';
+import { hint } from './hints';
 import type { Game } from './app';
 import { PAL } from '../art/palette';
-import { W, H, text, box, button } from './kit';
+import { W, H, SW, OX, text, box, button } from './kit';
+import { isTouchDevice } from '../core/platform';
 import { npcPortrait } from './sprites';
 import { sfx } from '../audio/sfx';
 
@@ -22,10 +24,10 @@ const STEPS: Record<string, Step[]> = {
     { title: 'TO THE DESK', text: "When you're done reading, head to the desk. That's where the actual work (and the actual lying) happens." },
   ],
   desk: [
-    { title: 'THE INBOX', text: 'Paperwork lands here: bout agreements, medicals, expenses, licences. Click one to open it.', rect: [366, 84, 108, 108] },
+    { title: 'THE INBOX', text: `Paperwork lands here: bout agreements, medicals, expenses, licences. ${hint('Click', 'Select')} one to open it.`, rect: [366, 84, 108, 108] },
     { title: 'THE DOCUMENT', text: 'Read it carefully. Names, weights, purses, dates and signatures all have to line up with the file card and the rulebook.', rect: [120, 84, 256, 130] },
     { title: 'THE FILE CARD', text: "The fighter's file: what you actually agreed to. Forgers and 'creative' managers count on you not checking it.", rect: [2, 84, 118, 62] },
-    { title: 'RULEBOOK & INSPECT', text: "The RULEBOOK lists every rule in force (new ones arrive by Commission bulletin). Press INSPECT (I), click a field, then the field it should match. Catch a mismatch and you can question the fighter about it.", rect: [4, 226, 116, 40] },
+    { title: 'RULEBOOK & INSPECT', text: `The RULEBOOK lists every rule in force (new ones arrive by Commission bulletin). Press INSPECT${hint(' (I)', '')}, ${hint('click', 'select')} a field, then the field it should match. Catch a mismatch and you can question the fighter about it.`, rect: [4, 226, 116, 40] },
     { title: 'STAMP IT', text: "Decide: FILE it if it's clean, SHRED it if it's bad, send it to LEGAL or BURY it. Approve something that breaks a rule and the Commission sends a citation, and the first two are warnings.", rect: [368, 198, 108, 68] },
     { title: 'RUN THE COMPANY', text: 'ROSTER = your fighters and free agents. CARDS = build fight cards. RANKS = the rankings. When the inbox is done, END DAY. On fight week that takes you to fight night.', rect: [394, 2, 86, 72] },
   ],
@@ -54,9 +56,9 @@ const STEPS: Record<string, Step[]> = {
     { title: 'YOUR CORNER', text: 'Between rounds your cutman works the face and your coach changes the plan. After the fight: the purse, the rankings and the internet.' },
   ],
   fm_live: [
-    { title: 'YOUR FIRST FIGHT', text: 'Move with the left stick / A-D. RB (J) lead hand, RT (K) rear hand, A (L) kick, LB (I) block, B (Space) grab. The stick direction picks the strike: hooks, uppercuts, body shots, overhands.' },
+    { title: 'YOUR FIRST FIGHT', text: hint('Move with the left stick / A-D. RB (J) lead hand, RT (K) rear hand, A (L) kick, LB (I) block, B (Space) grab. The stick direction picks the strike: hooks, uppercuts, body shots, overhands.', 'Move with the left stick. {RB} lead hand, {RT} rear hand, {A} kick, {LB} block, {B} grab, {X} taunt. The stick direction picks the strike: hooks, uppercuts, body shots, overhands.') },
     { title: 'CLINCH & GROUND', text: 'Hold grab to clinch (stick toward = shoot). In the clinch, tap grab + stick to fight for the plum or underhooks, trip, or break. On the mat, kick + stick passes, sweeps and stands up; grab + stick goes for a submission.' },
-    { title: 'PAUSE = HELP', text: "There are no button prompts on screen. Pause (ESC / MENU) for HELP with the full move list, AUTOPILOT, or SIM THE REST. Now go hurt somebody (legally)." },
+    { title: 'PAUSE = HELP', text: `There are no button prompts on screen. Pause (${hint('ESC / MENU', '{Menu}')}) for HELP with the full move list, AUTOPILOT, or SIM THE REST. Now go hurt somebody (legally).` },
   ],
 };
 
@@ -126,9 +128,35 @@ export function liveTutorial(g: Game): boolean {
   return true;
 }
 
+/** The hub's phone layout (FMHubScene.buildPhone) puts things elsewhere: point at those. Screen x -> design x is -OX. */
+function fmhubPhone(): (typeof STEPS)[string] {
+  const [you, week, offers, feed, end] = STEPS.fmhub;
+  const rw = SW - 160;
+  return [
+    { ...you, rect: [4 - OX, 22, 146, 226] },
+    { ...week, text: 'Three actions a week (the gold pips): TRAIN, SPAR, CUT WEIGHT, WORK A SHIFT, REST, GO OUT or work BLEETER. PAPERWORK, CLINIC, STAFF and RANKINGS are free.', rect: [156 - OX, 62, rw, 150] },
+    { ...offers, text: 'Your next fight, or the offers on the table: SEE OFFERS and SIGN one, and the bout agreement lands in PAPERWORK. Read it: whatever you sign is legally binding, mistakes included.', rect: [156 - OX, 22, rw, 38] },
+    { ...feed, text: 'What the internet says about you lives in THE FEED. Callouts and beef are under BLEETER. Hype sells tickets and moves you up the card.', rect: [156 - OX, 62, rw, 150] },
+    { ...end, rect: [SW - OX - 182, H - 23, 180, 22] },
+  ];
+}
+
+/** The desk on a phone (DeskScene.phone): same x positions on a full-width screen; the right column is wider. */
+function deskPhone(): (typeof STEPS)[string] {
+  const RW = SW - 366 - 4;
+  return STEPS.desk.map((st) => {
+    if (!st.rect) return st;
+    let [x, y, w, h] = st.rect;
+    if (x >= 390 && y < 80) w = SW - x - 4; // the nav
+    else if (x >= 360) w = RW; // inbox / stamps
+    const tap = st.text.replace(/Click one/g, 'Tap one').replace(/Press INSPECT \(I\), click a field, then the field/g, 'Tap INSPECT, tap a field, then the field').replace(/\bclick\b/g, 'tap');
+    return { ...st, text: tap, rect: [x - OX, y, w, h] as [number, number, number, number] };
+  });
+}
+
 function run(g: Game, key: string): void {
   const s = g.state!;
-  const steps = STEPS[key];
+  const steps = isTouchDevice() && key === 'fmhub' ? fmhubPhone() : isTouchDevice() && key === 'desk' ? deskPhone() : STEPS[key];
   s.flags['tut_' + key] = 1;
   const frame = new Container();
   const wrap = g.modal(frame, { dim: 0 });
@@ -140,23 +168,28 @@ function run(g: Game, key: string): void {
     const dim = new Graphics();
     if (st.rect) {
       const [x, y, w, h] = st.rect;
-      dim.rect(0, 0, W, y).rect(0, y + h, W, H - y - h).rect(0, y, x, h).rect(x + w, y, W - x - w, h).fill({ color: 0x000000, alpha: 0.6 });
+      dim.rect(-OX, 0, SW, y).rect(-OX, y + h, SW, H - y - h).rect(-OX, y, x + OX, h).rect(x + w, y, SW - OX - x - w, h).fill({ color: 0x000000, alpha: 0.6 });
       dim.rect(x - 1, y - 1, w + 2, h + 2).stroke({ color: PAL.gold, width: 1 });
-    } else dim.rect(0, 0, W, H).fill({ color: 0x000000, alpha: 0.55 });
+    } else dim.rect(-OX, 0, SW, H).fill({ color: 0x000000, alpha: 0.55 });
     dim.eventMode = 'static';
     frame.addChild(dim);
     // the card goes wherever the highlight isn't
+    // phones: taller card with finger-sized buttons, free to use the whole (wider) screen
+    const touch = isTouchDevice();
     const bw = 236;
-    const bh = 78;
+    const bh = touch ? 88 : 78;
+    const bth = touch ? 18 : 13;
+    const x0 = touch ? -OX : 0;
+    const x1 = touch ? SW - OX : W;
     let bx = (W - bw) / 2;
     let by = H - bh - 8;
     if (st.rect) {
       const [x, y, w, h] = st.rect;
       const cx = x + w / 2;
-      bx = cx > W / 2 ? Math.max(4, x - bw - 8) : Math.min(W - bw - 4, x + w + 8);
+      bx = cx > (x0 + x1) / 2 ? Math.max(x0 + 4, x - bw - 8) : Math.min(x1 - bw - 4, x + w + 8);
       by = Math.max(4, Math.min(H - bh - 4, y + h / 2 - bh / 2));
       // too wide to sit beside it: go above or below
-      if (w > W - bw - 24) {
+      if (w > x1 - x0 - bw - 24) {
         bx = (W - bw) / 2;
         by = y > H / 2 ? Math.max(4, y - bh - 6) : Math.min(H - bh - 4, y + h + 6);
       }
@@ -167,7 +200,7 @@ function run(g: Game, key: string): void {
     card.addChild(text(`${i + 1}/${steps.length}`, bw - 30, 6, { small: true, color: PAL.ash }));
     card.addChild(text(st.text, 8, 19, { small: true, width: bw - 16, color: PAL.bone, maxLines: 6 }));
     const last = i === steps.length - 1;
-    card.addChild(button(last ? 'GOT IT' : 'NEXT →', bw - 64, bh - 18, 56, 13, () => {
+    card.addChild(button(last ? 'GOT IT' : 'NEXT →', bw - (touch ? 74 : 64), bh - bth - 5, touch ? 66 : 56, bth, () => {
       sfx('click');
       if (last) g.closeModal(wrap);
       else {
@@ -175,7 +208,13 @@ function run(g: Game, key: string): void {
         show();
       }
     }, { small: true, fill: PAL.moss }));
-    card.addChild(button('SKIP TUTORIAL', 8, bh - 18, 72, 13, () => {
+    // back a card, so nobody misses anything
+    if (i > 0) card.addChild(button('← BACK', touch ? bw - 130 : bw - 112, bh - bth - 5, touch ? 52 : 44, bth, () => {
+      sfx('click');
+      i--;
+      show();
+    }, { small: true, fill: PAL.shadow }));
+    card.addChild(button('SKIP TUTORIAL', 8, bh - bth - 5, touch ? 100 : 72, bth, () => {
       s.flags.tutorial = 'off';
       g.closeModal(wrap);
     }, { small: true, fill: PAL.shadow }));

@@ -136,8 +136,7 @@ export function openBeltDesigner(g: Game, beltId: string, onDone: () => void): v
     }));
   });
   win.body.addChild(text('NAME', 10, 106, { small: true, color: PAL.ash }));
-  const p = win.frame.position;
-  const input = domInput(g, p.x + 60, p.y + 14 + 102, 228, 13, name, { maxLength: 48, onChange: (v) => (name = v) });
+  const input = domInput(g, 60, 102, 228, 13, name, { maxLength: 48, onChange: (v) => (name = v), in: win.body });
   win.body.addChild(button(free ? 'SAVE DESIGN' : `COMMISSION IT (${money(cost)})`, 60, 128, 228, 16, () => {
     if (!free) spend(s, 'belts', cost);
     belt.design = { ...d };

@@ -118,8 +118,62 @@ export function saveToSlot(state: GameState, slot: SlotId): boolean {
   if (state.difficulty === 'ironman' && !isAutoSlot(slot)) return false;
   try {
     const save = makeSave(state, slot);
-    kv.setItem(key(slot), 'lz:' + LZString.compressToUTF16(JSON.stringify(save)));
-    kv.setItem(key(slot) + '.meta', JSON.stringify(save.meta));
+    queued.delete(slot); // this write wins over a background one still on its way
+    writeSlot(slot, LZString.compressToUTF16(JSON.stringify(save)), JSON.stringify(save.meta));
+    return true;
+  } catch (e) {
+    console.warn('Save failed', e);
+    return false;
+  }
+}
+
+function writeSlot(slot: SlotId, lz: string, meta: string): void {
+  kv.setItem(key(slot), 'lz:' + lz);
+  kv.setItem(key(slot) + '.meta', meta);
+}
+
+/**
+ * Compressing a save (a megabyte of JSON) takes a phone a second or more. The browser build
+ * hands it to a worker (main.ts) so END WEEK doesn't freeze the screen; without one (tests,
+ * Godot) saves are written on the spot.
+ */
+let compressAsync: ((json: string) => Promise<string>) | null = null;
+export function setAsyncCompressor(fn: ((json: string) => Promise<string>) | null): void {
+  compressAsync = fn;
+}
+/** background saves not written yet: the JSON, so loading the slot meanwhile gets the newest */
+const queued = new Map<SlotId, { json: string; meta: string }>();
+
+/** Write the background saves now (the app is going away: a phone may kill it before the worker answers). */
+export function flushSaves(): void {
+  for (const [slot, job] of [...queued]) {
+    queued.delete(slot);
+    try {
+      writeSlot(slot, LZString.compressToUTF16(job.json), job.meta);
+    } catch (e) {
+      console.warn('Save failed', e);
+    }
+  }
+}
+
+/** saveToSlot, compressed off the main thread when the build can (the autosave). */
+export function saveToSlotSoon(state: GameState, slot: SlotId): boolean {
+  if (!compressAsync) return saveToSlot(state, slot);
+  if (state.difficulty === 'ironman' && !isAutoSlot(slot)) return false;
+  try {
+    const save = makeSave(state, slot);
+    const job = { json: JSON.stringify(save), meta: JSON.stringify(save.meta) };
+    queued.set(slot, job);
+    const done = (lz: string | null) => {
+      if (queued.get(slot) !== job) return; // a newer save of this slot took over
+      queued.delete(slot);
+      try {
+        writeSlot(slot, lz ?? LZString.compressToUTF16(job.json), job.meta);
+      } catch (e) {
+        console.warn('Save failed', e);
+      }
+    };
+    compressAsync(job.json).then(done, () => done(null));
     return true;
   } catch (e) {
     console.warn('Save failed', e);
@@ -139,7 +193,8 @@ export function parseSave(text: string): SaveFile {
 }
 
 export function loadFromSlot(slot: SlotId): GameState | null {
-  const raw = kv.getItem(key(slot));
+  const q = queued.get(slot);
+  const raw = q ? q.json : kv.getItem(key(slot));
   if (!raw) return null;
   try {
     return parseSave(raw).state;
@@ -150,7 +205,7 @@ export function loadFromSlot(slot: SlotId): GameState | null {
 }
 
 export function slotMeta(slot: SlotId): SaveMeta | null {
-  const metaRaw = kv.getItem(key(slot) + '.meta');
+  const metaRaw = queued.get(slot)?.meta ?? kv.getItem(key(slot) + '.meta');
   if (metaRaw) {
     try {
       return JSON.parse(metaRaw) as SaveMeta;
@@ -168,6 +223,7 @@ export function slotMeta(slot: SlotId): SaveMeta | null {
 }
 
 export function deleteSlot(slot: SlotId): void {
+  queued.delete(slot);
   kv.removeItem(key(slot));
   kv.removeItem(key(slot) + '.meta');
 }
@@ -187,7 +243,11 @@ function migrate(save: SaveFile): SaveFile {
 export function loadJSON<T>(k: string, fallback: T): T {
   try {
     const raw = kv.getItem(k);
-    return raw ? { ...fallback, ...JSON.parse(raw) } : fallback;
+    if (!raw) return fallback;
+    const v = JSON.parse(raw);
+    // objects are merged over the defaults; anything else (a version string, a list) is the value
+    const isObj = (x: unknown) => !!x && typeof x === 'object' && !Array.isArray(x);
+    return (isObj(fallback) && isObj(v) ? { ...fallback, ...v } : v) as T;
   } catch {
     return fallback;
   }

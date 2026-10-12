@@ -12,10 +12,11 @@
  *    recorded on the document as discrepancies; ask the visitor about them.
  */
 import { openReplacementPicker } from '../replace';
+import { hint } from '../hints';
 import { Container, Graphics } from 'pixi.js';
 import { Scene } from '../app';
 import { PAL, C, shade, meterColor } from '../../art/palette';
-import { W, H, text, button, box, clickable, ScrollBox, hoverTip, paper, makeDraggable } from '../kit';
+import { W, H, SW, OX, text, button, box, clickable, ScrollBox, hoverTip, paper, makeDraggable } from '../kit';
 import type { DeskDoc, Stamp, StoryletInstance, Negotiation } from '../../core/types';
 import { Inspector, renderDoc, renderFileCard, renderIdCard, ruleField, PAGE_RULE_KEYS, PAGE_FOR_TYPE, RULE_KEY_RULE } from '../docview';
 import { stampDoc, compareFields, spendMinutes } from '../../sim/week';
@@ -38,6 +39,7 @@ import { openRoster } from './roster';
 import { openCorkboard } from './corkboard';
 import { openRankings } from './rankings';
 import { openInbox, openTvOffer } from './inbox';
+import { isTouchDevice } from '../../core/platform';
 import { openGameMenu } from './gamemenu';
 import { openLedgerPeek } from './ledger';
 import { Rng } from '../../core/rng';
@@ -67,6 +69,18 @@ const STRIP_Y = H - 16;
 
 export class DeskScene extends Scene {
   tutorialKey = 'desk';
+  /**
+   * Phones: the desk spans the whole (wider) screen. Everything keeps its desktop x, and the extra
+   * width goes to the right-hand column (inbox + stamps) and the nav buttons. Tap the document to
+   * read it big. FW = screen width, RX/RW = the right column.
+   */
+  private phone = isTouchDevice();
+  private get FW(): number {
+    return this.phone ? SW : W;
+  }
+  private get RW(): number {
+    return this.FW - 366 - 4;
+  }
   ins = new Inspector();
   private selected: string | null = null;
   rulebookOpen = false;
@@ -121,10 +135,12 @@ export class DeskScene extends Scene {
     };
 
     // ---------------------------------------------------------- office wall
+    if (this.phone) r.x = -OX;
+    const FW = this.FW;
     const wall = new Graphics();
-    wall.rect(0, 0, W, 80).fill(0x3a3036);
-    for (let x = 0; x < W; x += 16) wall.rect(x, 0, 1, 80).fill(0x342b31);
-    wall.rect(0, 76, W, 4).fill(0x241d22);
+    wall.rect(0, 0, FW, 80).fill(0x3a3036);
+    for (let x = 0; x < FW; x += 16) wall.rect(x, 0, 1, 80).fill(0x342b31);
+    wall.rect(0, 76, FW, 4).fill(0x241d22);
     r.addChild(wall);
     // the doorway where visitors stand
     const win = new Graphics();
@@ -186,15 +202,18 @@ export class DeskScene extends Scene {
       ['INBOX', () => openInbox(this.g, () => this.refresh()), 'Messages, offers, citations'],
       ['MENU', () => openGameMenu(this.g, () => this.refresh()), 'Save / load / settings'],
     ];
-    nav.forEach(([label, fn, tip], i) => r.addChild(button(label, 396 + (i % 2) * 42, 4 + Math.floor(i / 2) * 15, 40, 13, fn, { small: true, fill: PAL.shadow, tooltip: tip })));
+    // phones: the nav grows into the extra width, a little taller
+    const nw = this.phone ? Math.floor((FW - 396 - 4 - 2) / 2) : 40;
+    const nh = this.phone ? 14 : 13;
+    nav.forEach(([label, fn, tip], i) => r.addChild(button(label, 396 + (i % 2) * (nw + 2), 4 + Math.floor(i / 2) * (nh + 2), nw, nh, fn, { small: true, fill: PAL.shadow, tooltip: tip })));
     const unread = s.inbox.filter((m) => !m.read).length + s.market.tvOffers.length;
-    if (unread) r.addChild(text(String(unread), 474, 34, { small: true, color: PAL.gold }));
-    r.addChild(button(ev ? 'END DAY → FIGHT NIGHT' : 'END DAY →', 396, 50, 82, 22, () => this.endDay(), { fill: PAL.blood, small: true }));
+    if (unread) r.addChild(text(String(unread), 396 + nw * 2 + 2 - 6, 34, { small: true, color: PAL.gold }));
+    r.addChild(button(ev ? 'END DAY → FIGHT NIGHT' : 'END DAY →', 396, 50, FW - 400, 23, () => this.endDay(), { fill: PAL.blood, small: true, border: this.phone ? PAL.gold : undefined }));
 
     // ---------------------------------------------------------- desk surface
     const desk = new Graphics();
-    desk.rect(0, 80, W, H - 80).fill(PAL.wood);
-    for (let y = 82; y < H; y += 5) desk.rect(0, y, W, 1).fill(shade(PAL.wood, (y % 15) / 150 - 0.04));
+    desk.rect(0, 80, FW, H - 80).fill(PAL.wood);
+    for (let y = 82; y < H; y += 5) desk.rect(0, y, FW, 1).fill(shade(PAL.wood, (y % 15) / 150 - 0.04));
     r.addChild(desk);
 
     const item = this.currentItem();
@@ -235,6 +254,19 @@ export class DeskScene extends Scene {
       centre.addChild(empty);
     }
 
+    if (this.phone && item?.kind === 'doc') {
+      // phones: tap the paper (outside inspect mode) to read it big, or the READ tab
+      centre.eventMode = 'static';
+      let down: { x: number; y: number } | null = null;
+      centre.on('pointerdown', (e) => (down = { x: e.global.x, y: e.global.y }));
+      centre.on('pointertap', (e) => {
+        const moved = down ? Math.hypot(e.global.x - down.x, e.global.y - down.y) : 0;
+        if (!this.ins.active && moved < 6) this.openReader();
+      });
+      // on the paper's header bar, top-right
+      r.addChild(button('READ', DOC_X + DOC_W - 41, DOC_Y + 1, 40, 12, () => this.openReader(), { fill: PAL.slate, border: PAL.gold }));
+    }
+
     // right: queue + stamps
     r.addChild(this.drawQueue());
     if (item?.kind === 'doc') r.addChild(this.drawStamps(item.doc));
@@ -252,6 +284,62 @@ export class DeskScene extends Scene {
     this.updateClock();
   }
 
+  /**
+   * Phones: the document and its file card side by side, big enough to read (up to 1.8x), with
+   * the stamps along the bottom. Look-only: INSPECT works on the desk itself.
+   */
+  private openReader(): void {
+    const s = this.g.state!;
+    const d = this.currentDoc();
+    if (!d || this.anim) return;
+    sfx('paper');
+    const FW = SW;
+    const root = new Container();
+    root.x = -OX;
+    const wrap = this.g.modal(root, { dim: 0.85, fit: false });
+    const close = () => this.g.closeModal(wrap);
+    root.addChild(new Graphics().rect(0, 0, FW, H).fill({ color: 0x1a1410, alpha: 0.97 }));
+    const ins = new Inspector(); // inactive: taps here don't inspect
+    const body = new Container();
+    const fc = renderFileCard(d, 114, ins, s);
+    body.addChild(fc);
+    if (d.type === 'bout') {
+      const idc = renderIdCard(d, d.subject ? s.fighters[d.subject] ?? null : null, 114, ins);
+      if (idc) {
+        idc.y = fc.height + 4;
+        body.addChild(idc);
+      }
+    }
+    const dv = renderDoc(d, DOC_W, ins, s.week);
+    dv.x = 120;
+    body.addChild(dv);
+    const bw = 120 + DOC_W;
+    const k = Math.min(1.8, (FW - 12) / bw);
+    body.scale.set(k);
+    body.x = Math.max(0, Math.round((FW - 8 - bw * k) / 2));
+    const sb = new ScrollBox(FW - 8, H - 30);
+    sb.position.set(4, 3);
+    sb.content.addChild(body);
+    root.addChild(sb);
+    sb.refresh();
+    // the bottom bar: back, and the stamps
+    const by = H - 24;
+    root.addChild(new Graphics().rect(0, by - 3, FW, 27).fill(0x120d0a));
+    root.addChild(button('< DESK', 4, by, 64, 21, close, { fill: PAL.shadow }));
+    if (d.type === 'memo' || d.type === 'letter') {
+      root.addChild(button('FILE IT', FW - 124, by, 120, 21, () => { close(); this.stamp('approve'); }, { fill: PAL.moss }));
+      return;
+    }
+    const labels = this.stampLabels(d);
+    const order: Stamp[] = ['approve', 'deny', 'escalate', 'bury'];
+    const x0 = 74;
+    const sw = Math.floor((FW - x0 - 4 - 3 * 4) / 4);
+    order.forEach((st, i) => root.addChild(button(labels[st], x0 + i * (sw + 4), by, sw, 21, () => {
+      close();
+      this.stamp(st);
+    }, { fill: STAMP_FILL[st](), small: text(labels[st], 0, 0).textWidth > sw - 4 })));
+  }
+
   // ------------------------------------------------------------ props
 
   private drawProps(): Container {
@@ -265,10 +353,10 @@ export class DeskScene extends Scene {
     if (fresh) rb.addChild(text('NEW', 22, 19, { small: true, color: PAL.blood }));
     props.addChild(rb);
     const on = this.ins.active;
-    const lamp = clickable(new Container(), () => this.toggleInspect(), 'Inspect mode (I / SPACE): click a field, then the field it should match.');
+    const lamp = clickable(new Container(), () => this.toggleInspect(), hint('Inspect mode (I / SPACE): click a field, then the field it should match.', 'Inspect mode: select a field, then the field it should match.'));
     lamp.addChild(box(46, 26, on ? PAL.gold : PAL.shadow, PAL.ink, { bevel: true }));
     lamp.addChild(new Graphics().circle(8, 13, 5).fill(on ? 0xfff2a0 : 0x5a5246).stroke({ color: PAL.ink, width: 1 }));
-    lamp.addChild(text(on ? 'INSPECT\nON' : 'INSPECT\n(I)', 16, 6, { small: true, color: on ? PAL.ink : PAL.bone }));
+    lamp.addChild(text(on ? 'INSPECT\nON' : this.phone ? 'INSPECT\nOFF' : 'INSPECT\n(I)', 16, 6, { small: true, color: on ? PAL.ink : PAL.bone }));
     lamp.position.set(40, 0);
     props.addChild(lamp);
     const calcBtn = clickable(new Container(), () => this.toggleCalc(), 'Calculator (C): auto-tallies camp expense reports.');
@@ -400,19 +488,22 @@ export class DeskScene extends Scene {
     const c = new Container();
     c.position.set(366, 84);
     const items = this.items();
-    c.addChild(box(110, 108, 0x2a1f18, PAL.woodDark));
+    // phones: as wide as the screen allows, taller rows in the big face
+    const qw = this.phone ? this.RW : 110;
+    const rh = this.phone ? 16 : 12;
+    c.addChild(box(qw, 108, 0x2a1f18, PAL.woodDark));
     c.addChild(text(`INBOX (${items.length})`, 4, 3, { small: true, color: PAL.gold }));
-    const sb = new ScrollBox(106, 92);
+    const sb = new ScrollBox(qw - 4, 92);
     sb.position.set(2, 12);
     items.forEach((it, i) => {
       const label = this.itemLabel(it);
       const sel = it.id === this.selected;
       const row = clickable(new Container(), () => this.selectItem(it));
-      row.addChild(box(100, 12, sel ? PAL.slate : shade(0x2a1f18, 0.08)));
-      row.addChild(box(3, 12, label.color));
-      row.addChild(text(label.text, 6, 3, { small: true, color: PAL.bone, width: 92, maxLines: 1 }));
-      if (it.kind === 'doc' && String(it.doc.meta.flagged ?? '')) row.addChild(text('!', 95, 3, { small: true, color: PAL.blood }));
-      row.position.set(0, i * 13);
+      row.addChild(box(qw - 10, rh, sel ? PAL.slate : shade(0x2a1f18, 0.08)));
+      row.addChild(box(3, rh, label.color));
+      row.addChild(text(label.text, 6, this.phone ? 4 : 3, { small: !this.phone, color: PAL.bone, width: qw - 18, maxLines: 1 }));
+      if (it.kind === 'doc' && String(it.doc.meta.flagged ?? '')) row.addChild(text('!', qw - 15, 3, { small: true, color: PAL.blood }));
+      row.position.set(0, i * (rh + 1));
       sb.content.addChild(row);
     });
     c.addChild(sb);
@@ -489,7 +580,7 @@ export class DeskScene extends Scene {
   private itemCard(it: QueueItem): Container {
     const c = paper(DOC_W, 80, 'white', 4);
     c.addChild(text(this.itemLabel(it).text, 8, 8, { width: 224, color: PAL.ink }));
-    c.addChild(text('Click it in the inbox to deal with it.', 8, 30, { small: true, color: PAL.grey }));
+    c.addChild(text(this.phone ? 'Tap it in the inbox to deal with it.' : hint('Click it in the inbox to deal with it.', 'Select it in the inbox to deal with it.'), 8, 30, { small: true, color: PAL.grey }));
     return c;
   }
 
@@ -504,10 +595,15 @@ export class DeskScene extends Scene {
   private drawStamps(d: DeskDoc): Container {
     const c = new Container();
     c.position.set(366, 196);
-    c.addChild(box(110, 70, 0x2a1f18, PAL.woodDark));
+    // phones: the stamps get the extra width; no keyboard letters
+    const P = this.phone;
+    const cw = P ? this.RW : 110;
+    const half = P ? Math.floor((cw - 9) / 2) : 52;
+    const x2 = P ? 6 + half : 56; // the second column
+    c.addChild(box(cw, 70, 0x2a1f18, PAL.woodDark));
     if (d.type === 'memo' || d.type === 'letter') {
-      c.addChild(text(d.meta.bulletin ? 'Read it. The rulebook\nhas been updated.' : 'Nothing to inspect.', 6, 6, { small: true, color: PAL.ash, width: 100 }));
-      c.addChild(button('FILE IT (A)', 4, 36, 102, 18, () => this.stamp('approve'), { fill: PAL.moss }));
+      c.addChild(text(d.meta.bulletin ? 'Read it. The rulebook\nhas been updated.' : 'Nothing to inspect.', 6, 6, { small: true, color: PAL.ash, width: cw - 10 }));
+      c.addChild(button(P ? 'FILE IT' : 'FILE IT (A)', 4, 36, cw - 8, 20, () => this.stamp('approve'), { fill: PAL.moss }));
       return c;
     }
     const labels = this.stampLabels(d);
@@ -515,23 +611,23 @@ export class DeskScene extends Scene {
     const block = (st: Stamp, x: number, key: string) => {
       const b = clickable(new Container(), () => this.stamp(st), `${labels[st]} (${key})`);
       const col = STAMP_FILL[st]();
-      b.addChild(new Graphics().rect(15, 0, 22, 9).fill(shade(PAL.wood, 0.25)).stroke({ color: PAL.ink, width: 1 })); // handle
-      b.addChild(new Graphics().rect(18, -3, 16, 4).fill(shade(PAL.wood, 0.4)));
-      b.addChild(box(52, 22, col, PAL.ink, { bevel: true })).position.set(0, 9);
-      b.addChild(text(labels[st], 0, 14, { small: true, color: PAL.bone, width: 52, align: 'center', maxLines: 1 }));
-      b.addChild(text(key, 0, 22, { small: true, color: shade(col, 0.5), width: 52, align: 'center' }));
+      b.addChild(new Graphics().rect(half / 2 - 11, 0, 22, 9).fill(shade(PAL.wood, 0.25)).stroke({ color: PAL.ink, width: 1 })); // handle
+      b.addChild(new Graphics().rect(half / 2 - 8, -3, 16, 4).fill(shade(PAL.wood, 0.4)));
+      b.addChild(box(half, 22, col, PAL.ink, { bevel: true })).position.set(0, 9);
+      b.addChild(text(labels[st], 0, P ? 16 : 14, { small: !P || text(labels[st], 0, 0).textWidth > half - 4, color: PAL.bone, width: half, align: 'center', maxLines: 1 }));
+      if (!P) b.addChild(text(key, 0, 22, { small: true, color: shade(col, 0.5), width: half, align: 'center' }));
       b.position.set(x, 6);
       return b;
     };
     c.addChild(block('approve', 3, 'A'));
-    c.addChild(block('deny', 56, 'D'));
-    c.addChild(button('ESCALATE (E)', 3, 40, 52, 11, () => this.stamp('escalate'), {
+    c.addChild(block('deny', x2, 'D'));
+    c.addChild(button(P ? 'ESCALATE' : 'ESCALATE (E)', 3, 40, half, P ? 13 : 11, () => this.stamp('escalate'), {
       small: true, fill: STAMP_FILL.escalate(), tooltip: d.type === 'weighin' ? 'Catchweight: the bout goes on, the offender forfeits 25% of the purse.' : 'Send to legal: always "safe" but costs a fee and time, and the board hates overuse.',
     }));
-    c.addChild(button('BURY (B)', 56, 40, 51, 11, () => this.stamp('bury'), { small: true, fill: STAMP_FILL.bury(), tooltip: 'Make it disappear. Deliberate. Tracked. It may resurface.' }));
+    c.addChild(button(P ? 'BURY' : 'BURY (B)', x2, 40, P ? half : 51, P ? 13 : 11, () => this.stamp('bury'), { small: true, fill: STAMP_FILL.bury(), tooltip: 'Make it disappear. Deliberate. Tracked. It may resurface.' }));
     const sec = secondaryAction(d);
-    if (sec) c.addChild(button(sec.label, 3, 54, 104, 12, () => this.secondary(), { small: true, fill: PAL.ember, tooltip: sec.tip }));
-    else c.addChild(text(this.ins.active ? 'Inspecting...' : 'I = inspect   R = rulebook', 4, 57, { small: true, color: PAL.grey }));
+    if (sec) c.addChild(button(sec.label, 3, 55, cw - 6, 12, () => this.secondary(), { small: true, fill: PAL.ember, tooltip: sec.tip }));
+    else c.addChild(text(this.ins.active ? 'Inspecting...' : P ? 'Tap the paper to read it big' : 'I = inspect   R = rulebook', 4, 57, { small: true, color: PAL.grey }));
     return c;
   }
 
@@ -570,9 +666,11 @@ export class DeskScene extends Scene {
       this.drawStrings();
     }, { w: bw, h: bh });
     hoverTip(handle, 'Drag me anywhere. +/- or [ ] to zoom.');
-    c.addChild(button('X', bw - 13, 2, 11, 10, () => this.toggleRulebook(), { small: true, fill: PAL.blood }));
-    c.addChild(button('+', bw - 39, 2, 11, 10, () => this.zoomRulebook(0.25), { small: true, fill: PAL.steel, tooltip: 'Zoom in' }));
-    c.addChild(button('-', bw - 26, 2, 11, 10, () => this.zoomRulebook(-0.25), { small: true, fill: PAL.steel, tooltip: 'Zoom out' }));
+    // phones: wider buttons (the touch slop does the rest)
+    const tb = this.phone ? 16 : 11;
+    c.addChild(button('X', bw - tb - 2, 2, tb, 10, () => this.toggleRulebook(), { small: true, fill: PAL.blood }));
+    c.addChild(button('+', bw - tb * 3 - 6, 2, tb, 10, () => this.zoomRulebook(0.25), { small: true, fill: PAL.steel, tooltip: 'Zoom in' }));
+    c.addChild(button('-', bw - tb * 2 - 4, 2, tb, 10, () => this.zoomRulebook(-0.25), { small: true, fill: PAL.steel, tooltip: 'Zoom out' }));
     // page flipper
     const flip = (d: number) => {
       idx = (idx + d + pages.length) % pages.length;
@@ -580,8 +678,9 @@ export class DeskScene extends Scene {
       sfx('paper');
       this.refresh();
     };
-    c.addChild(button('<', 4, 13, 12, 11, () => flip(-1), { small: true, fill: PAL.slate }));
-    c.addChild(button('>', bw - 16, 13, 12, 11, () => flip(1), { small: true, fill: PAL.slate }));
+    const fw = this.phone ? 20 : 12;
+    c.addChild(button('<', 4, 13, fw, 11, () => flip(-1), { small: true, fill: PAL.slate }));
+    c.addChild(button('>', bw - fw - 4, 13, fw, 11, () => flip(1), { small: true, fill: PAL.slate }));
     const pageNew = page?.rules.some((r) => fresh.has(r.id));
     c.addChild(text(`${(page?.page ?? '').toUpperCase()}  ${idx + 1}/${pages.length}${pageNew ? '  NEW!' : ''}`, 18, 16, { small: true, color: pageNew ? PAL.gold : PAL.bone, width: bw - 36, align: 'center' }));
     if (!page) return c;
@@ -782,7 +881,8 @@ export class DeskScene extends Scene {
         color = PAL.blood;
         ask = !d.meta.asked;
       } else if (this.ins.active) {
-        msg = this.ins.selected ? 'Now click the field it should match (file card, licence, rulebook or face).' : 'INSPECT: click a field on the document, then the field it should match.';
+        const verb = this.phone ? 'tap' : hint('click', 'select');
+        msg = this.ins.selected ? `Now ${verb} the field it should match (file card, licence, rulebook or face).` : `INSPECT: ${verb} a field on the document, then the field it should match.`;
         color = PAL.gold;
       }
     }
@@ -793,7 +893,7 @@ export class DeskScene extends Scene {
     const h = t.textHeight + 7;
     c.addChild(box(244, h, PAL.ink, color));
     c.addChild(t);
-    if (ask) c.addChild(button('ASK', 204, Math.floor((h - 11) / 2), 36, 11, () => this.ask(), { small: true, fill: PAL.blood, tooltip: 'Ask the visitor about it. Excuses, fixes, envelopes. (8 min)' }));
+    if (ask) c.addChild(button('ASK', 204, Math.max(1, Math.floor((h - (this.phone ? 14 : 11)) / 2)), 36, this.phone ? 14 : 11, () => this.ask(), { small: true, fill: PAL.blood, tooltip: 'Ask the visitor about it. Excuses, fixes, envelopes. (8 min)' }));
     c.position.set(DOC_X - 2, Math.min(STRIP_Y, H - h - 1));
     return c;
   }
@@ -949,10 +1049,10 @@ export class DeskScene extends Scene {
       this.refresh();
       // read the whole thing
       if (full) alertBox(this.g, 'M.O.A. CITATION', `PROTOCOL VIOLATION\n\n${full.reason}\n\n${full.warning ? 'WARNING. Next time it comes out of your pay.' : `PENALTY: -${money(full.fine, false)} from your pay.`}\n\nAll your citations are in the INBOX.`);
-    }, 'Click to read the whole citation.');
+    }, hint('Click to read the whole citation.', 'Select to read the whole citation.'));
     const w = 150;
     const body = text(sl.reason, 6, 22, { small: true, width: w - 12, color: PAL.ink, maxLines: 4 });
-    const more = text('CLICK TO READ IT ALL', 6, 0, { small: true, color: PAL.slate });
+    const more = text(isTouchDevice() ? 'TAP TO READ IT ALL' : 'CLICK TO READ IT ALL', 6, 0, { small: true, color: PAL.slate });
     const foot = text(sl.warning ? 'WARNING. Next time it comes out of your pay.' : `PENALTY: -${money(sl.fine, false)} from your pay`, 6, 0, { small: true, color: sl.warning ? PAL.slate : PAL.blood, width: w - 12 });
     const h = 40 + body.textHeight + foot.textHeight;
     foot.y = h - foot.textHeight - 14;

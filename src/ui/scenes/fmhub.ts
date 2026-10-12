@@ -7,7 +7,7 @@ import { Container, Graphics } from 'pixi.js';
 import { Scene } from '../app';
 import type { Skills } from '../../core/types';
 import { PAL } from '../../art/palette';
-import { W, H, text, button, box, ScrollBox } from '../kit';
+import { W, H, SW, OX, text, button, box, ScrollBox } from '../kit';
 import { openWindow, confirm, alertBox, selector } from '../widgets';
 import { openHelp } from '../help';
 import { openSettings } from './settings';
@@ -24,6 +24,7 @@ import { money, record } from '../../core/format';
 import { fmtDate } from '../../core/time';
 import { Rng } from '../../core/rng';
 import { sfx } from '../../audio/sfx';
+import { isTouchDevice } from '../../core/platform';
 import { fullName, overall } from '../../sim/fighters';
 import { divisionName, DIVISION_ORDER } from '../../sim/divisions';
 import { rankLabel, rankOf, undisputed } from '../../sim/rankings';
@@ -31,7 +32,7 @@ import {
   fm, me, BODY_PARTS, STAFF_ROLES, PLANS, doAction, treat, clinicCost, weeklyStaffCost, calloutTargets, callOut, humblePost,
   startPeds, stopPeds, bareknuckle, gamble, acceptOffer, resolveEvent, endWeek, fightThisWeek, weighInInfo, doWeighIn, fightEvent,
   afterFight, postFightCallout, weightLimit, contractLimit, fightReadySkills, type ActionId, type StaffId, type BodyPart,
-  ensureFM, condition, trainSkill, cutWeight, hire, fire, fightWeekPaperwork, cagesideReact, bkNext, bkPurse, bkSpot,
+  ensureFM, condition, trainSkill, trainPreview, isMaxed, SKILL_MAX, cutWindow, allocateSpar, cutWeight, hire, fire, fightWeekPaperwork, cagesideReact, bkNext, bkPurse, bkSpot,
   ladderSpot, stage, BKB_NAME, BRADIE, bradieOnYou, askOnlyFighters, postContent, cardSlot, SLOT_NAME, type CutMethod,
 } from '../../sim/fighter';
 import { FightNightScene } from './fightnight';
@@ -45,6 +46,7 @@ import { officialsFor } from '../../sim/events';
 import { portrait, namedPortrait, reporterPortrait } from '../sprites';
 import { content } from '../../core/content';
 import { fightWeekShow } from '../faceoff';
+import { bossLive } from '../../sim/cast';
 
 const bar = (w: number, v: number, color: number): Graphics => {
   const g = new Graphics();
@@ -127,11 +129,12 @@ export class FMHubScene extends Scene {
   }
 
   build(): void {
+    if (isTouchDevice()) return this.buildPhone();
     const s = this.g.state!;
     const st = fm(s);
     const f = me(s);
     const r = this.root;
-    const bg = new Graphics().rect(0, 0, W, H).fill(0x17141c);
+    const bg = new Graphics().rect(-OX, 0, SW, H).fill(0x17141c);
     bg.rect(0, 0, W, 18).fill(0x0f0d13);
     r.addChild(bg);
     r.addChild(text(`WEEK ${s.week + 1}  •  ${fmtDate(s.week)}`, 6, 5, { color: PAL.gold }));
@@ -140,45 +143,9 @@ export class FMHubScene extends Scene {
     if (susp) r.addChild(text(`SUSPENDED until week ${st.suspendedUntil + 1}`, 160, 5, { small: true, color: PAL.blood }));
 
     // ------------------------------------------------ left: you
-    const L = new Container();
+    const L = this.youPanel();
     L.position.set(6, 22);
     r.addChild(L);
-    L.addChild(box(146, 226, PAL.night, PAL.slate));
-    const por = fighterPortrait(f, 64);
-    por.position.set(4, 4);
-    L.addChild(por);
-    L.addChild(text(fullName(f).toUpperCase(), 72, 6, { small: true, width: 72, color: PAL.bone, maxLines: 2 }));
-    L.addChild(text(`"${f.nick}"`, 72, 24, { small: true, width: 72, color: PAL.gold, maxLines: 2 }));
-    L.addChild(text(st.tier === 'amateur' ? `AM ${record(f.record)}` : record(f.record), 72, 42, { color: PAL.bone }));
-    if (st.amateur) L.addChild(text(`PRO  (AM ${st.amateur.w}-${st.amateur.l}${st.amateur.d ? '-' + st.amateur.d : ''})`, 72, 62, { small: true, color: PAL.ash, width: 72, maxLines: 1 }));
-    const rk = rankOf(s, f.id);
-    const spot = ladderSpot(s);
-    if (st.tier === 'of') L.addChild(text(rk === 0 ? 'CHAMPION' : rk ? `RANKED #${rk}` : 'UNRANKED', 72, 54, { small: true, color: rk === 0 ? PAL.gold : rk ? PAL.sky : PAL.ash }));
-    else L.addChild(text(`${stage(s).short} ${spot === 0 ? 'CHAMP' : '#' + ((spot ?? 0) + 1)}`, 72, 54, { small: true, color: spot === 0 ? PAL.gold : PAL.sky, width: 72, maxLines: 1 }));
-    L.addChild(text(`${divisionName(f.division)}  •  ${stage(s).short}`, 4, 72, { small: true, color: PAL.ash, width: 140, maxLines: 1 }));
-    const cond = condition(s);
-    L.addChild(text(`OVR ${Math.round(overall(f.skills))}  •  AGE ${f.age}  •`, 4, 82, { small: true, color: PAL.ash }));
-    L.addChild(text(cond.label === 'PEAK CONDITION' ? 'PEAK' : cond.label, 98, 82, { small: true, color: PAL[cond.color] }));
-    let y = 96;
-    const vit = (label: string, v: number, c: number, right = '') => {
-      L.addChild(text(label, 4, y, { small: true, color: PAL.ash }));
-      if (right) L.addChild(text(right, 90, y, { small: true, color: PAL.bone, width: 52, align: 'right' }));
-      L.addChild(bar(138, v, c)).position.set(4, y + 9);
-      y += 18;
-    };
-    vit('ENERGY', st.energy, st.energy < 30 ? PAL.blood : PAL.moss, `${Math.round(st.energy)}`);
-    vit('MORALE', st.morale, PAL.sky, `${Math.round(st.morale)}`);
-    vit('HYPE', f.hype, PAL.gold, `${Math.round(f.hype)}`);
-    const lim = contractLimit(s);
-    const over = st.walkWeight - lim;
-    vit('WEIGHT', Math.max(0, 100 - over * 5), over > 12 ? PAL.blood : over > 7 ? PAL.ember : PAL.moss, `${st.walkWeight.toFixed(1)} / ${lim}`);
-    const health = Math.round(BODY_PARTS.reduce((a, p) => a + st.body[p.id], 0) / BODY_PARTS.length);
-    vit('HEALTH', health, health < 60 ? PAL.blood : PAL.moss, `${health}`);
-    L.addChild(text(`Diet`, 4, y + 2, { small: true, color: PAL.ash }));
-    L.addChild(selector(30, y, 112, [{ value: 'clean' as const, label: 'Clean ($$)' }, { value: 'balanced' as const, label: 'Balanced' }, { value: 'junk' as const, label: 'Junk ($)' }], st.diet, (v) => { st.diet = v; }));
-    y += 16;
-    if (st.ped.on) L.addChild(text('ON A CYCLE', 4, y + 2, { small: true, color: PAL.blood }));
-    L.addChild(button(`CAREER FILE${st.rap?.length ? ` (${st.rap.length} FLAG${st.rap.length > 1 ? 'S' : ''})` : ''}`, 4, 212, 138, 11, () => this.careerFile(), { small: true, fill: st.rap?.length ? 0x3a1a1a : PAL.shadow }));
 
     // ------------------------------------------------ middle: this week
     const M = new Container();
@@ -189,17 +156,11 @@ export class FMHubScene extends Scene {
     for (let i = 0; i < 3; i++) M.addChild(new Graphics().rect(110 + i * 14, 5, 10, 8).fill(i < st.ap ? PAL.gold : 0x2a2630));
     const act = (label: string, yy: number, fn: () => void, opts: { disabled?: boolean; fill?: number; tip?: string } = {}) =>
       M.addChild(button(label, 6, yy, 148, 15, fn, { small: true, fill: opts.fill ?? PAL.steel, disabled: opts.disabled || st.ap <= 0, tooltip: opts.tip }));
-    const run = (a: ActionId, focus: keyof Skills | 'cheap' | 'pro' | 'partner' | null = null) => {
-      const r2 = this.rng();
-      this.msg = doAction(s, a, focus, r2);
-      this.save(r2);
-      sfx('click');
-      this.refresh();
-      setTimeout(() => this.popups(), 100);
-    };
+    const run = this.runAction;
     act('TRAIN…', 17, () => this.trainMenu(), { tip: 'Pick a skill to drill. Peak condition = bigger gains' });
     act('SPAR…', 32, () => this.sparMenu(run), { tip: 'Big gains, real risk' });
-    act('CUT WEIGHT…', 47, () => this.cutMenu(), { fill: PAL.ember, tip: 'Roadwork, sauna or a strict diet' });
+    const cw = cutWindow(s);
+    act(cw.open ? 'CUT WEIGHT…' : 'CUT WEIGHT (FINAL 2 WKS)', 47, () => this.cutMenu(), { fill: cw.open ? PAL.ember : PAL.shadow, tip: cw.open ? 'Roadwork, sauna or a strict diet' : 'The dedicated cut opens two weeks before the fight' });
     act('WORK A SHIFT', 62, () => run('work'), { tip: 'Money, but it drains you' });
     act('REST & RECOVER', 77, () => run('rest'));
     act('GO OUT TONIGHT', 92, () => run('party'), { fill: PAL.plum, tip: 'Morale up. What could go wrong?' });
@@ -211,7 +172,9 @@ export class FMHubScene extends Scene {
     free('STAFF', 156, () => this.staffMenu());
     free(`${stage(s).short} ROSTER & RANKINGS`, 171, () => this.rankingsMenu());
     if (st.undergroundOpen) free('THE UNDERGROUND', 186, () => this.undergroundMenu(), 0x1d3a22);
-    if (this.msg) M.addChild(text(this.msg, 6, 202, { small: true, width: 148, color: PAL.bone, maxLines: 3 }));
+    if ((st.sparPoints ?? 0) > 0) M.addChild(button(`SPEND ${st.sparPoints} SPARRING POINTS`, 6, 186 + (st.undergroundOpen ? 15 : 0), 148, 14, () => this.sparAllocate(), { small: true, fill: PAL.gold }));
+    const extraRows = (st.undergroundOpen ? 1 : 0) + ((st.sparPoints ?? 0) > 0 ? 1 : 0);
+    if (this.msg) M.addChild(text(this.msg, 6, 187 + extraRows * 15, { small: true, width: 148, color: PAL.bone, maxLines: extraRows >= 2 ? 1 : extraRows ? 2 : 3 }));
 
     // ------------------------------------------------ right: fights & feed
     const R = new Container();
@@ -269,11 +232,210 @@ export class FMHubScene extends Scene {
     r.addChild(text(`Staff ${money(weeklyStaffCost(s))}/wk`, st.legacy ? 126 : 62, H - 14, { small: true, color: PAL.ash }));
   }
 
+  /**
+   * Phones: the same week laid out for thumbs on the full (wider) screen. Your card on the left;
+   * next fight / offers in a strip; this week's actions as a grid of big buttons; END WEEK big
+   * in the corner. The offers list and the Bleeter feed open in their own windows.
+   */
+  private buildPhone(): void {
+    const s = this.g.state!;
+    const st = fm(s);
+    const r = this.root;
+    r.x = -OX;
+    const FW = SW;
+    const bg = new Graphics().rect(0, 0, FW, H).fill(0x17141c);
+    bg.rect(0, 0, FW, 18).fill(0x0f0d13);
+    r.addChild(bg);
+    r.addChild(text(`WEEK ${s.week + 1}  •  ${fmtDate(s.week)}`, 6, 5, { color: PAL.gold }));
+    r.addChild(text(`CASH ${money(st.money)}`, FW - 126, 5, { color: st.money < 0 ? PAL.blood : PAL.moss, width: 120, align: 'right' }));
+    const susp = s.week < st.suspendedUntil;
+    if (susp) r.addChild(text(`SUSPENDED until week ${st.suspendedUntil + 1}`, 0, 6, { small: true, color: PAL.blood, width: FW, align: 'center' }));
+
+    const L = this.youPanel();
+    L.position.set(4, 22);
+    r.addChild(L);
+
+    const x0 = 156;
+    const rw = FW - x0 - 4;
+    // ---- the fight strip
+    r.addChild(box(rw, 38, PAL.night, PAL.slate)).position.set(x0, 22);
+    if (st.fight) {
+      const o = st.fight;
+      const opp = s.fighters[o.opp];
+      const op = fighterPortrait(opp, 32);
+      op.position.set(x0 + 3, 25);
+      r.addChild(op);
+      const wk = o.week - s.week;
+      r.addChild(text(`${o.title || o.tierTitle ? 'TITLE FIGHT' : 'NEXT FIGHT'}: ${fullName(opp).toUpperCase()}  ${record(opp.record)}`, x0 + 40, 26, { color: o.title || o.tierTitle ? PAL.gold : PAL.blood, width: rw - 44, maxLines: 1 }));
+      const odds = Math.round(100 / (1 + Math.exp(-(overall(fightReadySkills(s)) - overall(opp.skills)) / 6)));
+      r.addChild(text(`${wk <= 0 ? 'FIGHT WEEK!' : `In ${wk} week${wk > 1 ? 's' : ''}`}  •  ${money(o.purse)} + ${money(o.win)} win  •  ${o.rounds} rds`, x0 + 40, 37, { small: true, color: wk <= 0 ? PAL.gold : PAL.bone, width: rw - 44, maxLines: 1 }));
+      r.addChild(text(`Your odds: about ${odds}%`, x0 + 40, 47, { small: true, color: odds >= 50 ? PAL.moss : PAL.ember }));
+    } else if (st.offers.length) {
+      r.addChild(text(`FIGHT OFFERS: ${st.offers.length}`, x0 + 6, 27, { color: PAL.gold }));
+      const best = st.offers[0];
+      const bo = s.fighters[best.opp];
+      r.addChild(text(`${bo.last} ${record(bo.record)}  •  ${money(best.purse)}+${money(best.win)}`, x0 + 6, 41, { small: true, color: PAL.ash, width: rw - 130, maxLines: 1 }));
+      r.addChild(button('SEE OFFERS >', x0 + rw - 112, 27, 106, 24, () => this.offersWindow(), { fill: PAL.moss, border: PAL.gold }));
+    } else {
+      r.addChild(text('NO FIGHT BOOKED', x0 + 6, 27, { color: PAL.ash }));
+      r.addChild(text(susp ? 'You are suspended. Train, rest, wait.' : 'Your phone is quiet. Win the internet, train, and offers will come.', x0 + 6, 39, { small: true, width: rw - 12, color: PAL.ash, maxLines: 2 }));
+    }
+
+    // ---- this week: a grid of big buttons
+    r.addChild(text('THIS WEEK', x0 + 2, 65, { color: PAL.gold }));
+    r.addChild(text('ACTIONS', x0 + rw - 82, 66, { small: true, color: PAL.ash }));
+    for (let i = 0; i < 3; i++) r.addChild(new Graphics().rect(x0 + rw - 40 + i * 14, 65, 10, 8).fill(i < st.ap ? PAL.gold : 0x2a2630));
+    const noAp = st.ap <= 0;
+    const items: { label: string; fn: () => void; fill: number; ap?: boolean }[] = [
+      { label: 'TRAIN', fn: () => this.trainMenu(), fill: PAL.steel, ap: true },
+      { label: 'SPAR', fn: () => this.sparMenu(this.runAction), fill: PAL.steel, ap: true },
+      { label: cutWindow(s).open ? 'CUT WEIGHT' : 'CUT (LAST 2 WKS)', fn: () => this.cutMenu(), fill: cutWindow(s).open ? PAL.ember : PAL.shadow, ap: true },
+      { label: 'WORK A SHIFT', fn: () => this.runAction('work'), fill: PAL.steel, ap: true },
+      { label: 'REST', fn: () => this.runAction('rest'), fill: PAL.steel, ap: true },
+      { label: 'GO OUT', fn: () => this.runAction('party'), fill: PAL.plum, ap: true },
+      { label: 'BLEETER', fn: () => this.mediaMenu(), fill: PAL.sky, ap: true },
+      { label: `PAPERWORK${st.inbox.length ? ` (${st.inbox.length})` : ''}`, fn: () => this.paperwork(), fill: st.inbox.length ? PAL.ember : PAL.shadow },
+      { label: 'CLINIC', fn: () => this.conditionMenu(), fill: PAL.shadow },
+      { label: 'STAFF', fn: () => this.staffMenu(), fill: PAL.shadow },
+      { label: 'RANKINGS', fn: () => this.rankingsMenu(), fill: PAL.shadow },
+      { label: 'THE FEED', fn: () => this.feedWindow(), fill: PAL.shadow },
+      ...(st.undergroundOpen ? [{ label: 'UNDERGROUND', fn: () => this.undergroundMenu(), fill: 0x1d3a22 }] : []),
+      ...((st.sparPoints ?? 0) > 0 ? [{ label: `SPEND ${st.sparPoints} SPAR PTS`, fn: () => this.sparAllocate(), fill: PAL.gold }] : []),
+    ];
+    const cols = rw >= 360 ? 3 : 2;
+    const rows = Math.ceil(items.length / cols);
+    const gy0 = 76;
+    const gh = 212 - gy0; // the grid's height
+    const bh = Math.min(26, Math.floor(gh / rows) - 3);
+    const cw = Math.floor((rw - (cols - 1) * 4) / cols);
+    items.forEach((it, i) => {
+      const cx = x0 + (i % cols) * (cw + 4);
+      const cy = gy0 + Math.floor(i / cols) * (bh + 3);
+      r.addChild(button(it.label, cx, cy, cw, bh, it.fn, { fill: it.fill, disabled: !!it.ap && noAp }));
+    });
+    // what just happened
+    if (this.msg) {
+      r.addChild(box(rw, 32, 0x0f0d13, PAL.shadow)).position.set(x0, 214);
+      r.addChild(text(this.msg, x0 + 5, 218, { small: true, width: rw - 10, color: PAL.bone, maxLines: 3 }));
+    }
+
+    // ---- bottom bar
+    const by = H - 21;
+    if (fightThisWeek(s)) r.addChild(button('FIGHT WEEK: WEIGH-IN >', FW - 180, by, 176, 19, () => this.weighIn(), { fill: PAL.blood, border: PAL.gold }));
+    else r.addChild(button('END WEEK >', FW - 130, by, 126, 19, () => this.endTheWeek(), { fill: PAL.blood, border: PAL.gold }));
+    r.addChild(button('MENU', 4, by, 60, 19, () => this.menu()));
+    if (st.legacy) r.addChild(button('LEGACY', 68, by, 70, 19, () => this.legacyMenu(), { fill: PAL.plum }));
+    r.addChild(text(`Staff ${money(weeklyStaffCost(s))}/wk`, st.legacy ? 144 : 70, by + 7, { small: true, color: PAL.ash }));
+  }
+
+  /** Phones: the offers that sit in the right-hand panel on a desktop. */
+  private offersWindow(): void {
+    const s = this.g.state!;
+    const st = fm(s);
+    const n = Math.min(4, st.offers.length);
+    const win = openWindow(this.g, 'Fight offers', 300, 18 + n * 40);
+    st.offers.slice(0, n).forEach((o, i) => {
+      const opp = s.fighters[o.opp];
+      const yy = 4 + i * 40;
+      const op = fighterPortrait(opp, 32);
+      op.position.set(6, yy);
+      win.body.addChild(op);
+      win.body.addChild(text(`${o.title || o.tierTitle ? 'TITLE: ' : ''}${fullName(opp)} ${record(opp.record)} ${st.tier === 'of' ? rankLabel(s, opp.id) : '#' + (st.ladder.indexOf(opp.id) + 1)}`, 44, yy, { small: true, width: 190, color: o.title || o.tierTitle ? PAL.gold : PAL.bone, maxLines: 1 }));
+      win.body.addChild(text(`${money(o.purse)} + ${money(o.win)} win  •  week ${o.week + 1}`, 44, yy + 10, { small: true, color: PAL.ash }));
+      win.body.addChild(text(o.why, 44, yy + 20, { small: true, color: PAL.ash, width: 190, maxLines: 1 }));
+      win.body.addChild(button('SIGN', 240, yy + 4, 52, 22, () => {
+        win.close();
+        acceptOffer(s, i);
+        sfx('cash');
+        this.refresh();
+        this.g.autosave();
+      }, { fill: PAL.moss }));
+    });
+  }
+
+  /** Phones: the Bleeter feed from the desktop's right-hand panel. */
+  private feedWindow(): void {
+    const st = fm(this.g.state!);
+    const win = openWindow(this.g, 'Bleeter: your feed', 300, 180);
+    const feed = new ScrollBox(288, 160);
+    feed.position.set(6, 2);
+    let fy = 0;
+    for (const p of st.feed.slice(-12).reverse()) {
+      const t1 = text(p.handle, 0, fy, { small: true, color: PAL.sky });
+      const t2 = text(p.text, 0, fy + 9, { small: true, width: 276, color: PAL.bone, maxLines: 4 });
+      feed.content.addChild(t1, t2);
+      fy += 13 + t2.height;
+    }
+    if (!st.feed.length) feed.content.addChild(text('Nothing yet. Post something.', 0, 0, { small: true, color: PAL.ash }));
+    win.body.addChild(feed);
+    feed.refresh();
+  }
+
+  /** Your fighter and vitals: the left-hand card (146x226), shared by the desktop and phone layouts. */
+  private youPanel(): Container {
+    const s = this.g.state!;
+    const st = fm(s);
+    const f = me(s);
+    const L = new Container();
+    L.addChild(box(146, 226, PAL.night, PAL.slate));
+    const por = fighterPortrait(f, 64);
+    por.position.set(4, 4);
+    L.addChild(por);
+    L.addChild(text(fullName(f).toUpperCase(), 72, 6, { small: true, width: 72, color: PAL.bone, maxLines: 2 }));
+    L.addChild(text(`"${f.nick}"`, 72, 24, { small: true, width: 72, color: PAL.gold, maxLines: 2 }));
+    L.addChild(text(st.tier === 'amateur' ? `AM ${record(f.record)}` : record(f.record), 72, 42, { color: PAL.bone }));
+    if (st.amateur) L.addChild(text(`PRO  (AM ${st.amateur.w}-${st.amateur.l}${st.amateur.d ? '-' + st.amateur.d : ''})`, 72, 62, { small: true, color: PAL.ash, width: 72, maxLines: 1 }));
+    const rk = rankOf(s, f.id);
+    const spot = ladderSpot(s);
+    if (st.tier === 'of') L.addChild(text(rk === 0 ? 'CHAMPION' : rk ? `RANKED #${rk}` : 'UNRANKED', 72, 54, { small: true, color: rk === 0 ? PAL.gold : rk ? PAL.sky : PAL.ash }));
+    else L.addChild(text(`${stage(s).short} ${spot === 0 ? 'CHAMP' : '#' + ((spot ?? 0) + 1)}`, 72, 54, { small: true, color: spot === 0 ? PAL.gold : PAL.sky, width: 72, maxLines: 1 }));
+    L.addChild(text(`${divisionName(f.division)}  •  ${stage(s).short}`, 4, 72, { small: true, color: PAL.ash, width: 140, maxLines: 1 }));
+    const cond = condition(s);
+    L.addChild(text(`OVR ${Math.round(overall(f.skills))}  •  AGE ${f.age}  •`, 4, 82, { small: true, color: PAL.ash }));
+    L.addChild(text(cond.label === 'PEAK CONDITION' ? 'PEAK' : cond.label, 98, 82, { small: true, color: PAL[cond.color] }));
+    let y = 96;
+    const vit = (label: string, v: number, c: number, right = '') => {
+      L.addChild(text(label, 4, y, { small: true, color: PAL.ash }));
+      if (right) L.addChild(text(right, 90, y, { small: true, color: PAL.bone, width: 52, align: 'right' }));
+      L.addChild(bar(138, v, c)).position.set(4, y + 9);
+      y += 18;
+    };
+    vit('ENERGY', st.energy, st.energy < 30 ? PAL.blood : PAL.moss, `${Math.round(st.energy)}`);
+    vit('MORALE', st.morale, PAL.sky, `${Math.round(st.morale)}`);
+    vit('HYPE', f.hype, PAL.gold, `${Math.round(f.hype)}`);
+    const lim = contractLimit(s);
+    const over = st.walkWeight - lim;
+    vit('WEIGHT', Math.max(0, 100 - over * 5), over > 12 ? PAL.blood : over > 7 ? PAL.ember : PAL.moss, `${st.walkWeight.toFixed(1)} / ${lim}`);
+    const health = Math.round(BODY_PARTS.reduce((a, p) => a + st.body[p.id], 0) / BODY_PARTS.length);
+    vit('HEALTH', health, health < 60 ? PAL.blood : PAL.moss, `${health}`);
+    L.addChild(text(`Diet`, 4, y + 2, { small: true, color: PAL.ash }));
+    L.addChild(selector(30, y, 112, [{ value: 'clean' as const, label: 'Clean ($$)' }, { value: 'balanced' as const, label: 'Balanced' }, { value: 'junk' as const, label: 'Junk ($)' }], st.diet, (v) => { st.diet = v; }));
+    y += 16;
+    if (st.ped.on) L.addChild(text('ON A CYCLE', 4, y + 2, { small: true, color: PAL.blood }));
+    L.addChild(button(`CAREER FILE${st.rap?.length ? ` (${st.rap.length} FLAG${st.rap.length > 1 ? 'S' : ''})` : ''}`, 4, 212, 138, 11, () => this.careerFile(), { small: true, fill: st.rap?.length ? 0x3a1a1a : PAL.shadow }));
+
+    return L;
+  }
+
+  /** Spend an action point on `a` (with an optional focus), then refresh and show what happened. */
+  private runAction = (a: ActionId, focus: keyof Skills | 'cheap' | 'pro' | 'partner' | null = null): void => {
+    const s = this.g.state!;
+    const st = fm(s);
+    const r2 = this.rng();
+    this.msg = doAction(s, a, focus, r2);
+    this.save(r2);
+    sfx('click');
+    this.refresh();
+    // sparring earns points: spend them now
+    if (a === 'spar' && (st.sparPoints ?? 0) > 0) setTimeout(() => this.sparAllocate(), 120);
+    else setTimeout(() => this.popups(), 100);
+  };
+
   // ---------------------------------------------------------------- menus
 
   private trainMenu(): void {
     const s = this.g.state!;
-    const win = openWindow(this.g, 'Train', 240, 150);
+    const win = openWindow(this.g, 'Train', 320, 206);
     const f = me(s);
     const cond = condition(s);
     const after = (k: keyof Skills, score: number | null) => {
@@ -284,12 +446,72 @@ export class FMHubScene extends Scene {
       this.refresh();
       setTimeout(() => this.popups(), 100);
     };
+    const keys: [keyof Skills, string][] = [['striking', 'Striking'], ['power', 'Power'], ['wrestling', 'Wrestling'], ['grappling', 'Jiu-jitsu'], ['cardio', 'Cardio'], ['fightIQ', 'Fight IQ'], ['chin', 'Neck & chin'], ['durability', 'Conditioning'], ['heart', 'Heart']];
+    const NAME: Partial<Record<keyof Skills, string>> = { ...Object.fromEntries(keys), chin: 'Chin', durability: 'Cond.', grappling: 'BJJ' };
+    win.body.addChild(text('SKILL', 6, 2, { small: true, color: PAL.ash }));
+    win.body.addChild(text('NOW', 150, 2, { small: true, color: PAL.ash }));
+    win.body.addChild(text('AFTER A SESSION', 176, 2, { small: true, color: PAL.ash }));
+    keys.forEach(([k, label], i) => {
+      const y = 12 + i * 14;
+      const v = f.skills[k];
+      const pv = trainPreview(s, k);
+      const maxed = isMaxed(v);
+      const trainable = k !== 'heart' && !maxed;
+      win.body.addChild(text(label, 6, y + 3, { small: true, color: PAL.bone }));
+      // the bar: what you have, and (gold) what one session adds
+      const bar = new Graphics().rect(60, y + 3, 86, 6).fill(0x1a1820).rect(60, y + 3, Math.round(86 * v / 100), 6).fill(PAL.steel);
+      if (trainable) bar.rect(60 + Math.round(86 * v / 100), y + 3, Math.max(1, Math.round(86 * pv.gain / 100)), 6).fill(PAL.gold);
+      win.body.addChild(bar);
+      win.body.addChild(text(String(Math.round(v)), 150, y + 3, { small: true, color: PAL.bone }));
+      const after1 = Math.min(SKILL_MAX, v + pv.gain);
+      win.body.addChild(text(maxed ? 'MAX' : trainable ? `${after1.toFixed(1)}  (+${pv.gain}${pv.buddy ? `, ${NAME[pv.buddy] ?? pv.buddy} +${pv.buddyGain}` : ''})` : 'comes from real fights', 176, y + 3, { small: true, color: maxed ? PAL.moss : trainable ? PAL.gold : PAL.ash, width: 98, maxLines: 1 }));
+      if (maxed && k !== 'heart') win.body.addChild(button('MAX', 276, y, 38, 12, () => {}, { small: true, fill: PAL.shadow, disabled: true }));
+      else if (trainable) win.body.addChild(button('TRAIN', 276, y, 38, 12, () => { win.close(); after(k, null); }, { small: true, fill: PAL.steel, disabled: fm(s).ap <= 0 }));
+    });
+    const my = 12 + keys.length * 14 + 2;
+    win.body.addChild(text('MINI GAMES (a good score beats a normal session):', 6, my, { small: true, color: PAL.gold }));
+    const ropeMax = isMaxed(f.skills.cardio);
+    const chopMax = isMaxed(f.skills.power);
+    win.body.addChild(button(ropeMax ? 'JUMP ROPE: cardio MAX' : 'JUMP ROPE: cardio', 6, my + 10, 150, 13, () => { win.close(); openJumpRope(this.g, (sc) => after('cardio', sc)); }, { small: true, fill: PAL.moss, disabled: ropeMax || fm(s).ap <= 0 }));
+    win.body.addChild(button(chopMax ? 'TYRE CHOP: power MAX' : 'TYRE CHOP: power', 162, my + 10, 150, 13, () => { win.close(); openTyreChop(this.g, (sc) => after('power', sc)); }, { small: true, fill: PAL.moss, disabled: chopMax || fm(s).ap <= 0 }));
+    win.body.addChild(text(`Condition: ${cond.label} (x${cond.mult} gains). Training burns a little weight; the real cut is the last two weeks of camp.`, 6, my + 26, { small: true, width: 306, color: cond.label === 'PEAK CONDITION' ? PAL.gold : PAL.ash, maxLines: 2 }));
+  }
+
+  /** Sparring points: put them where your camp needs them. */
+  private sparAllocate(): void {
+    const s = this.g.state!;
+    const st = fm(s);
+    const f = me(s);
+    const total = st.sparPoints ?? 0;
+    if (total <= 0) return;
+    const alloc: Partial<Record<keyof Skills, number>> = {};
     const keys: [keyof Skills, string][] = [['striking', 'Striking'], ['power', 'Power'], ['wrestling', 'Wrestling'], ['grappling', 'Jiu-jitsu'], ['cardio', 'Cardio'], ['fightIQ', 'Fight IQ'], ['chin', 'Neck & chin'], ['durability', 'Conditioning']];
-    keys.forEach(([k, label], i) => win.body.addChild(button(`${label} (${Math.round(f.skills[k])})`, 6 + (i % 2) * 116, 6 + Math.floor(i / 2) * 17, 112, 14, () => { win.close(); after(k, null); }, { small: true, fill: PAL.steel })));
-    win.body.addChild(text('MINI GAMES (score boosts the gains):', 6, 76, { small: true, color: PAL.gold }));
-    win.body.addChild(button('JUMP ROPE: cardio', 6, 86, 112, 14, () => { win.close(); openJumpRope(this.g, (sc) => after('cardio', sc)); }, { small: true, fill: PAL.moss }));
-    win.body.addChild(button('TYRE CHOP: power', 122, 86, 112, 14, () => { win.close(); openTyreChop(this.g, (sc) => after('power', sc)); }, { small: true, fill: PAL.moss }));
-    win.body.addChild(text(`Condition: ${cond.label} (x${cond.mult} gains). Training burns weight. Coach, energy, morale and health all count.`, 6, 106, { small: true, width: 226, color: cond.label === 'PEAK CONDITION' ? PAL.gold : PAL.ash, maxLines: 3 }));
+    const win = openWindow(this.g, 'Sparring: spend your points', 250, 164, { onClose: () => this.refresh() });
+    const draw = () => {
+      win.body.removeChildren().forEach((c) => c.destroy({ children: true }));
+      const used = Object.values(alloc).reduce((a, b) => a + (b ?? 0), 0);
+      const left = total - used;
+      win.body.addChild(text(`${left} of ${total} point${total > 1 ? 's' : ''} left. One point = +1.`, 6, 2, { small: true, color: left ? PAL.gold : PAL.moss }));
+      keys.forEach(([k, label], i) => {
+        const y = 12 + i * 14;
+        const n = alloc[k] ?? 0;
+        const now = f.skills[k];
+        // points can't take a skill past the cap: at the cap the row reads MAX
+        const atCap = isMaxed(now + n);
+        win.body.addChild(text(label, 6, y + 3, { small: true, color: PAL.bone }));
+        win.body.addChild(text(isMaxed(now) ? 'MAX' : `${Math.round(now)}${n ? `  ->  ${atCap ? 'MAX' : Math.round(now + n)}` : ''}`, 80, y + 3, { small: true, color: isMaxed(now) ? PAL.moss : n ? PAL.gold : PAL.ash }));
+        win.body.addChild(button('-', 160, y, 16, 12, () => { if (n > 0) { alloc[k] = n - 1; draw(); } }, { small: true, fill: PAL.shadow, disabled: n <= 0 }));
+        win.body.addChild(text(String(n), 180, y + 3, { small: true, color: PAL.bone, width: 14, align: 'center' }));
+        win.body.addChild(button(atCap ? 'MAX' : '+', 196, y, atCap ? 26 : 16, 12, () => { if (left > 0 && !atCap) { alloc[k] = n + 1; draw(); } }, { small: true, fill: PAL.steel, disabled: left <= 0 || atCap }));
+      });
+      win.body.addChild(button(left ? 'SAVE THE REST FOR LATER' : 'DONE', 6, 128, 236, 14, () => {
+        this.msg = allocateSpar(s, alloc);
+        sfx('good');
+        win.close();
+        this.refresh();
+      }, { small: true, fill: left ? PAL.steel : PAL.moss }));
+    };
+    draw();
   }
 
   private cutMenu(): void {
@@ -297,7 +519,13 @@ export class FMHubScene extends Scene {
     const st = fm(s);
     const win = openWindow(this.g, 'Cut weight', 250, 128);
     const lim = contractLimit(s);
+    const cw = cutWindow(s);
     win.body.addChild(text(`You walk around ${st.walkWeight.toFixed(1)} lbs. ${lim !== weightLimit(s) ? 'Contracted' : 'Limit'} ${lim}. ${st.water > 0 ? `(${st.water.toFixed(1)} lbs is sauna water.)` : ''}`, 6, 4, { small: true, width: 238, color: PAL.bone }));
+    if (!cw.open) {
+      // too early: the cut is the last two weeks of camp
+      win.body.addChild(text(cw.weeksOut === null ? 'No fight booked. There is nothing to cut for yet: train (it burns a little) and keep the diet clean.' : `The fight is ${cw.weeksOut} weeks out. Cut now and it all comes back. The dedicated cut opens in the last two weeks of camp. Until then, training burns a little.`, 6, 26, { small: true, width: 238, color: PAL.ash, maxLines: 6 }));
+      return;
+    }
     const go = (m: CutMethod) => {
       win.close();
       this.msg = cutWeight(s, m);
@@ -305,8 +533,8 @@ export class FMHubScene extends Scene {
       this.refresh();
     };
     const opts: [CutMethod, string, string][] = [
-      ['roadwork', 'ROADWORK', '-2 lbs and some cardio. Tiring.'],
-      ['diet', 'STRICT DIET', '-1.5 lbs. Morale takes a hit. Nutritionist helps.'],
+      ['roadwork', 'ROADWORK', '-3 lbs and some cardio. Tiring.'],
+      ['diet', 'STRICT DIET', '-2 lbs. Morale takes a hit. Nutritionist helps.'],
       ['sauna', 'SAUNA', '-4 lbs fast, but water comes back unless you weigh in this week. Hurts the body.'],
     ];
     opts.forEach(([m, label, blurb], i) => {
@@ -542,7 +770,7 @@ export class FMHubScene extends Scene {
     win.body.addChild(button('LOAD…', 82, 6, 72, 15, () => { win.close(); openLoad(this.g, familyOf(this.g.state!)); }, { small: true }));
     win.body.addChild(button('HELP: HOW TO BE A PRO', 6, 24, 148, 15, () => openHelp(this.g, 'rtc'), { small: true, fill: PAL.shadow, border: PAL.gold }));
     win.body.addChild(button('SETTINGS', 6, 42, 148, 15, () => openSettings(this.g), { small: true }));
-    win.body.addChild(button('ACHIEVEMENTS', 6, 60, 148, 15, () => openAchievements(this.g), { small: true }));
+    win.body.addChild(button('TROPHY CASE', 6, 60, 148, 15, () => openAchievements(this.g), { small: true }));
     win.body.addChild(button('RETIRE…', 6, 78, 148, 15, () => { win.close(); confirm(this.g, 'Hang up the gloves for good?', () => this.legacy()); }, { small: true, fill: PAL.ember }));
     win.body.addChild(button('QUIT TO TITLE', 6, 96, 148, 15, () => { this.g.autosave(); win.close(); void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g))); }, { small: true }));
   }
@@ -744,9 +972,12 @@ export class FMHubScene extends Scene {
           this.save(r2);
           const A = s.fighters[bout.a];
           const B = s.fighters[bout.b];
+          // the story's boss fights have their own rules (and one very bad referee)
+          const boss = bossLive(s, bout);
           openLiveFight(this.g, {
             bout, A, B, skills: [A.skills, B.skills], player: side(bout) as 0 | 1, plan: st.plan, oppPlan: oppPlan(2), cutTier: st.staff.cutman, seed,
-            event: ev.name, judges: off.judges.map((j) => j.name), referee: off.referee.name, sponsors: eventSponsors(s, ev), canvas: eventCanvas(s, ev), bare: !!st.fight?.bare, state: s, ev,
+            rules: boss.rules, refLook: boss.refLook,
+            event: ev.name, judges: off.judges.map((j) => j.name), referee: boss.referee ?? off.referee.name, sponsors: eventSponsors(s, ev), canvas: eventCanvas(s, ev), bare: !!st.fight?.bare, state: s, ev,
             done: (res) => {
               bout.result = res;
               done();

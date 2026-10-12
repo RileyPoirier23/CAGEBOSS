@@ -6,9 +6,24 @@ import { Container, Graphics, Sprite, Texture, FederatedPointerEvent, FederatedW
 import { PAL, C, shade } from '../art/palette';
 import { PixelText, TextOpts, measure } from './text';
 import { sfx } from '../audio/sfx';
+import { isTouchDevice } from '../core/platform';
 
+/** Design size: every screen is laid out for 480x270. */
 export const W = 480;
+/** phone / tablet: bigger labels and touch areas on buttons */
+const TOUCH = isTouchDevice();
 export const H = 270;
+/**
+ * Screen width in game pixels. Phones widen the canvas to the screen's shape (no black bars):
+ * the 480-wide design is centred OX pixels in, and backgrounds bleed into the margins.
+ * Elsewhere SW = W and OX = 0. Full-width screens import `SW as W` and sit at x = -OX.
+ */
+export let SW = W;
+export let OX = 0;
+export function setScreenWidth(sw: number): void {
+  SW = sw;
+  OX = Math.floor((sw - W) / 2);
+}
 
 export function box(
   w: number, h: number, fill: number, border?: number, opts: { alpha?: number; shadow?: boolean; bevel?: boolean } = {},
@@ -139,8 +154,10 @@ export class Button extends Container {
     this.disabled = !!opts.disabled;
     this.bg = new Graphics();
     this.addChild(this.bg);
-    // labels that don't fit drop to the small face rather than spilling past the button edge
-    const small = !!opts.small || measure(labelText, false) > w - 4;
+    // labels that don't fit drop to the small face rather than spilling past the button edge.
+    // Phones: the big face whenever it fits (the small face is hard to read on a phone)
+    const fitsBig = measure(labelText, false) <= w - 4;
+    const small = TOUCH && h >= 10 && fitsBig ? false : !!opts.small || !fitsBig;
     this.labelNode = new PixelText(labelText, {
       small,
       color: this.disabled ? PAL.grey : (opts.textColor ?? PAL.bone),
@@ -153,6 +170,31 @@ export class Button extends Container {
     this.addChild(this.labelNode);
     this.eventMode = 'static';
     this.cursor = this.disabled ? 'default' : 'pointer';
+    // phones: a little slop around the button for thumbs (2px up/down so stacked menus don't overlap)
+    if (TOUCH) {
+      // fingers: the touch area is at least 30x22 around the button, but the slop never takes a
+      // tap that lands on a neighbouring button
+      const sx = Math.max(3, (30 - w) / 2);
+      const sy = Math.max(3, (22 - h) / 2);
+      this.hitArea = {
+        contains: (x: number, y: number) => {
+          if (x >= 0 && y >= 0 && x < this.w && y < this.h) return true;
+          if (x < -sx || y < -sy || x >= this.w + sx || y >= this.h + sy) return false;
+          const px = x + this.x;
+          const py = y + this.y;
+          return !this.parent?.children.some((c) => c !== this && c instanceof Button && c.visible && px >= c.x && py >= c.y && px < c.x + c.w && py < c.y + c.h);
+        },
+      };
+      // pressed feedback: there's no hover on a phone
+      this.on('pointerdown', () => {
+        this.hovered = true;
+        this.draw();
+      });
+      this.on('pointerupoutside', () => {
+        this.hovered = false;
+        this.draw();
+      });
+    }
     this.on('pointerover', () => {
       this.hovered = true;
       this.draw();
@@ -355,7 +397,7 @@ class Tooltip {
     const b = this.node.getLocalBounds();
     let x = this.pos.x + 8;
     let y = this.pos.y + 10;
-    if (x + b.width > W - 2) x = this.pos.x - b.width - 4;
+    if (x + b.width > SW - 2) x = this.pos.x - b.width - 4;
     if (y + b.height > H - 2) y = this.pos.y - b.height - 4;
     this.node.x = Math.max(1, Math.round(x));
     this.node.y = Math.max(1, Math.round(y));
@@ -383,7 +425,7 @@ export function clearChildren(c: Container): void {
 
 /** Simple blocking dim layer for modals. */
 export function dimmer(alpha = 0.6, onClick?: () => void): Graphics {
-  const g = new Graphics().rect(0, 0, W, H).fill({ color: 0x000000, alpha });
+  const g = new Graphics().rect(-OX, 0, SW, H).fill({ color: 0x000000, alpha });
   g.eventMode = 'static';
   if (onClick) g.on('pointertap', onClick);
   return g;

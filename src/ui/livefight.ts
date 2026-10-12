@@ -9,6 +9,7 @@
  * Esc / MENU pauses: resume, help, autopilot (the AI fights for you), turn hands-on fights off.
  */
 import { Container, Graphics, type Ticker } from 'pixi.js';
+import { hint } from './hints';
 import type { Game } from './app';
 import type { Bout, CornerReport, Fighter, FightEvent, FightResult, GameState, Skills, TickerLine } from '../core/types';
 import { content } from '../core/content';
@@ -20,16 +21,19 @@ import { boothOpen, commentate, butlerIntro, butlerDecision, butlerFinish, weigh
 import { boutLabel } from '../sim/events';
 import { rankLabel } from '../sim/rankings';
 import { PAL } from '../art/palette';
-import { W, H, text, button, box } from './kit';
+import { W, H, SW, OX, text, button, box } from './kit';
+import type { PixelText, TextOpts } from './text';
 import { ArenaView, AH, AW, type CanvasInfo } from './arena';
 import { input } from '../core/input';
 import { isTouchDevice } from '../core/platform';
 import { FightInput, sampleFight, rumbleForHit, type FightIntent, type KeyboardShare } from '../core/fightinput';
-import { TouchFightPad } from './fightpad';
+import { TouchFightPad, fightPadLayout } from './fightpad';
+import { setPinchZoom } from './touch';
 import { setPadUiMode } from './controller';
 import { fighterPortrait } from './sprites';
 import { sfx } from '../audio/sfx';
-import { LiveFight, LiveAI, GPOS_NAME, type LiveEvent, type Side } from '../sim/live';
+import { LiveFight, LiveAI, GPOS_NAME, type LiveEvent, type LiveRules, type Side } from '../sim/live';
+import type { Look2 } from './rig';
 import { openHelp } from './help';
 import { liveTutorial } from './tutorial';
 import type { GamePlan } from '../sim/fight';
@@ -58,6 +62,9 @@ export interface LiveFightOpts {
   ev?: FightEvent;
   /** local 2-player versus: each player's controller (-1 = none) and share of the keyboard */
   versus?: { p1: { pad?: number; kb: KeyboardShare }; p2: { pad?: number; kb: KeyboardShare } };
+  /** special rules for this fight (the story's boss fights), and a referee who looks like himself */
+  rules?: LiveRules;
+  refLook?: Look2;
   done: (r: FightResult) => void;
 }
 
@@ -76,6 +83,8 @@ const TIE_NAME = { collar: 'COLLAR TIE', under: 'DOUBLE UNDERHOOKS', plum: 'THAI
 
 export function openLiveFight(g: Game, o: LiveFightOpts): void {
   const L = new LiveFight(o.A, o.B, o.skills[0], o.skills[1], o.bout.rounds, o.seed);
+  // knockdown rules follow the promotion: bareknuckle and amateur smokers give a count, MMA doesn't
+  L.rules = { koRules: o.bare || o.canvas?.style === 'bk' || o.canvas?.style === 'local' ? 'count' : 'mma', ...(o.rules ? { referee: o.referee, ...o.rules } : {}) };
   (window as unknown as { __live?: LiveFight }).__live = L; // debug / automated testing hook
   const P = o.player;
   const O = (1 - P) as Side;
@@ -93,13 +102,19 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   let lastLine = '';
   let lineT = 0;
 
+  // the fight spans the whole screen: on a wide phone the arena sits in the middle and the
+  // HUD panel (and the thumbs) get the full width. FW = screen width, AX = the arena's x.
+  const FW = SW;
+  const AX = Math.floor((FW - AW) / 2);
   const root = new Container();
-  root.addChild(new Graphics().rect(0, 0, W, H).fill(0x0c0a10));
-  const arena = new ArenaView(o.A, o.B, o.bout.rounds, { event: o.event, eventKey: o.bout.id, sponsors: o.sponsors, canvas: o.canvas, bare: o.bare });
+  root.x = -OX;
+  root.addChild(new Graphics().rect(0, 0, FW, H).fill(0x0c0a10));
+  const arena = new ArenaView(o.A, o.B, o.bout.rounds, { event: o.event, eventKey: o.bout.id, sponsors: o.sponsors, canvas: o.canvas, bare: o.bare, refLook: o.refLook });
   (window as unknown as { __liveArena?: ArenaView }).__liveArena = arena;
   arena.manual = [L.F[0].x, L.F[1].x];
   arena.startFight();
   arena.manualRound();
+  arena.x = AX;
   root.addChild(arena);
   arena.setMode(g.settings.fightCam ?? 'side');
   /** C / View: side -> TV -> top-down */
@@ -135,15 +150,17 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       stage = 'tape';
       arena.startIntro();
       tape = new TaleOfTape(o.A, o.B, AW, boutLabel(S, o.bout), weighInWeight(o.A, o.bout, 1), weighInWeight(o.B, o.bout, 2), [rankLabel(S, o.A.id), rankLabel(S, o.B.id)]);
+      tape.x = AX;
       root.addChild(tape);
       sfx('crowd');
     }
     if (g.settings.bleets !== false) {
       feed = new BleetFeed();
-      feed.position.set(AW - 146, 36);
+      feed.position.set(AX + AW - 146, 36);
       root.addChild(feed);
     }
   }
+  subtitle.x = AX;
   root.addChild(subtitle);
   const say = (line: AnnounceLine | null) => {
     subtitle.removeChildren().forEach((c) => c.destroy({ children: true }));
@@ -194,28 +211,67 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   root.addChild(hudG);
   const dyn = new Container(); // redrawn text
   root.addChild(dyn);
+  // phones / tablets: the touch pad takes the panel's left and right thirds (the thumbs),
+  // so both fighters' readouts squeeze into the middle (TX0..TX1) and PAUSE / CAM go on screen
+  const touchUi = isTouchDevice() && !o.versus;
+  const TX0 = 124;
+  const TX1 = FW - 154;
   let pad: TouchFightPad | null = null;
-  if (isTouchDevice()) {
-    pad = new TouchFightPad();
+  let skipCatch: Container | null = null;
+  let skipBtn: Container | null = null;
+  if (touchUi) {
+    pad = new TouchFightPad(fightPadLayout(FW));
     root.addChild(pad);
   }
 
   // static HUD: portraits and names
   const y0 = AH + 2;
-  hud.addChild(box(W, H - AH, PAL.ink, PAL.shadow));
+  hud.addChild(box(FW, H - AH, PAL.ink, PAL.shadow));
   hud.position.set(0, 0);
   hud.children[0].position.set(0, AH);
-  const pA = fighterPortrait(o.A, 32, 'plain');
-  pA.position.set(4, y0 + 4);
-  const pB = fighterPortrait(o.B, 32, 'plain');
-  pB.position.set(W - 36, y0 + 4);
-  hud.addChild(pA, pB);
   const tag = (i: Side) => (o.versus ? (i === P ? 'P1: ' : 'P2: ') : i === P ? 'YOU: ' : '');
-  hud.addChild(text(tag(0) + o.A.last.toUpperCase(), 40, y0 + 3, { small: true, color: P === 0 || o.versus ? PAL.gold : PAL.bone }));
-  hud.addChild(text(tag(1) + o.B.last.toUpperCase(), W - 140, y0 + 3, { small: true, color: P === 1 || o.versus ? PAL.gold : PAL.bone, width: 100, align: 'right' }));
+  if (touchUi) {
+    const cw = (TX1 - TX0) / 2;
+    hud.addChild(text(tag(0) + o.A.last.toUpperCase(), TX0, y0 + 3, { small: true, color: P === 0 ? PAL.gold : PAL.bone, width: cw - 4, maxLines: 1 }));
+    hud.addChild(text(tag(1) + o.B.last.toUpperCase(), TX0 + cw + 4, y0 + 3, { small: true, color: P === 1 ? PAL.gold : PAL.bone, width: cw - 4, align: 'right', maxLines: 1 }));
+  } else {
+    const pA = fighterPortrait(o.A, 32, 'plain');
+    pA.position.set(4, y0 + 4);
+    const pB = fighterPortrait(o.B, 32, 'plain');
+    pB.position.set(FW - 36, y0 + 4);
+    hud.addChild(pA, pB);
+    hud.addChild(text(tag(0) + o.A.last.toUpperCase(), 40, y0 + 3, { small: true, color: P === 0 || o.versus ? PAL.gold : PAL.bone }));
+    hud.addChild(text(tag(1) + o.B.last.toUpperCase(), FW - 140, y0 + 3, { small: true, color: P === 1 || o.versus ? PAL.gold : PAL.bone, width: 100, align: 'right' }));
+  }
+
+  if (touchUi) {
+    // no Esc / C on a phone: PAUSE and CAM sit in the panel's top corners, above the thumbs
+    root.addChild(button('CAM', 4, AH + 4, 40, 16, () => {
+      if (!paused && !resultShown) cycleCam();
+    }, { fill: PAL.shadow }));
+    root.addChild(button('PAUSE', FW - 50, AH + 4, 46, 16, () => {
+      if (!paused && !resultShown && g.modals[g.modals.length - 1] === wrap) pause();
+    }, { fill: PAL.shadow }));
+    // tap the cage to skip the tale of the tape / Juiced Butler (a catcher over the tape card, gone once the fight starts)
+    if ((stage as string) !== 'fight') {
+      skipCatch = new Container();
+      skipCatch.eventMode = 'static';
+      skipCatch.hitArea = { contains: (x: number, y: number) => x >= AX && y >= 0 && x < AX + AW && y < AH };
+      skipCatch.on('pointertap', () => {
+        if ((stage === 'tape' || stage === 'intro') && !paused) endIntro();
+      });
+      root.addChildAt(skipCatch, root.getChildIndex(pad!));
+      // and a button that says so, in the middle of the panel
+      skipBtn = button('SKIP INTROS >>', Math.floor(FW / 2 - 50), H - 26, 100, 20, () => {
+        if ((stage === 'tape' || stage === 'intro') && !paused) endIntro();
+      }, { fill: PAL.blood, border: PAL.gold });
+      root.addChild(skipBtn);
+    }
+  }
 
   const wrap = g.modal(root, { dim: 0 });
   g.inLiveFight = true;
+  setPinchZoom(false);
   // first hands-on fight: the coach's three cards (the fight waits for them)
   setTimeout(() => liveTutorial(g), 50);
   setPadUiMode('game');
@@ -252,6 +308,20 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     // legs
     hudG.rect(x + 3, y + 17, 4, 9).fill(col(f.legs)).rect(x + 9, y + 17, 4, 9).fill(col(f.legs));
   };
+  // The HUD is rebuilt every frame: a text is reused while its words, style and place stay the same.
+  const hudPool = new Map<string, PixelText>();
+  let hudUsed = new Set<string>();
+  const hudText = (s: string, x: number, y: number, opts: TextOpts = {}): PixelText => {
+    let key = `${s}\u0001${x}|${y}|${opts.small ? 1 : 0}|${opts.color ?? ''}|${opts.width ?? ''}|${opts.align ?? ''}|${opts.maxLines ?? ''}|${opts.scale ?? ''}|${opts.shadow ?? ''}`;
+    while (hudUsed.has(key)) key += '+';
+    let t = hudPool.get(key);
+    if (!t || t.destroyed) {
+      t = text(s, x, y, opts);
+      hudPool.set(key, t);
+    } else t.y = Math.round(y);
+    hudUsed.add(key);
+    return t;
+  };
   const heart = (x: number, y: number, i: Side) => {
     const f = L.F[i];
     const beat = (performance.now() / 1000) * (f.bpm / 60);
@@ -259,13 +329,13 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     const c = f.bpm > 165 ? PAL.blood : f.bpm > 135 ? PAL.ember : 0xd04050;
     const s = pulse ? 1 : 0;
     hudG.rect(x + 1 - s, y, 2 + s, 2).fill(c).rect(x + 4, y, 2 + s, 2).fill(c).rect(x - s, y + 1, 7 + s * 2, 2).fill(c).rect(x + 1, y + 3, 5, 1).fill(c).rect(x + 2, y + 4, 3, 1).fill(c).rect(x + 3, y + 5, 1, 1).fill(c);
-    dyn.addChild(text(`${Math.round(f.bpm)} BPM`, x + 10, y - 1, { small: true, color: f.bpm > 165 ? PAL.blood : PAL.bone }));
+    dyn.addChild(hudText(`${Math.round(f.bpm)} BPM`, x + 10, y - 1, { small: true, color: f.bpm > 165 ? PAL.blood : PAL.bone }));
   };
   const bar = (x: number, y: number, w: number, v: number, c: number, label: string, right = false) => {
     hudG.rect(x, y, w, 4).fill(PAL.night);
     const n = Math.round(w * Math.max(0, Math.min(1, v)));
     hudG.rect(right ? x + w - n : x, y, n, 4).fill(c);
-    dyn.addChild(text(label, right ? x - 26 : x + w + 3, y - 2, { small: true, color: PAL.ash }));
+    dyn.addChild(hudText(label, right ? x - 26 : x + w + 3, y - 2, { small: true, color: PAL.ash }));
   };
 
   /** Where the fight is, in words: no button prompts (HELP has those), just the state. */
@@ -286,46 +356,61 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
 
   const drawHud = () => {
     hudG.clear();
-    dyn.removeChildren().forEach((c) => c.destroy({ children: true }));
-    // left / right panels
+    dyn.removeChildren();
+    hudUsed = new Set();
+    // left / right panels (touch: two columns in the middle, the arena's top bar has the clock)
+    const cx0 = touchUi ? TX0 : 112; // the centre column the text below lives in
+    const cx1 = touchUi ? TX1 : FW - 112;
     for (const i of [0, 1] as Side[]) {
       const left = i === 0;
-      const x = left ? 40 : W - 140;
-      bodyOutline(left ? 12 : W - 28, y0 + 42, i);
+      if (touchUi) {
+        bodyOutline(left ? TX0 : TX1 - 16, y0 + 12, i);
+        const x = left ? TX0 + 20 : TX1 - 20 - 46;
+        heart(x, y0 + 12, i);
+        bar(x, y0 + 22, 46, L.F[i].gas / 100, PAL.steel, 'GAS', !left);
+        bar(x, y0 + 30, 46, L.F[i].hp / 100, L.F[i].hp > 40 ? PAL.moss : PAL.blood, 'HEAD', !left);
+        continue;
+      }
+      const x = left ? 40 : FW - 140;
+      bodyOutline(left ? 12 : FW - 28, y0 + 42, i);
       heart(x, y0 + 14, i);
       bar(left ? x : x + 26, y0 + 25, 50, L.F[i].gas / 100, PAL.steel, 'GAS', !left);
       bar(left ? x : x + 26, y0 + 31, 50, L.F[i].hp / 100, L.F[i].hp > 40 ? PAL.moss : PAL.blood, 'HEAD', !left);
     }
     // centre: clock + control prompts
-    dyn.addChild(text(`ROUND ${L.round}/${L.rounds}   ${L.clockText()}`, 0, y0 + 3, { width: W, align: 'center', color: PAL.gold }));
-    if (autopilot) dyn.addChild(text('AUTOPILOT (ESC to take over)', 0, y0 + 14, { width: W, align: 'center', small: true, color: PAL.ember }));
+    if (!touchUi) dyn.addChild(hudText(`ROUND ${L.round}/${L.rounds}   ${L.clockText()}`, 0, y0 + 3, { width: FW, align: 'center', color: PAL.gold }));
+    const sy = touchUi ? y0 + 40 : y0 + 14;
+    if (autopilot) dyn.addChild(hudText(touchUi ? 'AUTOPILOT (PAUSE to take over)' : hint('AUTOPILOT (ESC to take over)', 'AUTOPILOT ({Menu} to take over)'), cx0, sy, { width: cx1 - cx0, align: 'center', small: true, color: PAL.ember }));
     const sit = situation();
     if (sit) {
-      dyn.addChild(text(sit.text, 150, y0 + (autopilot ? 25 : 16), { width: W - 300, align: 'center', small: true, color: sit.color, maxLines: 2 }));
+      dyn.addChild(hudText(sit.text, touchUi ? cx0 : 150, sy + (autopilot ? 11 : touchUi ? 0 : 2), { width: touchUi ? cx1 - cx0 : FW - 300, align: 'center', small: true, color: sit.color, maxLines: 2 }));
       // progress on the mat: your passing / escape work
       if (L.pos === 'ground' && !L.sub) {
         const v = Math.max(0, Math.min(1, L.top === P ? L.gprog : L.standProg));
-        hudG.rect(W / 2 - 40, y0 + 38, 80, 3).fill(PAL.night).rect(W / 2 - 40, y0 + 38, Math.round(80 * v), 3).fill(PAL.gold);
+        const py = touchUi ? sy + (autopilot ? 31 : 20) : y0 + 38;
+        hudG.rect(FW / 2 - 40, py, 80, 3).fill(PAL.night).rect(FW / 2 - 40, py, Math.round(80 * v), 3).fill(PAL.gold);
       }
     }
     // the booth and the play-by-play, newest at the bottom
-    if (stage === 'tape' || stage === 'intro') dyn.addChild(text('ENTER / A: SKIP THE INTROS', 0, H - 11, { small: true, color: PAL.grey, width: W, align: 'center' }));
+    if (stage === 'tape' || stage === 'intro') {
+      if (!touchUi) dyn.addChild(hudText(hint('ENTER / A: SKIP THE INTROS', '{A}: SKIP THE INTROS'), 0, H - 11, { small: true, color: PAL.grey, width: FW, align: 'center' }));
+    }
     else {
       const speakers = content().commentary.speakers;
       const rows: { t: string; c: number }[] = booth.slice(-3).map((l) => ({ t: `{#${speakers[l.speaker!]?.color ?? 'c4a04a'}}${speakers[l.speaker!]?.short ?? l.speaker!.toUpperCase()}:{/} ${l.text}`, c: PAL.fog }));
       let yy = H - 12;
       if (lineT > 0) {
-        dyn.addChild(text(lastLine, 112, yy, { small: true, color: PAL.gold, width: W - 224, align: 'center', maxLines: 1 }));
-        yy -= 10;
-      }
-      for (const r of rows.reverse()) {
-        const t = text(r.t, 112, 0, { small: true, color: r.c, width: W - 224, maxLines: 3 });
+        const t = hudText(lastLine, cx0, 0, { small: true, color: PAL.gold, width: cx1 - cx0, align: 'center', maxLines: touchUi ? 2 : 1 });
         yy -= t.textHeight - 6;
         t.y = yy;
-        if (yy < y0 + 44) {
-          t.destroy();
-          break;
-        }
+        dyn.addChild(t);
+        yy -= 10;
+      }
+      for (const r of (touchUi ? rows.slice(-2) : rows).reverse()) {
+        const t = hudText(r.t, cx0, 0, { small: true, color: r.c, width: cx1 - cx0, maxLines: 3 });
+        yy -= t.textHeight - 6;
+        t.y = yy;
+        if (yy < y0 + (touchUi ? 52 : 44)) break;
         dyn.addChild(t);
         yy -= 10;
       }
@@ -333,16 +418,25 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     // overlays: the count, submission struggle
     for (const i of [0, 1] as Side[]) {
       if (L.F[i].down <= 0) continue;
-      dyn.addChild(text(`${L.countOf(i)}`, 0, 40, { width: W, align: 'center', color: PAL.bone, scale: 3, shadow: PAL.ink }));
+      const mma = (L.rules.koRules ?? 'mma') === 'mma';
+      // MMA: no count. He's down: jump on him (any attack) or let him up. Bareknuckle and smokers count.
+      if (!mma) dyn.addChild(hudText(`${L.countOf(i)}`, 0, 40, { width: FW, align: 'center', color: PAL.bone, scale: 3, shadow: PAL.ink }));
+      else if (i !== P && !autopilot) dyn.addChild(hudText('HE\'S DOWN! JUMP ON HIM!', 0, 48, { width: FW, align: 'center', color: PAL.gold, scale: 2, shadow: PAL.ink }));
       if (i === P && !autopilot) {
-        hudG.rect(W / 2 - 60, 78, 120, 6).fill(PAL.night).rect(W / 2 - 59, 79, Math.round(118 * Math.min(1, L.F[i].getup)), 4).fill(PAL.gold);
-        dyn.addChild(text('GET UP!', 0, 88, { width: W, align: 'center', small: true, color: PAL.gold, shadow: PAL.ink }));
+        hudG.rect(FW / 2 - 60, 78, 120, 6).fill(PAL.night).rect(FW / 2 - 59, 79, Math.round(118 * Math.min(1, L.F[i].getup)), 4).fill(PAL.gold);
+        dyn.addChild(hudText('GET UP!', 0, 88, { width: FW, align: 'center', small: true, color: PAL.gold, shadow: PAL.ink }));
       }
     }
     if (L.sub) {
       const v = Math.max(0, Math.min(1, L.sub.prog));
-      hudG.rect(W / 2 - 80, 30, 160, 8).fill(PAL.night).rect(W / 2 - 79, 31, Math.round(158 * v), 6).fill(L.sub.atk === P ? PAL.moss : PAL.blood);
-      dyn.addChild(text(L.sub.name.toUpperCase(), 0, 20, { width: W, align: 'center', small: true, color: PAL.gold, shadow: PAL.ink }));
+      hudG.rect(FW / 2 - 80, 30, 160, 8).fill(PAL.night).rect(FW / 2 - 79, 31, Math.round(158 * v), 6).fill(L.sub.atk === P ? PAL.moss : PAL.blood);
+      dyn.addChild(hudText(L.sub.name.toUpperCase(), 0, 20, { width: FW, align: 'center', small: true, color: PAL.gold, shadow: PAL.ink }));
+    }
+    // texts that left the HUD this frame
+    for (const [k, t] of hudPool) {
+      if (hudUsed.has(k)) continue;
+      t.destroy();
+      hudPool.delete(k);
     }
   };
 
@@ -375,6 +469,10 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         break;
       }
       case 'miss':
+        if (e.name === 'STAND AND BANG') {
+          if (a === P) arena.showCallout('STAND AND BANG ONLY!');
+          break;
+        }
         sfx('whoosh');
         break;
       case 'block':
@@ -393,6 +491,11 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       case 'feint':
         arena.play(a, 'jab', 0.1, 3);
         break;
+      case 'taunt':
+        arena.play(a, 'taunt', 1.0);
+        if (a === P || Math.random() < 0.5) arena.showCallout(arena.tauntCall(a));
+        sfx('crowd');
+        break;
       case 'rocked':
         arena.play(a, 'rocked', 0.9);
         arena.showCallout('ROCKED!');
@@ -406,6 +509,14 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         sfx('slam');
         sfx('roar');
         if (d === P) rumbleForHit(input, 1);
+        break;
+      case 'pounce':
+        arena.floor(d, 'up');
+        arena.takedown(a, 'shoot');
+        arena.showCallout(L.gpos === 'mount' ? 'MOUNT! FINISH IT!' : 'SIDE CONTROL! FINISH IT!');
+        sfx('slam');
+        sfx('roar');
+        if (d === P) rumbleForHit(input, 0.8);
         break;
       case 'getup':
         arena.floor(a, 'up');
@@ -586,7 +697,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     const fr = new Container();
     const bw = 300;
     const bh = r.method === 'DEC' || r.method === 'DRAW' ? 92 : 70;
-    const bx = (W - bw) / 2;
+    const bx = (FW - bw) / 2;
     const by = 40;
     fr.addChild(box(bw, bh, PAL.night, won ? PAL.gold : PAL.slate, { bevel: true })).position.set(bx, by);
     fr.addChild(text(won ? 'YOU WIN' : lost ? 'YOU LOSE' : 'DRAW', bx, by + 8, { width: bw, align: 'center', color: won ? PAL.gold : lost ? PAL.blood : PAL.bone, scale: 2 }));
@@ -594,6 +705,12 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     if (r.method === 'DEC' || r.method === 'DRAW') fr.addChild(text(r.scores.map((s, i) => `${r.judges[i]} ${s[0]}-${s[1]}`).join('   '), bx + 8, by + 42, { width: bw - 16, align: 'center', small: true, color: PAL.ash, maxLines: 2 }));
     fr.addChild(text(`Strikes ${r.stats.strikes[0]}-${r.stats.strikes[1]}   Takedowns ${r.stats.takedowns[0]}-${r.stats.takedowns[1]}   Knockdowns ${r.stats.knockdowns[0]}-${r.stats.knockdowns[1]}`, bx + 8, by + bh - 34, { width: bw - 16, align: 'center', small: true, color: PAL.ash }));
     fr.addChild(button('CONTINUE', bx + bw / 2 - 40, by + bh - 20, 80, 14, () => close(r), { small: true, fill: PAL.moss }));
+    if (touchUi) {
+      // phones: bigger, over the cage (the HUD panel stays visible under it)
+      fr.pivot.set(bx + bw / 2, by + bh / 2);
+      fr.scale.set(1.4);
+      fr.position.set(Math.round(FW / 2), Math.round(Math.max(by + bh * 0.7, 6 + bh * 0.7)));
+    }
     root.addChild(fr);
     setPadUiMode('cursor');
   };
@@ -618,6 +735,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       const intents: [FightIntent[], FightIntent[]] = P === 0 ? [a.intents, b.intents] : [b.intents, a.intents];
       const moves: [number, number] = P === 0 ? [a.move, b.move] : [b.move, a.move];
       L.update(1 / 30, intents, moves);
+      auto.noteEvents(L);
+      ai.noteEvents(L);
       L.events.length = 0;
       steps++;
     }
@@ -691,6 +810,12 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   const tick = (t: Ticker) => {
     if (closed) return;
     const dt = Math.min(0.05, t.deltaMS / 1000);
+    if (skipCatch && stage !== 'tape' && stage !== 'intro') {
+      skipCatch.destroy();
+      skipCatch = null;
+      skipBtn?.destroy({ children: true });
+      skipBtn = null;
+    }
     if (!paused && !resultShown && (input.buttonPressed('Menu') || input.buttonPressed('Start' as never)) && g.modals[g.modals.length - 1] === wrap) pause();
     if (!paused && input.buttonPressed('View') && g.modals[g.modals.length - 1] === wrap) cycleCam();
     // a modal on top (corner, pause, controls): the fight waits
@@ -769,6 +894,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         const logLen = L.log.length;
         L.update(dt, intents, moves);
         for (const e of L.events) handle(e);
+        ai.noteEvents(L); // he learns what's landing on him
         L.events.length = 0;
         if (L.log.length > logLen) {
           for (const ln of L.log.slice(logLen)) react(ln);
@@ -818,11 +944,17 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         }
       }
     }
+    // the touch pad follows the fight (KNEE / TIE in the clinch, MASH in a submission, GET UP on the canvas)
+    if (pad && stage === 'fight' && L.phase === 'fight') {
+      const c = L.context(P);
+      pad.setMode(c.knockedDown ? 'down' : c.submission ? 'sub' : c.grounded ? 'ground' : c.clinch ? 'clinch' : 'stand');
+    }
     // mirror the engine into the arena
     const mid = (L.F[0].x + L.F[1].x) / 2;
     if (stage === 'fight') arena.manual = L.pos === 'clinch' ? [mid - 6, mid + 6] : [L.F[0].x, L.F[1].x];
     arena.clinchTie = { dom: L.clinch.dom, tie: L.clinch.tie, fence: L.clinch.fence };
     arena.hp = [Math.max(0, L.F[0].hp), Math.max(0, L.F[1].hp)];
+    arena.vitals = [{ gas: L.F[0].gas, cut: L.F[0].cut }, { gas: L.F[1].gas, cut: L.F[1].cut }];
     arena.round = L.round;
     arena.sec = 300 - (L.clock / 75) * 300;
     if (stage === 'fight' && (L.phase === 'fight' || L.phase === 'over')) arena.setMat(L.pos === 'ground' ? (L.top === 0 ? 'atop' : 'btop') : L.pos, L.gpos, L.sub);
@@ -833,6 +965,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   g.app.ticker.add(tick);
   wrap.once('destroyed', () => {
     g.inLiveFight = false;
+    setPinchZoom(true);
     g.app.ticker.remove(tick);
     popKeys();
     setPadUiMode('cursor');

@@ -3,6 +3,8 @@
  * sim each bout) -> post-fight interviews & fight-night chaos -> performance
  * bonuses -> post-fight presser -> ledger.
  */
+import { isTouchDevice } from '../../core/platform';
+import { DANIEL_REF_LOOK } from '../../sim/cast';
 import type { FightOpts } from '../../sim/fight';
 import { Container, Graphics } from 'pixi.js';
 import { Scene, Game, fullBg } from '../app';
@@ -368,7 +370,7 @@ export class FightNightScene extends Scene {
     const A = s.fighters[p.bout.a];
     const B = s.fighters[p.bout.b];
     const champ = (id: string) => Object.values(s.belts).some((bt) => bt.holder === id);
-    this.arena = new ArenaView(A, B, p.bout.rounds, { event: this.ev.name, eventKey: this.ev.id, champs: [champ(A.id), champ(B.id)], sponsors: eventSponsors(s, this.ev), canvas: eventCanvas(s, this.ev) });
+    this.arena = new ArenaView(A, B, p.bout.rounds, { event: this.ev.name, eventKey: this.ev.id, champs: [champ(A.id), champ(B.id)], sponsors: eventSponsors(s, this.ev), canvas: eventCanvas(s, this.ev), refLook: /Stinkovich/.test(p.bout.result?.referee ?? '') ? DANIEL_REF_LOOK : undefined });
     this.arena.position.set(0, 0);
     r.addChild(this.arena);
     this.arena.setMode(this.g.settings.fightCam ?? 'side');
@@ -473,19 +475,28 @@ export class FightNightScene extends Scene {
     if (!c || c.destroyed || !p) return;
     c.removeChildren().forEach((ch) => ch.destroy({ children: true }));
     const s = this.g.state!;
-    c.addChild(button('SPEED x' + this.g.settings.fightSpeed, 4, H - 16, 50, 13, () => {
+    // phones: wider, taller buttons with the big face; the bout label shrinks to fit
+    const t = isTouchDevice();
+    const by = t ? H - 17 : H - 16;
+    const bh = t ? 16 : 13;
+    const ws = t ? [62, 50, 76, 96] : [50, 36, 62, 56];
+    const xs = [4];
+    for (let i = 1; i < ws.length; i++) xs.push(xs[i - 1] + ws[i - 1] + 3);
+    const o = t ? {} : { small: true };
+    c.addChild(button('SPEED x' + this.g.settings.fightSpeed, xs[0], by, ws[0], bh, () => {
       this.g.settings.fightSpeed = (this.g.settings.fightSpeed % 4) + 1;
       this.g.applySettings();
       this.drawControls();
-    }, { small: true }));
-    c.addChild(button(p.paused ? 'PLAY' : 'PAUSE', 57, H - 16, 36, 13, () => {
+    }, o));
+    c.addChild(button(p.paused ? 'PLAY' : 'PAUSE', xs[1], by, ws[1], bh, () => {
       p.paused = !p.paused;
       this.drawControls();
-    }, { small: true }));
-    c.addChild(button('CAM: ' + CAM_NAMES[this.g.settings.fightCam ?? 'side'], 96, H - 16, 62, 13, () => this.cycleCam(), { small: true, fill: PAL.steel }));
-    if (p.phase === 'intro') c.addChild(button('SKIP INTRO', 161, H - 16, 56, 13, () => this.endIntro(), { small: true, fill: PAL.plum }));
-    else c.addChild(button(p.phase === 'ceremony' ? 'SKIP' : 'SKIP TO END', 161, H - 16, 56, 13, () => this.skipToEnd(), { small: true, fill: PAL.blood }));
-    c.addChild(text(boutLabel(s, p.bout).toUpperCase(), 222, H - 12, { small: true, color: PAL.ash, width: W - 226, maxLines: 1 }));
+    }, o));
+    c.addChild(button('CAM: ' + CAM_NAMES[this.g.settings.fightCam ?? 'side'], xs[2], by, ws[2], bh, () => this.cycleCam(), { ...o, fill: PAL.steel }));
+    if (p.phase === 'intro') c.addChild(button(t ? 'SKIP INTRO >>' : 'SKIP INTRO', xs[3], by, ws[3], bh, () => this.endIntro(), { ...o, fill: PAL.plum, border: t ? PAL.gold : undefined }));
+    else c.addChild(button(p.phase === 'ceremony' ? 'SKIP' : 'SKIP TO END', xs[3], by, ws[3], bh, () => this.skipToEnd(), { ...o, fill: PAL.blood }));
+    const lx = xs[3] + ws[3] + 5;
+    c.addChild(text(boutLabel(s, p.bout).toUpperCase(), lx, H - 12, { small: true, color: PAL.ash, width: W - lx - 4, maxLines: 1 }));
   }
 
   private cycleCam(): void {

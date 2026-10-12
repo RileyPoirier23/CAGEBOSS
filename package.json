@@ -1,12 +1,13 @@
 {
   "name": "cage-boss",
   "private": true,
-  "version": "1.7.0",
+  "version": "2.1.0",
   "type": "module",
   "description": "CAGE BOSS - a satirical MMA-promoter management sim",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:web": "tsc --noEmit && vite build --base=/play/cageboss/ --outDir dist-web --emptyOutDir",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

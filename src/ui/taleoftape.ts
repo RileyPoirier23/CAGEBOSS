@@ -22,7 +22,7 @@ export class TaleOfTape extends Container {
     const x0 = Math.round((aw - w) / 2);
     const y0 = 16;
     const g = new Graphics()
-      .rect(x0, y0, w, 112).fill({ color: 0x0a0a10, alpha: 0.92 })
+      .rect(x0, y0, w, 112).fill({ color: 0x0a0a10, alpha: 0.98 })
       .rect(x0, y0, w, 12).fill(0xa01818)
       .rect(x0, y0 + 12, w, 1).fill(PAL.gold)
       .rect(x0 + 2, y0 + 14, 3, 96).fill(0x9e2a2a)
@@ -59,7 +59,6 @@ export class TaleOfTape extends Container {
       this.addChild(text(label, cx, y + 1, { small: true, color: PAL.gold, width: cw, align: 'center' }));
       this.addChild(text(b, cx + cw / 2 + 16, y + 1, { small: true, color: PAL.bone, width: cw / 2 - 18, align: 'right', maxLines: 1 }));
     });
-    this.addChild(text(divisionName(A.division).toUpperCase(), cx, y0 + 104, { small: true, color: PAL.ash, width: cw, align: 'center' }));
     this.alpha = 0;
   }
 
