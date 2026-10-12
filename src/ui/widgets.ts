@@ -16,6 +16,8 @@ export interface WindowOpts {
   dim?: number;
   x?: number;
   y?: number;
+  /** keep it at 1:1 on phones (by default a phone scales windows up to fill the screen) */
+  noScale?: boolean;
 }
 
 /** A centred modal window; returns the body container (local coords inside frame). */
@@ -34,7 +36,8 @@ export function openWindow(g: Game, title: string, w: number, h: number, opts: W
   body.y = 14;
   frame.addChild(body);
   let closed = false;
-  const wrap = g.modal(frame, { dim: opts.dim });
+  // phones scale centred windows up to fill the screen (Game.modal); placed ones stay put
+  const wrap = g.modal(frame, { dim: opts.dim, fit: opts.x === undefined && opts.y === undefined && !opts.noScale });
   const close = () => {
     if (closed) return;
     closed = true;
@@ -152,7 +155,8 @@ export function checkbox(x: number, y: number, label: string, value: boolean, on
 
 /** DOM text input overlaid on the canvas at game coordinates. */
 export function domInput(
-  g: Game, x: number, y: number, w: number, h: number, value: string, opts: { multiline?: boolean; maxLength?: number; onChange?: (v: string) => void } = {},
+  g: Game, x: number, y: number, w: number, h: number, value: string,
+  opts: { multiline?: boolean; maxLength?: number; onChange?: (v: string) => void; /** x, y are in this container's coordinates (a window body) */ in?: Container } = {},
 ): { el: HTMLInputElement | HTMLTextAreaElement; remove: () => void; value: () => string } {
   const overlay = document.getElementById('dom-overlay')!;
   const el = document.createElement(opts.multiline ? 'textarea' : 'input') as HTMLInputElement | HTMLTextAreaElement;
@@ -164,11 +168,20 @@ export function domInput(
     const s = r.height / H;
     overlay.style.left = r.left + 'px';
     overlay.style.top = r.top + 'px';
-    el.style.left = (x + OX) * s + 'px';
-    el.style.top = y * s + 'px';
-    el.style.width = w * s + 'px';
-    el.style.height = h * s + 'px';
-    el.style.fontSize = Math.max(10, Math.floor(7 * s)) + 'px';
+    let gx = x + OX;
+    let gy = y;
+    let k = 1;
+    if (opts.in && !opts.in.destroyed) {
+      const p = opts.in.toGlobal({ x, y });
+      gx = p.x;
+      gy = p.y;
+      k = opts.in.worldTransform.a;
+    }
+    el.style.left = gx * s + 'px';
+    el.style.top = gy * s + 'px';
+    el.style.width = w * k * s + 'px';
+    el.style.height = h * k * s + 'px';
+    el.style.fontSize = Math.max(10, Math.floor(7 * k * s)) + 'px';
   };
   place();
   const onResize = () => place();
@@ -180,6 +193,7 @@ export function domInput(
   const owner: Container | undefined = g.modals[g.modals.length - 1] ?? g.scene?.root;
   const ownerIsModal = g.modals.length > 0;
   const sync = () => {
+    if (opts.in) place(); // its window may be scaled / moved after we were made (phones)
     const covered = ownerIsModal ? g.modals[g.modals.length - 1] !== owner : g.modals.length > 0;
     el.style.display = covered ? 'none' : '';
   };

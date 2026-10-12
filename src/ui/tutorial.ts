@@ -9,6 +9,7 @@ import { Container, Graphics } from 'pixi.js';
 import type { Game } from './app';
 import { PAL } from '../art/palette';
 import { W, H, SW, OX, text, box, button } from './kit';
+import { isTouchDevice } from '../core/platform';
 import { npcPortrait } from './sprites';
 import { sfx } from '../audio/sfx';
 
@@ -126,9 +127,22 @@ export function liveTutorial(g: Game): boolean {
   return true;
 }
 
+/** The hub's phone layout (FMHubScene.buildPhone) puts things elsewhere: point at those. Screen x -> design x is -OX. */
+function fmhubPhone(): (typeof STEPS)[string] {
+  const [you, week, offers, feed, end] = STEPS.fmhub;
+  const rw = SW - 160;
+  return [
+    { ...you, rect: [4 - OX, 22, 146, 226] },
+    { ...week, text: 'Three actions a week (the gold pips): TRAIN, SPAR, CUT WEIGHT, WORK A SHIFT, REST, GO OUT or work BLEETER. PAPERWORK, CLINIC, STAFF and RANKINGS are free.', rect: [156 - OX, 62, rw, 150] },
+    { ...offers, text: 'Your next fight, or the offers on the table: SEE OFFERS and SIGN one, and the bout agreement lands in PAPERWORK. Read it: whatever you sign is legally binding, mistakes included.', rect: [156 - OX, 22, rw, 38] },
+    { ...feed, text: 'What the internet says about you lives in THE FEED. Callouts and beef are under BLEETER. Hype sells tickets and moves you up the card.', rect: [156 - OX, 62, rw, 150] },
+    { ...end, rect: [SW - OX - 182, H - 23, 180, 22] },
+  ];
+}
+
 function run(g: Game, key: string): void {
   const s = g.state!;
-  const steps = STEPS[key];
+  const steps = isTouchDevice() && key === 'fmhub' ? fmhubPhone() : STEPS[key];
   s.flags['tut_' + key] = 1;
   const frame = new Container();
   const wrap = g.modal(frame, { dim: 0 });
@@ -146,17 +160,22 @@ function run(g: Game, key: string): void {
     dim.eventMode = 'static';
     frame.addChild(dim);
     // the card goes wherever the highlight isn't
+    // phones: taller card with finger-sized buttons, free to use the whole (wider) screen
+    const touch = isTouchDevice();
     const bw = 236;
-    const bh = 78;
+    const bh = touch ? 88 : 78;
+    const bth = touch ? 18 : 13;
+    const x0 = touch ? -OX : 0;
+    const x1 = touch ? SW - OX : W;
     let bx = (W - bw) / 2;
     let by = H - bh - 8;
     if (st.rect) {
       const [x, y, w, h] = st.rect;
       const cx = x + w / 2;
-      bx = cx > W / 2 ? Math.max(4, x - bw - 8) : Math.min(W - bw - 4, x + w + 8);
+      bx = cx > (x0 + x1) / 2 ? Math.max(x0 + 4, x - bw - 8) : Math.min(x1 - bw - 4, x + w + 8);
       by = Math.max(4, Math.min(H - bh - 4, y + h / 2 - bh / 2));
       // too wide to sit beside it: go above or below
-      if (w > W - bw - 24) {
+      if (w > x1 - x0 - bw - 24) {
         bx = (W - bw) / 2;
         by = y > H / 2 ? Math.max(4, y - bh - 6) : Math.min(H - bh - 4, y + h + 6);
       }
@@ -167,7 +186,7 @@ function run(g: Game, key: string): void {
     card.addChild(text(`${i + 1}/${steps.length}`, bw - 30, 6, { small: true, color: PAL.ash }));
     card.addChild(text(st.text, 8, 19, { small: true, width: bw - 16, color: PAL.bone, maxLines: 6 }));
     const last = i === steps.length - 1;
-    card.addChild(button(last ? 'GOT IT' : 'NEXT →', bw - 64, bh - 18, 56, 13, () => {
+    card.addChild(button(last ? 'GOT IT' : 'NEXT →', bw - (touch ? 74 : 64), bh - bth - 5, touch ? 66 : 56, bth, () => {
       sfx('click');
       if (last) g.closeModal(wrap);
       else {
@@ -175,7 +194,7 @@ function run(g: Game, key: string): void {
         show();
       }
     }, { small: true, fill: PAL.moss }));
-    card.addChild(button('SKIP TUTORIAL', 8, bh - 18, 72, 13, () => {
+    card.addChild(button('SKIP TUTORIAL', 8, bh - bth - 5, touch ? 100 : 72, bth, () => {
       s.flags.tutorial = 'off';
       g.closeModal(wrap);
     }, { small: true, fill: PAL.shadow }));

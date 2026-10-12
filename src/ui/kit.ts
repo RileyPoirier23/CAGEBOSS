@@ -10,6 +10,8 @@ import { isTouchDevice } from '../core/platform';
 
 /** Design size: every screen is laid out for 480x270. */
 export const W = 480;
+/** phone / tablet: bigger labels and touch areas on buttons */
+const TOUCH = isTouchDevice();
 export const H = 270;
 /**
  * Screen width in game pixels. Phones widen the canvas to the screen's shape (no black bars):
@@ -152,8 +154,10 @@ export class Button extends Container {
     this.disabled = !!opts.disabled;
     this.bg = new Graphics();
     this.addChild(this.bg);
-    // labels that don't fit drop to the small face rather than spilling past the button edge
-    const small = !!opts.small || measure(labelText, false) > w - 4;
+    // labels that don't fit drop to the small face rather than spilling past the button edge.
+    // Phones: the big face whenever it fits (the small face is hard to read on a phone)
+    const fitsBig = measure(labelText, false) <= w - 4;
+    const small = TOUCH && h >= 10 && fitsBig ? false : !!opts.small || !fitsBig;
     this.labelNode = new PixelText(labelText, {
       small,
       color: this.disabled ? PAL.grey : (opts.textColor ?? PAL.bone),
@@ -167,10 +171,29 @@ export class Button extends Container {
     this.eventMode = 'static';
     this.cursor = this.disabled ? 'default' : 'pointer';
     // phones: a little slop around the button for thumbs (2px up/down so stacked menus don't overlap)
-    if (isTouchDevice()) {
-      // tiny buttons (selector arrows, X boxes) reach at least 20 wide
-      const sx = Math.max(3, (20 - w) / 2);
-      this.hitArea = { contains: (x: number, y: number) => x >= -sx && y >= -2 && x < this.w + sx && y < this.h + 2 };
+    if (TOUCH) {
+      // fingers: the touch area is at least 30x22 around the button, but the slop never takes a
+      // tap that lands on a neighbouring button
+      const sx = Math.max(3, (30 - w) / 2);
+      const sy = Math.max(3, (22 - h) / 2);
+      this.hitArea = {
+        contains: (x: number, y: number) => {
+          if (x >= 0 && y >= 0 && x < this.w && y < this.h) return true;
+          if (x < -sx || y < -sy || x >= this.w + sx || y >= this.h + sy) return false;
+          const px = x + this.x;
+          const py = y + this.y;
+          return !this.parent?.children.some((c) => c !== this && c instanceof Button && c.visible && px >= c.x && py >= c.y && px < c.x + c.w && py < c.y + c.h);
+        },
+      };
+      // pressed feedback: there's no hover on a phone
+      this.on('pointerdown', () => {
+        this.hovered = true;
+        this.draw();
+      });
+      this.on('pointerupoutside', () => {
+        this.hovered = false;
+        this.draw();
+      });
     }
     this.on('pointerover', () => {
       this.hovered = true;

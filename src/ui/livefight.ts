@@ -210,6 +210,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   const TX1 = FW - 154;
   let pad: TouchFightPad | null = null;
   let skipCatch: Container | null = null;
+  let skipBtn: Container | null = null;
   if (touchUi) {
     pad = new TouchFightPad(fightPadLayout(FW));
     root.addChild(pad);
@@ -237,12 +238,12 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
 
   if (touchUi) {
     // no Esc / C on a phone: PAUSE and CAM sit in the panel's top corners, above the thumbs
-    root.addChild(button('CAM', 4, AH + 4, 34, 14, () => {
+    root.addChild(button('CAM', 4, AH + 4, 40, 16, () => {
       if (!paused && !resultShown) cycleCam();
-    }, { small: true, fill: PAL.shadow }));
-    root.addChild(button('PAUSE', FW - 44, AH + 4, 40, 14, () => {
+    }, { fill: PAL.shadow }));
+    root.addChild(button('PAUSE', FW - 50, AH + 4, 46, 16, () => {
       if (!paused && !resultShown && g.modals[g.modals.length - 1] === wrap) pause();
-    }, { small: true, fill: PAL.shadow }));
+    }, { fill: PAL.shadow }));
     // tap the cage to skip the tale of the tape / Juiced Butler (a catcher over the tape card, gone once the fight starts)
     if ((stage as string) !== 'fight') {
       skipCatch = new Container();
@@ -252,6 +253,11 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         if ((stage === 'tape' || stage === 'intro') && !paused) endIntro();
       });
       root.addChildAt(skipCatch, root.getChildIndex(pad!));
+      // and a button that says so, in the middle of the panel
+      skipBtn = button('SKIP INTROS >>', Math.floor(FW / 2 - 50), H - 26, 100, 20, () => {
+        if ((stage === 'tape' || stage === 'intro') && !paused) endIntro();
+      }, { fill: PAL.blood, border: PAL.gold });
+      root.addChild(skipBtn);
     }
   }
 
@@ -363,7 +369,9 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       }
     }
     // the booth and the play-by-play, newest at the bottom
-    if (stage === 'tape' || stage === 'intro') dyn.addChild(text(touchUi ? 'TAP THE CAGE TO SKIP THE INTROS' : 'ENTER / A: SKIP THE INTROS', 0, H - 11, { small: true, color: PAL.grey, width: FW, align: 'center' }));
+    if (stage === 'tape' || stage === 'intro') {
+      if (!touchUi) dyn.addChild(text('ENTER / A: SKIP THE INTROS', 0, H - 11, { small: true, color: PAL.grey, width: FW, align: 'center' }));
+    }
     else {
       const speakers = content().commentary.speakers;
       const rows: { t: string; c: number }[] = booth.slice(-3).map((l) => ({ t: `{#${speakers[l.speaker!]?.color ?? 'c4a04a'}}${speakers[l.speaker!]?.short ?? l.speaker!.toUpperCase()}:{/} ${l.text}`, c: PAL.fog }));
@@ -651,6 +659,12 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     if (r.method === 'DEC' || r.method === 'DRAW') fr.addChild(text(r.scores.map((s, i) => `${r.judges[i]} ${s[0]}-${s[1]}`).join('   '), bx + 8, by + 42, { width: bw - 16, align: 'center', small: true, color: PAL.ash, maxLines: 2 }));
     fr.addChild(text(`Strikes ${r.stats.strikes[0]}-${r.stats.strikes[1]}   Takedowns ${r.stats.takedowns[0]}-${r.stats.takedowns[1]}   Knockdowns ${r.stats.knockdowns[0]}-${r.stats.knockdowns[1]}`, bx + 8, by + bh - 34, { width: bw - 16, align: 'center', small: true, color: PAL.ash }));
     fr.addChild(button('CONTINUE', bx + bw / 2 - 40, by + bh - 20, 80, 14, () => close(r), { small: true, fill: PAL.moss }));
+    if (touchUi) {
+      // phones: bigger, over the cage (the HUD panel stays visible under it)
+      fr.pivot.set(bx + bw / 2, by + bh / 2);
+      fr.scale.set(1.4);
+      fr.position.set(Math.round(FW / 2), Math.round(Math.max(by + bh * 0.7, 6 + bh * 0.7)));
+    }
     root.addChild(fr);
     setPadUiMode('cursor');
   };
@@ -751,6 +765,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     if (skipCatch && stage !== 'tape' && stage !== 'intro') {
       skipCatch.destroy();
       skipCatch = null;
+      skipBtn?.destroy({ children: true });
+      skipBtn = null;
     }
     if (!paused && !resultShown && (input.buttonPressed('Menu') || input.buttonPressed('Start' as never)) && g.modals[g.modals.length - 1] === wrap) pause();
     if (!paused && input.buttonPressed('View') && g.modals[g.modals.length - 1] === wrap) cycleCam();

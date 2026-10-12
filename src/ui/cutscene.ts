@@ -14,6 +14,7 @@ import { W, H, SW, OX, text, button, box } from './kit';
 import { POSES, drawRig, lookFor, type Look2, type Pose } from './rig';
 import { input } from '../core/input';
 import { sfx } from '../audio/sfx';
+import { isTouchDevice } from '../core/platform';
 
 export type Bg = 'gym' | 'street' | 'office' | 'presser' | 'stage' | 'cage' | 'lot' | 'booth' | 'landlord' | 'black';
 
@@ -343,12 +344,17 @@ export function playCutscene(g: Game, scene: Cutscene, done: (choice: string | n
     if (ln && shown < ln.text.length) shown = ln.text.length;
     else nextLine();
   };
-  const skipBtn = button('SKIP', W - 44, 1, 40, 11, () => {
+  // phones: a big SKIP in the top-right corner of the screen (above the title card, added below)
+  const touch = isTouchDevice();
+  const skipBtn = touch
+    ? button('SKIP >>', SW - OX - 66, 3, 62, 18, () => skipAll(), { fill: PAL.shadow, border: PAL.gold })
+    : button('SKIP', W - 44, 1, 40, 11, () => skipAll(), { small: true, fill: PAL.shadow });
+  const skipAll = () => {
     // skipping still lands on the choices
+    titleT = 0;
     shotIdx = scene.shots.length - 1;
     end();
-  }, { small: true, fill: PAL.shadow });
-  root.addChild(skipBtn);
+  };
   const hit = new Graphics().rect(-OX, 0, SW, H).fill({ color: 0, alpha: 0.001 });
   hit.eventMode = 'static';
   hit.on('pointertap', advance);
@@ -359,7 +365,9 @@ export function playCutscene(g: Game, scene: Cutscene, done: (choice: string | n
     return true;
   });
   const titleC = new Container();
+  titleC.eventMode = 'none'; // a tap during the title card goes through to `hit` and skips it
   root.addChild(titleC);
+  root.addChild(skipBtn);
   if (scene.title) {
     titleC.addChild(new Graphics().rect(-OX, 0, SW, H).fill(0x060508));
     titleC.addChild(text(scene.title, 0, H / 2 - 8, { width: W, align: 'center', color: PAL.gold, scale: 2 }));

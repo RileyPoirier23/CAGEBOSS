@@ -6,7 +6,7 @@ import { maybeTutorial } from './tutorial';
 import { checkAchievements } from './achievements';
 import { openHelp } from './help';
 import { input } from '../core/input';
-import { Application, Container, TextureStyle, Graphics, Ticker } from 'pixi.js';
+import { Application, Container, TextureStyle, Graphics, Ticker, UPDATE_PRIORITY } from 'pixi.js';
 import type { GameState } from '../core/types';
 import { loadJSON, storeJSON, saveToSlot, autoSlot } from '../core/save';
 import { setColorblind, PAL } from '../art/palette';
@@ -239,10 +239,12 @@ export class Game {
   }
 
   /** Push a modal container (gets a dimmer behind it). */
-  modal(content: Container, opts: { dim?: number; closeOnDim?: boolean } = {}): Container {
+  modal(content: Container, opts: { dim?: number; closeOnDim?: boolean; fit?: boolean } = {}): Container {
     const wrap = new Container();
     wrap.addChild(dimmer(opts.dim ?? 0.6, opts.closeOnDim ? () => this.closeModal(wrap) : undefined));
     wrap.addChild(content);
+    // phones: once it's built (next tick, before it's drawn), a dialog smaller than the screen grows to fill it
+    if (opts.fit !== false && isTouchDevice()) this.app.ticker.addOnce(() => fitToScreen(content), undefined, UPDATE_PRIORITY.HIGH);
     this.modalLayer.addChild(wrap);
     this.modals.push(wrap);
     tooltip.hide();
@@ -386,6 +388,22 @@ export class Game {
   overlayRect(): DOMRect {
     return this.app.canvas.getBoundingClientRect();
   }
+}
+
+/**
+ * Phones: scale a dialog up (to 1.6x) to fill the screen and centre it, so its text and buttons are
+ * finger-sized. Full-screen content (cutscenes, fights) measures as big as the screen and is left alone.
+ */
+export function fitToScreen(c: Container): void {
+  if (c.destroyed) return;
+  const b = c.getLocalBounds();
+  if (b.width < 8 || b.height < 8) return;
+  const k = Math.min(1.6, (SW - 10) / b.width, (H - 8) / b.height);
+  if (k < 1.08) return;
+  const kk = Math.floor(k * 20) / 20;
+  c.pivot.set(b.x + b.width / 2, b.y + b.height / 2);
+  c.scale.set(kk);
+  c.position.set(Math.round(W / 2), Math.round(H / 2));
 }
 
 export function fullBg(color: number): Graphics {

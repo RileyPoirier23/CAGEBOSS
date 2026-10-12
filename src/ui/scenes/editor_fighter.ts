@@ -50,11 +50,9 @@ export function openFighterEditor(g: Game, id: string | null, onDone: () => void
     b.addChild(text('First', 76, 6, { small: true, color: PAL.ash }));
     b.addChild(text('Nick', 76, 22, { small: true, color: PAL.ash }));
     b.addChild(text('Last', 76, 38, { small: true, color: PAL.ash }));
-    const ox = win.frame.x + 0;
-    const oy = win.frame.y + 14;
-    inputs.push(domInput(g, ox + 100, oy + 3, 120, 13, f.first, { maxLength: 20, onChange: (v) => (f.first = v) }));
-    inputs.push(domInput(g, ox + 100, oy + 19, 120, 13, f.nick, { maxLength: 30, onChange: (v) => (f.nick = v) }));
-    inputs.push(domInput(g, ox + 100, oy + 35, 120, 13, f.last, { maxLength: 20, onChange: (v) => (f.last = v) }));
+    inputs.push(domInput(g, 100, 3, 120, 13, f.first, { maxLength: 20, onChange: (v) => (f.first = v), in: win.body }));
+    inputs.push(domInput(g, 100, 19, 120, 13, f.nick, { maxLength: 30, onChange: (v) => (f.nick = v), in: win.body }));
+    inputs.push(domInput(g, 100, 35, 120, 13, f.last, { maxLength: 20, onChange: (v) => (f.last = v), in: win.body }));
     b.addChild(selector(230, 4, 150, DIVISION_ORDER.map((d) => ({ value: d, label: divisionName(d) })), f.division, (v) => { f.division = v; f.gender = v.startsWith('w') ? 'W' : 'M'; }));
     b.addChild(text('Age', 230, 22, { small: true, color: PAL.ash }));
     b.addChild(stepper(256, 19, 124, f.age, 18, 50, 1, String, (v) => (f.age = v)));
