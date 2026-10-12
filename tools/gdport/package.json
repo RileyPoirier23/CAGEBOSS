@@ -1,0 +1,9 @@
+{
+  "name": "cageboss-gdport",
+  "private": true,
+  "type": "module",
+  "description": "Translates the CAGE BOSS TypeScript source into GDScript for the Godot port (port/godot).",
+  "devDependencies": {
+    "typescript": "5.8.3"
+  }
+}

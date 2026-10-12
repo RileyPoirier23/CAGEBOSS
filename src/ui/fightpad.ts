@@ -47,6 +47,7 @@ export function fightPadLayout(W = DESIGN_W): FightPadLayout {
     { id: 'EVADE', x: W - 50, y: H - 17, r: 14, color: PAL.plum, labels: { stand: 'DODGE' } },
     { id: 'BODY', x: W - 140, y: H - 70, r: 12, color: PAL.gold, labels: { stand: 'BODY', clinch: 'BODY' } },
     { id: 'FEINT', x: W - 104, y: H - 104, r: 12, color: PAL.shadow, labels: { stand: 'FEINT' } },
+    { id: 'TAUNT', x: W - 136, y: H - 104, r: 11, color: PAL.plum, labels: { stand: 'TAUNT' } },
     // knocked down: alternate the two, in rhythm, to beat the count
     { id: 'UPL', x: 64, y: H - 56, r: 30, color: PAL.gold, labels: { down: 'GET UP' } },
     { id: 'UPR', x: W - 64, y: H - 56, r: 30, color: PAL.gold, labels: { down: 'GET UP' } },

@@ -48,7 +48,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   // ---------------- Road To Champion (the story)
   { id: 'rtc_soup', name: 'SAVE THE SOUP', desc: "Pay off Ray's back rent.", mode: 'rtc', icon: 'soup', test: (s) => !!fmS(s)?.story?.gymSaved },
   { id: 'rtc_rival', name: 'TRUST FUND, BANKRUPT', desc: 'Beat Tyler "Trust Fund" Vance.', mode: 'rtc', icon: 'glove', test: (s) => wins(s).some((h) => h.opp === 'rival') },
-  { id: 'rtc_epilogue', name: 'THE ROAD', desc: 'Finish the Road To Champion story.', mode: 'rtc', icon: 'belt', test: (s) => !!fmS(s)?.story?.seen.includes('c4_champ') },
+  { id: 'rtc_epilogue', name: 'THE ROAD', desc: 'Finish the Road To Champion story.', mode: 'rtc', icon: 'belt', test: (s) => !!fmS(s)?.story?.seen.includes('c5_won') },
   // ---------------- Legacy Mode
   { id: 'leg_start', name: 'NO SCRIPT', desc: 'Start a Legacy Mode career.', mode: 'legacy', icon: 'star', test: (s) => !!fmS(s)?.legacy },
   { id: 'leg_chaos', name: 'MORE F***ING AROUND', desc: 'Legacy Mode: five entries on your rap sheet.', mode: 'legacy', icon: 'skull', test: (s) => !!fmS(s)?.legacy && (fmS(s)?.rap?.length ?? 0) >= 5 },
