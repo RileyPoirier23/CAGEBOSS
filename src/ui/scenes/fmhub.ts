@@ -356,17 +356,24 @@ export class FMHubScene extends Scene {
   /** Phones: the Bleeter feed from the desktop's right-hand panel. */
   private feedWindow(): void {
     const st = fm(this.g.state!);
-    const win = openWindow(this.g, 'Bleeter: your feed', 300, 180);
-    const feed = new ScrollBox(288, 160);
-    feed.position.set(6, 2);
+    const posts = new Container();
     let fy = 0;
     for (const p of st.feed.slice(-12).reverse()) {
       const t1 = text(p.handle, 0, fy, { small: true, color: PAL.sky });
       const t2 = text(p.text, 0, fy + 9, { small: true, width: 276, color: PAL.bone, maxLines: 4 });
-      feed.content.addChild(t1, t2);
+      posts.addChild(t1, t2);
       fy += 13 + t2.height;
     }
-    if (!st.feed.length) feed.content.addChild(text('Nothing yet. Post something.', 0, 0, { small: true, color: PAL.ash }));
+    if (!st.feed.length) {
+      posts.addChild(text('Nothing yet. Post something.', 0, 0, { small: true, color: PAL.ash }));
+      fy = 12;
+    }
+    // the window fits the feed (a quiet week is a short scroll)
+    const h = Math.max(40, Math.min(160, fy));
+    const win = openWindow(this.g, 'Bleeter: your feed', 300, h + 20);
+    const feed = new ScrollBox(288, h);
+    feed.position.set(6, 2);
+    feed.content.addChild(posts);
     win.body.addChild(feed);
     feed.refresh();
   }
@@ -517,9 +524,10 @@ export class FMHubScene extends Scene {
   private cutMenu(): void {
     const s = this.g.state!;
     const st = fm(s);
-    const win = openWindow(this.g, 'Cut weight', 250, 128);
-    const lim = contractLimit(s);
     const cw = cutWindow(s);
+    // nothing to cut yet: a short note, not a tall empty window
+    const win = openWindow(this.g, 'Cut weight', 250, cw.open ? 128 : 64);
+    const lim = contractLimit(s);
     win.body.addChild(text(`You walk around ${st.walkWeight.toFixed(1)} lbs. ${lim !== weightLimit(s) ? 'Contracted' : 'Limit'} ${lim}. ${st.water > 0 ? `(${st.water.toFixed(1)} lbs is sauna water.)` : ''}`, 6, 4, { small: true, width: 238, color: PAL.bone }));
     if (!cw.open) {
       // too early: the cut is the last two weeks of camp

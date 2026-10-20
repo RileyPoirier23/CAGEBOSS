@@ -17,7 +17,10 @@ export function openChart(g: Game): void {
   sb.position.set(4, 2);
   let y = 0;
   const charts = s.market.chart.slice().reverse().slice(0, 10);
-  if (!charts.length) sb.content.addChild(text('No ratings yet. Run an event.', 0, 0, { color: PAL.ash }));
+  if (!charts.length) {
+    sb.content.addChild(text('No ratings yet. Run an event and see where you land.', 0, 0, { color: PAL.ash }));
+    y += 16;
+  }
   for (const ch of charts) {
     sb.content.addChild(text(`WEEK OF ${fmtDate(ch.week).toUpperCase()}`, 0, y, { small: true, color: PAL.gold }));
     y += 9;
@@ -32,7 +35,16 @@ export function openChart(g: Game): void {
     });
     y += 6;
   }
-  sb.content.addChild(text('Competitors: ' + content().competitors.map((c) => `${c.name} (${c.sport}) - ${c.blurb}`).join('  •  '), 0, y, { small: true, width: W - 64, color: PAL.grey }));
+  // who you're up against for the eyeballs
+  sb.content.addChild(text('THE COMPETITION', 0, y, { small: true, color: PAL.gold }));
+  y += 10;
+  content().competitors.forEach((c, i) => {
+    sb.content.addChild(box(W - 64, 18, i % 2 ? 0x2a2630 : 0x24212a)).position.set(0, y);
+    sb.content.addChild(text(c.name, 4, y + 2, { small: true, color: PAL.bone, width: 150, maxLines: 1 }));
+    sb.content.addChild(text(c.sport, 158, y + 2, { small: true, color: PAL.ash, width: 90, maxLines: 1 }));
+    sb.content.addChild(text(c.blurb, 4, y + 10, { small: true, color: PAL.grey, width: W - 72, maxLines: 1 }));
+    y += 19;
+  });
   win.body.addChild(sb);
   sb.refresh();
 }

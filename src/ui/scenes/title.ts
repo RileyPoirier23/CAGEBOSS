@@ -18,7 +18,7 @@ import { maybeComingSoon, openComingSoon } from '../comingsoon';
 import { openLoad, latestSave, continueLatest } from './loadmenu';
 import { ModesScene } from './modes';
 import { buildStreet, STREET_W, type Street } from '../menuworld';
-import { openEndCredits } from '../endcredits';
+import { openCredits } from './credits';
 import { openSupport, supportAvailable } from '../support';
 import { desktop } from '../../desktop';
 
@@ -78,7 +78,7 @@ export class TitleScene extends Scene {
       ['SETTINGS', () => openSettings(this.g)],
       ['HELP', () => openHelp(this.g)],
       // the credits roll, the thank-you, and the memorial
-      ['CREDITS', () => openEndCredits(this.g, () => {}, { menu: true })],
+      ['CREDITS', () => openCredits(this.g)],
       ['COMING SOON: DRIVEBOSS', () => openComingSoon(this.g)],
     ];
     if (desktop) items.push(['QUIT GAME', () => desktop!.quit()]);

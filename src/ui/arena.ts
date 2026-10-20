@@ -13,6 +13,7 @@ import { PixelText, pixelArtResolution } from './text';
 import { portrait } from './sprites';
 import { sfx } from '../audio/sfx';
 import { heightStr } from '../core/format';
+import { ROOMS, leagueRoom, paintRoom, roomFx, type Room } from './rooms';
 import { Rig, Pose, POSES, drawRig, lerpRig, mirrorRig, lookFor, stanceGuard, tauntRig, TAUNT_CALL, Look2, KO_POSES, HEAVY_POSES, koPoseFor } from './rig';
 
 export const AW = 480;
@@ -64,6 +65,8 @@ export interface CanvasInfo {
   /** name painted in the middle (text promotions); the CBFC uses the logo art */
   logo?: string;
   accent?: number;
+  /** a special venue's room (rooms.ts); otherwise the league's own */
+  room?: Room;
 }
 const CANVAS: Record<CanvasStyle, { mat: number; edge: number; wear: number; ring: number; rail: number; deco: number }> = {
   cbfc: { mat: 0xcfc8b9, edge: 0x8a8274, wear: 0xbdb5a5, ring: 0xa83232, rail: 0x8a1e1e, deco: 0x2a4a86 },
@@ -316,9 +319,10 @@ export class ArenaView extends Container {
     this.topWorld.cacheAsTexture({ resolution: res, antialias: false });
     this.drawBg();
     this.drawTopStatic();
-    this.hud.addChild(text(`${A.first[0]}. ${A.last}`, 6, 3, { color: PAL.bone }));
-    this.hud.addChild(text(`${B.first[0]}. ${B.last}`, AW - 126, 3, { color: PAL.bone, width: 120, align: 'right' }));
-    this.clock = text('R1 5:00', 0, 3, { width: AW, align: 'center', color: PAL.gold });
+    // shadowed: the sky behind them is bright at an outdoor venue
+    this.hud.addChild(text(`${A.first[0]}. ${A.last}`, 6, 3, { color: PAL.bone, shadow: PAL.ink }));
+    this.hud.addChild(text(`${B.first[0]}. ${B.last}`, AW - 126, 3, { color: PAL.bone, width: 120, align: 'right', shadow: PAL.ink }));
+    this.clock = text('R1 5:00', 0, 3, { width: AW, align: 'center', color: PAL.gold, shadow: PAL.ink });
     this.callout = text('', 0, 46, { width: AW, align: 'center', color: PAL.gold, scale: 2, shadow: PAL.ink });
     this.hud.addChild(this.clock, this.callout);
     this.slowTag = text('SLOW MO', AW - 58, AH - 8, { small: true, color: 0xffffff });
@@ -353,6 +357,13 @@ export class ArenaView extends Container {
     // arena darkness with a warm gradient toward the cage
     for (let y = 0; y < AH; y += 2) g.rect(0, y, AW, 2).fill(lerpColor(0x0c090d, 0x1d151b, y / AH));
     this.drawVenue(g);
+    const sign = ROOMS[this.room].sign;
+    if (sign && !this.roomSign) {
+      const t = text(sign.text, 0, 0, { small: true, color: sign.color });
+      t.position.set(Math.round(sign.x - t.textWidth / 2), sign.y);
+      this.roomSign = t;
+      this.worldInner.addChildAt(t, this.worldInner.getChildIndex(this.bg) + 1);
+    }
     // ---- the octagon in perspective: canvas, apron, eight fence panels
     const cx = AW / 2;
     const cy = FLOOR + 1;
@@ -421,77 +432,20 @@ export class ArenaView extends Container {
     }
   }
   private matName: PixelText | null = null;
+  private roomSign: PixelText | null = null;
 
   /** Where the fight is: every league has its own room behind the cage. */
   private drawVenue(g: Graphics): void {
-    const style = this.canvasStyle;
-    const rig = (n: number, col = 0xe8d8a0) => {
-      g.rect(0, 14, AW, 2).fill(0x2a2228);
-      for (let i = 0; i < n; i++) {
-        const x = 18 + i * (AW / n);
-        g.rect(x, 10, 12, 5).fill(0x3a3032).rect(x + 3, 15, 6, 2).fill(col);
-      }
-    };
-    if (style === 'local') {
-      // a bingo hall on fight night: wood panelling, the number board, strip lights, folding chairs
-      g.rect(0, 0, AW, 60).fill(0x3a2a1a);
-      for (let x = 0; x < AW; x += 12) g.rect(x, 0, 1, 60).fill(0x2e2114);
-      g.rect(0, 58, AW, 3).fill(0x24180e);
-      g.rect(AW / 2 - 70, 2, 140, 18).fill(0x0c0c0e);
-      for (let c = 0; c < 15; c++) for (let r = 0; r < 3; r++) g.rect(AW / 2 - 66 + c * 9, 5 + r * 5, 7, 3).fill((c * 3 + r * 7) % 5 === 0 ? 0xffd860 : 0x2a2a20);
-      for (const x of [60, 180, 300, 420]) g.rect(x, 1, 50, 2).fill(0xe8f0ff).rect(x, 3, 50, 1).fill(0x8a9098);
-      g.rect(30, 24, 70, 14).fill(0x8e2f2f).rect(AW - 100, 24, 70, 14).fill(0x2a4a86); // paper banners
-      return;
-    }
-    if (style === 'bk') {
-      // a warehouse: brick, roller doors, bare bulbs on cords, a forklift nobody moved
-      g.rect(0, 0, AW, 60).fill(0x3a2420);
-      for (let y = 0; y < 60; y += 6) for (let x = (y / 6) % 2 ? -8 : 0; x < AW; x += 16) g.rect(x + 1, y + 1, 14, 4).fill(((x + y) % 5) ? 0x4a2c26 : 0x40261f);
-      for (const x of [40, AW - 120]) {
-        g.rect(x, 10, 80, 50).fill(0x5a5a62);
-        for (let y = 12; y < 60; y += 4) g.rect(x, y, 80, 1).fill(0x46464e);
-      }
-      for (let i = 0; i < 8; i++) {
-        const x = 30 + i * 60;
-        g.rect(x, 0, 1, 12 + (i % 3) * 4).fill(0x1a1a1a).circle(x, 13 + (i % 3) * 4, 2).fill(0xffe8a0);
-      }
-      return;
-    }
-    if (style === 'regional') {
-      // a casino ballroom: chandeliers, swagged curtains, a carpet only a casino could love
-      g.rect(0, 0, AW, 60).fill(0x3a1424);
-      for (let x = 0; x < AW; x += 20) g.rect(x, 0, 10, 60).fill(0x42182a);
-      for (let x = 0; x < AW; x += 40) g.poly([x, 0, x + 40, 0, x + 20, 8]).fill(0x8a2a3a);
-      for (const cx of [80, AW / 2, AW - 80]) {
-        g.rect(cx, 0, 1, 6).fill(0xc4a04a);
-        for (let k = -3; k <= 3; k++) g.circle(cx + k * 5, 9 + Math.abs(k), 1.5).fill(0xfff2c8);
-        g.rect(cx - 14, 8, 28, 1).fill(0xc4a04a);
-      }
-      g.rect(150, 14, 60, 9).fill(0x0e1420).rect(270, 14, 60, 9).fill(0x0e1420); // rented screens
-      return;
-    }
-    if (style === 'pfl') {
-      // the Lounge: smaller room, purple neon, a VIP couch row, cameras everywhere
-      g.rect(0, 0, AW, 60).fill(0x140a1c);
-      g.rect(0, 18, AW, 1).fill(0xb04aff).rect(0, 46, AW, 1).fill(0x4a2aff);
-      for (let x = 20; x < AW; x += 70) g.roundRect(x, 48, 40, 10, 3).fill(0x5a2a6a);
-      for (const x of [100, AW - 110]) g.rect(x, 22, 10, 7).fill(0x2a2a30).rect(x + 10, 24, 5, 3).fill(0x1a1a1e).circle(x + 3, 25, 1).fill(0xff2020);
-      rig(8, 0xd8b0ff);
-      g.rect(150, 1, 60, 8).fill(0x0e1420).rect(270, 1, 60, 8).fill(0x0e1420);
-      return;
-    }
-    // the CBFC: a proper arena. Championship banners in the rafters, the lighting rig, the big screens
-    rig(10);
-    for (let i = 0; i < 6; i++) {
-      const x = 22 + i * 82 + (i > 2 ? 40 : 0);
-      if (x > 140 && x < 340) continue;
-      g.rect(x, 0, 14, 12).fill(i % 2 ? 0x8e2f2f : 0x1a2a4a).rect(x + 4, 4, 6, 3).fill(0xc4a04a).poly([x, 12, x + 14, 12, x + 7, 15]).fill(i % 2 ? 0x8e2f2f : 0x1a2a4a);
-    }
-    g.rect(150, 1, 60, 8).fill(0x0e1420).rect(270, 1, 60, 8).fill(0x0e1420);
+    paintRoom(g, this.room, lerpColor);
   }
 
   private get canvasStyle(): CanvasStyle {
     return this.info.canvas?.style ?? 'cbfc';
+  }
+
+  /** where the cage stands: a special venue, or the league's own room */
+  private get room(): Room {
+    return this.info.canvas?.room ?? leagueRoom(this.canvasStyle);
   }
 
   /** Sponsors around the cage: a ribbon board under the lighting rig, decals on the canvas, ads on the big screens. */
@@ -560,10 +514,10 @@ export class ArenaView extends Container {
   private drawCrowd(): void {
     const g = this.crowd;
     // smaller rooms, smaller crowds: a bingo hall is half empty, the CBFC is sold out
-    const style = this.canvasStyle;
+    const room = ROOMS[this.room];
     if (!this.crowdSeats) {
-      const fill = { local: 0.45, bk: 0.55, regional: 0.8, pfl: 0.85, cbfc: 1 }[style];
-      const rows = style === 'local' || style === 'bk' ? 2 : 4;
+      const fill = room.fill;
+      const rows = room.rows;
       this.crowdSeats = [];
       for (let r = 0; r < rows; r++) {
         const y = 22 + r * 7 + (rows === 2 ? 14 : 0);
@@ -572,7 +526,10 @@ export class ArenaView extends Container {
           const v = n - Math.floor(n);
           if (((n * 7) % 1 + 1) % 1 > fill) continue;
           const head = lerpColor(0x1e171c, 0x4a3a40, v * 0.7);
-          this.crowdSeats.push({ x, y, v, head, body: shade(head, -0.2), fist: shade(head, 0.2) });
+          // outdoors in daylight you can see what they're wearing
+          const shirt = room.shirts ? shade(room.shirts[Math.floor(v * 97) % room.shirts.length], room.day ? -0.1 : -0.45) : shade(head, -0.2);
+          const skin = room.day ? lerpColor(0x8a6a50, 0xd8b090, v) : head;
+          this.crowdSeats.push({ x, y, v, head: skin, body: shirt, fist: shade(skin, 0.2) });
         }
       }
     }
@@ -597,16 +554,17 @@ export class ArenaView extends Container {
       const fx = Math.random() * AW;
       l.circle(fx, 24 + Math.random() * 20, 2).fill(0xffffff);
     }
+    roomFx(l, this.room, this.t);
     // jumbotrons show the action (no jumbotrons in a bingo hall or a warehouse)
     const sc = this.scene === 'intro' ? 0x3a2a14 : this.intensity >= 3 ? 0x5a1a1a : 0x1a2a40;
-    if (style === 'regional') l.rect(152, 15, 56, 7).fill(sc).rect(272, 15, 56, 7).fill(sc);
-    else if (style !== 'local' && style !== 'bk') l.rect(152, 2, 56, 6).fill(sc).rect(272, 2, 56, 6).fill(sc);
-    // spotlights over the cage
-    l.poly([AW / 2 - 30, 16, AW / 2 + 30, 16, AW / 2 + 150, FLOOR, AW / 2 - 150, FLOOR]).fill({ color: 0xfff2d0, alpha: 0.05 + this.intensity * 0.01 });
+    if (room.screens === 'low') l.rect(152, 15, 56, 7).fill(sc).rect(272, 15, 56, 7).fill(sc);
+    else if (room.screens === 'high') l.rect(152, 2, 56, 6).fill(sc).rect(272, 2, 56, 6).fill(sc);
+    // spotlights over the cage (in daylight you can barely see them)
+    l.poly([AW / 2 - 30, 16, AW / 2 + 30, 16, AW / 2 + 150, FLOOR, AW / 2 - 150, FLOOR]).fill({ color: 0xfff2d0, alpha: (0.05 + this.intensity * 0.01) * (room.day ? 0.3 : 1) });
     // moving heads: four coloured beams sweeping the cage, wilder for walkouts and big moments
     const hype = this.scene === 'intro' ? 1 : this.intensity >= 3 ? 0.8 : this.scene === 'ceremony' ? 0.7 : 0.25;
     const beamCols = [0x3a7aff, 0xff3a4a, 0xffffff, 0xb04aff];
-    for (let b = 0; b < 4; b++) {
+    for (let b = 0; b < (room.beams ? 4 : 0); b++) {
       const ox = 60 + b * 120;
       const sweep = Math.sin(this.t * (0.7 + b * 0.23) + b * 1.7) * (90 + hype * 60);
       const tx = ox + sweep;
@@ -616,7 +574,7 @@ export class ArenaView extends Container {
     }
     // LED strip along the top of the back fence: a chase that speeds up with the crowd (the big leagues only)
     const rail = 236;
-    for (let i = 0; i < (style === 'local' || style === 'bk' ? 0 : 46); i++) {
+    for (let i = 0; i < (room.led ? 46 : 0); i++) {
       const x = AW / 2 - rail + 22 + i * 9.8;
       const on = (i + Math.floor(this.t * (4 + this.intensity * 3))) % 6 < 2;
       l.rect(Math.round(x), FLOOR - 88 + Math.round(Math.abs(x - AW / 2) / 30), 3, 1).fill({ color: on ? (this.intensity >= 3 ? 0xff4040 : 0xffd27a) : 0x3a2a20, alpha: on ? 0.9 : 0.5 });
@@ -634,7 +592,8 @@ export class ArenaView extends Container {
   private drawTopStatic(): void {
     const g = this.top;
     g.clear();
-    g.rect(0, 0, AW, AH).fill(0x110d11);
+    const rm = ROOMS[this.room];
+    g.rect(0, 0, AW, AH).fill(rm.day ? shade(rm.top, -0.35) : 0x110d11);
     // crowd ring
     for (let i = 0; i < 520; i++) {
       const n = Math.sin(i * 91.7) * 43758.5453;
@@ -655,7 +614,7 @@ export class ArenaView extends Container {
       }
       return pts;
     };
-    g.poly(oct(TR + 14)).fill(0x1c171b);
+    g.poly(oct(TR + 14)).fill(ROOMS[this.room].top);
     g.poly(oct(TR + 3)).fill(0x2a2a30);
     const cv = CANVAS[this.canvasStyle];
     const ring = this.info.canvas?.accent ?? cv.ring;

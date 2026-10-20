@@ -103,6 +103,71 @@ function noise(dur: number, vol = 0.3, filterFreq = 1200, q = 0.7, delay = 0, at
   src.stop(t0 + dur + 0.05);
 }
 
+/** The desk phone's ring: "ring-ring" bursts (seconds into each cycle), a cycle every RING_CYCLE s. */
+export const RING_CYCLE = 3.2;
+export const RING_BURSTS: [number, number][] = [[0, 0.45], [0.65, 1.1]];
+export const RING_CYCLES = 6;
+let ringOsc: OscillatorNode | null = null;
+let ringGain: GainNode | null = null;
+/** when the last ring was cut off (a 'phone' chirp right after is the pickup instead) */
+let ringStoppedAt = -1e9;
+
+/**
+ * Start the desk phone ringing: one oscillator for the whole ring (the bell's two notes
+ * alternate on its frequency, the bursts are fades on one gain), so nothing stacks or clicks.
+ * Ends by itself after `cycles`; stopRing() cuts it off with a short fade.
+ */
+export function startRing(cycles = RING_CYCLES): void {
+  const a = ac();
+  if (!a || !master || ringOsc) return;
+  const t0 = a.currentTime + 0.05;
+  const o = a.createOscillator();
+  const g = a.createGain();
+  o.type = 'square';
+  o.frequency.setValueAtTime(1320, t0);
+  g.gain.setValueAtTime(0, t0);
+  const vol = 0.09;
+  for (let c = 0; c < cycles; c++) {
+    const b = t0 + c * RING_CYCLE;
+    for (const [s0, s1] of RING_BURSTS) {
+      g.gain.setValueAtTime(0, b + s0);
+      g.gain.linearRampToValueAtTime(vol, b + s0 + 0.012);
+      g.gain.setValueAtTime(vol, b + s1 - 0.012);
+      g.gain.linearRampToValueAtTime(0, b + s1);
+      let k = 0;
+      for (let t = s0; t < s1; t += 0.035) o.frequency.setValueAtTime(k++ % 2 ? 1100 : 1320, b + t);
+    }
+  }
+  o.connect(g).connect(master);
+  o.start(t0);
+  o.stop(t0 + cycles * RING_CYCLE);
+  o.onended = () => {
+    if (ringOsc !== o) return;
+    ringOsc = null;
+    ringGain = null;
+  };
+  ringOsc = o;
+  ringGain = g;
+}
+
+/** Cut the ring off (answered, or you walked away from the desk). */
+export function stopRing(): void {
+  ringStoppedAt = Date.now();
+  const a = ctx;
+  if (!a || !ringOsc || !ringGain) return;
+  const now = a.currentTime;
+  ringGain.gain.cancelScheduledValues(now);
+  ringGain.gain.setValueAtTime(ringGain.gain.value, now);
+  ringGain.gain.linearRampToValueAtTime(0, now + 0.03);
+  try {
+    ringOsc.stop(now + 0.06);
+  } catch {
+    /* already stopping */
+  }
+  ringOsc = null;
+  ringGain = null;
+}
+
 export type Sfx =
   | 'click' | 'stamp' | 'paper' | 'crowd' | 'roar' | 'boo' | 'phone' | 'cash' | 'punch' | 'bell'
   | 'error' | 'citation' | 'type' | 'good' | 'bad' | 'thud' | 'whoosh' | 'kick' | 'snap'
@@ -142,6 +207,12 @@ export function sfx(name: Sfx): void {
       noise(1.0, 0.15, 400, 0.6, 0, 0.2, 'bandpass');
       break;
     case 'phone':
+      // just picked up a ringing phone: the handset off the hook, not another ring
+      if (Date.now() - ringStoppedAt < 1500) {
+        tone(520, 0.03, 'square', 0.1);
+        noise(0.06, 0.15, 1800);
+        break;
+      }
       for (let i = 0; i < 6; i++) {
         tone(1320, 0.05, 'square', 0.12, 0, i * 0.07);
         tone(1100, 0.05, 'square', 0.12, 0, i * 0.07 + 0.035);

@@ -113,7 +113,16 @@ export function openFMDesk(g: Game, onDone: () => void): void {
       layer.addChild(ref);
       // full title of the reference card (it can be long)
       layer.addChild(text(cur.ref.title, REF_X, DOC_Y + Math.max(60, y + 4) + 4, { small: true, color: PAL.ash, width: REF_W }));
-    } else docNodeRef.node = null;
+    } else {
+      docNodeRef.node = null;
+      // nothing to sign: a note on the table instead of bare wood
+      const note = paper(220, 74, 'white', 5);
+      note.addChild(text('ALL CAUGHT UP.', 10, 10, { color: PAL.ink }));
+      note.addChild(text('Nothing to sign this week. Contracts, medicals and sponsor deals land here when they come: read every line before you sign. Uncle Ray did not, once. Ask him about the soup franchise.', 10, 24, { small: true, width: 200, color: PAL.ink, maxLines: 6 }));
+      note.position.set(DOC_X + 20, DOC_Y + 20);
+      note.rotation = -0.02;
+      layer.addChild(note);
+    }
 
     // ------------------------------------------------ controls
     const ctl = new Container();

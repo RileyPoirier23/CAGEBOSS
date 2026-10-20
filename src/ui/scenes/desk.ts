@@ -29,7 +29,7 @@ import { def } from '../../storylets/engine';
 import { playStorylet } from '../dialog';
 import { namedPortrait, fighterPortrait, reporterPortrait, npcPortrait } from '../sprites';
 import { content } from '../../core/content';
-import { sfx } from '../../audio/sfx';
+import { sfx, startRing, stopRing, RING_CYCLE, RING_CYCLES, RING_BURSTS } from '../../audio/sfx';
 import { eventThisWeek, upcomingEvents } from '../../sim/events';
 import { routePhase } from '../flow';
 import { confirm, alertBox } from '../widgets';
@@ -62,6 +62,16 @@ const STAMP_FILL: Record<Stamp, () => number> = {
 const STAMP_INK: Record<Stamp, string> = { approve: 'APPROVED', deny: 'DENIED', escalate: 'ESCALATED', bury: 'BURIED' };
 
 /** Centre column geometry. */
+/** Phones that can buzz do (Android); everything else ignores it. */
+function vibrate(pattern: number | number[]): void {
+  if (!isTouchDevice()) return;
+  try {
+    navigator.vibrate?.(pattern);
+  } catch {
+    /* no vibration motor */
+  }
+}
+
 const DOC_X = 122;
 const DOC_Y = 84;
 const DOC_W = 240;
@@ -149,6 +159,7 @@ export class DeskScene extends Scene {
     for (let i = 0; i < 30; i++) win.rect(8 + ((i * 37) % 186), 40 + ((i * 13) % 30), 2, 2).fill(i % 3 ? 0x4a5a6a : 0x8a7a4a);
     r.addChild(win);
     this.drawVisitor(r);
+    this.drawWallPhone(r);
 
     // clock
     const clock = new Graphics();
@@ -215,6 +226,7 @@ export class DeskScene extends Scene {
     desk.rect(0, 80, FW, H - 80).fill(PAL.wood);
     for (let y = 82; y < H; y += 5) desk.rect(0, y, FW, 1).fill(shade(PAL.wood, (y % 15) / 150 - 0.04));
     r.addChild(desk);
+    r.addChild(this.drawClutter());
 
     const item = this.currentItem();
     const doc = item?.kind === 'doc' ? item.doc : null;
@@ -341,6 +353,144 @@ export class DeskScene extends Scene {
   }
 
   // ------------------------------------------------------------ props
+
+  /** What lives on the desk under the paperwork: the nameplate, a cold coffee, a photo. */
+  private drawClutter(): Container {
+    const s = this.g.state!;
+    const c = new Container();
+    c.eventMode = 'none';
+    const g = new Graphics();
+    // coffee rings from every long night
+    for (const [x, y, r] of [[300, 236, 7], [312, 241, 6], [168, 226, 7]]) g.circle(x, y, r).stroke({ color: shade(PAL.wood, -0.25), width: 1, alpha: 0.6 });
+    // the mug
+    g.rect(326, 216, 14, 16).fill(0xe8e2d4).rect(326, 216, 14, 3).fill(0x3a2418).rect(340, 220, 4, 8).stroke({ color: 0xe8e2d4, width: 2 });
+    g.rect(328, 222, 10, 5).fill(PAL.blood); // a promotion mug, chipped
+    g.rect(330, 208, 1, 4).fill({ color: 0xffffff, alpha: 0.3 }).rect(334, 205, 1, 5).fill({ color: 0xffffff, alpha: 0.25 });
+    // a pen, a stapler
+    g.rect(132, 222, 22, 2).fill(0x2a3a8a).rect(152, 222, 3, 2).fill(0xc4a04a);
+    g.roundRect(128, 232, 26, 7, 2).fill(0x3a3a40).roundRect(128, 230, 24, 4, 2).fill(0x8a2a2a);
+    // a framed photo: the cage on opening night
+    g.rect(16, 168, 40, 32).fill(0x8a6a3a).rect(19, 171, 34, 26).fill(0x1a1a24);
+    g.ellipse(36, 190, 13, 4).fill(0xcfc8b9).rect(24, 178, 24, 10).stroke({ color: 0x5a5a62, width: 1 });
+    g.circle(33, 183, 2).fill(0xe0b48c).circle(40, 183, 2).fill(0x8a5a3a);
+    // a stress ball that has seen things
+    g.circle(86, 196, 6).fill(PAL.blood).circle(84, 194, 2).fill({ color: 0xffffff, alpha: 0.3 });
+    c.addChild(g);
+    // the nameplate
+    const plate = new Graphics().rect(0, 0, 124, 13).fill(0x2a1a10).rect(0, 0, 124, 2).fill(0x4a3420).rect(4, 13, 116, 2).fill(shade(PAL.wood, -0.3));
+    plate.position.set(180, 248);
+    c.addChild(plate);
+    c.addChild(text(`PRESIDENT ${s.president.name}`.toUpperCase(), 180, 252, { small: true, color: PAL.gold, width: 124, align: 'center', maxLines: 1 }));
+    return c;
+  }
+
+  // ------------------------------------------------------------ the phone
+
+  /** the wall phone's moving parts (rebuilt with the desk; the ring itself lives on the scene) */
+  private wallPhone: { body: Container; handset: Graphics; light: Graphics; tag: Container } | null = null;
+  /** the call ringing now (its queue id), how long it's been ringing, the calls that already rang */
+  private ringing: string | null = null;
+  private ringT = 0;
+  private rang = new Set<string>();
+
+  /** The first phone call waiting in the inbox. */
+  private pendingCall(): QueueItem | null {
+    return this.items().find((it) => it.kind === 'story' && def(it.inst.id)?.scenes[0]?.type === 'phone') ?? null;
+  }
+
+  /** On the office wall under the calendar: tap it to answer the call that's waiting. */
+  private drawWallPhone(r: Container): void {
+    const ph = clickable(new Container(), () => this.answerPhone(), 'The phone: pick up when it rings');
+    ph.position.set(270, 45);
+    const body = new Container();
+    const g = new Graphics();
+    g.rect(13, 5, 2, 18).fill(0x1a1416); // the cord, coiled down the wall
+    for (let y = 7; y < 22; y += 2) g.rect(12, y, 4, 1).fill(0x2a2226);
+    g.roundRect(0, 4, 28, 24, 3).fill(0xd8ccb0).stroke({ color: 0x5a4a3a, width: 1 });
+    for (let k = 0; k < 12; k++) g.rect(5 + (k % 3) * 7, 11 + Math.floor(k / 3) * 4, 4, 2).fill(0x8a7a64);
+    body.addChild(g);
+    const light = new Graphics().circle(24, 8, 1.5).fill(0x3a1a1a);
+    body.addChild(light);
+    const handset = new Graphics();
+    handset.roundRect(-2, 0, 32, 5, 2).fill(0xc8bca0).stroke({ color: 0x5a4a3a, width: 1 });
+    handset.rect(-3, -1, 7, 7).fill(0xc8bca0).rect(24, -1, 7, 7).fill(0xc8bca0);
+    body.addChild(handset);
+    ph.addChild(body);
+    // cartoon ring lines either side (the meters start right after it)
+    const tag = new Graphics();
+    for (const [x0, x1] of [[-3, -8], [31, 36]]) {
+      tag.moveTo(x0, 9).lineTo(x1, 5).moveTo(x0, 15).lineTo(x1 + (x1 > x0 ? 1 : -1), 15).moveTo(x0, 21).lineTo(x1, 25);
+    }
+    tag.stroke({ color: PAL.gold, width: 1 });
+    tag.visible = false;
+    ph.addChild(tag);
+    // a fat target on touch screens
+    if (this.phone) ph.hitArea = { contains: (x: number, y: number) => x >= -6 && x < 40 && y >= -4 && y < 34 };
+    r.addChild(ph);
+    this.wallPhone = { body, handset, light, tag };
+    this.animatePhone();
+  }
+
+  /** Pick up: the waiting call plays, the ringing stops. Nobody calling: a dial tone. */
+  private answerPhone(): void {
+    const call = this.pendingCall();
+    this.silenceRing();
+    stopRing(); // off the hook: the call opens with a pickup, not another ring
+    if (call) this.selectItem(call);
+    else {
+      sfx('click');
+      this.flash('Dial tone. Nobody is calling you. Enjoy it.', PAL.ash, 2);
+    }
+  }
+
+  private silenceRing(): void {
+    if (!this.ringing) return;
+    this.ringing = null;
+    stopRing();
+    vibrate(0);
+  }
+
+  /** Each frame: start ringing for a new call (once per call), stop when it's answered, shake. */
+  private updatePhone(dt: number): void {
+    const call = this.pendingCall();
+    if (this.ringing && call?.id !== this.ringing) this.silenceRing();
+    if (call && !this.ringing && !this.rang.has(call.id) && !this.g.modals.length && !this.anim) {
+      this.rang.add(call.id);
+      this.ringing = call.id;
+      this.ringT = 0;
+      startRing(RING_CYCLES);
+      const buzz: number[] = [];
+      for (let c = 0; c < RING_CYCLES; c++) buzz.push(450, 200, 450, Math.round((RING_CYCLE - 1.1) * 1000));
+      vibrate(buzz);
+    }
+    if (this.ringing) {
+      this.ringT += dt;
+      // rang out: nobody picked up (the call is still in the inbox, the light keeps blinking)
+      if (this.ringT >= RING_CYCLES * RING_CYCLE) {
+        this.ringing = null;
+        stopRing();
+      }
+    }
+    this.animatePhone();
+  }
+
+  private animatePhone(): void {
+    const p = this.wallPhone;
+    if (!p) return;
+    const ph = this.ringT % RING_CYCLE;
+    const burst = !!this.ringing && RING_BURSTS.some(([a, b]) => ph >= a && ph < b);
+    const f = Math.floor(this.ringT * 30) % 2;
+    p.body.x = burst ? (f ? 1 : -1) : 0;
+    p.handset.y = burst ? -1 - f : 0;
+    p.tag.visible = burst;
+    const waiting = !!this.pendingCall();
+    p.light.clear().circle(24, 8, 1.5).fill(waiting && (burst || Math.floor(performance.now() / 500) % 2) ? 0xff3a3a : 0x3a1a1a);
+  }
+
+  exit(): void {
+    this.silenceRing();
+    super.exit();
+  }
 
   private drawProps(): Container {
     const props = new Container();
@@ -540,6 +690,7 @@ export class DeskScene extends Scene {
     this.lastEvent = { kind: 'select' };
     sfx('paper');
     if (it.kind === 'story') {
+      if (this.ringing === it.id) this.silenceRing();
       spendMinutes(this.g.state!, 20);
       playStorylet(this.g, it.inst, (res) => {
         if (res) this.flash(res, PAL.bone);
@@ -1141,6 +1292,7 @@ export class DeskScene extends Scene {
       }
     }
     this.updateClock();
+    this.updatePhone(dt);
     if (this.anim) {
       const a = this.anim;
       a.t += dt;
