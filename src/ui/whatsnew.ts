@@ -12,6 +12,19 @@ import { openHelp } from './help';
 /** Newest first. Keep each version to a few lines. */
 export const NOTES: { v: string; lines: string[] }[] = [
   {
+    v: '2.2.0',
+    lines: [
+      'PLAY ANYWHERE: on your phone at 506clicks.ca/play/cageboss, and a new Android app.',
+      'Phones fill the screen: big buttons, touch fight controls, skip intros and cutscenes.',
+      'END WEEK no longer freezes phones: saving happens in the background.',
+      'QUICK FIGHT venues: a beach, an aircraft carrier, a rooftop, Uncle Dale\'s barn and more.',
+      'Book your event at one of them and that\'s where the cage goes.',
+      'Nine new fighters, three of them from the Maritimes.',
+      'The desk phone rings now. Pick it up.',
+      'The rankings wall shows the open spots, and who could fill them.',
+    ],
+  },
+  {
     v: '2.1.0',
     lines: [
       'THE FINAL ROUND: the last update before the full release.',

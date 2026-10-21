@@ -4,7 +4,7 @@
  * keyboard, or both of you on one keyboard). Nothing is saved; nobody's career is touched.
  */
 import { Graphics } from 'pixi.js';
-import { isConsole } from '../../core/platform';
+import { isConsole, isTouchDevice } from '../../core/platform';
 import { Scene } from '../app';
 import type { Bout, FightEvent, Fighter, GameState } from '../../core/types';
 import { PAL } from '../../art/palette';
@@ -92,19 +92,26 @@ export class QuickFightScene extends Scene {
     return [...ranked, ...rest].slice(0, 40);
   }
 
+  /** phones: the corners move out to the screen's real edges */
+  private get FW(): number {
+    return isTouchDevice() ? SW : W;
+  }
+
   build(): void {
     const r = this.root;
-    const bg = new Graphics().rect(-OX, 0, SW, H).fill(0x15121a);
-    for (let y = 0; y < H; y += 6) bg.rect(0, y, W, 1).fill({ color: 0x000000, alpha: 0.25 });
+    const FW = this.FW;
+    r.x = FW === W ? 0 : -OX;
+    const bg = new Graphics().rect(0, 0, FW, H).fill(0x15121a);
+    for (let y = 0; y < H; y += 6) bg.rect(0, y, FW, 1).fill({ color: 0x000000, alpha: 0.25 });
     r.addChild(bg);
-    r.addChild(text('QUICK FIGHT', 0, 6, { width: W, align: 'center', color: PAL.gold, scale: 2 }));
-    r.addChild(text('Any two fighters. No careers on the line. Probably some brain damage.', 0, 24, { width: W, align: 'center', small: true, color: PAL.ash }));
+    r.addChild(text('QUICK FIGHT', 0, 6, { width: FW, align: 'center', color: PAL.gold, scale: 2 }));
+    r.addChild(text('Any two fighters. No careers on the line. Probably some brain damage.', 0, 24, { width: FW, align: 'center', small: true, color: PAL.ash }));
     const fighters = this.list();
     this.pick = [Math.min(this.pick[0], fighters.length - 1), Math.min(this.pick[1], fighters.length - 1)];
     if (this.pick[0] === this.pick[1]) this.pick[1] = (this.pick[0] + 1) % fighters.length;
     // the two corners
     for (const side of [0, 1] as const) {
-      const x = side === 0 ? 8 : W - 172;
+      const x = side === 0 ? 8 : FW - 172;
       const f = fighters[this.pick[side]];
       r.addChild(box(164, 150, PAL.night, side === 0 ? 0x9e2a2a : 0x284a86, { bevel: true })).position.set(x, 36);
       r.addChild(text(side === 0 ? (this.mode === 'versus' ? 'RED CORNER  •  P1' : 'RED CORNER  •  YOU') : this.mode === 'versus' ? 'BLUE CORNER  •  P2' : 'BLUE CORNER  •  CPU', x + 6, 40, { small: true, color: side === 0 ? 0xd86a6a : 0x6a8ad8 }));
@@ -120,7 +127,7 @@ export class QuickFightScene extends Scene {
       r.addChild(button('VS ANYONE', x + 84, 168, 74, 13, () => this.anyone(side), { small: true, fill: PAL.shadow }));
     }
     // the middle: settings
-    const mx = 180;
+    const mx = Math.round((FW - 120) / 2);
     const row = (label: string, y: number) => r.addChild(text(label, mx, y + 3, { small: true, color: PAL.ash }));
     row('DIVISION', 40);
     const divOpts = DIVISION_ORDER.map((d) => ({ value: d, label: divisionName(d) }));
@@ -138,7 +145,7 @@ export class QuickFightScene extends Scene {
     r.addChild(text(this.controlsNote(), mx, 114, { small: true, width: 120, color: PAL.ash, maxLines: 8 }));
     this.venuePanel();
     r.addChild(button('← BACK', 8, H - 20, 60, 14, () => void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g))), { small: true }));
-    r.addChild(button('FIGHT!', W / 2 - 50, H - 24, 100, 18, () => this.fight(), { fill: PAL.blood }));
+    r.addChild(button('FIGHT!', FW / 2 - 50, H - 24, 100, 18, () => this.fight(), { fill: PAL.blood }));
   }
 
   /** Under the corners: where tonight's fight is, with a look at the room. */
@@ -148,7 +155,8 @@ export class QuickFightScene extends Scene {
     const room = roomOf(v);
     const info = v.venue ? content().venues.find((x) => x.id === v.venue) : undefined;
     const y = 190;
-    r.addChild(box(464, 52, PAL.night, PAL.slate, { bevel: true })).position.set(8, y);
+    const FW = this.FW;
+    r.addChild(box(FW - 16, 52, PAL.night, PAL.slate, { bevel: true })).position.set(8, y);
     // the room, small: its band, a row of heads, the top of the cage
     const pv = new Graphics();
     paintRoom(pv, room, lerpColor, 60);
@@ -159,11 +167,11 @@ export class QuickFightScene extends Scene {
     r.addChild(pv);
     r.addChild(box(202, 26, 0x000000, PAL.slate, { alpha: 0 })).position.set(12, y + 4);
     r.addChild(text('VENUE', 220, y + 6, { small: true, color: PAL.ash }));
-    r.addChild(selector(250, y + 4, 216, VENUES.map((x, i) => ({ value: i, label: x.label })), this.venue, (i) => { this.venue = i; this.refresh(); }));
+    r.addChild(selector(250, y + 4, FW - 264, VENUES.map((x, i) => ({ value: i, label: x.label })), this.venue, (i) => { this.venue = i; this.refresh(); }));
     const name = info?.name ?? 'An Unmarked Warehouse';
     const blurb = info?.blurb ?? 'No permits, no gloves, no address on the flyer. Bring cash.';
-    r.addChild(text(name.toUpperCase(), 220, y + 21, { small: true, color: PAL.gold, width: 246, maxLines: 1 }));
-    r.addChild(text(blurb, 220, y + 29, { small: true, color: PAL.ash, width: 246, maxLines: 2 }));
+    r.addChild(text(name.toUpperCase(), 220, y + 21, { small: true, color: PAL.gold, width: FW - 234, maxLines: 1 }));
+    r.addChild(text(blurb, 220, y + 29, { small: true, color: PAL.ash, width: FW - 234, maxLines: 2 }));
     const cap = info ? `CAPACITY ${info.capacity.toLocaleString('en-US')}` : 'CAPACITY: WHOEVER FITS';
     r.addChild(text(`${v.bare ? 'BARE KNUCKLE  •  ' : ''}${ROOMS[room].day ? 'DAYLIGHT  •  ' : ''}${cap}`, 13, y + 36, { small: true, color: PAL.grey, width: 200, maxLines: 1 }));
   }
