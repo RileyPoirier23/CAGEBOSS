@@ -19,6 +19,7 @@ import { openLedgerPeek } from './ui/scenes/ledger';
 import { openNegotiation } from './ui/scenes/negotiation';
 import { openFighterEditor } from './ui/scenes/editor_fighter';
 import { openFightLab } from './ui/scenes/fightlab';
+import { openArenaLab } from './ui/scenes/arenalab';
 import { installTouch, attachTouchCanvas } from './ui/touch';
 import { installController } from './ui/controller';
 import { installNative, importLegacySaves } from './native';
@@ -102,10 +103,13 @@ async function boot() {
   (window as any).__open = {
     roster: openRoster, rankings: openRankings, inbox: openInbox, chart: openChart, corkboard: openCorkboard, settings: openSettings,
     credits: openCredits, gamemenu: openGameMenu, jukebox: openJukebox, load: openLoad, ledger: openLedgerPeek, negotiation: openNegotiation,
-    editor: openFighterEditor, fightlab: openFightLab,
+    editor: openFighterEditor, fightlab: openFightLab, arenalab: openArenaLab,
   };
   game.goto(new TitleScene(game));
-  if (new URLSearchParams(location.search).has('fightlab')) openFightLab(game);
+  const params = new URLSearchParams(location.search);
+  if (params.has('fightlab')) openFightLab(game);
+  // after the title's own pop-ups (what's new, coming soon), so the lab is on top
+  if (params.has('arenalab')) setTimeout(() => openArenaLab(game, params.get('arenalab') || 'strikes'), 1200);
 }
 
 boot().catch((e) => {
