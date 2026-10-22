@@ -40,6 +40,7 @@ export interface Settings {
   tutorial?: boolean; // offer the tutorial on new careers
   handsOn?: boolean; // Fighter Mode: control your fighter in real time (default on)
   tvSafe?: number; // TV-safe margin in % of each edge (consoles / TVs)
+  vibration?: boolean; // controller rumble and phone buzz in hands-on fights (default on)
 }
 
 const DEFAULT_SETTINGS: Settings = {

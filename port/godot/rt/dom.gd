@@ -240,7 +240,17 @@ class Nav extends RefCounted:
 	var maxTouchPoints: float:
 		get: return 5.0 if DisplayServer.is_touchscreen_available() else 0.0
 	var onLine := true
-	func vibrate(_p = null) -> bool: return false
+	## phones buzz (Godot ignores it where there's no motor): ms, or an [on, off, on...] pattern whose "on" parts add up
+	func vibrate(p = null) -> bool:
+		var ms := 0
+		if p is int or p is float:
+			ms = int(p)
+		elif p is Array:
+			for i in range(0, p.size(), 2):
+				ms += int(p[i])
+		if ms > 0:
+			Input.vibrate_handheld(ms)
+		return true
 	## the W3C "standard" gamepad layout, from Godot's SDL-style joypad mapping
 	func getGamepads() -> Array:
 		var out: Array = []

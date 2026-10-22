@@ -20,7 +20,7 @@ import type { Input, PadButton } from './input';
 // ------------------------------------------------------------ action table
 
 export type FightButton =
-  | 'lead' | 'rear' | 'kick' | 'block' | 'grab' | 'feint' | 'body' | 'taunt'
+  | 'lead' | 'rear' | 'kick' | 'block' | 'grab' | 'feint' | 'body' | 'taunt' | 'dodge'
   | 'evadeUp' | 'evadeDown' | 'evadeAway' | 'evadeToward'
   | 'getupLeft' | 'getupRight';
 
@@ -52,6 +52,8 @@ export const DEFAULT_FIGHT_BINDINGS: Record<FightButton, FightBinding> = {
   taunt: { pad: ['X'], keys: ['KeyT'], touch: ['TAUNT'] },
   // hold to send strikes to the body (the stick also works: down + punch)
   body: { pad: ['LT'], keys: ['KeyO'], touch: ['BODY'] },
+  // hold + stick = head movement that way (alone: pull). Pads flick the right stick instead.
+  dodge: { keys: ['KeyH'], touch: ['EVADE'] },
   // right-stick flicks are read from the stick; these are the digital equivalents
   evadeUp: { keys: ['ArrowUp'] },
   evadeDown: { keys: ['ArrowDown'] },
@@ -62,14 +64,15 @@ export const DEFAULT_FIGHT_BINDINGS: Record<FightButton, FightBinding> = {
 };
 
 export const FIGHT_ACTIONS: Record<FightButton, FightActionInfo> = {
-  lead: { label: 'Lead hand', help: 'Tap = light, hold = heavy. Neutral jab, toward/up hook, down body jab, down+toward uppercut. Clinch: short hooks' },
-  rear: { label: 'Rear hand', help: 'Neutral straight, toward hook, up overhand, down body shot, down+toward uppercut, away spinning backfist. Clinch: heavy = elbow' },
-  kick: { label: 'Kick', help: 'Neutral body, up head, down leg, toward front kick, away spinning kick. Clinch: knees (up = head from the plum). Ground: pass / sweep / stand' },
+  lead: { label: 'Lead hand', help: 'Tap = light, hold = heavy. Push the stick AS you press (walking doesn\'t count): neutral jab, toward/up hook, down body jab, down+toward uppercut. Clinch: short hooks' },
+  rear: { label: 'Rear hand', help: 'Push the stick AS you press: neutral straight, toward hook, up overhand, down body shot, down+toward uppercut, away spinning backfist. Clinch: heavy = elbow' },
+  kick: { label: 'Kick', help: 'Push the stick AS you kick: neutral body, up head, down leg, toward front kick, away spinning kick. Clinch: knees (up = head from the plum). Ground: pass / sweep / stand' },
   block: { label: 'Block / parry', help: 'Hold to block (head high; body and legs leak through), tap just before a punch lands to parry' },
-  grab: { label: 'Grab', help: 'Hold = clinch (toward = shoot). Tap = sprawl. Clinch: up plum, toward underhooks, down trip, away break. Ground: + stick = submission' },
-  feint: { label: 'Feint', help: 'Fake a strike: a good one makes him flinch and opens a counter' },
+  grab: { label: 'Grab', help: 'Hold = clinch (push toward = shoot). Press when he shoots = sprawl. Clinch: up plum, toward underhooks, down trip, away break. Ground: + stick = submission' },
+  feint: { label: 'Feint', help: 'Fake a strike: a good one makes him flinch and opens a counter. Block while holding a punch = it never comes out' },
   taunt: { label: 'Taunt', help: 'Your own taunt (some flip him off). Gets a breath back and gets in his head: he comes forward reckless. Hands are down while you do it' },
   body: { label: 'Body modifier', help: 'Hold with a punch to go to the body (jab, straight, hook). Same as stick down' },
+  dodge: { label: 'Dodge', help: 'Hold + stick: slip (up), roll (down), pull (away), lean (toward). Alone: pull' },
   evadeUp: { label: 'Slip', help: 'Right stick flick up (or arrow)' },
   evadeDown: { label: 'Roll / duck', help: 'Right stick flick down' },
   evadeAway: { label: 'Pull', help: 'Right stick flick away from the opponent' },
@@ -91,6 +94,9 @@ export const FIGHT_TUNING = {
   mashWindow: 1, // presses counted over this window for mash rate
   getupMin: 0.16, // ideal alternate-trigger interval
   getupMax: 0.5,
+  dirFresh: 0.2, // a toward/away held longer than this is walking, not a strike modifier
+  dirGrace: 0.07, // a direction pushed this soon after a punch press still picks the punch (J + D together)
+  subKeep: 0.25, // submissions: the stick may sit in neutral this long between quarter turns (keyboard taps)
 };
 
 // ------------------------------------------------------------ context + intents
@@ -197,7 +203,7 @@ export function weightFor(hold: number): Weight {
 export type KeyboardShare = 'full' | 'left' | 'right' | 'none';
 /** Player 2's half of a shared keyboard: arrows to move, the keys around Enter to fight. */
 export const P2_KEYS: Partial<Record<FightButton, string[]>> = {
-  lead: ['Comma'], rear: ['Period'], kick: ['Slash'], block: ['ShiftRight'], grab: ['Enter'], feint: ['Quote'], body: ['Semicolon'], taunt: ['Backslash'],
+  lead: ['Comma'], rear: ['Period'], kick: ['Slash'], block: ['ShiftRight'], grab: ['Enter'], feint: ['Quote'], body: ['Semicolon'], taunt: ['Backslash'], dodge: ['KeyP'],
   getupLeft: ['BracketLeft'], getupRight: ['BracketRight'],
 };
 
@@ -240,11 +246,11 @@ export function sampleFight(inp: Input, binds: Record<FightButton, FightBinding>
     if (kx || ky) move = { x: kx / Math.hypot(kx, ky), y: ky / Math.hypot(kx, ky) };
   }
   if (!move.x && !move.y && touch) move = { ...touch.stick };
-  // head movement: right stick; the touch EVADE button flicks in the touch stick's direction
+  // head movement: right stick; DODGE (key / touch EVADE) flicks the way the move stick points, alone it pulls
   let look = padList.length && pad !== -1 ? inp.stick('right', pad) : { x: 0, y: 0 };
-  if (touch?.held.has('EVADE') && Math.hypot(touch.stick.x, touch.stick.y) > 0.3) {
-    const m = Math.hypot(touch.stick.x, touch.stick.y);
-    look = { x: touch.stick.x / m, y: touch.stick.y / m };
+  if (held.has('dodge')) {
+    const m = Math.hypot(move.x, move.y);
+    look = m > 0.3 ? { x: move.x / m, y: move.y / m } : { x: -facing, y: 0 };
   }
   return { move, look, held, pressure, analog };
 }
@@ -271,20 +277,24 @@ export class FightInput {
   private lookLowT = -1;
   private lookFired = false;
   private subAngle: number | null = null;
+  /** when the stick last went back to neutral during a submission (-1 = it's deflected) */
+  private subLostT = -1;
   private subAccum = 0;
   private subTurns = 0;
   private mashTimes: number[] = [];
   private lastGetup: { side: 'left' | 'right'; t: number } | null = null;
+  private lastDir8: Dir8 = 'neutral';
+  private dir8Since = 0;
 
   /** Remap one action. */
   bind(action: FightButton, b: FightBinding): void {
     this.bindings[action] = { pad: b.pad?.slice(), keys: b.keys?.slice(), touch: b.touch?.slice() };
   }
 
-  /** Seconds a button has been held (0 if up) — for charge meters. */
+  /** Seconds a button has been held (0 if up, or if the press was already used up) — for charge meters. */
   heldFor(b: FightButton): number {
     const p = this.presses.get(b);
-    return p ? this.t - p.t : 0;
+    return p && !p.fired ? this.t - p.t : 0;
   }
 
   get isBlocking(): boolean {
@@ -309,9 +319,12 @@ export class FightInput {
     this.presses.clear();
     this.blocking = false;
     this.subAngle = null;
+    this.subLostT = -1;
     this.subAccum = this.subTurns = 0;
     this.mashTimes = [];
     this.lastGetup = null;
+    this.lastDir8 = 'neutral';
+    this.dir8Since = 0;
   }
 
   private mashRate(): number {
@@ -329,8 +342,27 @@ export class FightInput {
     const up = (b: FightButton) => !s.held.has(b) && this.prevHeld.has(b);
 
     // track press starts (direction is read when the button goes down)
-    const dir8 = stickDir8(s.move, ctx.facing);
-    for (const b of s.held) if (!this.prevHeld.has(b)) this.presses.set(b, { t: this.t, dir: moveDir, dir8, body: s.held.has('body'), pressure: s.pressure[b] ?? 1, analog: !!s.analog?.has(b) });
+    const raw8 = stickDir8(s.move, ctx.facing);
+    const turned = raw8 !== this.lastDir8;
+    if (turned) {
+      this.lastDir8 = raw8;
+      this.dir8Since = this.t;
+    }
+    // standing, a sideways direction only picks the strike if it was just pushed: walking in and pressing lead is still a jab
+    const stale = !ctx.grounded && !ctx.clinch && this.t - this.dir8Since > T.dirFresh;
+    const dir8: Dir8 = stale ? (raw8 === 'toward' || raw8 === 'away' ? 'neutral' : raw8 === 'upToward' || raw8 === 'upAway' ? 'up' : raw8) : raw8;
+    const pressDir: Dir = stale && (moveDir === 'toward' || moveDir === 'away') ? 'neutral' : moveDir;
+    for (const b of s.held) if (!this.prevHeld.has(b)) this.presses.set(b, { t: this.t, dir: pressDir, dir8, body: s.held.has('body'), pressure: s.pressure[b] ?? 1, analog: !!s.analog?.has(b) });
+    // pressed J a hair before D: a direction that arrives just after the press still picks the punch
+    if (turned && raw8 !== 'neutral') {
+      for (const hand of ['lead', 'rear'] as const) {
+        const p = this.presses.get(hand);
+        if (p && !p.fired && s.held.has(hand) && p.t < this.t && this.t - p.t <= T.dirGrace + 1e-9) {
+          p.dir8 = dir8;
+          p.dir = pressDir;
+        }
+      }
+    }
     for (const b of s.held) {
       const p = this.presses.get(b);
       if (p) p.pressure = Math.max(p.pressure, s.pressure[b] ?? 1);
@@ -372,7 +404,12 @@ export class FightInput {
           }
         }
         this.subAngle = a;
-      } else this.subAngle = null;
+        this.subLostT = -1;
+      } else if (this.subAngle !== null) {
+        // keyboard taps (W, D, S, A) pass through neutral: keep the last angle for a moment
+        if (this.subLostT < 0) this.subLostT = this.t;
+        else if (this.t - this.subLostT > T.subKeep) this.subAngle = null;
+      }
       if (down('kick') || down('grab')) {
         this.mashTimes.push(this.t);
         out.push({ type: 'mash', rate: this.mashRate(), role });
@@ -380,13 +417,22 @@ export class FightInput {
       return this.finish(s, out);
     }
     this.subAngle = null;
+    this.subLostT = -1;
     this.subAccum = this.subTurns = 0;
+
+    // a block pressed while a punch is held calls the punch off (the hold feint)
+    if (down('block')) {
+      for (const hand of ['lead', 'rear'] as const) {
+        const p = this.presses.get(hand);
+        if (p && s.held.has(hand)) p.fired = true;
+      }
+    }
 
     // punches resolve on release: hold time = weight, press-time stick = type
     for (const hand of ['lead', 'rear'] as const) {
       if (!up(hand)) continue;
       const p = this.presses.get(hand);
-      if (!p) continue;
+      if (!p || p.fired) continue;
       const hold = this.t - p.t;
       const punch = punchFor(hand, p.dir8, p.body);
       // a hard trigger squeeze bumps the weight one step
@@ -419,17 +465,20 @@ export class FightInput {
     } else if (ctx.clinch) {
       // in the clinch: kicks are knees (up = to the head), grab taps fight for the tie-up
       if (down('kick')) out.push({ type: 'kick', level: moveDir === 'up' ? 'head' : moveDir === 'down' ? 'low' : 'body' });
-      if (down('grab')) out.push({ type: 'clinchMove', move: moveDir === 'up' ? 'plum' : moveDir === 'toward' ? 'under' : moveDir === 'down' ? 'trip' : moveDir === 'away' ? 'break' : 'pummel' });
+      if (down('grab')) out.push(ctx.beingShot ? { type: 'sprawl' } : { type: 'clinchMove', move: moveDir === 'up' ? 'plum' : moveDir === 'toward' ? 'under' : moveDir === 'down' ? 'trip' : moveDir === 'away' ? 'break' : 'pummel' });
     } else {
-      if (down('kick')) out.push({ type: 'kick', level: moveDir === 'up' ? 'head' : moveDir === 'down' ? 'low' : moveDir === 'toward' ? 'front' : moveDir === 'away' ? 'spin' : 'body' });
+      if (down('kick')) out.push({ type: 'kick', level: pressDir === 'up' ? 'head' : pressDir === 'down' ? 'low' : pressDir === 'toward' ? 'front' : pressDir === 'away' ? 'spin' : 'body' });
 
-      // clinch / shoot on hold, sprawl on a tap while being shot
+      // clinch / shoot on hold; while he's shooting, the press itself is the sprawl (no waiting for the release)
       const g = this.presses.get('grab');
+      if (g && down('grab') && ctx.beingShot) {
+        g.fired = true;
+        out.push({ type: 'sprawl' });
+      }
       if (g && s.held.has('grab') && !g.fired && this.t - g.t >= T.grabHold) {
         g.fired = true;
-        out.push(g.dir === 'toward' || moveDir === 'toward' ? { type: 'shoot' } : { type: 'clinch' });
+        out.push(g.dir === 'toward' || (moveDir === 'toward' && this.dir8Since > g.t) ? { type: 'shoot' } : { type: 'clinch' });
       }
-      if (up('grab') && g && !g.fired && ctx.beingShot) out.push({ type: 'sprawl' });
 
       // head movement: right stick flick, or the digital evade buttons
       const mag = Math.hypot(s.look.x, s.look.y);
@@ -465,8 +514,44 @@ export function cloneBindings(b: Record<FightButton, FightBinding>): Record<Figh
   return out;
 }
 
+// ------------------------------------------------------------ haptics
+
+export type FightHaptic = 'land' | 'landBig' | 'hurt' | 'hurtBig' | 'blocked' | 'parried' | 'charged' | 'kd' | 'heartbeat';
+/** Pad rumble per moment: [strong, weak, ms]. */
+const HAPTIC_PAD: Record<FightHaptic, [number, number, number]> = {
+  land: [0.15, 0.1, 40], landBig: [0.6, 0.4, 120], hurt: [0.35, 0.2, 90], hurtBig: [0.9, 0.6, 220],
+  blocked: [0.2, 0.1, 60], parried: [0.2, 0.1, 60], charged: [0.12, 0.05, 30], kd: [1, 0.7, 400], heartbeat: [0.08, 0, 40],
+};
+/** Phone buzz per moment (ms, or an on/off/on pattern). */
+const HAPTIC_TOUCH: Record<FightHaptic, number | number[]> = {
+  land: 10, landBig: 35, hurt: [30, 40, 30], hurtBig: 60, blocked: [10, 30, 10], parried: [10, 30, 10], kd: 250, charged: 8, heartbeat: 15,
+};
+/** when the phone last buzzed (ms): a flurry is one buzz every 60 ms at most, not a constant drone */
+let lastBuzz = -1e9;
+
+/**
+ * Feel the fight: what you landed, what landed on you, a blocked or parried shot, a loaded heavy,
+ * a knockdown, your heart when you're hurt or gassed. Pads rumble; phones buzz. on = the Vibration setting.
+ */
+export function fightHaptic(inp: Input, kind: FightHaptic, on = true): void {
+  if (!on) return;
+  if (inp.lastDevice === 'touch') {
+    const now = performance.now();
+    if (now - lastBuzz < 60) return;
+    lastBuzz = now;
+    try {
+      navigator.vibrate?.(HAPTIC_TOUCH[kind]);
+    } catch {
+      /* no vibration motor */
+    }
+    return;
+  }
+  const r = HAPTIC_PAD[kind];
+  inp.rumble(r[0], r[1], r[2]);
+}
+
 /** Rumble scaled to how big a hit was (0..1). Light hits are ignored. */
 export function rumbleForHit(inp: Input, power: number): void {
   if (power < 0.35) return;
-  inp.rumble(Math.min(1, power), Math.min(1, power * 0.6), 80 + Math.round(power * 220));
+  fightHaptic(inp, power >= 0.7 ? 'hurtBig' : 'hurt');
 }
