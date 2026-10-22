@@ -317,4 +317,26 @@ describe('a smarter CPU, and no one-button wins', () => {
     expect(caught).toBeGreaterThanOrEqual(1);
     expect(tds).toBe(0);
   });
+
+  it('a sharp shot stops a looping one', () => {
+    const L = setup(6);
+    L.F[0].x = 200;
+    L.F[1].x = 248;
+    const evs = run(L, [[], [P('overhand', 'heavy', 'rear')]], 1);
+    expect(L.F[1].act?.wind).toBeCloseTo(0.345);
+    evs.push(...run(L, [[P('straight', 'medium', 'rear')], []], 14));
+    expect(evs.some((e) => e.type === 'interrupt' && e.side === 0 && e.name === 'overhand')).toBe(true);
+    expect(evs.some((e) => (e.type === 'hit' || e.type === 'counter' || e.type === 'miss') && e.side === 1)).toBe(false);
+    // told right after the hit that did it
+    const k = evs.findIndex((e) => e.type === 'interrupt');
+    expect(evs[k - 1].type === 'hit' && evs[k - 1].side === 0).toBe(true);
+    // a flicked jab doesn't stop anything: the overhand still comes
+    const J = setup(6);
+    J.F[0].x = 200;
+    J.F[1].x = 248;
+    const evj = run(J, [[], [P('overhand', 'heavy', 'rear')]], 1);
+    evj.push(...run(J, [[P('jab', 'light')], []], 14));
+    expect(evj.some((e) => e.type === 'interrupt')).toBe(false);
+    expect(evj.some((e) => (e.type === 'hit' || e.type === 'counter' || e.type === 'miss' || e.type === 'block') && e.side === 1)).toBe(true);
+  });
 });

@@ -56,6 +56,8 @@ interface Act {
   push?: number;
   /** a light (flicked) strike: it chips, it doesn't finish */
   light?: boolean;
+  /** started inside a counter window: it lands as a counter even if the window shut during the windup */
+  counter?: boolean;
 }
 
 export interface LiveFighter {
@@ -762,7 +764,7 @@ export class LiveFight {
 
   private startAct(f: LiveFighter, a: Omit<Act, 't' | 'done'>, gas: number): void {
     const chain = f.comboT > 0 && (a.kind === 'punch' || a.kind === 'kick' || a.kind === 'knee') ? 0.75 : 1;
-    f.act = { ...a, wind: a.wind * chain, rec: a.rec * chain, t: 0, done: false };
+    f.act = { ...a, wind: a.wind * chain, rec: a.rec * chain, t: 0, done: false, counter: f.counterT > 0 };
     f.gas = Math.max(0, f.gas - gas);
     f.exert += gas * 1.4;
     f.block = f.block && a.kind === 'feint';
@@ -887,7 +889,7 @@ export class LiveFight {
     if (o.cut >= 2 && a.target === 'head') dmg *= 1.08; // blood in the eye: he doesn't see it coming
     const limb = this.hurtLimb[i];
     if ((a.hand === 'lead' && limb.lead) || (a.hand === 'rear' && limb.rear) || (a.kind === 'kick' && limb.legs)) dmg *= 0.5;
-    const counter = f.counterT > 0;
+    const counter = f.counterT > 0 || !!a.counter;
     if (counter) {
       dmg *= 1.5;
       f.counterT = 0;
@@ -937,7 +939,17 @@ export class LiveFight {
       this.nudge((1 - i) as Side, -a.push);
       if (o.act && !o.act.done) o.act = null;
     }
+    // beat him to the punch: a clean, solid shot to the head stops whatever he was loading up
+    let stopped = '';
+    if (o.act && !o.act.done && o.act.kind !== 'shoot' && o.act.wind >= 0.18 && !a.light && (a.heavy || a.dmg >= 4) && a.target === 'head') {
+      stopped = o.act.name;
+      o.act = null;
+      o.stun = Math.max(o.stun, 0.2);
+    }
+    const at = this.events.length;
     this.apply(i, a.target, dmg, a.heavy || counter, counter, a.name, !!a.light);
+    // (told right after the hit itself)
+    if (stopped && !this.result) this.events.splice(at + 1, 0, { type: 'interrupt', side: i, name: stopped });
   }
 
   /** Damage lands. Knockdowns and finishes are decided here. */
@@ -1729,20 +1741,45 @@ export class LiveAI {
     }
     // a low fight IQ misjudges the distance by a few pixels
     const slack = 2 + (1 - iq) * 12;
+    // free to start something this frame?
+    let acted = !!me.act || me.stun > 0;
+    if (!acted && me.counterT > 0 && d <= 70 && this.rng.chance(dt * 12 * iq)) {
+      // an opening (he whiffed, got parried, got his kick caught): make him pay now, not whenever the next thought comes
+      if (d <= 56) {
+        const c: PunchType = d <= 44 ? 'hook' : d <= 53 ? 'straight' : 'jab';
+        this.throwPunch(out, c, c === 'jab' ? 'lead' : 'rear', 'heavy', d);
+        this.entry = null;
+        this.think = this.rng.float(0.15, 0.3);
+        acted = true;
+      } else if (!this.entry) this.entry = { punch: 'straight', hand: 'rear', weight: 'heavy', t: me.counterT }; // he pulled out of range: step back in behind it
+    }
+    if (!acted && op.act && !op.act.done && (op.act.kind === 'punch' || op.act.kind === 'kick') && (iq > 0.7 || this.plan === 'counter' || (this.side === 0 ? L.A : L.B).styles.includes('Counter Striker'))) {
+      // he sees the big one loading up and gets there first with something quicker
+      const left = op.act.wind - op.act.t;
+      const wk = me.gas < 20 ? 1.3 : 1;
+      const c: PunchType | null = d <= 53 && left > PUNCH.straight.wind * wk + 0.05 ? 'straight' : d <= 56 && left > PUNCH.jab.wind * wk + 0.05 ? 'jab' : null;
+      if (c && this.rng.chance(dt * 6 * iq)) {
+        this.throwPunch(out, c, c === 'jab' ? 'lead' : 'rear', 'medium', d);
+        this.entry = null;
+        this.think = this.rng.float(0.15, 0.3);
+        acted = true;
+      }
+    }
     if (this.entry) {
       // stepping in behind a short shot: walk into its range, then throw it
       const e = this.entry;
       e.t -= dt;
       if (e.t <= 0 || me.stun > 0.2) this.entry = null;
-      else if (d <= PUNCH[e.punch].reach - 2 && !me.act) {
+      else if (d <= PUNCH[e.punch].reach - 2 && !acted) {
         this.throwPunch(out, e.punch, e.hand, e.weight, d);
         this.entry = null;
         this.think = this.rng.float(0.12, 0.3);
+        acted = true;
       } else move = toward;
     }
     this.think -= dt;
-    if (this.think <= 0 && !me.act && me.stun <= 0 && !this.entry) {
-      this.think = this.rng.float(0.18, 0.55) * (this.plan === 'counter' ? 1.4 : pressure ? 0.8 : 1) * (1.25 - iq * 0.4) * (me.gas < 25 ? 1.6 : 1);
+    if (this.think <= 0 && !acted && !this.entry) {
+      this.think = this.rng.float(0.18, 0.55) * (pressure ? 0.8 : 1) * (1.25 - iq * 0.4) * (me.gas < 25 ? 1.6 : 1);
       if (tilted) this.think *= 0.7;
       if (urgent || hurtOp) this.think *= 0.7;
       if (cruise) this.think *= 1.6;
@@ -1755,6 +1792,8 @@ export class LiveAI {
       if (wrestle && d < 66 && r < (0.12 + sk.wrestling / 500 + (urgent && sk.wrestling > 55 ? 0.1 : 0)) * grab) out.push({ type: 'shoot' });
       else if (d < 54 && r < (0.09 + (wrestle ? 0.08 : 0) + (sk.wrestling > sk.striking ? 0.04 : 0) + (rest ? 0.08 : 0)) * grab) out.push({ type: 'clinch' });
       else if (d < 58 && (r < (rest ? 0.45 : cruise ? 0.5 : 0.75) || opening || urgent) && !(this.plan === 'counter' && !opening && !urgent && r > 0.35)) {
+        // a counter puncher who has to lead is in no hurry to lead again
+        if (this.plan === 'counter' && !opening) this.think *= 1.4;
         const kick = badLeg ? 0.04 : this.plan === 'legs' ? 0.45 : 0.18 + (sk.striking > 65 ? 0.05 : 0) + (urgent ? 0.08 : 0);
         if (this.rng.chance(kick) && !rest) {
           const kr = this.rng.next();
