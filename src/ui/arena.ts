@@ -105,6 +105,8 @@ interface FState {
   fallKind: 'back' | 'face' | 'fold' | 'sit';
   fallPose: Pose;
   landed: boolean;
+  /** where he landed, still being eased into the views that follow his x (the punch-in, the overhead view): world px */
+  slide: number;
   /** rubbery legs (rocked, stunned), and the stumble timer */
   wobble: number;
   wobT: number;
@@ -119,7 +121,7 @@ interface FState {
 const newFState = (x: number, facing: 1 | -1): FState => ({
   rig: { ...POSES.guard }, pose: 'guard', poseT: 0, x, lunge: 0, recoil: 0, facing, queue: [],
   hd: [0, 0], hv: [0, 0], td: [0, 0], tv: [0, 0], drv: null, drvU: -1,
-  fallT: -1, fallFrom: POSES.guard, fallKind: 'back', fallPose: 'ko', landed: false,
+  fallT: -1, fallFrom: POSES.guard, fallKind: 'back', fallPose: 'ko', landed: false, slide: 0,
   wobble: 0, wobT: 0, bounce: 1, dripT: 1, pawT: 1.5, pivT: 3,
 });
 
@@ -558,6 +560,8 @@ export class ArenaView extends Container {
   private zoomKick = 0;
   private kickT = 0;
   private zoomOn: 0 | 1 = 0;
+  /** where the punch-in is looking (eased: a man landing or the other man taking the shot doesn't jerk the picture) */
+  private zoomX = AW / 2;
   /** HP bars: the chunk just lost (drains after a beat), the white flash on a hit */
   private hpGhost: [number, number] = [100, 100];
   private hpPrev: [number, number] = [100, 100];
@@ -588,6 +592,8 @@ export class ArenaView extends Container {
   private piece: [Piece | null, Piece | null] = [null, null];
   /** signature moves called (the round each fighter last had one) */
   private lastSig: [number, number] = [-9, -9];
+  /** a finish's signature call, waiting for the KNOCKOUT! / KNOCKDOWN! / TAP! to have its moment (seen: that's up) */
+  private sigNext: { s: string; prio: number; seen: boolean; t: number } | null = null;
   /** the man backed onto his own fence (gets the cage-back guard) */
   private pinned: [boolean, boolean] = [false, false];
   /** the rig each fighter was drawn with this frame (gloves for the counter glow) */
@@ -1116,6 +1122,7 @@ export class ArenaView extends Container {
     f.wobble = 0;
     f.drv = null;
     f.drvU = -1;
+    f.slide = 0;
     if (f.fallT >= 0) {
       f.fallT = -1;
       f.rig = { ...POSES[f.fallPose] };
@@ -1638,7 +1645,8 @@ export class ArenaView extends Container {
    * `instant` applies the line on the spot and quietly (rebuilding the view mid-fight).
    */
   cue(line: TickerLine, instant = false): void {
-    if (instant) return this.apply(line, true);
+    // (a hands-on fight's cut comes in this way too: it's live, not a rebuild, so it still bleeds)
+    if (instant) return this.apply(line, !(this.manual && line.act === 'cut'));
     this.held.push(line);
     this.pumpHeld(0);
   }
@@ -1664,6 +1672,7 @@ export class ArenaView extends Container {
     this.slowT = 0;
     this.hitStop = 0;
     this.calloutT = 0;
+    this.sigNext = null;
     this.flash = 0;
     this.flashT = 0;
     this.flashes = [];
@@ -2132,7 +2141,9 @@ export class ArenaView extends Container {
     // the shot he's throwing becomes his shot
     if (m.pose && throwing) f.pose = m.pose;
     this.lastSig[A] = line.round;
-    this.call(m.call, PAL.gold, finish ? 1 : 2);
+    // on a finish it goes up right after the KNOCKOUT! / KNOCKDOWN! / TAP! (already up on a tap, at contact on the others)
+    if (finish) this.sigNext = { s: m.call, prio: line.act === 'kd' ? 4 : 5, seen: line.act === 'tap', t: 4 };
+    else this.call(m.call, PAL.gold, 1);
   }
 
   /** His celebration style: his own (through CELEB_ALIAS), or one of the arena's if he hasn't got one we know. */
@@ -2389,6 +2400,7 @@ export class ArenaView extends Container {
     this.calloutT = 1.3;
     this.calloutAge = 0;
     this.calloutPrio = prio;
+    if (prio >= 4 && this.sigNext) this.sigNext.seen = true;
   }
 
   // ------------------------------------------------------------ camera
@@ -2435,7 +2447,10 @@ export class ArenaView extends Container {
       if (this.zoomKick < 0.002) this.zoomKick = 0;
       const zk = this.zoomKick;
       const ground = this.ground === 'atop' || this.ground === 'btop';
-      const fx = this.F[this.zoomOn].x;
+      // the punch-in follows him smoothly (it starts right on him)
+      const tx = this.F[this.zoomOn].x;
+      this.zoomX = zk ? this.zoomX + (tx - this.zoomX) * Math.min(1, real * 8) : tx;
+      const fx = this.zoomX;
       const fy = ground || onCanvas(this.F[this.zoomOn].pose) ? FLOOR - 26 : FLOOR - 56;
       if (this.mode === 'side') this.applyCam(AW / 2 + (fx - AW / 2) * zk, AH / 2 + (fy - AH / 2) * zk, 1 + 0.22 * zk, true);
       else this.applyCam(AW / 2, AH / 2, 1, true);
@@ -2649,6 +2664,11 @@ export class ArenaView extends Container {
         // walk off and celebrate away from the man on the canvas
         tx = o.x + (f.x < o.x ? -1 : 1) * 56;
         maxV = 90;
+      } else if (this.scene === 'fight' && !this.manual && !ground && this.refOver === 1 - i && onCanvas(o.pose) && !onCanvas(f.pose)) {
+        // the referee's over the man he dropped: he backs off and gives them room
+        const away = f.x < o.x ? -1 : 1;
+        if (away * (tx - o.x) < 56) tx = Math.max(CAGE_L + 20, Math.min(CAGE_R - 20, o.x + away * 56));
+        maxV = 90;
       }
       // a man on the canvas stays where he fell
       if (this.scene === 'fight' && !ground && (onCanvas(f.pose) || f.fallT >= 0)) tx = f.x;
@@ -2728,6 +2748,15 @@ export class ArenaView extends Container {
       const strike = fight && upright && !walking && f.poseT > 0 && !!f.poseDur && STRIKE_POSES.has(pose);
       const guardUp = fight && upright && !walking && f.poseT > 0 && !!f.poseDur && DEFENCE_POSES.has(pose);
       f.bounce += ((strike ? 0 : 1) - f.bounce) * (1 - Math.exp(-(strike ? 60 : 12) * dt));
+      // taken down (or back up) before he'd finished falling: the fall's over, the pose takes it from here
+      if (f.fallT >= 0 && (!upright || !onCanvas(f.pose))) {
+        f.fallT = -1;
+        f.landed = true;
+      }
+      if (f.slide) {
+        f.slide -= f.slide * Math.min(1, real * 4);
+        if (Math.abs(f.slide) < 0.05) f.slide = 0;
+      }
       if (f.fallT >= 0) this.tickFall(i, f, dt);
       else if (strike || guardUp) {
         // thrown (or ducked) over his own stance: a crouched man stays crouched on a jab
@@ -2815,7 +2844,10 @@ export class ArenaView extends Container {
           // over a man on the canvas: covering him, pointing at him, counting over him
           const o = this.F[this.refOver as 0 | 1];
           const close = ra !== null && (ra.a === 'refCover' || ra.a === 'refWave1' || this.refNext !== null) ? 10 : 30;
-          a.tx = Math.max(CAGE_L + 14, Math.min(CAGE_R - 14, o.x - o.facing * close));
+          // from behind him; with his back on the fence there's no room there, so from the open side
+          const behind = o.x - o.facing * close;
+          const spot = behind < CAGE_L + 14 || behind > CAGE_R - 14 ? o.x + o.facing * close : behind;
+          a.tx = Math.max(CAGE_L + 14, Math.min(CAGE_R - 14, spot));
           if (Math.abs(a.tx - a.x) < 8) a.facing = o.x >= a.x ? 1 : -1;
           else a.facing = a.tx > a.x ? 1 : -1;
         } else if (ra) {
@@ -2949,7 +2981,9 @@ export class ArenaView extends Container {
           // the body stays where it hit the canvas (the legs fold up after it): he is where he landed now
           const lay = this.toppled(buckle, from, kind, 1.3);
           const dx = lay.hip[0] - end.hip[0];
-          f.x += dx * f.facing * this.sz[i];
+          const shift = dx * f.facing * this.sz[i];
+          f.x += shift;
+          f.slide -= shift;
           const r = {} as Rig;
           for (const j of JOINTS) r[j] = [f.rig[j][0] - dx, f.rig[j][1]];
           f.rig = r;
@@ -3150,7 +3184,8 @@ export class ArenaView extends Container {
     const c = this.tc;
     const ground = this.ground === 'atop' || this.ground === 'btop';
     // the real gap between them (side view feet), so range, footwork and pressure read from above too
-    const real = Math.abs(this.F[1].x - this.F[0].x);
+    // (a knocked-out man's landing shift eases in: the overhead view doesn't jump when he hits the canvas)
+    const real = Math.abs(this.F[1].x + this.F[1].slide - this.F[0].x - this.F[0].slide);
     const d = this.ground === 'clinch' ? 13 : ground ? 4 : Math.max(16, Math.min(64, real * 0.62));
     const dir = i === 0 ? -1 : 1;
     const f = this.F[i];
@@ -3446,6 +3481,15 @@ export class ArenaView extends Container {
     }
     const left = Math.max(0, 300 - this.sec);
     this.clock.setText(`R${this.round}/${this.rounds}  ${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, '0')}`);
+    if (this.sigNext) {
+      // the finish's signature call: once the big one has had its moment (or if it never comes)
+      const n = this.sigNext;
+      n.t -= real;
+      if ((n.seen && this.calloutT < 0.4) || n.t <= 0) {
+        this.sigNext = null;
+        this.showCallout(n.s, PAL.gold, n.prio);
+      }
+    }
     if (this.calloutT > 0) {
       // the callout slams in big and settles; a knockdown or a knockout shudders as it lands
       this.calloutT -= dt;
