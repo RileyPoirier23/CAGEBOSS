@@ -148,20 +148,20 @@ export function openArenaLab(g: Game, script: string): void {
     if (sc === 'defence') {
       const a = fresh(true);
       a.manual = [240 - 26, 240 + 26];
-      DEFENCE.forEach((p, k) =>
-        at(0.6 + k * 1.0, () => {
-          note(p);
-          if (p === 'catchKick') {
-            lab.arena.play(0, 'bodykick', 0.4);
-            lab.arena.blockFx(1, 'catch');
-            return;
-          }
+      const defend = (p: string) => {
+        note(p);
+        if (p === 'catchKick') {
+          // a body kick, caught: the kicker hops, the defender cradles the shin
+          lab.arena.play(0, 'bodykick', 0.4);
+          lab.arena.blockFx(1, 'catch');
+        } else {
           lab.arena.play(1, p, 0.5);
           if (p === 'parry') lab.arena.blockFx(1, 'parry');
           if (p === 'check') lab.arena.blockFx(1, 'check');
           if (p === 'block' || p === 'blockBody') lab.arena.blockFx(1, 'block');
-        }),
-      );
+        }
+      };
+      DEFENCE.forEach((p, k) => at(0.6 + k * 1.0, () => defend(p)));
     } else if (sc === 'ko') {
       // a knockdown and the rise, then each of the three ways out
       const segs: [string, Partial<TickerLine>][] = [

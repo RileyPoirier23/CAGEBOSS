@@ -237,6 +237,17 @@ const KEY_SEQ: Record<string, SeqStep[]> = {
   land_dirty: [seqStep('uppercut', 0.2, 'head', 0, '', 1), seqStep('leadHook', 0.24, 'head', 2, '', 1)],
 };
 
+/** The shot the booth names in a finishing line, if it names one. */
+function namedShot(text: string): Pose | '' {
+  if (/uppercut/i.test(text)) return 'uppercut';
+  if (/overhand/i.test(text)) return 'overhand';
+  if (/hook/i.test(text)) return /left/i.test(text) ? 'leadHook' : /body|liver/i.test(text) ? 'bodyHook' : 'hook';
+  if (/liver|to the body|body shot/i.test(text)) return 'bodyHook';
+  if (/\bjab\b/i.test(text)) return 'jab';
+  if (/straight right|right hand|\bcross\b/i.test(text)) return 'cross';
+  return '';
+}
+
 /** Feints by style: wrestlers fake the level change, brawlers dip a shoulder, everybody else paws. */
 function feintFor(stance: string, r: number): Pose {
   if (stance === 'wrestler' || stance === 'crouch') return r < 0.45 ? 'levelFeint' : r < 0.75 ? 'paw' : 'shoulderFeint';
@@ -244,6 +255,9 @@ function feintFor(stance: string, r: number): Pose {
   return r < 0.5 ? 'paw' : r < 0.8 ? 'shoulderFeint' : 'check';
 }
 const FEINT_DUR: Record<string, number> = { paw: 0.18, shoulderFeint: 0.24, levelFeint: 0.28, check: 0.3 };
+
+/** How far the pressure can build: past 1 he's pinned on the fence, and the extra keeps him there a while longer. */
+const PRESS_MAX = 1.3;
 
 /** Ground positions, worst to best for the man on top (a change upward is a pass, downward a scramble). */
 const GPOS_RANK: Record<string, number> = { guard: 0, half: 1, side: 2, mount: 3, back: 4 };
@@ -272,6 +286,17 @@ const SIG_MOVES: Record<string, { acts: string[]; pose?: Pose; call: string; tex
   spinningWheelKick: { acts: ['kick', 'headkick'], pose: 'spinKick', call: 'WHEEL KICK!' },
   jabJabJab: { acts: ['jab'], pose: 'jab', call: 'JAB, JAB, JAB!' },
   volume: { acts: ['jab'], pose: 'jab', call: 'THE VOLUME!' },
+};
+/** A signature only fits the shot he's throwing: hands, legs, knees, shots (a head kicker's punch KO isn't his head kick). */
+const STRIKE_KIND: Record<string, string> = {
+  jab: 'hand', cross: 'hand', hook: 'hand', leadHook: 'hand', uppercut: 'hand', body: 'hand', bodyJab: 'hand', bodyHook: 'hand', overhand: 'hand', elbow: 'hand', spin: 'hand',
+  legkick: 'leg', bodykick: 'leg', headkick: 'leg', frontKick: 'leg', spinKick: 'leg', knee: 'knee', plumKnee: 'knee', flyknee: 'knee', shoot: 'shoot', trip: 'trip',
+};
+/** ...and the booth's words: when the line names a strike, it has to be his. */
+const STRIKE_WORDS = /jab|cross|hook|uppercut|overhand|kick|knee|elbow|backfist|spinning|body|liver/i;
+const SIG_WORDS: Record<string, RegExp> = {
+  overhand: /overhand/i, leadHook: /hook/i, headkick: /kick/i, legkick: /kick|calf|leg/i, bodyHook: /body|liver|hook/i,
+  flyknee: /knee/i, spin: /spinning|backfist|elbow/i, spinKick: /spinning|wheel|kick/i, jab: /jab/i,
 };
 
 /** What the watched sim may add to a line (absent: today's behaviour). */
@@ -519,10 +544,12 @@ export class ArenaView extends Container {
   /** watched strikes on their way to the target, and whether we're rebuilding quietly (no sound, no fx) */
   private pend: Pend[] = [];
   private q = false;
-  /** this line's dice: the same line always plays the same way */
+  /** this line's dice: the same line always plays the same way (the reactions and the mouthpiece roll on them too) */
   private R = new Rng(1);
   /** who's walking whom down (-1 = fighter 1 on the left fence .. 1 = fighter 0 has him on the right one) */
   private press = 0;
+  /** clean shots in a row by one man (+ fighter 0, - fighter 1): unanswered, they walk the other man back faster */
+  private pressRun = 0;
   /** just broke from the clinch: a bigger gap for a moment */
   private breakT = 0;
   /** the sim said which tie it is: no random grip changes for a while */
@@ -1231,7 +1258,7 @@ export class ArenaView extends Container {
       this.setPose(i, detail === 'body' ? 'kneel' : 'down', 9999);
       this.bigMoment(i);
       this.refJob('refPoint', '', 0, 1.2, i);
-      if (Math.random() < 0.25) this.knockPiece(i);
+      if (this.R.next() < 0.25) this.knockPiece(i);
       return;
     }
     const kop = koPoseFor(detail);
@@ -1274,7 +1301,9 @@ export class ArenaView extends Container {
 
   /** It's over: the referee runs in, scissors his arms over his head, then dives over the man on the canvas. */
   private waveOff(i: 0 | 1): void {
-    this.refJob('refWave1', 'refWave2', 6, 0.9, i, { a: 'refCover', b: '', hz: 0, t: 2.5 });
+    // (stopped on his feet: he steps in between them instead)
+    const down = onCanvas(this.F[i].pose) || this.F[i].fallT >= 0 || this.ground === 'atop' || this.ground === 'btop';
+    this.refJob('refWave1', 'refWave2', 6, 0.9, i, { a: down ? 'refCover' : 'refBreak', b: '', hz: 0, t: down ? 2.5 : 1.5 });
     this.refRun = true;
   }
 
@@ -1293,7 +1322,7 @@ export class ArenaView extends Container {
     const f = this.F[i];
     const a = this.F[1 - i];
     const s = this.sz[i];
-    this.piece[i] = { x: f.x + f.rig.head[0] * f.facing * s, y: FLOOR + (f.rig.head[1] + 3) * s, vx: a.facing * (50 + Math.random() * 40), vy: -(80 + Math.random() * 40), bounces: 0, c: mouthguardColor(this.L[i]) };
+    this.piece[i] = { x: f.x + f.rig.head[0] * f.facing * s, y: FLOOR + (f.rig.head[1] + 3) * s, vx: a.facing * (50 + this.R.next() * 40), vy: -(80 + this.R.next() * 40), bounces: 0, c: mouthguardColor(this.L[i]) };
     this.L[i].noGuard = true;
   }
 
@@ -1503,11 +1532,11 @@ export class ArenaView extends Container {
       if (D.poseT <= 0 || D.pose === 'guard') {
         if (legs) this.setPose(def, 'legBuckle', big ? 0.45 : 0.3); // the knee goes
         else if (target === 'body') {
-          if (big || Math.random() < 0.5) this.setPose(def, 'doubled', 0.4); // folded over
+          if (big || this.R.next() < 0.5) this.setPose(def, 'doubled', 0.4); // folded over
         } else if (big) {
           this.setPose(def, 'rocked', 0.45);
           D.wobble = Math.max(D.wobble, 0.6);
-        } else if (Math.random() < 0.5) this.setPose(def, 'hurt', 0.2);
+        } else if (this.R.next() < 0.5) this.setPose(def, 'hurt', 0.2);
       }
     }
     if (big && !this.q) this.hitStop = 0.055;
@@ -1525,7 +1554,7 @@ export class ArenaView extends Container {
     if (big && this.mode === 'tv' && !this.q) this.cutTo('close', 0.25);
     if (big) {
       this.pump(2, D.x);
-      if (head && Math.random() < 0.03) this.knockPiece(def);
+      if (head && this.R.next() < 0.03) this.knockPiece(def);
     }
     this.q = wasQ;
   }
@@ -1559,9 +1588,11 @@ export class ArenaView extends Container {
     const f = this.F[D];
     if (p.react) this.setPose(D, p.react, p.reactDur);
     if (p.fin === 'kd') {
+      // down (on a knee, from a body shot)
+      const kp = (p.kop || 'down') as Pose;
       this.impact(A, p.joint, true, p.bloody, p.target);
-      if (this.q) this.floorNow(D, 'down');
-      else this.setPose(D, 'down', 1.6);
+      if (this.q) this.floorNow(D, kp);
+      else this.setPose(D, kp, 1.6);
       f.poseT = 1.6;
       if (this.q) return;
       this.flash = 0.25;
@@ -1569,7 +1600,7 @@ export class ArenaView extends Container {
       this.slowT = 1.1;
       this.bigMoment(D);
       this.refJob('refPoint', '', 0, 1.2, D);
-      if (Math.random() < 0.25) this.knockPiece(D);
+      if (this.R.next() < 0.25) this.knockPiece(D);
       if (this.mode === 'tv') this.cutTo('close', 0.6, true);
       this.snd('punch');
       this.snd('roar');
@@ -1641,6 +1672,10 @@ export class ArenaView extends Container {
     this.zoomKick = 0;
     this.kickT = 0;
     this.clockRamp = null;
+    // no takedown, pass or punch half played out: they're where the last line left them
+    this.tdT = 0;
+    this.gnpT = 0;
+    this.trans = null;
     this.hpGhost = [this.hp[0], this.hp[1]];
     this.hpPrev = [this.hp[0], this.hp[1]];
     const ground = this.ground === 'atop' || this.ground === 'btop';
@@ -1763,7 +1798,7 @@ export class ArenaView extends Container {
       // standing with his back to the fence: the picture shows it
       this.press = line.fence === 1 ? Math.max(this.press, 0.7) : Math.min(this.press, -0.7);
     }
-    if (line.lead !== undefined) this.press = Math.max(-1, Math.min(1, this.press + (line.lead === 0 ? 0.08 : -0.08)));
+    if (line.lead !== undefined) this.press = Math.max(-PRESS_MAX, Math.min(PRESS_MAX, this.press + (line.lead === 0 ? 0.08 : -0.08)));
     if (!isDown) this.subAnim = null;
     if (prevGround !== this.ground && this.ground === 'stand') {
       this.setPose(0, 'guard', 0);
@@ -1802,10 +1837,13 @@ export class ArenaView extends Container {
     const key = line.key ?? '';
     // an exchange on the feet: re-centre on the pair so they don't drift straight back out of range
     if (!ground && REACH[line.act]) this.center = (this.F[0].x + this.F[1].x) / 2;
-    // landing clean walks the other man back toward his fence
+    // landing clean walks the other man back toward his fence (faster when he doesn't answer)
     if (!ground && (/^land_/.test(key) || line.act === 'kd' || line.act === 'rocked')) {
       const big = line.intensity >= 2 || line.act === 'kd';
-      this.press = Math.max(-1, Math.min(1, this.press + (A === 0 ? 1 : -1) * (big ? 0.22 : 0.1)));
+      const dir = A === 0 ? 1 : -1;
+      this.pressRun = this.pressRun * dir > 0 ? this.pressRun + dir : dir;
+      const run = Math.min(4, Math.abs(this.pressRun));
+      this.press = Math.max(-PRESS_MAX, Math.min(PRESS_MAX, this.press + dir * (big ? 0.22 : 0.1) * (1 + 0.5 * (run - 1))));
     }
     // a whiff: the shot is thrown for real and the other man gets out of the way of that shot
     if (/^miss_/.test(key)) {
@@ -1906,21 +1944,23 @@ export class ArenaView extends Container {
           this.snd('crowd');
           break;
         case 'kd': {
-          const p: Pose = R.next() < 0.5 ? 'hook' : 'cross';
+          const p: Pose = namedShot(line.text) || (R.next() < 0.5 ? 'hook' : 'cross');
+          const body = BODY_SHOTS.has(p);
           this.setPose(A, p, 0.35);
-          this.pendHit(A, 'haB', true, true, 'head', 0.35 * 0.4, '', 0, 'kd');
+          this.pendHit(A, HIT_JOINT[p] ?? 'haB', true, !body, body ? 'body' : 'head', 0.35 * 0.4, '', 0, 'kd', body ? 'kneel' : '');
           break;
         }
         case 'ko': {
           // how he goes depends on what put him there
           const kop = koPoseFor(`${key} ${line.act} ${line.text}`);
+          // (a punch KO is a punch: the one the booth names, or one that fits the way he falls)
           const p: Pose =
-            key === 'ko_kick' ? 'headkick'
+            key === 'ko_kick' ? (/spinning|wheel/i.test(line.text) ? 'spinKick' : 'headkick')
               : key === 'ko_knee' ? (/flying/i.test(line.text) ? 'flyknee' : 'knee')
                 : key === 'ko_elbow' ? 'elbow'
-                  : kop === 'ko' ? (R.next() < 0.5 ? 'headkick' : 'uppercut')
+                  : namedShot(line.text) || (kop === 'ko' ? (R.next() < 0.5 ? 'uppercut' : 'cross')
                     : kop === 'koCrumple' ? (R.next() < 0.5 ? 'hook' : 'overhand')
-                      : R.next() < 0.5 ? 'bodykick' : 'body';
+                      : R.next() < 0.5 ? 'bodyHook' : 'overhand');
           this.setPose(A, p, 0.6);
           this.pendHit(A, HIT_JOINT[p] ?? 'haB', true, true, kop === 'koFace' && BODY_SHOTS.has(p) ? 'body' : 'head', 0.6 * 0.4, '', 0, 'ko', kop);
           this.winnerSide = A;
@@ -2067,6 +2107,7 @@ export class ArenaView extends Container {
     this.breakT = 1;
     this.refTo((this.F[0].x + this.F[1].x) / 2, 1);
     this.refJob('refBreak', '', 0, 0.7, -1);
+    this.refRun = true;
   }
 
   /** His signature move, called by name when the line is that move (once every couple of rounds; always on the finish). */
@@ -2074,16 +2115,22 @@ export class ArenaView extends Container {
     if (!sig.length || this.q) return;
     const finish = line.act === 'ko' || line.act === 'tap' || line.act === 'kd';
     if (!finish && (line.round - this.lastSig[A] < 2 || line.intensity < 2)) return;
+    const f = this.F[A];
+    const throwing = f.poseT > 0 && (STRIKE_POSES.has(f.pose) || f.pose === 'shoot' || f.pose === 'trip');
+    const named = STRIKE_WORDS.test(line.text);
     const fits: string[] = [];
     for (const id of sig) {
       const m = SIG_MOVES[id];
-      if (m && m.acts.includes(line.act) && (!m.text || m.text.test(line.text))) fits.push(id);
+      if (!m || !m.acts.includes(line.act) || (m.text && !m.text.test(line.text))) continue;
+      // it has to be the shot we're showing, and the one the booth is calling
+      if (m.pose && (!throwing || STRIKE_KIND[m.pose] !== STRIKE_KIND[f.pose])) continue;
+      if (m.pose && named && SIG_WORDS[m.pose] && !SIG_WORDS[m.pose].test(line.text)) continue;
+      fits.push(id);
     }
     if (!fits.length || (!finish && this.R.next() >= 0.35)) return;
     const m = SIG_MOVES[fits[Math.floor(this.R.next() * fits.length)]];
-    const f = this.F[A];
     // the shot he's throwing becomes his shot
-    if (m.pose && f.poseT > 0 && (STRIKE_POSES.has(f.pose) || f.pose === 'shoot')) f.pose = m.pose;
+    if (m.pose && throwing) f.pose = m.pose;
     this.lastSig[A] = line.round;
     this.call(m.call, PAL.gold, finish ? 1 : 2);
   }
@@ -2240,6 +2287,7 @@ export class ArenaView extends Container {
     this.subAnim = null;
     this.center = AW / 2;
     this.press = 0;
+    this.pressRun = 0;
     this.refAct = null;
     this.refNext = null;
     this.refOver = -1;
@@ -2289,6 +2337,7 @@ export class ArenaView extends Container {
     this.tdT = 0;
     this.center = AW / 2;
     this.press = 0;
+    this.pressRun = 0;
     this.walkIn = true;
     this.walkT = 0;
     this.refAct = null;
@@ -2469,8 +2518,8 @@ export class ArenaView extends Container {
     this.tickAds(dt);
     const ground = this.ground === 'atop' || this.ground === 'btop';
     if (this.scene === 'fight') {
-      // the man landing walks the other one back to his fence; clinches end up on the fence;
-      // ground work stays put; a finish stays where it happened
+      // the man landing walks the other one back to his fence (the pair wanders less while he does);
+      // clinches end up on the fence; ground work stays put; a finish stays where it happened
       const fence = this.clinchTie.fence;
       const targetCenter =
         this.manual && !ground ? (this.manual[0] + this.manual[1]) / 2
@@ -2478,7 +2527,7 @@ export class ArenaView extends Container {
             : this.walkIn || this.touchT > 0 ? AW / 2
               : this.ground === 'clinch' ? (fence === 0 ? CAGE_L + 40 : fence === 1 ? CAGE_R - 40 : Math.sin(this.round * 1.7) > 0 ? CAGE_R - 40 : CAGE_L + 40)
                 : ground ? this.groundX
-                  : Math.max(CAGE_L + 50, Math.min(CAGE_R - 50, AW / 2 + this.press * 150 + Math.sin(this.t * 0.35) * 25));
+                  : Math.max(CAGE_L + 50, Math.min(CAGE_R - 50, AW / 2 + Math.max(-1, Math.min(1, this.press)) * 150 + Math.sin(this.t * 0.35) * 25 * (1 - Math.min(1, Math.abs(this.press)) * 0.6)));
       this.center += (targetCenter - this.center) * Math.min(1, dt * (ground ? 4 : 1.5));
     } else this.center += (AW / 2 - this.center) * Math.min(1, dt * 2);
     this.drift = this.center - AW / 2;
@@ -2631,7 +2680,8 @@ export class ArenaView extends Container {
       let du = -1;
       if (f.drv) {
         du = driveU(f.drv.t, f.drv.wind, f.drv.rec);
-        f.poseT = Math.max(f.poseT, 0.05);
+        // (still 0.05 s left after this frame's tick, however long the frame)
+        f.poseT = Math.max(f.poseT, 0.05 + dt);
         f.drvU = du;
       } else if (f.drvU >= 0) {
         // the engine's done with it: finish on our own clock from where it got to
@@ -2768,6 +2818,10 @@ export class ArenaView extends Container {
           a.tx = Math.max(CAGE_L + 14, Math.min(CAGE_R - 14, o.x - o.facing * close));
           if (Math.abs(a.tx - a.x) < 8) a.facing = o.x >= a.x ? 1 : -1;
           else a.facing = a.tx > a.x ? 1 : -1;
+        } else if (ra) {
+          // a job between them (breaking them up, stopping a choke): he gets in there, wherever they've gone
+          a.tx = Math.max(CAGE_L + 14, Math.min(CAGE_R - 14, (this.F[0].x + this.F[1].x) / 2));
+          a.facing = a.tx >= a.x ? 1 : -1;
         } else {
           // the ref circles the action at a distance, keeping a sightline (in close on the ground work);
           // now and then he crosses to the other side (behind the fighters)
@@ -2792,10 +2846,11 @@ export class ArenaView extends Container {
       }
       let tgt: Rig;
       const act = reffing ? this.refAct : null;
-      if (act && Math.abs(a.tx - a.x) < 8) {
-        // he's there: do the job (and the next one when this one's done)
-        act.t -= dt;
-        tgt = act.b !== '' && Math.floor(this.t * act.hz) % 2 ? POSES[act.b as Pose] : POSES[act.a];
+      const there = act !== null && Math.abs(a.tx - a.x) < 8;
+      if (act) {
+        // the job runs once he's there (and the next one when this one's done); on his way it counts down
+        // slowly, so a job he can't get to never holds him forever
+        act.t -= there ? dt : dt * 0.25;
         if (act.t <= 0) {
           this.refAct = this.refNext;
           this.refNext = null;
@@ -2804,7 +2859,9 @@ export class ArenaView extends Container {
             this.refRun = false;
           }
         }
-      } else if (moving) tgt = Math.floor(this.t * (run ? 12 : 7)) % 2 ? POSES.walk1 : POSES.walk2;
+      }
+      if (act && there) tgt = act.b !== '' && Math.floor(this.t * act.hz) % 2 ? POSES[act.b as Pose] : POSES[act.a];
+      else if (moving) tgt = Math.floor(this.t * (run ? 12 : 7)) % 2 ? POSES.walk1 : POSES.walk2;
       else tgt = reffing && ground && !this.finished ? POSES.refWatch : POSES[a.pose];
       a.rig = lerpRig(a.rig, tgt, 1 - Math.exp(-10.9 * dt));
     }
