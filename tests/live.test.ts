@@ -216,7 +216,7 @@ describe('the final round: a fight that reads itself', () => {
   });
 });
 
-import { STRIKE_REACH, ARENA_L, subFor, type LiveEvent } from '../src/sim/live';
+import { STRIKE_REACH, ARENA_L, subFor, groundGoal, CLINCH_MOVE_NAME, type LiveEvent } from '../src/sim/live';
 import type { FightIntent } from '../src/core/fightinput';
 
 describe('a smarter CPU, and no one-button wins', () => {
@@ -338,5 +338,108 @@ describe('a smarter CPU, and no one-button wins', () => {
     evj.push(...run(J, [[P('jab', 'light')], []], 14));
     expect(evj.some((e) => e.type === 'interrupt')).toBe(false);
     expect(evj.some((e) => (e.type === 'hit' || e.type === 'counter' || e.type === 'miss' || e.type === 'block') && e.side === 1)).toBe(true);
+  });
+
+  it('he times a jab on a rhythm', () => {
+    const early = [0, 0];
+    const late = [0, 0];
+    for (const seed of [1, 2, 4, 6]) {
+      const L = setup(seed, 90);
+      L.rules.noGrappling = true;
+      // a durable jabber: this is about the read, not about him getting knocked out
+      L.F[0].sk = { ...L.F[0].sk, chin: 99, heart: 99 };
+      const ai = new LiveAI(1, 9);
+      let t = 0;
+      let next = 0.3;
+      for (let k = 0; k < 600 && !L.result; k++) {
+        const mine: FightIntent[] = [];
+        if (t >= next) {
+          mine.push(P('jab', 'light'));
+          next += 0.6;
+        }
+        if (L.F[0].down > 0) mine.push({ type: 'getup', side: 'left', rhythm: 1 });
+        const d = L.dist;
+        const b = ai.update(L, 1 / 30);
+        L.update(1 / 30, [mine, b.intents], [d > 52 ? 1 : d < 48 ? -1 : 0, b.move]);
+        for (const e of L.events) {
+          if (e.side !== 0 || e.name !== 'jab') continue;
+          const bucket = t < 5 ? early : t >= 10 ? late : null;
+          if (!bucket) continue;
+          if (e.type === 'punch') bucket[1]++;
+          if (e.type === 'hit' || e.type === 'counter') bucket[0]++;
+        }
+        ai.noteEvents(L);
+        L.events.length = 0;
+        L.F[0].hp = Math.max(L.F[0].hp, 60);
+        t += 1 / 30;
+      }
+      expect(L.result).toBeNull();
+      expect(ai.readNote).toBe('jab');
+      expect(ai.readN).toBeGreaterThanOrEqual(1);
+    }
+    expect(late[1]).toBeGreaterThan(20);
+    expect(late[0] / late[1]).toBeLessThan(early[0] / early[1]);
+  });
+
+  it('a man already getting up covers and pulls guard when he gets jumped', () => {
+    const kd = (getup: number) => {
+      const L = setup(9);
+      (L as unknown as { knockdown: (i: 0 | 1) => void }).knockdown(0);
+      expect(L.F[1].down).toBeGreaterThan(0);
+      L.F[1].getup = getup;
+      run(L, [[P('straight', 'heavy', 'rear')], []], 1);
+      expect(L.pos).toBe('ground');
+      expect(L.top).toBe(0);
+      return L;
+    };
+    const covered = kd(0.7);
+    expect(covered.gpos).toBe('guard');
+    expect(covered.F[1].stun).toBeLessThan(0.7);
+    expect(kd(0.4).gpos).toBe('half');
+    expect(['mount', 'side']).toContain(kd(0).gpos);
+  });
+
+  it('pushing back into the fence circles you off it', () => {
+    const L = setup(10);
+    L.F[0].x = ARENA_L;
+    const evs = run(L, [[], []], 18, [-1, 0]);
+    expect(evs.some((e) => e.type === 'pivot' && e.side === 0 && e.name === 'escape')).toBe(true);
+    expect(L.F[0].x).toBeGreaterThan(ARENA_L + 15);
+    // walking in on the circle, the other man can cut it off (and he's never stuck there for good)
+    let cut = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const C = setup(seed, 99);
+      C.F[0].x = ARENA_L;
+      C.F[1].x = ARENA_L + 45;
+      cut += run(C, [[], []], 8, [-1, -1]).filter((e) => e.type === 'pivot' && e.name === 'cutoff').length;
+    }
+    expect(cut).toBeGreaterThan(0);
+  });
+
+  it('the HUD helpers: submissions, ground goals, clinch names', () => {
+    const cases: [string, 0 | 1, 'neutral' | 'up' | 'down' | 'toward' | 'away', string | null][] = [
+      ['back', 0, 'neutral', 'rear-naked choke'], ['mount', 0, 'up', 'arm-triangle choke'], ['side', 0, 'up', 'north-south choke'],
+      ['guard', 1, 'neutral', 'triangle choke'], ['guard', 1, 'down', 'heel hook'], ['half', 0, 'up', "d'arce choke"], ['mount', 1, 'neutral', null],
+    ];
+    for (const [gpos, who, dir, want] of cases) expect(subFor(who === 0, gpos as never, dir)).toBe(want);
+    expect(groundGoal(true, 'half', 'toward')).toBe('pass to side control');
+    expect(groundGoal(true, 'back', 'toward')).toBe('');
+    expect(groundGoal(true, 'guard', 'up')).toBe('stand up');
+    expect(groundGoal(true, 'side', 'up')).toBe('take the back');
+    expect(groundGoal(true, 'mount', 'down')).toBe('pressure');
+    expect(groundGoal(false, 'half', 'toward')).toBe('sweep');
+    expect(groundGoal(false, 'side', 'toward')).toBe('recover half guard');
+    expect(groundGoal(false, 'guard', 'away')).toBe('');
+    expect(groundGoal(false, 'mount', 'up')).toBe('stand up');
+    expect(groundGoal(false, 'back', 'neutral')).toBe('frame');
+    expect(Object.keys(CLINCH_MOVE_NAME).sort()).toEqual(['break', 'plum', 'pummel', 'trip', 'under']);
+    // the progress bar's label follows what each man last worked on
+    const L = setup(3);
+    L.pos = 'ground';
+    L.top = 0;
+    L.gpos = 'half';
+    expect(L.working()).toEqual({ top: '', bottom: '' });
+    run(L, [[{ type: 'ground', move: 'advance' }], [{ type: 'ground', move: 'reverse' }]], 1);
+    expect(L.working()).toEqual({ top: 'pass to side control', bottom: 'recover full guard' });
   });
 });

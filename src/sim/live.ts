@@ -178,6 +178,25 @@ export function subFor(top: boolean, gpos: GPos, dir: Dir): string | null {
   return table[dir] ?? table.neutral ?? Object.values(table)[0] ?? null;
 }
 
+/** What a ground move (kick button + stick) works toward from here, as the HUD says it; '' when it does nothing. */
+export function groundGoal(top: boolean, gpos: GPos, dir: Dir): string {
+  if (top) {
+    if (dir === 'toward') return gpos === 'back' ? '' : 'pass to ' + GPOS_NAME[NEXT_POS[gpos]];
+    if (dir === 'up') return gpos === 'guard' ? 'stand up' : gpos === 'back' ? '' : 'take the back';
+    if (dir === 'away') return 'stand up';
+    return 'pressure';
+  }
+  if (dir === 'toward') return gpos === 'guard' || gpos === 'half' ? 'sweep' : 'recover ' + GPOS_NAME[RECOVER[gpos]];
+  if (dir === 'away') return gpos === 'guard' ? '' : 'recover ' + GPOS_NAME[RECOVER[gpos]];
+  if (dir === 'up') return 'stand up';
+  return 'frame';
+}
+
+/** The clinch moves as the HUD names them. */
+export const CLINCH_MOVE_NAME: Record<'plum' | 'under' | 'pummel' | 'trip' | 'break', string> = {
+  plum: 'Thai plum', under: 'double underhooks', pummel: 'pummel', trip: 'trip', break: 'break away',
+};
+
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const LINE_KEY: Record<string, string> = {
   td: 'takedown', sprawl: 'takedown', ctrl: 'ground_control', sub: 'sub_attempt', sweep: 'sweep', escape: 'escape', rocked: 'rocked', kd: 'knockdown',
@@ -237,6 +256,10 @@ export class LiveFight {
   private hurtLimb: [Partial<Record<'lead' | 'rear' | 'legs', boolean>>, Partial<Record<'lead' | 'rear' | 'legs', boolean>>] = [{}, {}];
   /** commentary-ish lines (for the result's ticker) */
   log: TickerLine[] = [];
+  /** circling off the cage: how long each man has pushed into it, the wait before he can again, the slide in progress */
+  private pivotHold: [number, number] = [0, 0];
+  private pivotCd: [number, number] = [0, 0];
+  private pivotT: [number, number] = [0, 0];
   private rng: Rng;
 
   constructor(public A: Fighter, public B: Fighter, skA: Skills, skB: Skills, public rounds: 3 | 5, seed: number) {
@@ -258,6 +281,16 @@ export class LiveFight {
   clockText(): string {
     const s = Math.max(0, Math.ceil((this.clock / ROUND_SECONDS) * 300));
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  }
+
+  /** What each man on the ground is working toward right now (his progress bar), '' when nothing. */
+  working(): { top: string; bottom: string } {
+    if (this.pos !== 'ground') return { top: '', bottom: '' };
+    const g = this.gKey;
+    const top = g === 'stand' ? 'stand up' : g === 'back' ? (this.gpos === 'mount' ? 'pass to the back' : 'take the back') : g ? 'pass to ' + GPOS_NAME[g as GPos] : '';
+    const k = this.sKey;
+    const bottom = k === 'sweep' ? 'sweep' : k === 'recover' ? 'recover ' + GPOS_NAME[RECOVER[this.gpos]] : k === 'stand' ? 'stand up' : '';
+    return { top, bottom };
   }
 
   /** What the input interpreter needs to know about one side. */
@@ -488,7 +521,8 @@ export class LiveFight {
         // head movement is timing, not a reflex to mash: back-to-back evades start later (0.32 s of cover, then 0.22, 0.12, none) and cost more
         f.evadeChain = f.evadeLast < 0.7 ? f.evadeChain + 1 : 0;
         f.evadeLast = 0;
-        f.evade = { kind: it.kind, t: f.evadeChain * 0.1 };
+        // and a tired man's head moves late
+        f.evade = { kind: it.kind, t: f.evadeChain * 0.1 + (f.gas < 20 ? 0.08 : 0) };
         f.gas = Math.max(0, f.gas - 1.5 * (1 + f.evadeChain));
         f.exert += 2;
         if (it.kind === 'pull') this.nudge(i, -14);
@@ -507,6 +541,9 @@ export class LiveFight {
           this.clinch = { dom: i, tie: 'collar', fence: -1, idle: 0 };
           this.ev({ type: 'clinch', side: i });
           this.line(i, 'clinch', `${this.name(i)} ties him up with a collar tie.`);
+          // tied up with his back already on the cage: it starts there
+          const w = this.onWall(0) ? 0 : this.onWall(1) ? 1 : -1;
+          if (w >= 0) this.drive((1 - w) as Side, 40);
         } else this.ev({ type: 'miss', side: i, name: 'clinch' });
         return;
       case 'clinchMove':
@@ -817,11 +854,52 @@ export class LiveFight {
     }
     for (const i of [0, 1] as Side[]) {
       const f = this.F[i];
+      const o = this.F[(1 - i) as Side];
+      // back on the cage: the other man is winning the position
+      if (this.onWall(i)) this.score((1 - i) as Side, dt * 0.05);
+      // pushing back into the cage means circling off it
+      this.pivotCd[i] = Math.max(0, this.pivotCd[i] - dt);
+      const into = i === 0 ? moves[0] < -0.5 : moves[1] > 0.5;
+      if (this.onWall(i) && !f.act && f.stun <= 0 && into) this.pivotHold[i] += dt;
+      else this.pivotHold[i] = 0;
+      if (this.pivotHold[i] >= 0.2 - 1e-6 && this.pivotCd[i] <= 0) {
+        this.pivotHold[i] = 0;
+        this.pivotCd[i] = 1;
+        f.gas = Math.max(0, f.gas - 2);
+        f.exert += 3;
+        // walking in on the pivot, the smarter man cuts him off
+        const cut = i === 0 ? moves[1] < -0.3 : moves[0] > 0.3;
+        if (cut && this.rng.chance(0.3 + (o.sk.fightIQ - f.sk.fightIQ) / 200)) {
+          this.slide(i, 8);
+          o.counterT = 0.4;
+          this.ev({ type: 'pivot', side: i, name: 'cutoff' });
+        } else {
+          this.pivotT[i] = 0.4;
+          this.ev({ type: 'pivot', side: i, name: 'escape' });
+        }
+      }
+      if (this.pivotT[i] > 0) {
+        // the pair turns: both slide toward the middle of the cage for 0.25 s (30 px), then the circle settles
+        // (holding back into the cage keeps him circling until it does, so he doesn't walk straight back onto it)
+        const before = this.pivotT[i];
+        this.pivotT[i] = before - dt > 1e-6 ? before - dt : 0;
+        const slid = Math.max(0, before - Math.max(this.pivotT[i], 0.15));
+        if (slid > 0) this.slide(i, 120 * slid);
+        if (slid > 0 || into) continue;
+      }
       if (f.stun > 0.3 || (f.act && f.act.kind !== 'feint')) continue;
       const speed = 90 * (0.55 + f.legs / 220) * (0.6 + f.gas / 250) * (f.block ? 0.6 : 1);
       f.x += clamp(moves[i], -1, 1) * speed * dt;
       if (Math.abs(moves[i]) > 0.2) f.exert += dt * 3;
     }
+    this.fixGap();
+  }
+
+  /** Both men shift off fighter i's wall, toward the middle of the cage. */
+  private slide(i: Side, px: number): void {
+    const dx = i === 0 ? px : -px;
+    this.F[0].x += dx;
+    this.F[1].x += dx;
     this.fixGap();
   }
 
@@ -883,7 +961,8 @@ export class LiveFight {
       this.ev({ type: 'parry', side: (1 - i) as Side, name: a.name });
       return;
     }
-    let dmg = a.dmg * 0.62 * (0.55 + f.sk.power / 110) * this.gasK(f);
+    // (0.45: tuned down from 0.62 once the CPU stopped whiffing two thirds of its shots, so fights keep their length)
+    let dmg = a.dmg * 0.45 * (0.55 + f.sk.power / 110) * this.gasK(f);
     dmg *= 0.78 + f.body / 450; // a body that's been worked over has no snap left
     dmg *= 1 + f.momentum * 0.1; // on a roll
     if (o.cut >= 2 && a.target === 'head') dmg *= 1.08; // blood in the eye: he doesn't see it coming
@@ -911,7 +990,7 @@ export class LiveFight {
     if (o.block && o.stun <= 0) {
       // a high guard covers the head; shots to the body and legs get through more of it
       const through = a.target === 'legs' ? 0.55 : a.target === 'body' ? (a.heavy ? 0.55 : 0.42) : a.heavy ? 0.32 : 0.18;
-      dmg *= through;
+      dmg *= through * (o.gas < 20 ? 1.25 : 1); // tired arms: the guard gives
       o.gas = Math.max(0, o.gas - 1.5);
       if (a.target === 'legs') {
         f.legs = Math.max(0, f.legs - 2.5); // checked
@@ -967,7 +1046,8 @@ export class LiveFight {
       // flicks chip a fresh man, they don't finish him (they still pile up on a hurt one)
       const chip = light && o.stun <= 0;
       const hp0 = o.hp;
-      const k = 1.25 - o.sk.chin / 200;
+      // nowhere to go with your back on the cage: you take them flush
+      const k = (1.25 - o.sk.chin / 200) * (this.pos === 'stand' && this.onWall((1 - i) as Side) ? 1.1 : 1);
       o.hp -= dmg * k;
       if (chip) o.hp = Math.max(o.hp, Math.min(hp0, 12));
       o.hpMax = Math.max(35, o.hpMax - dmg * k * 0.18);
@@ -1080,20 +1160,22 @@ export class LiveFight {
   private pounce(a: Side): void {
     const d = (1 - a) as Side;
     const o = this.F[d];
+    // how far he'd got with the get-up: a man already working his way up covers and pulls guard
+    const cover = o.getup;
     o.down = 0;
     o.getup = 0;
     // he's hurt, not finished: a tough man can survive the storm (heart buys him time)
-    o.stun = Math.max(o.stun, 0.7);
+    o.stun = Math.max(0.7 - cover * 0.4, 0.3);
     o.hp = Math.max(o.hp, 12 + o.sk.heart / 6);
     this.pos = 'ground';
     this.top = a;
-    this.gpos = this.rng.chance(0.55) ? 'mount' : 'side';
+    this.gpos = cover >= 0.6 ? 'guard' : cover >= 0.3 ? 'half' : this.rng.chance(0.55) ? 'mount' : 'side';
     this.gprog = this.standProg = 0;
     this.gKey = this.sKey = '';
     this.groundIdle = 0;
     this.F[a].act = null;
     this.ev({ type: 'pounce', side: a });
-    this.line(a, 'pounce', `${this.name(a)} jumps on him! ${this.gpos === 'mount' ? 'FULL MOUNT' : 'Side control'}, and the hammers are coming!`, 3);
+    this.line(a, 'pounce', `${this.name(a)} jumps on him! ${this.gpos === 'mount' ? 'FULL MOUNT, and the hammers are coming!' : this.gpos === 'side' ? 'Side control, and the hammers are coming!' : `${this.name(d)} covers up and gets to ${GPOS_NAME[this.gpos]}.`}`, 3);
   }
 
   /** Count shown to the player: 1..10 */
@@ -1135,7 +1217,7 @@ export class LiveFight {
       f.stun = 0.4;
       return;
     }
-    const p = clamp(0.42 + (f.sk.wrestling - o.sk.wrestling) / 90 + (o.stun > 0 ? 0.25 : 0) + (o.act ? 0.12 : 0) - (o.gas > 60 ? 0 : -0.1) + (this.pos === 'clinch' ? 0.1 : 0) - (o.legs < 50 ? -0.08 : 0), 0.08, 0.9);
+    const p = clamp(0.42 + (f.sk.wrestling - o.sk.wrestling) / 90 + (o.stun > 0 ? 0.25 : 0) + (o.act ? 0.12 : 0) - (o.gas > 60 ? 0 : -0.1) + (this.pos === 'clinch' ? 0.1 : 0) - (o.legs < 50 ? -0.08 : 0) + (this.pos === 'stand' && this.onWall((1 - i) as Side) ? 0.1 : 0), 0.08, 0.9);
     if (this.rng.chance(p)) {
       this.pos = 'ground';
       this.top = i;
@@ -1510,6 +1592,24 @@ const AI_PUNCHES: PunchType[] = ['jab', 'jab', 'straight', 'overhand', 'bodyJab'
 const AI_REST_PUNCHES: PunchType[] = ['jab', 'jab', 'bodyJab'];
 const AI_ENTRY_PUNCHES: PunchType[] = ['hook', 'hook', 'uppercut', 'bodyHook', 'overhand'];
 
+/** The CPU's combinations, by style family. Steps are punches, 'kick:<level>', 'feint' or 'shoot'. */
+const COMBOS: Record<string, string[][]> = {
+  boxer: [['jab', 'straight'], ['jab', 'straight', 'hook'], ['jab', 'jab', 'straight'], ['bodyJab', 'overhand']],
+  kicker: [['jab', 'straight', 'kick:low'], ['straight', 'hook', 'kick:body'], ['feint', 'kick:head']],
+  brawler: [['hook', 'hook'], ['overhand', 'uppercut']],
+  wrestler: [['jab', 'straight', 'shoot']],
+  'default': [['jab', 'straight'], ['jab', 'hook']],
+};
+const STYLE_FAMILY: Record<string, string> = {
+  Boxer: 'boxer', 'Pressure Striker': 'boxer', 'Counter Striker': 'boxer',
+  Kickboxer: 'kicker', 'Muay Thai': 'kicker', 'Point Fighter': 'kicker',
+  Brawler: 'brawler',
+  Wrestler: 'wrestler', Judoka: 'wrestler', 'Boring But Effective': 'wrestler',
+};
+/** How far a combo step reaches, and the name its events carry. */
+const stepReach = (step: string): number => (step === 'feint' ? 999 : step === 'shoot' ? 66 : step.startsWith('kick:') ? KICK[step.slice(5) as KickLevel].reach : PUNCH[step as PunchType].reach);
+const stepName = (step: string): string => (step === 'feint' || step === 'shoot' ? step : step.startsWith('kick:') ? KICK[step.slice(5) as KickLevel].name : PUNCH[step as PunchType].name);
+
 export class LiveAI {
   private think = 0;
   private want = 50;
@@ -1518,6 +1618,30 @@ export class LiveAI {
   private entry: { punch: PunchType; hand: 'lead' | 'rear'; weight: Weight; t: number } | null = null;
   /** how far away he was when he threw each strike (a shot from out of range says nothing about the shot) */
   private lastThrowD: Record<string, number> = {};
+  /** the rest of a combination in progress, the weight of its last shot, the hand that threw the one before */
+  private queue: string[] = [];
+  private qWeight: Weight = 'heavy';
+  private qHand: 'lead' | 'rear' = 'rear';
+  /** a combination just ended: give the other man a beat to answer */
+  private qTail = false;
+  /** a feint just went out: the shot it set up comes next */
+  private feintT = 0;
+  /** his habits: the strikes he's started lately (name, when), the gaps between them, how he defends (event counts) */
+  private hist: [string, number][] = [];
+  private gaps: number[] = [];
+  private def: Record<string, number> = {};
+  private clockT = 0;
+  private lastOpAct = '';
+  private lastOpT = -9;
+  private habit = '';
+  /** the strike (by its start time) the rhythm read already has a defence armed for */
+  private armed = -9;
+  /** back on the fence: what he's doing about it (circle off, tie up, or just stand there), and for how long */
+  private wallPlan: '' | 'pivot' | 'clinch' | 'stay' = '';
+  private wallT = 0;
+  /** the habit he's just read off you (for the HUD: "HE'S READING YOUR JAB"), and a count that ticks once per new read */
+  readNote = '';
+  readN = 0;
   private rng: Rng;
   /** what's been landing on me, and how my own shots are doing (thrown / landed by name) */
   read: FightRead = { hook: 0, straight: 0, kick: 0, body: 0, shoot: 0, blocked: 0 };
@@ -1551,8 +1675,57 @@ export class LiveAI {
         if (e.side !== this.side) {
           this.read.blocked++;
           (this.mine[e.name] ??= { t: 0, l: 0 }).t++;
+          this.def.block = (this.def.block ?? 0) + 1;
         }
       } else if (e.type === 'td' && e.side !== this.side) this.read.shoot++;
+      // how he defends: parries, which way he moves his head, sprawls
+      if (e.side !== this.side) {
+        if (e.type === 'parry' || e.type === 'sprawl') this.def[e.type] = (this.def[e.type] ?? 0) + 1;
+        else if (e.type === 'evade' && !e.big && e.name) this.def['evade:' + e.name] = (this.def['evade:' + e.name] ?? 0) + 1;
+      }
+    }
+  }
+
+  /** Watch what he starts: the last dozen strikes and their rhythm, and the habit if there is one. */
+  private watch(L: LiveFight, op: LiveFighter, iq: number): void {
+    const a = op.act;
+    const name = a && a.kind !== 'feint' ? a.name : '';
+    let changed = false;
+    if (a && name && name !== this.lastOpAct && a.t < 0.05 && L.pos === 'stand') {
+      const gap = this.clockT - this.lastOpT;
+      if (gap < 4) {
+        this.gaps.push(gap);
+        if (this.gaps.length > 6) this.gaps.shift();
+      }
+      this.lastOpT = this.clockT;
+      this.hist.push([name, this.clockT]);
+      if (this.hist.length > 12) this.hist.shift();
+      changed = true;
+    }
+    this.lastOpAct = name;
+    // old news fades: vary it and he loses the read
+    while (this.hist.length && this.clockT - this.hist[0][1] > 20) {
+      this.hist.shift();
+      changed = true;
+    }
+    if (!changed) return;
+    let best = '';
+    let bestN = 0;
+    if (this.hist.length >= 6) {
+      for (const h of this.hist) {
+        let n = 0;
+        for (const g of this.hist) if (g[0] === h[0]) n++;
+        if (n > bestN) {
+          best = h[0];
+          bestN = n;
+        }
+      }
+      if (bestN / this.hist.length < 0.5 - 0.15 * iq) best = '';
+    }
+    this.habit = best;
+    if (best && best !== this.readNote) {
+      this.readNote = best;
+      this.readN++;
     }
   }
 
@@ -1561,6 +1734,8 @@ export class LiveAI {
     if (L.round === this.lastRound) return;
     this.lastRound = L.round;
     if (L.round < 2) return;
+    // a minute in the corner: what he was doing to defend is half forgotten
+    for (const k of Object.keys(this.def)) this.def[k] *= 0.5;
     const me = L.F[this.side];
     const { totals } = L.cards();
     const behind = totals.filter(([a, b]) => (this.side === 0 ? a < b : b < a)).length >= 2;
@@ -1582,7 +1757,12 @@ export class LiveAI {
     const toward = this.side === 0 ? 1 : -1;
     const iq = sk.fightIQ / 100;
     this.rethink(L);
-    if (L.pos !== 'stand' || me.down > 0 || op.down > 0) this.entry = null;
+    this.clockT += dt;
+    if (L.pos !== 'stand' || me.down > 0 || op.down > 0) {
+      this.entry = null;
+      this.queue.length = 0;
+      this.feintT = 0;
+    }
     // knocked down: beat the count
     if (me.down > 0) {
       if (this.rng.chance(dt * (3 + sk.heart / 25))) out.push({ type: 'getup', side: this.rng.chance(0.5) ? 'left' : 'right', rhythm: this.rng.float(0.5, 1) });
@@ -1599,9 +1779,12 @@ export class LiveAI {
       if (this.rng.chance(dt * (atk ? 4 + sk.grappling / 18 : 5.5 + Math.max(sk.grappling, sk.wrestling) / 16))) out.push({ type: 'mash', rate: 6, role: atk ? 'attack' : 'defend' });
       return { intents: out, move: 0 };
     }
+    this.watch(L, op, iq);
     // reactive defence: read the other man's strike while it winds up
     if (op.act && !op.act.done && op.act.kind !== 'feint' && op.act.kind !== 'shoot' && op.act.t > 0.04) {
-      if (!this.blockT && this.rng.chance(dt * 9 * (0.25 + iq * 0.7) * ((me.tilt ?? 0) > 0 ? 0.6 : 1))) {
+      // the one he's been reading, he sees coming
+      const expect = this.habit && op.act.name === this.habit ? 1 + iq * 2 : 1;
+      if (!this.blockT && this.rng.chance(dt * 9 * (0.25 + iq * 0.7) * ((me.tilt ?? 0) > 0 ? 0.6 : 1) * expect)) {
         const r = this.rng.next();
         // what's been landing is what he's ready for: hooks that keep catching him get rolled under
         const fam = STRIKE_FAMILY(op.act.name);
@@ -1710,7 +1893,7 @@ export class LiveAI {
     const wrestle = this.plan === 'wrestle' || this.plan === 'grind' || this.plan === 'subhunt' || (this.plan === 'balanced' && sk.wrestling > sk.striking + 8);
     const pressure = this.plan === 'pressure';
     const survive = this.plan === 'survive' || me.hp < 25;
-    this.want = survive ? 75 : pressure ? 40 : this.plan === 'counter' ? 58 : wrestle ? 52 : 50;
+    this.want = survive ? 60 : pressure ? 40 : this.plan === 'counter' ? 58 : wrestle ? 52 : 50;
     // the fight as he reads it: a hurt man in front of him, the cards late in the last round, an empty tank
     const hurtOp = op.stun > 0.3 || op.hp < 32;
     const last = L.round >= L.rounds;
@@ -1727,22 +1910,86 @@ export class LiveAI {
     this.mood = hurtOp && !survive ? 'hunt' : urgent ? 'urgent' : cruise ? 'cruise' : rest ? 'rest' : 'even';
     if (urgent) this.want = Math.min(this.want, 42);
     if (cruise) this.want = Math.max(this.want, 64);
-    if (rest) this.want += 14;
+    // tired: hold home range and breathe (backing away only walks him onto the fence)
+    if (rest) this.want = 50;
     // wound up by a taunt: walks straight in swinging
     const tilted = (me.tilt ?? 0) > 0 && !survive;
     if (tilted) this.want = 38;
+    // what he's read off you: wait outside the teep to time it, crowd a man who keeps pulling away
+    const parryHappy = (this.def.parry ?? 0) >= 4;
+    const pullHappy = (this.def['evade:pull'] ?? 0) >= 4;
+    if (this.habit === 'front kick') this.want = Math.max(this.want, 62);
+    if (pullHappy) this.want = Math.min(this.want, 40);
+    // room behind each man: a pressure fighter walks a man near his fence onto it
+    const myRoom = this.side === 0 ? me.x - ARENA_L : ARENA_R - me.x;
+    const opRoom = this.side === 0 ? ARENA_R - op.x : op.x - ARENA_L;
+    if (pressure && opRoom < 30) this.want -= 6;
     const d = L.dist;
     let move = 0;
     if (me.stun <= 0.2) {
       if (d > this.want + 6) move = toward;
-      else if (d < this.want - 8) move = -toward;
+      // too close: back off, but not straight back onto the fence
+      else if (d < this.want - 4 && myRoom > 16) move = -toward;
       // a hurt opponent: go get him
       if (op.stun > 0.3 && op.hp < 45 && !survive) move = toward;
+      // he's on the fence: stay on him, walk in on the circle and cut it off
+      if (pressure && L.onWall((1 - this.side) as Side)) move = toward;
+    }
+    // on the fence himself: circle off it (the sharper man sees to it at once), tie up if he's a wrestler, or stand there and take it
+    if (!L.onWall(this.side)) {
+      this.wallPlan = '';
+      this.wallT = 0;
+    } else {
+      this.wallT += dt;
+      if (!this.wallPlan || this.wallT > 1.2) {
+        this.wallT = 0;
+        this.wallPlan = this.rng.chance(0.35 + iq * 0.6 + (rest || survive ? 0.2 : 0)) ? 'pivot' : sk.wrestling > sk.striking ? 'clinch' : 'stay';
+      }
+    }
+    const pivoting = this.wallPlan === 'pivot' && me.stun <= 0.2;
+    if (pivoting) {
+      // into the cage: the feet turn it into the circle
+      move = -toward;
+      this.entry = null;
+      this.queue.length = 0;
+    }
+    // hurt: hands up while he's throwing
+    if (survive && op.act && !op.act.done && d < 50 && !this.blockT) {
+      out.push({ type: 'block', phase: 'start' });
+      this.blockT = 0.4;
     }
     // a low fight IQ misjudges the distance by a few pixels
     const slack = 2 + (1 - iq) * 12;
     // free to start something this frame?
     let acted = !!me.act || me.stun > 0;
+    // he's figured you out: when the next one is due he holds his own fire, and he's already moving
+    let due = false;
+    if (this.habit && d < 64 && this.gaps.length >= 2 && this.armed !== this.lastOpT) {
+      // his rhythm: the typical gap (the median, so one pause doesn't throw it off)
+      let gap = 0;
+      for (const g of this.gaps) {
+        let n = 0;
+        for (const h of this.gaps) if (h <= g) n++;
+        if (n * 2 >= this.gaps.length && (gap === 0 || g < gap)) gap = g;
+      }
+      const since = this.clockT - this.lastOpT;
+      due = since > gap - 0.3 && since < gap + 0.2;
+      if (!acted && since > gap - 0.12 && since < gap + 0.2 && this.rng.chance(dt * 8 * iq)) {
+        this.armed = this.lastOpT;
+        const h = this.habit;
+        const fam = STRIKE_FAMILY(h);
+        if (/kick/.test(h) || /body/.test(h)) {
+          // legkicks get checked, body kicks met with the elbows (and maybe caught), body shots covered
+          out.push({ type: 'block', phase: 'start' });
+          this.blockT = 0.45;
+        } else if (fam === 'straight') {
+          // parry it or slip it (whichever his hands and his head are ready for)
+          const parry = me.parryCd <= 0 && (me.evadeLast < 0.7 || this.rng.chance(0.5));
+          out.push(parry ? { type: 'parry' } : { type: 'evade', kind: 'slip', source: 'button' });
+        } else out.push({ type: 'evade', kind: 'roll', source: 'button' });
+        acted = true;
+      }
+    }
     if (!acted && me.counterT > 0 && d <= 70 && this.rng.chance(dt * 12 * iq)) {
       // an opening (he whiffed, got parried, got his kick caught): make him pay now, not whenever the next thought comes
       if (d <= 56) {
@@ -1765,6 +2012,10 @@ export class LiveAI {
         acted = true;
       }
     }
+    if (this.habit === 'front kick' && !this.entry && !acted && op.act && op.act.name === 'front kick' && op.act.done) {
+      // the teep is coming back: that's the moment to walk in behind it
+      this.entry = { punch: 'straight', hand: 'rear', weight: 'medium', t: 0.4 };
+    }
     if (this.entry) {
       // stepping in behind a short shot: walk into its range, then throw it
       const e = this.entry;
@@ -1777,8 +2028,39 @@ export class LiveAI {
         acted = true;
       } else move = toward;
     }
+    if (this.queue.length) {
+      // working a combination: the next shot the moment his hands are free, unless it's gone wrong
+      const next = this.queue[0];
+      if (me.sinceHit < 0.1 || me.gas < 25 || stepReach(next) + slack < d || (next === 'shoot' && L.rules.noGrappling)) {
+        this.queue.length = 0;
+        this.qTail = true;
+      } else if (!acted) {
+        this.queue.shift();
+        this.comboStep(out, next, d, this.queue.length === 0);
+        if (!this.queue.length) this.qTail = true;
+        acted = true;
+      }
+    }
+    if (this.qTail && !acted) {
+      this.qTail = false;
+      this.think = Math.max(this.think, 0.3);
+    }
+    if (this.feintT > 0) {
+      // the feint was the set-up: high guard, he goes to the body; a flinch, he lets the right hand go; nothing, the shot he planned
+      this.feintT -= dt;
+      if (!acted && !this.queue.length) {
+        const c: PunchType = op.stun > 0 ? 'straight' : op.block || op.parryT > 0 ? (d <= 42 ? 'bodyHook' : 'bodyStraight') : 'straight';
+        const w: Weight = op.stun > 0 ? 'heavy' : 'medium';
+        const hand = c === 'bodyHook' ? 'lead' : 'rear';
+        if (PUNCH[c].reach + slack >= d) {
+          this.throwPunch(out, c, hand, w, d);
+          acted = true;
+        } else if (!this.entry) this.entry = { punch: c, hand, weight: w, t: 0.4 };
+        this.feintT = 0;
+      }
+    }
     this.think -= dt;
-    if (this.think <= 0 && !acted && !this.entry) {
+    if (this.think <= 0 && !acted && !this.entry && !this.queue.length && !due && !pivoting) {
       this.think = this.rng.float(0.18, 0.55) * (pressure ? 0.8 : 1) * (1.25 - iq * 0.4) * (me.gas < 25 ? 1.6 : 1);
       if (tilted) this.think *= 0.7;
       if (urgent || hurtOp) this.think *= 0.7;
@@ -1789,17 +2071,22 @@ export class LiveAI {
       const badLeg = me.legs < 35;
       // closer range means more chances to grab: only the grapplers' plans take every one
       const grab = this.plan === 'wrestle' || this.plan === 'grind' || this.plan === 'subhunt' ? 1 : 0.6;
-      if (wrestle && d < 66 && r < (0.12 + sk.wrestling / 500 + (urgent && sk.wrestling > 55 ? 0.1 : 0)) * grab) out.push({ type: 'shoot' });
-      else if (d < 54 && r < (0.09 + (wrestle ? 0.08 : 0) + (sk.wrestling > sk.striking ? 0.04 : 0) + (rest ? 0.08 : 0)) * grab) out.push({ type: 'clinch' });
+      // pinned (and a wrestler), or hurt with him on a roll: tie him up
+      if (d < 54 && !L.rules.noGrappling && (this.wallPlan === 'clinch' || (survive && op.momentum > 0.5))) out.push({ type: 'clinch' });
+      else if (wrestle && d < 66 && r < (0.12 + sk.wrestling / 500 + (urgent && sk.wrestling > 55 ? 0.1 : 0)) * grab) out.push({ type: 'shoot' });
+      else if (d < 54 && r < (0.09 + (wrestle ? 0.08 : 0) + (sk.wrestling > sk.striking ? 0.04 : 0) + (rest ? 0.08 : 0)) * grab * (sk.wrestling > sk.striking || rest || survive ? 1 : 0.5)) out.push({ type: 'clinch' });
       else if (d < 58 && (r < (rest ? 0.45 : cruise ? 0.5 : 0.75) || opening || urgent) && !(this.plan === 'counter' && !opening && !urgent && r > 0.35)) {
         // a counter puncher who has to lead is in no hurry to lead again
         if (this.plan === 'counter' && !opening) this.think *= 1.4;
-        const kick = badLeg ? 0.04 : this.plan === 'legs' ? 0.45 : 0.18 + (sk.striking > 65 ? 0.05 : 0) + (urgent ? 0.08 : 0);
+        const kick = badLeg ? 0.04 : this.plan === 'legs' ? 0.45 : 0.18 + (sk.striking > 65 ? 0.05 : 0) + (urgent ? 0.08 : 0) + (parryHappy ? 0.12 : 0) + (pullHappy ? 0.15 : 0);
         if (this.rng.chance(kick) && !rest) {
           const kr = this.rng.next();
           // a man coming forward eats a front kick; flashy strikers throw the spinning stuff now and then;
           // behind on the cards, he swings for the head
           let level: KickLevel = badLeg ? 'front' : op.act && d > 50 && kr < 0.2 ? 'front' : this.plan === 'legs' || kr < 0.42 ? 'low' : kr < (urgent ? 0.55 : 0.7) ? 'body' : kr < (urgent ? 0.9 : 0.84) ? 'head' : kr < 0.94 ? 'front' : sk.striking > 72 ? 'spin' : 'body';
+          // a man who pulls away gets teeped back to the fence; a man who parries everything gets his legs chopped
+          if (pullHappy && kr < 0.5) level = 'front';
+          else if (parryHappy && kr < 0.6) level = 'low';
           // too far for that one: the longer kicks
           if (KICK[level].reach + slack < d) level = KICK.body.reach + slack >= d ? 'body' : 'front';
           this.throwKick(out, level, d);
@@ -1809,9 +2096,19 @@ export class LiveAI {
           const hand = sp === 'overhand' || sp === 'uppercut' ? 'rear' : this.rng.chance(0.6) ? 'lead' : 'rear';
           this.entry = { punch: sp, hand, weight: opening || hurtOp || this.rng.chance(0.3) ? 'heavy' : 'medium', t: 0.5 };
           return { intents: out, move: toward };
+        } else if (this.habit === 'jab' && !rest && this.rng.chance(0.4)) {
+          // he's timing your jab: slip it and come back over it with the right hand
+          out.push({ type: 'evade', kind: 'slip', source: 'button' });
+          this.entry = { punch: 'straight', hand: 'rear', weight: opening ? 'heavy' : 'medium', t: 0.5 };
+          return { intents: out, move: toward };
+        } else if (parryHappy && !this.feintT && this.rng.chance(0.35)) {
+          // he parries everything: show him one upstairs, then go where his hands aren't
+          out.push({ type: 'feint' });
+          this.feintT = 0.5;
+          return { intents: out, move };
         } else {
           // mix it up: work the body when he's covering up, go upstairs when he drops his hands
-          const body = op.block ? 0.45 : op.body < 60 ? 0.3 : this.read.blocked >= 4 ? 0.35 : 0.15;
+          const body = (op.block ? 0.45 : op.body < 60 ? 0.3 : this.read.blocked >= 4 ? 0.35 : 0.15) + (parryHappy ? 0.3 : 0);
           // only what reaches from here
           const menu = rest ? AI_REST_PUNCHES : AI_PUNCHES;
           const types: PunchType[] = [];
@@ -1825,6 +2122,17 @@ export class LiveAI {
           }
           const weight: Weight = opening || hurtOp || this.rng.chance(0.2 + sk.power / 400 + (urgent ? 0.2 : 0)) ? 'heavy' : rest ? 'light' : this.rng.chance(0.5) ? 'medium' : 'light';
           const lead = punch === 'jab' || punch === 'bodyJab' || (punch === 'hook' && this.rng.chance(0.6)) || (punch === 'bodyHook' && this.rng.chance(0.5));
+          // or put punches together: one of his combinations, the ones that have been landing more often
+          const combo = me.gas > 40 && this.rng.chance(0.25 + iq * 0.35) ? this.pickCombo(L, d, slack) : null;
+          if (combo) {
+            this.queue.length = 0;
+            const n = Math.min(combo.length, 2 + Math.round(iq * 2));
+            for (let k = 1; k < n; k++) this.queue.push(combo[k]);
+            this.qWeight = 'heavy';
+            this.qHand = 'rear';
+            this.comboStep(out, combo[0], d, false);
+            return { intents: out, move };
+          }
           // a little short from here: the sharper man takes the step that puts it on the button
           if (!rest && PUNCH[punch].reach < d && this.rng.chance(0.5 + iq * 0.5)) {
             this.entry = { punch, hand: lead ? 'lead' : 'rear', weight, t: 0.45 };
@@ -1833,7 +2141,10 @@ export class LiveAI {
           this.throwPunch(out, punch, lead ? 'lead' : 'rear', weight, d);
         }
       } else if (r > 0.985 && d > 64 && me.hp > op.hp + 20 && me.gas > 40) out.push({ type: 'taunt' });
-      else if (r > 0.92) out.push({ type: 'feint' });
+      else if (r > (iq > 0.6 ? 0.86 : 0.92)) {
+        out.push({ type: 'feint' });
+        this.feintT = 0.5;
+      }
     }
     return { intents: out, move };
   }
@@ -1847,6 +2158,53 @@ export class LiveAI {
   private throwKick(out: FightIntent[], level: KickLevel, d: number): void {
     this.lastThrowD[KICK[level].name] = d;
     out.push({ type: 'kick', level });
+  }
+
+  /** One of his combinations that starts with something that reaches, weighted by how that first shot has been landing. */
+  private pickCombo(L: LiveFight, d: number, slack: number): string[] | null {
+    let fam = 'default';
+    for (const st of (this.side === 0 ? L.A : L.B).styles) {
+      if (STYLE_FAMILY[st]) {
+        fam = STYLE_FAMILY[st];
+        break;
+      }
+    }
+    const list = COMBOS[fam];
+    const w: number[] = [];
+    let total = 0;
+    for (const c of list) {
+      let x = 0;
+      if (stepReach(c[0]) + slack >= d && !(L.rules.noGrappling && c.includes('shoot'))) {
+        const m = this.mine[stepName(c[0])];
+        x = m && m.t >= 3 ? 1 + 1.5 * (m.l / m.t) : 1;
+      }
+      w.push(x);
+      total += x;
+    }
+    if (total <= 0) return null;
+    let r = this.rng.next() * total;
+    for (let k = 0; k < list.length; k++) {
+      if (w[k] <= 0) continue;
+      r -= w[k];
+      if (r <= 0) return list[k];
+    }
+    for (let k = list.length - 1; k >= 0; k--) if (w[k] > 0) return list[k];
+    return null;
+  }
+
+  /** Throw one step of a combination: the set-up shots quick and light, the last one with everything. */
+  private comboStep(out: FightIntent[], step: string, d: number, last: boolean): void {
+    if (step === 'feint') out.push({ type: 'feint' });
+    else if (step === 'shoot') out.push({ type: 'shoot' });
+    else if (step.startsWith('kick:')) this.throwKick(out, step.slice(5) as KickLevel, d);
+    else {
+      const p = step as PunchType;
+      const w: Weight = last ? this.qWeight : this.rng.chance(0.6) ? 'light' : 'medium';
+      // jabs from the lead, straights from the rear, hooks and uppercuts off whichever hand went last
+      const hand = p === 'jab' || p === 'bodyJab' ? 'lead' : p === 'straight' || p === 'bodyStraight' || p === 'overhand' || p === 'spinBackfist' ? 'rear' : this.qHand === 'lead' ? 'rear' : 'lead';
+      this.qHand = hand;
+      this.throwPunch(out, p, hand, w, d);
+    }
   }
 
   /** What's been working gets thrown more: each punch's weight grows with how often it's landed. */
