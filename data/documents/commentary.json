@@ -242,6 +242,14 @@
     "We're on the main card now. The pay-per-view is live, the money is real, and so is the violence.",
     "Main card action at {venue}. {xf} against {yf}. Wallets are open, so are the wounds.",
     "Welcome to everyone just joining us for the main card. You missed some blood. Here's some more."
+   ],
+   "momentum": [
+    "And just like that, this fight belongs to {x}.",
+    "What a turnaround! {x} has completely flipped the script.",
+    "The momentum has swung, and it has swung hard toward {x}.",
+    "A minute ago this was {y}'s round. Not anymore. {x} has taken it over.",
+    "The tide has turned in round {r}. {x} is the one dictating now.",
+    "{x} weathered the storm, and now {x} is the storm."
    ]
   },
   "blow": {
@@ -260,7 +268,10 @@
    ],
    "open_prelim": [
     "Don't sleep on this one. These are hungry guys. Literally, one of them just made weight.",
-    "I love prelim fighters, man. They don't know they're not supposed to be in a war yet."
+    "I love prelim fighters, man. They don't know they're not supposed to be in a war yet.",
+    "Prelims, man! People sleep on the prelims. Do not sleep on the prelims. Sleep in an elk tent. Not on the prelims.",
+    "These young guys are hungry, Lon. You can see it in their eyes. Also one of them told me he hasn't eaten since Tuesday.",
+    "I love the prelims, man. This is where you find the next superstar. Or the next guy who sells you a supplement."
    ],
    "wrestling": [
     "LOOK AT THAT DOUBLE LEG! That's world-class wrestling, man! That's the most dominant thing a human being can do to another human being!",
@@ -489,7 +500,18 @@
    ],
    "open_card": [
     "Main card, man! Now we're cooking! Everything before this was the appetizer. This is the fucking steak!",
-    "We're on the main card! Pay-per-view money! Somebody's getting knocked into a new tax bracket!"
+    "We're on the main card! Pay-per-view money! Somebody's getting knocked into a new tax bracket!",
+    "Main card, Lon! The energy in here just went up like ten notches. I can feel it in my teeth, man.",
+    "Okay, this is where it gets real. Main card. These guys have been living in a sauna all week. Respect.",
+    "Main card time! You know what I love about the main card? Everything. I love everything about it."
+   ],
+   "momentum": [
+    "OH! It's all {x} now! ALL {x}!",
+    "Did you see that switch, Lon? {y} was cooking and now {x} owns the kitchen!",
+    "This is why you never count anybody out, man. {x} just took this fight over!",
+    "{x} flipped a switch! That's the dog in him, man! That's the dog!",
+    "Momentum, Lon! You can feel it in the building! It's all {x}!",
+    "{y} is in deep water now and {x} can smell it!"
    ]
   },
   "dc": {
@@ -654,7 +676,18 @@
     "{wn} texted me this morning: 'DC, co-main, let's go.' I said 'who is this?' Anyway, he's here."
    ],
    "open_card": [
-    "Main card, baby! I changed my shirt for this. Not because of the fights. I spilled sauce. But also the fights."
+    "Main card, baby! I changed my shirt for this. Not because of the fights. I spilled sauce. But also the fights.",
+    "Main card time! I've been waiting all night. I ate during the prelims, but I've been waiting.",
+    "Here we go, main card! Somebody's getting a bonus tonight and somebody's getting a sandwich. Me. I'm getting the sandwich.",
+    "This is the main card, Lon. The lights are brighter, the stakes are higher, and catering just brought out the good wings."
+   ],
+   "momentum": [
+    "Big swing! {x} turned this whole thing around!",
+    "I told you! {x} was just warming up. Like a deep fryer.",
+    "{y} had it, {y} lost it. Now it's {x}'s round.",
+    "Whoa, whoa, whoa! {x} is taking over! Somebody tell {y}!",
+    "That's a momentum shift right there. I can feel it in my wings. My chicken wings.",
+    "{x} just took round {r} back! You love to see it!"
    ]
   },
   "braille": {
@@ -765,6 +798,9 @@
   ],
   "finish_dq": [
    "foul"
+  ],
+  "momentum": [
+   "hurt"
   ]
  },
  "butler": {
