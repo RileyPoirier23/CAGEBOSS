@@ -100,7 +100,7 @@ export function openFMDesk(g: Game, onDone: () => void): void {
       let y = 14;
       const rows: Container[] = [];
       cur.ref.lines.forEach((l, i) => {
-        const { node: fnode, h } = fieldNode('ref.' + i, l.label, l.value, REF_W - 6, ins, { labelW: 40, small: true, kind: l.kind === 'sig' ? 'sig' : undefined });
+        const { node: fnode, h } = fieldNode('ref.' + i, l.label, l.value, REF_W - 6, ins, { labelW: 50, small: true, kind: l.kind === 'sig' ? 'sig' : undefined });
         fnode.position.set(3, y);
         rows.push(fnode);
         y += h + 2;

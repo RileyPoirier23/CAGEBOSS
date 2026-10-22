@@ -12,7 +12,7 @@ import { Container, Graphics, type Ticker } from 'pixi.js';
 import { hint } from './hints';
 import type { Game } from './app';
 import { PAL } from '../art/palette';
-import { W, H, text, box } from './kit';
+import { W, H, text, box, button } from './kit';
 import { input } from '../core/input';
 import { setPadUiMode } from './controller';
 import { prompt } from './glyphs';
@@ -37,7 +37,7 @@ function shell(g: Game, title: string, help: string, done: (score: number) => vo
   frame.addChild(box(bw, bh, PAL.night, PAL.gold, { bevel: true })).position.set(bx, by);
   frame.addChild(text(title, bx + 8, by + 6, { color: PAL.gold }));
   frame.addChild(text(help, bx + 8, by + 18, { small: true, width: bw - 16, color: PAL.ash }));
-  frame.addChild(prompt({ pad: 'B', key: 'Esc' }, 'SKIP', bx + bw - 50, by + 6, PAL.ash));
+  if (!isTouchDevice()) frame.addChild(prompt({ pad: 'B', key: 'Esc' }, 'SKIP', bx + bw - 50, by + 6, PAL.ash));
   const gfx = new Graphics();
   gfx.position.set(bx, by);
   frame.addChild(gfx);
@@ -58,6 +58,8 @@ function shell(g: Game, title: string, help: string, done: (score: number) => vo
   let keyPress = false;
   let keyRelease = false;
   let skip = false;
+  // phones have no Esc: a real button (the panel itself is the action button)
+  if (isTouchDevice()) frame.addChild(button('SKIP', bx + bw - 52, by + 4, 48, 16, () => (skip = true), { small: true, fill: PAL.shadow }));
   const kd = (e: KeyboardEvent) => {
     if (e.code === 'Escape') skip = true;
     if ((e.code === 'Space' || e.code === 'Enter') && !keys.has(e.code)) { keys.add(e.code); keyPress = true; }

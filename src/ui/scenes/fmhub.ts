@@ -8,6 +8,7 @@ import { Scene } from '../app';
 import type { Skills } from '../../core/types';
 import { PAL } from '../../art/palette';
 import { W, H, SW, OX, text, button, box, ScrollBox } from '../kit';
+import { measure } from '../text';
 import { openWindow, confirm, alertBox, selector } from '../widgets';
 import { openHelp } from '../help';
 import { openSettings } from './settings';
@@ -101,7 +102,8 @@ export class FMHubScene extends Scene {
     const frame = new Container();
     const wrap = this.g.modal(frame, { dim: 0.7 });
     const bw = 320;
-    const many = ev.choices.length > 3;
+    // side by side only if every label fits its third (or half) of the box
+    const many = ev.choices.length > 3 || ev.choices.some((c) => measure(c.label, true) > (bw - 16) / ev.choices.length - 12);
     const bh = many ? 74 + ev.choices.length * 17 : 120;
     const bx = (W - bw) / 2;
     const by = (H - bh) / 2;
@@ -189,7 +191,7 @@ export class FMHubScene extends Scene {
       op.position.set(6, 18);
       R.addChild(op);
       R.addChild(text(fullName(opp), 42, 18, { small: true, width: 104, color: PAL.bone, maxLines: 2 }));
-      R.addChild(text(`${record(opp.record)}  ${st.tier === 'of' ? rankLabel(s, opp.id) : '#' + (st.ladder.indexOf(opp.id) + 1)}`, 42, 36, { small: true, color: PAL.ash }));
+      R.addChild(text(`${record(opp.record)}  ${this.rankTag(opp.id)}`, 42, 36, { small: true, color: PAL.ash }));
       const wk = o.week - s.week;
       R.addChild(text(`${wk <= 0 ? 'FIGHT WEEK!' : `In ${wk} week${wk > 1 ? 's' : ''}`}  •  ${SLOT_NAME(cardSlot(s), st.tier === 'of')}`, 6, 56, { small: true, color: wk <= 0 ? PAL.gold : PAL.bone }));
       R.addChild(text(`${money(o.purse)} + ${money(o.win)} win  •  ${o.rounds} rds`, 6, 66, { small: true, color: PAL.ash }));
@@ -200,7 +202,7 @@ export class FMHubScene extends Scene {
       st.offers.slice(0, 3).forEach((o, i) => {
         const opp = s.fighters[o.opp];
         const yy = 16 + i * 30;
-        R.addChild(text(`${o.title || o.tierTitle ? 'TITLE: ' : ''}${opp.last} ${record(opp.record)} ${st.tier === 'of' ? rankLabel(s, opp.id) : '#' + (st.ladder.indexOf(opp.id) + 1)}`, 6, yy, { small: true, width: 102, color: o.title || o.tierTitle ? PAL.gold : PAL.bone, maxLines: 1 }));
+        R.addChild(text(`${o.title || o.tierTitle ? 'TITLE: ' : ''}${opp.last} ${record(opp.record)} ${this.rankTag(opp.id)}`, 6, yy, { small: true, width: 102, color: o.title || o.tierTitle ? PAL.gold : PAL.bone, maxLines: 1 }));
         R.addChild(text(`${money(o.purse)}+${money(o.win)} • wk ${o.week + 1}`, 6, yy + 9, { small: true, color: PAL.ash }));
         R.addChild(text(o.why, 6, yy + 18, { small: true, color: PAL.ash, width: 102, maxLines: 1 }));
         R.addChild(button('SIGN', 110, yy + 2, 34, 14, () => { acceptOffer(s, i); sfx('cash'); this.refresh(); this.g.autosave(); }, { small: true, fill: PAL.moss }));
@@ -340,7 +342,7 @@ export class FMHubScene extends Scene {
       const op = fighterPortrait(opp, 32);
       op.position.set(6, yy);
       win.body.addChild(op);
-      win.body.addChild(text(`${o.title || o.tierTitle ? 'TITLE: ' : ''}${fullName(opp)} ${record(opp.record)} ${st.tier === 'of' ? rankLabel(s, opp.id) : '#' + (st.ladder.indexOf(opp.id) + 1)}`, 44, yy, { small: true, width: 190, color: o.title || o.tierTitle ? PAL.gold : PAL.bone, maxLines: 1 }));
+      win.body.addChild(text(`${o.title || o.tierTitle ? 'TITLE: ' : ''}${fullName(opp)} ${record(opp.record)} ${this.rankTag(opp.id)}`, 44, yy, { small: true, width: 190, color: o.title || o.tierTitle ? PAL.gold : PAL.bone, maxLines: 1 }));
       win.body.addChild(text(`${money(o.purse)} + ${money(o.win)} win  •  week ${o.week + 1}`, 44, yy + 10, { small: true, color: PAL.ash }));
       win.body.addChild(text(o.why, 44, yy + 20, { small: true, color: PAL.ash, width: 190, maxLines: 1 }));
       win.body.addChild(button('SIGN', 240, yy + 4, 52, 22, () => {
@@ -354,6 +356,15 @@ export class FMHubScene extends Scene {
   }
 
   /** Phones: the Bleeter feed from the desktop's right-hand panel. */
+  /** Where someone stands: the CBFC rankings, or your league's ladder below it. */
+  private rankTag(id: string): string {
+    const s = this.g.state!;
+    const st = fm(s);
+    if (st.tier === 'of') return rankLabel(s, id);
+    const i = st.ladder.indexOf(id);
+    return i < 0 ? 'NR' : i === 0 ? 'C' : '#' + i;
+  }
+
   private feedWindow(): void {
     const st = fm(this.g.state!);
     const posts = new Container();
@@ -584,8 +595,9 @@ export class FMHubScene extends Scene {
         const yy = 4 + i * 20;
         const v = Math.round(st.body[p.id]);
         win.body.addChild(text(`${p.name}  ${v}${p.id === 'head' ? ` / ${Math.round(st.headCap)}` : ''}`, 96, yy, { small: true, color: PAL.bone }));
-        win.body.addChild(text(p.effect, 96, yy + 9, { small: true, width: 170, color: PAL.ash, maxLines: 1 }));
         const cost = clinicCost(s, p.id);
+        // the TREAT button only takes the end of the row when there's something to treat
+        win.body.addChild(text(p.effect, 96, yy + 9, { small: true, width: cost ? 170 : 226, color: PAL.ash, maxLines: 1 }));
         if (cost) win.body.addChild(button(`TREAT ${money(cost)}`, 268, yy, 54, 13, () => { this.msg = treat(s, p.id); draw(); this.refresh(); }, { small: true, fill: PAL.steel, disabled: st.money < cost }));
       });
     };
@@ -625,7 +637,7 @@ export class FMHubScene extends Scene {
     const win = openWindow(this.g, 'Bleeter', 300, 180);
     win.body.addChild(text('Call somebody out. Starts beef, builds hype, sometimes gets you the fight.', 6, 4, { small: true, width: 288, color: PAL.ash }));
     const targets = calloutTargets(s);
-    targets.forEach((t, i) => win.body.addChild(button(`@${t.last.toLowerCase()}  ${rankLabel(s, t.id)}`, 6 + (i % 2) * 146, 20 + Math.floor(i / 2) * 18, 142, 15, () => {
+    targets.forEach((t, i) => win.body.addChild(button(`@${t.last.toLowerCase()}  ${this.rankTag(t.id)}`, 6 + (i % 2) * 146, 20 + Math.floor(i / 2) * 18, 142, 15, () => {
       const r = this.rng();
       this.msg = callOut(s, t.id, r);
       this.save(r);
@@ -1088,7 +1100,7 @@ export class FMHubScene extends Scene {
         then?.();
       });
     };
-    targets.forEach((t, i) => frame.addChild(button(`CALL OUT ${t.last.toUpperCase()} (${rankLabel(s, t.id)})`, bx + 8, by + 22 + i * 18, bw - 16, 15, () => pick(t.id), { small: true, fill: PAL.blood })));
+    targets.forEach((t, i) => frame.addChild(button(`CALL OUT ${t.last.toUpperCase()} (${this.rankTag(t.id)})`, bx + 8, by + 22 + i * 18, bw - 16, 15, () => pick(t.id), { small: true, fill: PAL.blood })));
     frame.addChild(button('THANK EVERYONE', bx + 8, by + bh - 22, bw - 16, 15, () => pick(null), { small: true, fill: PAL.steel }));
   }
 
