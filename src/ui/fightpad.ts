@@ -85,7 +85,8 @@ export class TouchFightPad extends Container {
   private gfx = new Graphics();
   /** what changes while you fight (charge rings, the busy sweep): redrawn only when it looks different */
   private fx = new Graphics();
-  private fxKey = '';
+  private fxKey = -1;
+  private fxMode: PadMode | '' = '';
   private labels = new Container();
   private mode: PadMode = 'stand';
   /** BODY latch: when BODY went down, until when it stays lit, and whether it lets go after the next state() */
@@ -311,11 +312,11 @@ export class TouchFightPad extends Container {
 
   /** Charge rings and the busy sweep: cheap, and only redrawn when they'd look different. */
   private drawFx(): void {
-    const q = (v: number) => Math.min(20, Math.round((v / CHARGE_HEAVY) * 20));
     const busy = Math.round(this.busy * 10);
-    const key = `${this.mode}|${q(this.chargeLead)}|${q(this.chargeRear)}|${busy}`;
-    if (key === this.fxKey) return;
+    const key = chargeStep(this.chargeLead) + chargeStep(this.chargeRear) * 128 + busy * 16384;
+    if (key === this.fxKey && this.mode === this.fxMode) return;
     this.fxKey = key;
+    this.fxMode = this.mode;
     const g = this.fx.clear();
     for (const b of this.shown()) {
       if (busy > 0 && (b.id === 'LEAD' || b.id === 'REAR' || b.id === 'KICK')) {
@@ -337,6 +338,12 @@ export class TouchFightPad extends Container {
 
 function now(): number {
   return performance.now() / 1000;
+}
+
+/** How a charge ring looks (0 = none): 21 lengths times 3 colours, so it's only redrawn when one changes. */
+function chargeStep(v: number): number {
+  if (v <= 0) return 0;
+  return 1 + Math.min(20, Math.floor((v / CHARGE_HEAVY) * 20)) + (v < CHARGE_MED ? 0 : v < CHARGE_HEAVY ? 32 : 64);
 }
 
 /** A dotted pixel ring, from 12 o'clock clockwise, `frac` of the way round. */

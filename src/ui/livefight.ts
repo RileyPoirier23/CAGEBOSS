@@ -619,27 +619,32 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         yy -= 10;
       }
     }
-    // over the cage: SHORT / TOO FAR over your head, the string you're on under each HP bar
+    // over the cage: SHORT / TOO FAR over your head (under the sponsor band), the string you're on under each HP bar
     if (stage === 'fight') {
       if (rangeT > 0 && rangeTag && !autopilot) {
-        const t = hudText(rangeTag, 0, 30, { small: true, color: PAL.ember, shadow: PAL.ink });
+        const t = hudText(rangeTag, 0, 42, { small: true, color: PAL.ember, shadow: PAL.ink });
         t.x = Math.round(AX + L.F[P].x - t.textWidth / 2);
         dyn.addChild(t);
       }
       for (const i of SIDES) {
         const c = combo[i];
-        const cxx = i === 0 ? AX + 6 : AX + AW - 70;
-        const align = i === 0 ? 'left' : 'right';
-        if (c.n >= 2 && L.F[i].comboT > 0) dyn.addChild(hudText(c.n === 2 ? '2 HITS' : `${c.n} HIT COMBO`, cxx, 24, { small: true, color: PAL.bone, shadow: PAL.ink, width: 64, align }));
-        if (c.tagT > 0 && c.tag) dyn.addChild(hudText(c.tag, cxx, 32, { small: true, color: PAL.gold, shadow: PAL.ink, width: 64, align }));
+        const run = c.n >= 2 && L.F[i].comboT > 0 ? (c.n === 2 ? '2 HITS' : `${c.n} HIT COMBO`) : '';
+        // a named finish (ONE-TWO!) leads the line in gold for a moment
+        const named = c.tagT > 0 ? c.tag : '';
+        if (!run && !named) continue;
+        const s = named ? col(PAL.gold, named) + (run ? ' ' + run : '') : run;
+        dyn.addChild(hudText(s, i === 0 ? AX + 6 : AX + AW - 126, 24, { small: true, color: PAL.bone, shadow: PAL.ink, width: 120, align: i === 0 ? 'left' : 'right' }));
       }
     }
     // he's shooting: the sprawl, right now
     const shot = L.F[O].act;
-    if (fighting && !autopilot && L.shooting === O && shot && shot.kind === 'shoot' && !shot.done) {
+    const sprawlNow = fighting && !autopilot && L.shooting === O && !!shot && shot.kind === 'shoot' && !shot.done;
+    if (sprawlNow) {
       const key = touchUi ? 'GRAB' : input.lastDevice === 'gamepad' ? padName('B') : hint('SPACE', '{B}');
       dyn.addChild(hudText(`TAP ${key} TO SPRAWL!`, 0, 48, { width: FW, align: 'center', color: PAL.gold, scale: 2, shadow: PAL.ink }));
     }
+    // Bleeter steps aside while the big prompts (the sprawl, the count, JUMP ON HIM) are up
+    if (feed && !feed.destroyed) feed.visible = !sprawlNow && L.F[0].down <= 0 && L.F[1].down <= 0;
     // overlays: the count, submission struggle
     for (const i of SIDES) {
       if (L.F[i].down <= 0) continue;
@@ -928,8 +933,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         sfx('crowd');
         break;
       case 'cut':
-        // (the line's side is the man who opened it; the arena bleeds the other one)
-        arena.cue({ round: L.round, t: 0, text: '', side: d, intensity: 1, act: 'cut', pos: 'stand', hp: [L.F[0].hp, L.F[1].hp] }, true);
+        // (the shot that opened it already sprayed blood; the cut count is mirrored every frame)
         callout(a === P && !o.versus ? "YOU'RE CUT!" : 'HE IS CUT!', who(d));
         break;
       case 'ko':
@@ -1053,7 +1057,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       steps++;
     }
     const w = L.result?.winner ?? -1;
-    if (L.result && (L.result.method === 'KO' || L.result.method === 'TKO') && w >= 0) arena.floor((1 - w) as Side, 'ko');
+    if (L.result && (L.result.method === 'KO' || L.result.method === 'TKO') && w >= 0) arena.floor((1 - w) as Side, 'ko', L.result.detail);
     arena.over(w as Side | -1);
     freeze = 0;
     endT = 99;
