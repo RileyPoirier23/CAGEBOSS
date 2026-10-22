@@ -240,7 +240,7 @@ describe('a smarter CPU, and no one-button wins', () => {
     expect(STRIKE_REACH.jab).toBe(56);
     expect(STRIKE_REACH['front kick']).toBe(60);
     expect(STRIKE_REACH['spinning backfist']).toBe(48);
-    const long = new Set(['overhand', 'uppercut', 'spinning backfist']);
+    const looping = new Set(['overhand', 'uppercut', 'spinning backfist']);
     let thrown = 0;
     let missed = 0;
     for (let seed = 1; seed <= 30; seed++) {
@@ -253,8 +253,8 @@ describe('a smarter CPU, and no one-button wins', () => {
         const b = ai[1].update(L, 1 / 30);
         L.update(1 / 30, [a.intents, b.intents], [a.move, b.move]);
         for (const e of L.events) {
-          if (e.type === 'punch' && e.name && long.has(e.name) && L.pos === 'stand') thrown++;
-          if (e.type === 'miss' && e.name && long.has(e.name)) missed++;
+          if (e.type === 'punch' && e.name && looping.has(e.name) && L.pos === 'stand') thrown++;
+          if (e.type === 'miss' && e.name && looping.has(e.name)) missed++;
         }
         ai[0].noteEvents(L);
         ai[1].noteEvents(L);
