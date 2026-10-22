@@ -381,6 +381,72 @@ describe('a smarter CPU, and no one-button wins', () => {
     expect(late[0] / late[1]).toBeLessThan(early[0] / early[1]);
   });
 
+  it('the CPU sees an opening before it punishes it, and a plain whiff costs a sharp shot, not a haymaker', () => {
+    /** side 0 opens the window (a whiffed heavy hook from 50 px, or a jab into side 1's parry); returns side 1's answer and how long it took */
+    const answer = (seed: number, parried: boolean) => {
+      const L = setup(seed, 85);
+      L.F[0].x = 200;
+      L.F[1].x = 250;
+      const ai = new LiveAI(1, seed);
+      // nothing else on his mind: only the counter can answer
+      (ai as unknown as { think: number }).think = 9;
+      let t = 0;
+      let opened = -1;
+      for (let k = 0; k < 30; k++) {
+        const b = ai.update(L, 1 / 30);
+        const p = b.intents.find((x) => x.type === 'punch');
+        if (p && p.type === 'punch') return { weight: p.weight, after: t - opened, stuck: L.F[0].stun };
+        L.update(1 / 30, k === 0 ? [[P(parried ? 'jab' : 'hook', parried ? 'medium' : 'heavy')], parried ? [{ type: 'parry' }] : []] : [[], b.intents], [0, 0]);
+        L.events.length = 0;
+        t += 1 / 30;
+        if (opened < 0 && L.F[1].counterT > 0) opened = t;
+      }
+      return null;
+    };
+    let heavy = 0;
+    for (const seed of [1, 2, 3, 4, 5, 6]) {
+      const w = answer(seed, false);
+      expect(w).not.toBeNull();
+      // he waits 0.25 - 0.15 * 0.85 = 0.1225 s from when he first sees it (the update after it opens): 0.09 s of fight at the least
+      expect(w!.after).toBeGreaterThanOrEqual(0.085);
+      // a whiff: the stumble is all but over by then, so a medium shot
+      expect(w!.weight).toBe('medium');
+      // a parried hand leaves him stuck for longer: while he still is, that one gets everything
+      const p = answer(seed, true);
+      expect(p).not.toBeNull();
+      expect(p!.weight).toBe(p!.stuck > 0.2 ? 'heavy' : 'medium');
+      if (p!.weight === 'heavy') heavy++;
+    }
+    expect(heavy).toBeGreaterThan(0);
+  });
+
+  it('he reads a habit at any frame rate', () => {
+    // a slow phone: the fight runs at the 0.05 s frame clamp
+    const L = setup(2, 90);
+    L.rules.noGrappling = true;
+    L.F[0].sk = { ...L.F[0].sk, chin: 99, heart: 99 };
+    const ai = new LiveAI(1, 9);
+    let t = 0;
+    let next = 0.3;
+    while (t < 20 && !L.result) {
+      const mine: FightIntent[] = [];
+      if (t >= next) {
+        mine.push(P('jab', 'light'));
+        next += 0.6;
+      }
+      if (L.F[0].down > 0) mine.push({ type: 'getup', side: 'left', rhythm: 1 });
+      const d = L.dist;
+      const b = ai.update(L, 0.05);
+      L.update(0.05, [mine, b.intents], [d > 52 ? 1 : d < 48 ? -1 : 0, b.move]);
+      ai.noteEvents(L);
+      L.events.length = 0;
+      L.F[0].hp = Math.max(L.F[0].hp, 60);
+      t += 0.05;
+    }
+    expect(ai.readNote).toBe('jab');
+    expect(ai.readN).toBeGreaterThanOrEqual(1);
+  });
+
   it('a man already getting up covers and pulls guard when he gets jumped', () => {
     const kd = (getup: number) => {
       const L = setup(9);
@@ -414,6 +480,69 @@ describe('a smarter CPU, and no one-button wins', () => {
       cut += run(C, [[], []], 8, [-1, -1]).filter((e) => e.type === 'pivot' && e.name === 'cutoff').length;
     }
     expect(cut).toBeGreaterThan(0);
+    // the circle is over when the round is: no slide carries across the bell (or onto the mat and back up)
+    const R = setup(5);
+    R.F[0].x = ARENA_L;
+    R.F[1].x = ARENA_L + 50;
+    R.clock = 0.25;
+    expect(run(R, [[], []], 12, [-1, 0]).some((e) => e.type === 'pivot' && e.name === 'escape')).toBe(true);
+    expect(R.phase).toBe('break');
+    R.nextRound([0.5, 0.5]);
+    run(R, [[], []], 10);
+    expect([R.F[0].x, R.F[1].x]).toEqual([170, 310]);
+    const G = setup(5);
+    G.F[0].x = ARENA_L;
+    G.F[1].x = ARENA_L + 50;
+    run(G, [[], []], 7, [-1, 0]);
+    G.pos = 'ground';
+    run(G, [[], []], 5);
+    G.pos = 'stand';
+    G.F[0].x = 200;
+    G.F[1].x = 250;
+    run(G, [[], []], 10);
+    expect([G.F[0].x, G.F[1].x]).toEqual([200, 250]);
+  });
+
+  it('a pressure fighter walks him onto the fence, and the fence work happens', () => {
+    // two balanced men keep to the middle; a pressure plan (the CPU's from round 2 in a career fight) backs a man up
+    let standT = 0;
+    let wallT = 0;
+    let spells = 0;
+    let spellT = 0;
+    let pin = 0;
+    const evs: Record<string, number> = {};
+    for (let seed = 1; seed <= 20; seed++) {
+      const L = setup(seed);
+      const ai: [LiveAI, LiveAI] = [new LiveAI(0, seed * 3), new LiveAI(1, seed * 5, 'pressure')];
+      let steps = 0;
+      while (L.phase !== 'over' && steps < 100000) {
+        if (L.phase === 'break') L.nextRound([0.5, 0.5]);
+        const a = ai[0].update(L, 1 / 30);
+        const b = ai[1].update(L, 1 / 30);
+        L.update(1 / 30, [a.intents, b.intents], [a.move, b.move]);
+        for (const e of L.events) evs[e.type] = (evs[e.type] ?? 0) + 1;
+        ai[0].noteEvents(L);
+        ai[1].noteEvents(L);
+        L.events.length = 0;
+        if (L.pos === 'stand' && L.F.every((x) => x.down <= 0)) {
+          standT++;
+          if (L.onWall(0) || L.onWall(1)) {
+            wallT++;
+            pin++;
+          } else if (pin > 0) {
+            spells++;
+            spellT += pin;
+            pin = 0;
+          }
+        }
+        steps++;
+      }
+    }
+    expect(wallT / standT).toBeGreaterThan(0.01);
+    expect(wallT / standT).toBeLessThan(0.09);
+    expect(spellT / Math.max(1, spells) / 30).toBeLessThan(5);
+    expect(evs.pivot ?? 0).toBeGreaterThan(0);
+    expect(evs.fence ?? 0).toBeGreaterThan(0);
   });
 
   it('the HUD helpers: submissions, ground goals, clinch names', () => {
@@ -441,5 +570,19 @@ describe('a smarter CPU, and no one-button wins', () => {
     expect(L.working()).toEqual({ top: '', bottom: '' });
     run(L, [[{ type: 'ground', move: 'advance' }], [{ type: 'ground', move: 'reverse' }]], 1);
     expect(L.working()).toEqual({ top: 'pass to side control', bottom: 'recover full guard' });
+    // a change of position wipes both labels: after a recovery the top man's goal from the old spot is gone,
+    // and after a sweep the new top man isn't shown the old top man's goal
+    for (const [gpos, move] of [['side', 'reverse'], ['half', 'advance']] as const) {
+      const W = new LiveFight(f, opp, fightReadySkills(s), { ...opp.skills, grappling: 99, wrestling: 99 }, 3, 1);
+      W.pos = 'ground';
+      W.top = 0;
+      W.gpos = gpos;
+      run(W, [[{ type: 'ground', move: 'advance' }], []], 1);
+      expect(W.working().top).not.toBe('');
+      for (let k = 0; k < 300 && W.pos === 'ground' && W.top === 0 && W.gpos === gpos; k++) run(W, [[], k % 6 === 0 ? [{ type: 'ground', move }] : []], 1);
+      expect(W.pos).toBe('ground');
+      expect([W.top, W.gpos]).not.toEqual([0, gpos]);
+      expect(W.working()).toEqual({ top: '', bottom: '' });
+    }
   });
 });

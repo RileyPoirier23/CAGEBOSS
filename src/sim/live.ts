@@ -742,7 +742,8 @@ export class LiveFight {
     f.exert += 1.5;
     if (this.gprog < 1) return;
     this.gprog = 0;
-    this.gKey = '';
+    // a new position: both progress bars start over (and so do their labels)
+    this.gKey = this.sKey = '';
     if (goal === 'stand') {
       this.line(i, 'getup', `${this.name(i)} stands up out of it.`);
       return this.standUp(i);
@@ -779,7 +780,7 @@ export class LiveFight {
     f.exert += 2;
     if (this.standProg < 1) return;
     this.standProg = 0;
-    this.sKey = '';
+    this.gKey = this.sKey = '';
     if (goal === 'stand') return this.standUp(i);
     const from = this.gpos;
     this.groundIdle = 0;
@@ -835,6 +836,7 @@ export class LiveFight {
 
   private move(dt: number, moves: [number, number]): void {
     if (this.pos !== 'stand') {
+      this.stopPivots();
       // tied up or on the mat: they stay together
       const mid = (this.F[0].x + this.F[1].x) / 2;
       const gap = this.pos === 'clinch' ? 26 : 0;
@@ -893,6 +895,14 @@ export class LiveFight {
       if (Math.abs(moves[i]) > 0.2) f.exert += dt * 3;
     }
     this.fixGap();
+  }
+
+  /** A circle off the cage in progress ends with the exchange (a clinch, the mat, a knockdown, the bell). */
+  private stopPivots(): void {
+    this.pivotT[0] = 0;
+    this.pivotT[1] = 0;
+    this.pivotHold[0] = 0;
+    this.pivotHold[1] = 0;
   }
 
   /** Both men shift off fighter i's wall, toward the middle of the cage. */
@@ -1099,6 +1109,7 @@ export class LiveFight {
     this.score(i, 6);
     this.pos = 'stand';
     this.sub = null;
+    this.stopPivots();
     this.ev({ type: 'kd', side: i });
     this.line(i, 'kd', `DOWN GOES ${this.name((1 - i) as Side).toUpperCase()}!`, 3);
     if (o.kdsRound >= 3) this.finish(i, 'TKO', 'three knockdowns');
@@ -1298,17 +1309,24 @@ export class LiveFight {
         if (LEG_LOCKS.has(name) && this.rng.chance(0.5)) {
           this.ev({ type: 'scramble', side: esc });
           if (this.rng.chance(0.5)) return this.standUp(esc);
+          // the other man on top now: the progress bars (and what they were for) were the old top man's
           this.top = esc;
           this.gpos = 'half';
+          this.gprog = this.standProg = 0;
+          this.gKey = this.sKey = '';
           this.line(esc, 'sweep', `${this.name(esc)} wins the scramble and comes up on top.`, 2);
           return;
         }
         if (atk === this.top) {
           const from = this.gpos;
           this.gpos = from === 'back' || from === 'mount' ? (this.rng.chance(0.5) ? 'guard' : 'half') : from === 'side' ? 'half' : 'guard';
-          if (from !== this.gpos) this.ev({ type: 'pass', side: atk, name: this.gpos, from });
+          if (from !== this.gpos) {
+            this.gKey = this.sKey = '';
+            this.ev({ type: 'pass', side: atk, name: this.gpos, from });
+          }
         } else if (this.gpos === 'guard' && this.rng.chance(0.4)) {
           this.gpos = 'half';
+          this.gKey = this.sKey = '';
           this.ev({ type: 'pass', side: this.top, name: 'half', from: 'guard' });
         }
       }
@@ -1354,6 +1372,7 @@ export class LiveFight {
     this.sub = null;
     this.shooting = -1;
     this.clinch = { dom: -1, tie: 'collar', fence: -1, idle: 0 };
+    this.stopPivots();
     this.F.forEach((f, i) => {
       const a = aid[i];
       f.hp = Math.min(f.hpMax, f.hp + 18 + a * 18);
@@ -1424,6 +1443,7 @@ export class LiveFight {
     if (kind !== 'fence') o.hp -= 3;
     this.pos = 'stand';
     this.sub = null;
+    this.stopPivots();
     this.F[0].x -= 16;
     this.F[1].x += 16;
     this.fixGap();
@@ -1626,6 +1646,8 @@ export class LiveAI {
   private qTail = false;
   /** a feint just went out: the shot it set up comes next */
   private feintT = 0;
+  /** how long his current opening has been there (he has to see it before he can punish it) */
+  private openT = 0;
   /** his habits: the strikes he's started lately (name, when), the gaps between them, how he defends (event counts) */
   private hist: [string, number][] = [];
   private gaps: number[] = [];
@@ -1687,11 +1709,12 @@ export class LiveAI {
   }
 
   /** Watch what he starts: the last dozen strikes and their rhythm, and the habit if there is one. */
-  private watch(L: LiveFight, op: LiveFighter, iq: number): void {
+  private watch(L: LiveFight, op: LiveFighter, iq: number, dt: number): void {
     const a = op.act;
     const name = a && a.kind !== 'feint' ? a.name : '';
     let changed = false;
-    if (a && name && name !== this.lastOpAct && a.t < 0.05 && L.pos === 'stand') {
+    // a strike he's only just started (it has had one tick, of up to a frame; frames on a slow phone run to 0.05 s and vary)
+    if (a && name && name !== this.lastOpAct && a.t <= Math.max(dt, 0.05) + 0.01 && L.pos === 'stand') {
       const gap = this.clockT - this.lastOpT;
       if (gap < 4) {
         this.gaps.push(gap);
@@ -1758,6 +1781,7 @@ export class LiveAI {
     const iq = sk.fightIQ / 100;
     this.rethink(L);
     this.clockT += dt;
+    this.openT = me.counterT > 0 ? this.openT + dt : 0;
     if (L.pos !== 'stand' || me.down > 0 || op.down > 0) {
       this.entry = null;
       this.queue.length = 0;
@@ -1779,11 +1803,11 @@ export class LiveAI {
       if (this.rng.chance(dt * (atk ? 4 + sk.grappling / 18 : 5.5 + Math.max(sk.grappling, sk.wrestling) / 16))) out.push({ type: 'mash', rate: 6, role: atk ? 'attack' : 'defend' });
       return { intents: out, move: 0 };
     }
-    this.watch(L, op, iq);
+    this.watch(L, op, iq, dt);
     // reactive defence: read the other man's strike while it winds up
     if (op.act && !op.act.done && op.act.kind !== 'feint' && op.act.kind !== 'shoot' && op.act.t > 0.04) {
       // the one he's been reading, he sees coming
-      const expect = this.habit && op.act.name === this.habit ? 1 + iq * 2 : 1;
+      const expect = this.habit && op.act.name === this.habit ? 1 + iq : 1;
       if (!this.blockT && this.rng.chance(dt * 9 * (0.25 + iq * 0.7) * ((me.tilt ?? 0) > 0 ? 0.6 : 1) * expect)) {
         const r = this.rng.next();
         // what's been landing is what he's ready for: hooks that keep catching him get rolled under
@@ -1990,17 +2014,20 @@ export class LiveAI {
         acted = true;
       }
     }
-    if (!acted && me.counterT > 0 && d <= 70 && this.rng.chance(dt * 12 * iq)) {
+    // (a human reaction: the opening has to be there a beat before he moves on it, 0.13 s for a sharp man, nearer 0.2 s for a dull one)
+    if (!acted && me.counterT > 0 && this.openT >= 0.25 - 0.15 * iq - 1e-6 && d <= 70 && this.rng.chance(dt * 8 * iq)) {
       // an opening (he whiffed, got parried, got his kick caught): make him pay now, not whenever the next thought comes
       if (d <= 56) {
         const c: PunchType = d <= 44 ? 'hook' : d <= 53 ? 'straight' : 'jab';
-        this.throwPunch(out, c, c === 'jab' ? 'lead' : 'rear', 'heavy', d);
+        // everything on it only while he's well and truly stuck (a parried hand, a caught kick, a spinning miss);
+        // a plain whiff costs him a sharp shot, not a haymaker
+        this.throwPunch(out, c, c === 'jab' ? 'lead' : 'rear', op.stun > 0.2 ? 'heavy' : 'medium', d);
         this.entry = null;
         this.think = this.rng.float(0.15, 0.3);
         acted = true;
       } else if (!this.entry) this.entry = { punch: 'straight', hand: 'rear', weight: 'heavy', t: me.counterT }; // he pulled out of range: step back in behind it
     }
-    if (!acted && op.act && !op.act.done && (op.act.kind === 'punch' || op.act.kind === 'kick') && (iq > 0.7 || this.plan === 'counter' || (this.side === 0 ? L.A : L.B).styles.includes('Counter Striker'))) {
+    if (!acted && op.act && !op.act.done && (op.act.kind === 'punch' || op.act.kind === 'kick') && (iq > 0.8 || this.plan === 'counter' || (this.side === 0 ? L.A : L.B).styles.includes('Counter Striker'))) {
       // he sees the big one loading up and gets there first with something quicker
       const left = op.act.wind - op.act.t;
       const wk = me.gas < 20 ? 1.3 : 1;
@@ -2046,10 +2073,11 @@ export class LiveAI {
       this.think = Math.max(this.think, 0.3);
     }
     if (this.feintT > 0) {
-      // the feint was the set-up: high guard, he goes to the body; a flinch, he lets the right hand go; nothing, the shot he planned
+      // the feint was the set-up: a flinch, he lets the right hand go; the hands come up, he goes to the body
+      // (no reaction and it was just a feint: the next shot waits for the next thought)
       this.feintT -= dt;
-      if (!acted && !this.queue.length) {
-        const c: PunchType = op.stun > 0 ? 'straight' : op.block || op.parryT > 0 ? (d <= 42 ? 'bodyHook' : 'bodyStraight') : 'straight';
+      if (!acted && !this.queue.length && (op.stun > 0 || op.block || op.parryT > 0)) {
+        const c: PunchType = op.stun > 0 ? 'straight' : d <= 42 ? 'bodyHook' : 'bodyStraight';
         const w: Weight = op.stun > 0 ? 'heavy' : 'medium';
         const hand = c === 'bodyHook' ? 'lead' : 'rear';
         if (PUNCH[c].reach + slack >= d) {
