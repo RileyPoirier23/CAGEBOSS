@@ -215,3 +215,106 @@ describe('the final round: a fight that reads itself', () => {
     expect(ai.mood).toBe('cruise');
   });
 });
+
+import { STRIKE_REACH, ARENA_L, subFor, type LiveEvent } from '../src/sim/live';
+import type { FightIntent } from '../src/core/fightinput';
+
+describe('a smarter CPU, and no one-button wins', () => {
+  const s = createFighterGame({ seed: 7, first: 'Test', last: 'Guy', nick: '', gender: 'M', culture: 'us_urban', division: 'light', archetype: 'striker', look: { head: 0, skin: 1, hair: 1, hairColor: 1, beard: 0, brows: 0, eyes: 0, nose: 0, ears: 0, scar: 0, tattoo: 0, build: 1 } as never });
+  const f = me(s);
+  const opp = Object.values(s.fighters).find((x) => x.division === f.division && x.id !== f.id)!;
+  const setup = (seed = 3, iqB?: number) => new LiveFight(f, opp, fightReadySkills(s), iqB === undefined ? opp.skills : { ...opp.skills, fightIQ: iqB }, 3, seed);
+  /** run frames with these intents on the first one, nothing after; returns every event */
+  const run = (L: LiveFight, first: [FightIntent[], FightIntent[]], frames: number, moves: [number, number] = [0, 0]) => {
+    const evs: LiveEvent[] = [];
+    for (let k = 0; k < frames; k++) {
+      L.update(1 / 30, k === 0 ? first : [[], []], moves);
+      evs.push(...L.events);
+      L.events.length = 0;
+    }
+    return evs;
+  };
+  const P = (punch: 'jab' | 'straight' | 'overhand' | 'hook', weight: 'light' | 'medium' | 'heavy' = 'medium', hand: 'lead' | 'rear' = 'lead'): FightIntent => ({ type: 'punch', hand, punch, weight, hold: 0.1, pressure: 1, grounded: false });
+
+  it('the CPU throws what reaches', () => {
+    expect(STRIKE_REACH.jab).toBe(56);
+    expect(STRIKE_REACH['front kick']).toBe(60);
+    expect(STRIKE_REACH['spinning backfist']).toBe(48);
+    const long = new Set(['overhand', 'uppercut', 'spinning backfist']);
+    let thrown = 0;
+    let missed = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const L = setup(seed);
+      const ai: [LiveAI, LiveAI] = [new LiveAI(0, seed * 3), new LiveAI(1, seed * 5)];
+      let steps = 0;
+      while (L.phase !== 'over' && steps < 100000) {
+        if (L.phase === 'break') L.nextRound([0.5, 0.5]);
+        const a = ai[0].update(L, 1 / 30);
+        const b = ai[1].update(L, 1 / 30);
+        L.update(1 / 30, [a.intents, b.intents], [a.move, b.move]);
+        for (const e of L.events) {
+          if (e.type === 'punch' && e.name && long.has(e.name) && L.pos === 'stand') thrown++;
+          if (e.type === 'miss' && e.name && long.has(e.name)) missed++;
+        }
+        ai[0].noteEvents(L);
+        ai[1].noteEvents(L);
+        L.events.length = 0;
+        steps++;
+      }
+    }
+    expect(thrown).toBeGreaterThan(30);
+    expect(missed / thrown).toBeLessThan(0.4);
+  });
+
+  it('parry has a cooldown, evades back to back come later, pull needs room', () => {
+    const L = setup(3);
+    run(L, [[{ type: 'parry' }], []], 1);
+    expect(L.F[0].parryT).toBeGreaterThan(0);
+    run(L, [[], []], 7); // 0.25 s later
+    run(L, [[{ type: 'parry' }], []], 1);
+    expect(L.F[0].parryT).toBe(0);
+    // three evades 0.2 s apart: each starts later in its window
+    const E = setup(4);
+    const ev: FightIntent = { type: 'evade', kind: 'slip', source: 'button' };
+    run(E, [[ev], []], 6);
+    run(E, [[ev], []], 6);
+    run(E, [[ev], []], 1);
+    expect(E.F[0].evade?.t ?? 0).toBeGreaterThanOrEqual(0.2);
+    // back on the fence, pulling away goes nowhere: the jab lands
+    const W = setup(5);
+    W.F[0].x = ARENA_L;
+    W.F[1].x = ARENA_L + 50;
+    expect(W.onWall(0)).toBe(true);
+    const evs = run(W, [[{ type: 'evade', kind: 'pull', source: 'button' }], [P('jab')]], 10);
+    expect(evs.some((e) => e.type === 'hit' && e.side === 1)).toBe(true);
+    expect(evs.some((e) => e.type === 'evade' && e.big)).toBe(false);
+    // off the fence the same pull makes him miss
+    const O = setup(5);
+    O.F[0].x = 200;
+    O.F[1].x = 250;
+    const evo = run(O, [[{ type: 'evade', kind: 'pull', source: 'button' }], [P('jab')]], 10);
+    expect(evo.some((e) => e.type === 'miss' && e.side === 1)).toBe(true);
+    expect(evo.some((e) => e.type === 'hit' && e.side === 1)).toBe(false);
+  });
+
+  it('a blocked body kick can get caught (and a catch is never a takedown)', () => {
+    let caught = 0;
+    let tds = 0;
+    for (let seed = 1; seed <= 300; seed++) {
+      const L = setup(seed);
+      L.F[0].x = 230;
+      const evs = run(L, [[{ type: 'kick', level: 'body' }], [{ type: 'block', phase: 'start' }]], 15);
+      for (const e of evs) {
+        if (e.type === 'catch') {
+          caught++;
+          expect(e.side).toBe(1);
+          expect(e.name).toBe('kick');
+          expect(L.F[0].stun).toBeGreaterThan(0);
+        }
+        if (e.type === 'td') tds++;
+      }
+    }
+    expect(caught).toBeGreaterThanOrEqual(1);
+    expect(tds).toBe(0);
+  });
+});
