@@ -8,6 +8,7 @@ import { openWindow, confirm, downloadText } from '../widgets';
 import { slotsFor, familyOf, isAutoSlot, saveToSlot, slotMeta, exportSave } from '../../core/save';
 import { openSettings } from './settings';
 import { openHelp } from '../help';
+import { openTutorials } from '../guide';
 import { openAchievements } from '../achievements';
 import { openLoad } from './loadmenu';
 import { TitleScene } from './title';
@@ -42,7 +43,9 @@ export function openGameMenu(g: Game, onClose: () => void): void {
   y += 15;
   win.body.addChild(button('LOAD...', 8, y, 204, 13, () => { win.close(); openLoad(g); }, { small: true, disabled: s.difficulty === 'ironman' }));
   y += 15;
-  win.body.addChild(button('HELP: HOW TO PLAY', 8, y, 204, 13, () => openHelp(g, g.state?.mode === 'fighter' ? 'rtc' : 'career'), { small: true, fill: PAL.shadow, border: PAL.gold }));
+  // step-by-step lessons with pictures, and the written rules
+  win.body.addChild(button('TUTORIALS', 8, y, 100, 13, () => openTutorials(g, g.state?.mode === 'fighter' ? 'rtc' : 'promoter'), { small: true, fill: PAL.shadow, border: PAL.gold }));
+  win.body.addChild(button('HELP', 112, y, 100, 13, () => openHelp(g, g.state?.mode === 'fighter' ? 'rtc' : 'career'), { small: true, fill: PAL.shadow }));
   y += 15;
   win.body.addChild(button('SETTINGS', 8, y, 66, 13, () => openSettings(g), { small: true }));
   win.body.addChild(button('TROPHIES', 77, y, 66, 13, () => openAchievements(g), { small: true, fill: PAL.steel }));

@@ -70,6 +70,8 @@ function roster(): GameState {
 
 export class QuickFightScene extends Scene {
   music = 'title' as const;
+  /** the first visit: the QUICK FIGHT lesson (src/ui/guidelessons.ts) */
+  tutorialKey = 'quickfight';
   private div = 'light';
   private pick: [number, number] = [0, 1];
   private mode: Mode = 'cpu';

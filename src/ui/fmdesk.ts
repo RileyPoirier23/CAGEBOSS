@@ -17,6 +17,7 @@ import { sfx } from '../audio/sfx';
 import { Rng } from '../core/rng';
 import { fm, resolveDoc, comparePair, type FMDoc } from '../sim/fighter';
 import { isTouchDevice } from '../core/platform';
+import { maybeLesson } from './guide';
 
 const DOC_X = 122;
 const DOC_Y = 40;
@@ -333,6 +334,19 @@ export function openFMDesk(g: Game, onDone: () => void): void {
     popKeys();
     onDone();
   });
+  // automation hook (tests / the tutorial's capture tool): drive the table without the mouse
+  const lineKey = (label: string): [string | null, string | null] => {
+    if (!cur) return [null, null];
+    const di = cur.fields.findIndex((f) => f.label === label);
+    const ri = cur.ref.lines.findIndex((l) => l.label === label);
+    return [di >= 0 ? 'doc.' + di : null, ri >= 0 ? 'ref.' + ri : null];
+  };
+  (window as unknown as { __fmdesk?: unknown }).__fmdesk = {
+    ins, compare: (a: string, b: string) => compare(a, b), toggleInspect: () => toggleInspect(), stamp: (a: 'sign' | 'dispute') => stamp(a),
+    slip: () => (slip?.node && !slip.node.destroyed ? slip.node.getBounds().rectangle : null), keyFor: lineKey,
+  };
   draw();
   if (!cur) msg = { text: 'Nothing to sign. Enjoy it while it lasts.', color: PAL.ash, t: 99 };
+  // the first paper on the table: the YOUR PAPERWORK lesson, over it
+  else maybeLesson(g, 'fm_paper', { over: true });
 }

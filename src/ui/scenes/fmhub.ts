@@ -11,6 +11,7 @@ import { W, H, SW, OX, text, button, box, ScrollBox } from '../kit';
 import { measure } from '../text';
 import { openWindow, confirm, alertBox, selector } from '../widgets';
 import { openHelp } from '../help';
+import { openTutorials, maybeLesson, openLesson, lessonDue } from '../guide';
 import { openSettings } from './settings';
 import { showMoment } from '../moments';
 import { divisionMoves, changeDivision, gym, openGym, upgradeGym, GYM_COST, GYM_UPGRADE } from '../../sim/legacy';
@@ -98,7 +99,11 @@ export class FMHubScene extends Scene {
       return;
     }
     const ev = st.pending[0];
-    if (!ev) return checkAchievements(this.g);
+    if (!ev) {
+      // the cut opens two weeks out: the MAKING WEIGHT lesson (once)
+      if (cutWindow(s).open) maybeLesson(this.g, 'fm_weight');
+      return checkAchievements(this.g);
+    }
     const frame = new Container();
     const wrap = this.g.modal(frame, { dim: 0.7 });
     const bw = 320;
@@ -493,6 +498,7 @@ export class FMHubScene extends Scene {
     win.body.addChild(button(ropeMax ? 'JUMP ROPE: cardio MAX' : 'JUMP ROPE: cardio', 6, my + 10, 150, 13, () => { win.close(); openJumpRope(this.g, (sc) => after('cardio', sc)); }, { small: true, fill: PAL.moss, disabled: ropeMax || fm(s).ap <= 0 }));
     win.body.addChild(button(chopMax ? 'TYRE CHOP: power MAX' : 'TYRE CHOP: power', 162, my + 10, 150, 13, () => { win.close(); openTyreChop(this.g, (sc) => after('power', sc)); }, { small: true, fill: PAL.moss, disabled: chopMax || fm(s).ap <= 0 }));
     win.body.addChild(text(`Condition: ${cond.label} (x${cond.mult} gains). Training burns a little weight; the real cut is the last two weeks of camp.`, 6, my + 26, { small: true, width: 306, color: cond.label === 'PEAK CONDITION' ? PAL.gold : PAL.ash, maxLines: 2 }));
+    maybeLesson(this.g, 'fm_train', { over: true });
   }
 
   /** Sparring points: put them where your camp needs them. */
@@ -788,7 +794,8 @@ export class FMHubScene extends Scene {
     const win = openWindow(this.g, 'Menu', 160, 146);
     win.body.addChild(button('SAVE…', 6, 6, 72, 15, () => { this.g.autosave(); win.close(); openSaveSlots(this.g); }, { small: true }));
     win.body.addChild(button('LOAD…', 82, 6, 72, 15, () => { win.close(); openLoad(this.g, familyOf(this.g.state!)); }, { small: true }));
-    win.body.addChild(button('HELP: HOW TO BE A PRO', 6, 24, 148, 15, () => openHelp(this.g, 'rtc'), { small: true, fill: PAL.shadow, border: PAL.gold }));
+    win.body.addChild(button('TUTORIALS', 6, 24, 72, 15, () => openTutorials(this.g, 'rtc'), { small: true, fill: PAL.shadow, border: PAL.gold }));
+    win.body.addChild(button('HELP', 82, 24, 72, 15, () => openHelp(this.g, 'rtc'), { small: true, fill: PAL.shadow }));
     win.body.addChild(button('SETTINGS', 6, 42, 148, 15, () => openSettings(this.g), { small: true }));
     win.body.addChild(button('TROPHY CASE', 6, 60, 148, 15, () => openAchievements(this.g), { small: true }));
     win.body.addChild(button('RETIRE…', 6, 78, 148, 15, () => { win.close(); confirm(this.g, 'Hang up the gloves for good?', () => this.legacy()); }, { small: true, fill: PAL.ember }));
@@ -856,6 +863,8 @@ export class FMHubScene extends Scene {
   // ---------------------------------------------------------------- fight week
 
   private weighIn(): void {
+    // first weigh-in: the MAKING WEIGHT lesson first, if it hasn't been seen yet
+    if (lessonDue(this.g, 'fm_weight')) return openLesson(this.g, 'fm_weight', { mode: 'auto', onDone: () => this.weighIn() });
     const s = this.g.state!;
     const st0 = fm(s);
     if (st0.inbox.length && !this.paperworkWarned) {

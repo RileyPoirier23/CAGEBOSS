@@ -15,6 +15,7 @@ import { Rng } from '../../core/rng';
 import { sfx } from '../../audio/sfx';
 import { record } from '../../core/format';
 import { rankLabel } from '../../sim/rankings';
+import { maybeLesson } from '../guide';
 
 export function openNegotiation(g: Game, negId: string, onDone: () => void): void {
   const s = g.state!;
@@ -98,4 +99,6 @@ export function openNegotiation(g: Game, negId: string, onDone: () => void): voi
     frame.addChild(button('LATER', bx + bw - 60, by + bh - 22, 52, 16, close, { fill: PAL.shadow }));
   };
   draw();
+  // the first contract talks (or the filing cabinet before them): the SIGNING FIGHTERS lesson
+  maybeLesson(g, 'signing', { over: true });
 }

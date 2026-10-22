@@ -13,14 +13,14 @@
  */
 import { openReplacementPicker } from '../replace';
 import { hint } from '../hints';
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, type Rectangle } from 'pixi.js';
 import { Scene } from '../app';
 import { PAL, C, shade, meterColor } from '../../art/palette';
 import { W, H, SW, OX, text, button, box, clickable, ScrollBox, hoverTip, paper, makeDraggable } from '../kit';
 import type { DeskDoc, Stamp, StoryletInstance, Negotiation } from '../../core/types';
 import { Inspector, renderDoc, renderFileCard, renderIdCard, ruleField, PAGE_RULE_KEYS, PAGE_FOR_TYPE, RULE_KEY_RULE } from '../docview';
 import { stampDoc, compareFields, spendMinutes } from '../../sim/week';
-import { checkPair } from '../../sim/docs';
+import { checkPair, tutorialDocs } from '../../sim/docs';
 import { interrogate, takeBribe, refuseBribe, secondaryAction, doSecondary, closeDeskDay, deskTally, type Reply } from '../../sim/deskops';
 import { fmtClock, fmtDate, DAY_MINUTES, fmtFightDate } from '../../core/time';
 import { money } from '../../core/format';
@@ -45,6 +45,7 @@ import { openLedgerPeek } from './ledger';
 import { Rng } from '../../core/rng';
 import { METER_KEYS } from '../../core/types';
 import { openChart } from './chart';
+import { maybeLesson, openLesson, lessonDue } from '../guide';
 
 type QueueItem =
   | { kind: 'doc'; id: string; doc: DeskDoc }
@@ -121,6 +122,18 @@ export class DeskScene extends Scene {
   enter(): void {
     // the morning bulletin (if any) is the first thing on the desk
     const s = this.g.state!;
+    // day one with lessons on: two practice agreements (one clean, one with a tenfold purse) right after the
+    // bulletin, so the DESK lesson's catch is on the player's own desk
+    if (s.week === 0 && lessonDue(this.g, 'desk') && !s.flags.tut_docs) {
+      const r = new Rng(s.rng);
+      const docs = tutorialDocs(s, r);
+      s.rng = r.state;
+      if (docs.length === 2) {
+        const at = s.desk.queue.findIndex((d) => d.meta.bulletin) + 1;
+        s.desk.queue.splice(at, 0, docs[1], docs[0]);
+      }
+      s.flags.tut_docs = 1;
+    }
     const bulletin = s.desk.queue.find((d) => d.meta.bulletin);
     if (bulletin) this.selected = bulletin.id;
     super.enter();
@@ -206,7 +219,7 @@ export class DeskScene extends Scene {
     r.addChild(ms);
     // nav
     const nav: [string, () => void, string][] = [
-      ['ROSTER', () => openRoster(this.g, () => this.refresh()), 'Filing cabinet: fighter dossiers, scouting, free agents'],
+      ['ROSTER', () => { openRoster(this.g, () => this.refresh()); maybeLesson(this.g, 'signing', { over: true }); }, 'Filing cabinet: fighter dossiers, scouting, free agents'],
       ['CARDS', () => openCorkboard(this.g, () => this.refresh()), 'Matchmaking corkboard'],
       ['RANKS', () => openRankings(this.g), 'Rankings wall & belts'],
       ['RATINGS', () => openChart(this.g), 'PPV & TV ratings vs other combat sports'],
@@ -459,6 +472,8 @@ export class DeskScene extends Scene {
       this.ringing = call.id;
       this.ringT = 0;
       startRing(RING_CYCLES);
+      // the first call: the CALLS & VISITORS lesson (on day one the desk lesson goes first)
+      if (lessonDue(this.g, 'desk_calls') && !lessonDue(this.g, 'desk')) maybeLesson(this.g, 'desk_calls', { delay: 1800 });
       const buzz: number[] = [];
       for (let c = 0; c < RING_CYCLES; c++) buzz.push(450, 200, 450, Math.round((RING_CYCLE - 1.1) * 1000));
       vibrate(buzz);
@@ -635,6 +650,7 @@ export class DeskScene extends Scene {
   }
 
   private drawQueue(): Container {
+    this.rowNodes.clear();
     const c = new Container();
     c.position.set(366, 84);
     const items = this.items();
@@ -655,10 +671,31 @@ export class DeskScene extends Scene {
       if (it.kind === 'doc' && String(it.doc.meta.flagged ?? '')) row.addChild(text('!', qw - 15, 3, { small: true, color: PAL.blood }));
       row.position.set(0, i * (rh + 1));
       sb.content.addChild(row);
+      this.rowNodes.set(it.id, row);
     });
     c.addChild(sb);
     sb.scrollTo(this.queueScroll);
+    this.queueBox = sb;
     return c;
+  }
+
+  /** inbox rows by item id, and the box they scroll in (for the tutorial's 'your turn' arrow) */
+  private rowNodes = new Map<string, Container>();
+  private queueBox: ScrollBox | null = null;
+
+  /** Tutorial hook: where a thing is on screen ('bout' = the practice agreement's inbox row, else the first bout agreement). */
+  guideRect(what: string): Rectangle | null {
+    if (what !== 'bout') return null;
+    const items = this.items();
+    const it = items.find((x) => x.kind === 'doc' && x.doc.meta.tutorial === 'dodgy') ?? items.find((x) => x.kind === 'doc' && x.doc.type === 'bout');
+    const row = it ? this.rowNodes.get(it.id) : null;
+    const sb = this.queueBox;
+    if (!row || row.destroyed || !sb || sb.destroyed) return null;
+    const r = row.getBounds().rectangle;
+    const b = sb.getBounds().rectangle;
+    // scrolled out of the inbox: nothing to point at
+    if (r.y + r.height / 2 < b.y || r.y + r.height / 2 > b.y + b.height) return null;
+    return r;
   }
 
   private itemLabel(it: QueueItem): { text: string; color: number } {
@@ -691,6 +728,8 @@ export class DeskScene extends Scene {
     sfx('paper');
     if (it.kind === 'story') {
       if (this.ringing === it.id) this.silenceRing();
+      // the first call or visit: the CALLS & VISITORS lesson, then the call (before the clock runs)
+      if (lessonDue(this.g, 'desk_calls')) return openLesson(this.g, 'desk_calls', { mode: 'auto', onDone: () => this.selectItem(it) });
       spendMinutes(this.g.state!, 20);
       playStorylet(this.g, it.inst, (res) => {
         if (res) this.flash(res, PAL.bone);
@@ -726,6 +765,8 @@ export class DeskScene extends Scene {
     if (page) this.rulePage = page;
     spendMinutes(this.g.state!, 2);
     this.refresh();
+    // the first medical, expense report, weigh-in sheet...: the OTHER PAPERWORK lesson
+    if (it.doc.type !== 'bout' && it.doc.type !== 'memo' && it.doc.type !== 'letter' && lessonDue(this.g, 'desk_docs')) maybeLesson(this.g, 'desk_docs', { delay: 400 });
   }
 
   private itemCard(it: QueueItem): Container {

@@ -26,6 +26,7 @@ import { setPadUiMode } from './controller';
 import { prompt } from './glyphs';
 import { sfx } from '../audio/sfx';
 import { isTouchDevice } from '../core/platform';
+import { maybeLesson } from './guide';
 
 type Tool = 'ice' | 'enswell' | 'gauze' | 'vaseline';
 const TOOLS: { id: Tool; name: string; call: string; wearRate: number }[] = [
@@ -195,6 +196,8 @@ export function openCorner(
     msg = 'Fresh one!';
   };
   const keyDown = (e: KeyboardEvent) => {
+    // a lesson card (or any window) on top of the corner gets the keys (and the Esc that closes it)
+    if (e.defaultPrevented || g.modals[g.modals.length - 1] !== wrap) return;
     const i = ['1', '2', '3', '4'].indexOf(e.key);
     if (i >= 0) tool = TOOLS[i].id;
     if (e.key === 'q' || e.key === 'Q') setTool(-1);
@@ -350,9 +353,15 @@ export function openCorner(
   };
 
   // automation hook (tests / tutorial): read the meter, list problems
-  (window as unknown as { __corner?: unknown }).__corner = { get pressure() { return pressure; }, band: [bandLo, bandHi], probs, setHold: (v: boolean) => (holdKey = v) };
+  (window as unknown as { __corner?: unknown }).__corner = {
+    get pressure() { return pressure; }, band: [bandLo, bandHi], probs, setHold: (v: boolean) => (holdKey = v),
+    // where the tool is (corner coordinates), the screen position of a problem, skip the mini game
+    aim: (x: number, y: number) => { tx = x; ty = y; }, zone: (i: number) => (probs[i] ? zoneScreen(probs[i]) : null), skip: () => skip(),
+  };
   const tick = (tk: Ticker) => {
     if (ended) return;
+    // a lesson card on top: the clock and the pressure wait for it
+    if (g.modals[g.modals.length - 1] !== wrap) return;
     const dt = Math.min(0.05, tk.deltaMS / 1000);
     input.update();
     // pad: move the tool, switch, refresh, skip
@@ -397,6 +406,8 @@ export function openCorner(
   }
   drawFace();
   Ticker.shared.add(tick);
+  // the first time on the stool: THE CORNER lesson (the clock waits for it)
+  maybeLesson(g, 'fm_corner', { over: true, delay: 50 });
   // closed from outside (Esc / back): stop the mini game and send him out with an average corner
   wrap.once('destroyed', () => {
     Ticker.shared.remove(tick);
