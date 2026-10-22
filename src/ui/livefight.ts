@@ -164,6 +164,14 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   const loaded: [boolean, boolean] = [false, false];
   /** the body outline: which part just got hit (or blocked), for a moment */
   const hitFlash = [{ part: '', t: 0, blocked: false }, { part: '', t: 0, blocked: false }];
+  /** the guard a shot just met (check, body block, parry) holds for a moment before the held guard takes over again */
+  const guardPose: [string, string] = ['', ''];
+  const guardT: [number, number] = [0, 0];
+  const guardShow = (i: Side, pose: string, dur: number) => {
+    arena.play(i, pose, dur);
+    guardPose[i] = pose;
+    guardT[i] = dur;
+  };
   /** strings of landed shots: count, last landing, the last few names, the named finishes already called */
   const combo = [{ n: 0, t: -9, names: [] as string[], fired: '', tag: '', tagT: 0 }, { n: 0, t: -9, names: [] as string[], fired: '', tag: '', tagT: 0 }];
   const rangeSide = { side: P as 0 | 1 };
@@ -739,7 +747,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         const tgt = L.F[d].act?.target ?? (n === 'legkick' ? 'legs' : /body|kick|knee/.test(n) && n !== 'headkick' ? 'body' : 'head');
         if (L.pos === 'ground') arena.play(a, 'block', 0.25);
         else {
-          arena.play(a, n === 'legkick' ? 'check' : tgt === 'body' ? 'blockBody' : 'block', 0.25);
+          guardShow(a, n === 'legkick' ? 'check' : tgt === 'body' ? 'blockBody' : 'block', 0.25);
           arena.blockFx(a, n === 'legkick' ? 'check' : 'block');
         }
         sfx('thud');
@@ -749,7 +757,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         break;
       }
       case 'parry':
-        arena.play(a, 'parry', 0.25);
+        guardShow(a, 'parry', 0.25);
         arena.blockFx(a, 'parry');
         callout('PARRY!', who(a), 2);
         sfx('snap');
@@ -1132,6 +1140,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     fumbleT -= dt;
     for (const i of SIDES) {
       hitFlash[i].t -= dt;
+      guardT[i] -= dt;
       combo[i].tagT -= dt;
       // the heart beats at his real rate; hurt or gassed, you feel yours
       const was = Math.floor(beat[i]);
@@ -1350,7 +1359,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       if (fighting && f.down > 0 && (L.rules.koRules ?? 'mma') !== 'mma') arena.refCount(i, L.countOf(i));
     }
     if (stage === 'fight' && (L.phase === 'fight' || L.phase === 'over')) arena.setMat(L.pos === 'ground' ? (L.top === 0 ? 'atop' : 'btop') : L.pos, L.gpos, L.sub);
-    for (const i of SIDES) if (L.F[i].block && !L.F[i].act && L.phase === 'fight' && L.pos === 'stand') arena.play(i, L.F[1 - i].act?.target === 'body' ? 'blockBody' : 'block', 0.06);
+    for (const i of SIDES) if (L.F[i].block && !L.F[i].act && L.phase === 'fight' && L.pos === 'stand') arena.play(i, guardT[i] > 0 ? guardPose[i] : L.F[1 - i].act?.target === 'body' ? 'blockBody' : 'block', 0.06);
     arena.update(dt);
     drawHud();
   };
