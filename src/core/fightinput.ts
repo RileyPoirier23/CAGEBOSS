@@ -52,7 +52,7 @@ export const DEFAULT_FIGHT_BINDINGS: Record<FightButton, FightBinding> = {
   taunt: { pad: ['X'], keys: ['KeyT'], touch: ['TAUNT'] },
   // hold to send strikes to the body (the stick also works: down + punch)
   body: { pad: ['LT'], keys: ['KeyO'], touch: ['BODY'] },
-  // hold + stick = head movement that way (alone: pull). Pads flick the right stick instead.
+  // tap with the stick pointed = head movement that way (alone: pull). Pads flick the right stick instead.
   dodge: { keys: ['KeyH'], touch: ['EVADE'] },
   // right-stick flicks are read from the stick; these are the digital equivalents
   evadeUp: { keys: ['ArrowUp'] },
@@ -72,7 +72,7 @@ export const FIGHT_ACTIONS: Record<FightButton, FightActionInfo> = {
   feint: { label: 'Feint', help: 'Fake a strike: a good one makes him flinch and opens a counter. Block while holding a punch = it never comes out' },
   taunt: { label: 'Taunt', help: 'Your own taunt (some flip him off). Gets a breath back and gets in his head: he comes forward reckless. Hands are down while you do it' },
   body: { label: 'Body modifier', help: 'Hold with a punch to go to the body (jab, straight, hook). Same as stick down' },
-  dodge: { label: 'Dodge', help: 'Hold + stick: slip (up), roll (down), pull (away), lean (toward). Alone: pull' },
+  dodge: { label: 'Dodge', help: 'Point the stick and tap: slip (up), roll (down), pull (away), lean (toward). Alone: pull' },
   evadeUp: { label: 'Slip', help: 'Right stick flick up (or arrow)' },
   evadeDown: { label: 'Roll / duck', help: 'Right stick flick down' },
   evadeAway: { label: 'Pull', help: 'Right stick flick away from the opponent' },
@@ -95,7 +95,7 @@ export const FIGHT_TUNING = {
   getupMin: 0.16, // ideal alternate-trigger interval
   getupMax: 0.5,
   dirFresh: 0.2, // a toward/away held longer than this is walking, not a strike modifier
-  dirGrace: 0.07, // a direction pushed this soon after a punch press still picks the punch (J + D together)
+  dirGrace: 0.07, // a direction pushed this soon after a punch or DODGE press still picks the move (J + D, H + W together)
   subKeep: 0.25, // submissions: the stick may sit in neutral this long between quarter turns (keyboard taps)
 };
 
@@ -246,7 +246,7 @@ export function sampleFight(inp: Input, binds: Record<FightButton, FightBinding>
     if (kx || ky) move = { x: kx / Math.hypot(kx, ky), y: ky / Math.hypot(kx, ky) };
   }
   if (!move.x && !move.y && touch) move = { ...touch.stick };
-  // head movement: right stick; DODGE (key / touch EVADE) flicks the way the move stick points, alone it pulls
+  // head movement: right stick; DODGE (key / touch EVADE) goes the way the move stick points, alone it pulls
   let look = padList.length && pad !== -1 ? inp.stick('right', pad) : { x: 0, y: 0 };
   if (held.has('dodge')) {
     const m = Math.hypot(move.x, move.y);
@@ -395,6 +395,9 @@ export class FightInput {
           let d = a - this.subAngle;
           if (d > Math.PI) d -= Math.PI * 2;
           if (d < -Math.PI) d += Math.PI * 2;
+          // a jump of more than three eighths of a turn (up, then straight down through the middle) has no
+          // direction: it moves the anchor but doesn't count, so wiggling up and down is not a roll
+          if (Math.abs(d) > Math.PI * 0.75) d = 0;
           this.subAccum += d;
           while (Math.abs(this.subAccum) >= Math.PI / 2) {
             const dir = this.subAccum > 0 ? 1 : -1;
@@ -480,16 +483,31 @@ export class FightInput {
         out.push(g.dir === 'toward' || (moveDir === 'toward' && this.dir8Since > g.t) ? { type: 'shoot' } : { type: 'clinch' });
       }
 
-      // head movement: right stick flick, or the digital evade buttons
-      const mag = Math.hypot(s.look.x, s.look.y);
-      if (mag < T.flickLow) {
-        this.lookLowT = this.t;
-        this.lookFired = false;
-      } else if (mag >= T.flickHigh && !this.lookFired && this.lookLowT >= 0 && this.t - this.lookLowT <= T.flickTime + dt) {
+      // head movement: DODGE (+ the stick), a right-stick flick, or the digital evade buttons
+      const dg = this.presses.get('dodge');
+      if (dg && (s.held.has('dodge') || up('dodge'))) {
+        // DODGE goes the way the stick points. Pressed a hair before the stick (H and W together), it waits
+        // a moment for the direction; with none (or a quick tap already let go) it's a pull.
+        const pointed = s.held.has('dodge') && Math.hypot(s.move.x, s.move.y) > 0.3;
+        if (!dg.fired && this.t - dg.t > T.dirGrace + T.flickTime) dg.fired = true; // held since before (down on the mat): not a dodge
+        if (!dg.fired && (pointed || !s.held.has('dodge') || this.t - dg.t >= T.dirGrace - 1e-9)) {
+          dg.fired = true;
+          const d = pointed ? stickDir(s.move, ctx.facing, 0.3) : 'away';
+          out.push({ type: 'evade', kind: d === 'up' ? 'slip' : d === 'down' ? 'roll' : d === 'away' ? 'pull' : 'lean', source: 'flick' });
+        }
+        // (while it's held the dodge stands in for the right stick: no flick from it)
         this.lookFired = true;
-        const d = stickDir(s.look, ctx.facing, 0.3);
-        const kind = d === 'up' ? 'slip' : d === 'down' ? 'roll' : d === 'away' ? 'pull' : 'lean';
-        out.push({ type: 'evade', kind, source: 'flick' });
+      } else {
+        const mag = Math.hypot(s.look.x, s.look.y);
+        if (mag < T.flickLow) {
+          this.lookLowT = this.t;
+          this.lookFired = false;
+        } else if (mag >= T.flickHigh && !this.lookFired && this.lookLowT >= 0 && this.t - this.lookLowT <= T.flickTime + dt) {
+          this.lookFired = true;
+          const d = stickDir(s.look, ctx.facing, 0.3);
+          const kind = d === 'up' ? 'slip' : d === 'down' ? 'roll' : d === 'away' ? 'pull' : 'lean';
+          out.push({ type: 'evade', kind, source: 'flick' });
+        }
       }
       const evBtn: [FightButton, 'slip' | 'roll' | 'pull' | 'lean'][] = [['evadeUp', 'slip'], ['evadeDown', 'roll'], ['evadeAway', 'pull'], ['evadeToward', 'lean']];
       for (const [b, kind] of evBtn) if (down(b)) out.push({ type: 'evade', kind, source: 'button' });
@@ -532,10 +550,11 @@ let lastBuzz = -1e9;
 /**
  * Feel the fight: what you landed, what landed on you, a blocked or parried shot, a loaded heavy,
  * a knockdown, your heart when you're hurt or gassed. Pads rumble; phones buzz. on = the Vibration setting.
+ * pad = whose controller (two-player fights; -1 = none, a keyboard player): left out, the pad in use (or the phone).
  */
-export function fightHaptic(inp: Input, kind: FightHaptic, on = true): void {
+export function fightHaptic(inp: Input, kind: FightHaptic, on = true, pad?: number): void {
   if (!on) return;
-  if (inp.lastDevice === 'touch') {
+  if (inp.lastDevice === 'touch' && pad === undefined) {
     const now = performance.now();
     if (now - lastBuzz < 60) return;
     lastBuzz = now;
@@ -547,7 +566,7 @@ export function fightHaptic(inp: Input, kind: FightHaptic, on = true): void {
     return;
   }
   const r = HAPTIC_PAD[kind];
-  inp.rumble(r[0], r[1], r[2]);
+  inp.rumble(r[0], r[1], r[2], pad);
 }
 
 /** Rumble scaled to how big a hit was (0..1). Light hits are ignored. */

@@ -256,6 +256,27 @@ describe('inputs are never eaten', () => {
     expect(run(fi, sample([], { x: 0, y: -1 }), DT * 3, sub).filter((i) => i.type === 'subTurn')).toEqual([]);
   });
 
+  it('wiggling up and down is not a roll (keys or the stick through the middle)', () => {
+    const sub: FightContext = { facing: 1, submission: 'defend' };
+    const turns = (moves: { x: number; y: number }[], on: number, off: number) => {
+      const fi = new FightInput();
+      const out: FightIntent[] = [];
+      for (const m of moves) out.push(...run(fi, sample([], m), DT * on, sub), ...run(fi, sample(), DT * off, sub));
+      return out.filter((i) => i.type === 'subTurn').length;
+    };
+    const ws: { x: number; y: number }[] = [];
+    const wdsa: { x: number; y: number }[] = [];
+    const quarter = [{ x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }];
+    for (let k = 0; k < 8; k++) {
+      ws.push(k % 2 ? { x: 0.05, y: 1 } : { x: 0.05, y: -1 });
+      wdsa.push(quarter[k % 4]);
+    }
+    expect(turns(ws, 3, 3)).toBeLessThanOrEqual(1); // W / S taps
+    expect(turns(ws, 2, 1)).toBeLessThanOrEqual(1); // a stick flicked up and down through the centre
+    expect(turns(ws, 2, 0)).toBeLessThanOrEqual(1); // ...or straight across it
+    expect(turns(wdsa, 3, 3)).toBe(7); // a real roll: every quarter after the first counts
+  });
+
   it('block while a punch is held calls it off (the hold feint)', () => {
     const fi = new FightInput();
     run(fi, sample(['rear']), 0.3, ctx);
@@ -272,9 +293,27 @@ describe('inputs are never eaten', () => {
     const roll = fi.update(sampleFight(inp, fi.bindings, touch({ x: 0, y: 1 }, ['EVADE']), 1), DT, ctx);
     expect(roll).toEqual([{ type: 'evade', kind: 'roll', source: 'flick' }]);
     run(fi, sample(), 0.1, ctx);
-    const pull = fi.update(sampleFight(inp, fi.bindings, touch({ x: 0, y: 0 }, ['EVADE']), 1), DT, ctx);
+    // alone it waits a moment for a direction, then pulls (once)
+    const pull: FightIntent[] = [];
+    for (let k = 0; k < 12; k++) pull.push(...fi.update(sampleFight(inp, fi.bindings, touch({ x: 0, y: 0 }, ['EVADE']), 1), DT, ctx));
     expect(pull).toEqual([{ type: 'evade', kind: 'pull', source: 'flick' }]);
     expect(DEFAULT_FIGHT_BINDINGS.dodge.keys).toEqual(['KeyH']);
+  });
+
+  it('DODGE a frame before the stick still goes the stick\'s way; a quick tap alone still pulls', () => {
+    const inp = new Input();
+    const touch = (stick: { x: number; y: number }, held: TouchFightButton[]) => ({ stick, held: new Set(held) });
+    const fi = new FightInput();
+    const step = (stick: { x: number; y: number }, held: TouchFightButton[]) => fi.update(sampleFight(inp, fi.bindings, touch(stick, held), 1), DT, ctx);
+    for (let k = 0; k < 6; k++) step({ x: 0, y: 0 }, []);
+    const slip = [...step({ x: 0, y: 0 }, ['EVADE'])];
+    for (let k = 0; k < 10; k++) slip.push(...step({ x: 0, y: -1 }, ['EVADE']));
+    expect(slip).toEqual([{ type: 'evade', kind: 'slip', source: 'flick' }]);
+    for (let k = 0; k < 6; k++) step({ x: 0, y: 0 }, []);
+    // tapped and let go inside the wait: the pull isn't lost
+    const tap = [...step({ x: 0, y: 0 }, ['EVADE']), ...step({ x: 0, y: 0 }, ['EVADE'])];
+    for (let k = 0; k < 6; k++) tap.push(...step({ x: 0, y: 0 }, []));
+    expect(tap).toEqual([{ type: 'evade', kind: 'pull', source: 'flick' }]);
   });
 });
 
@@ -293,6 +332,15 @@ describe('fight haptics', () => {
     fightHaptic(inp, 'heartbeat');
     fightHaptic(inp, 'kd', false); // Vibration off
     expect(calls).toEqual([[0.15, 0.1, 40], [0.6, 0.4, 120], [0.35, 0.2, 90], [0.9, 0.6, 220], [0.2, 0.1, 60], [0.2, 0.1, 60], [0.12, 0.05, 30], [1, 0.7, 400], [0.08, 0, 40]]);
+  });
+
+  it('two players: each rumble goes to that player\'s own pad', () => {
+    const calls: (number | undefined)[] = [];
+    const inp = { lastDevice: 'touch', rumble: (_a: number, _b: number, _ms: number, pad?: number) => calls.push(pad) } as unknown as Input;
+    fightHaptic(inp, 'land', true, 1);
+    fightHaptic(inp, 'hurt', true, 0);
+    fightHaptic(inp, 'kd', true, -1); // a keyboard player: no pad (and no phone buzz)
+    expect(calls).toEqual([1, 0, -1]);
   });
 
   it('phones buzz at most once every 60 ms', () => {

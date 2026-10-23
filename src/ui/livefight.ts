@@ -164,19 +164,35 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   const loaded: [boolean, boolean] = [false, false];
   /** the body outline: which part just got hit (or blocked), for a moment */
   const hitFlash = [{ part: '', t: 0, blocked: false }, { part: '', t: 0, blocked: false }];
-  /** the guard a shot just met (check, body block, parry) holds for a moment before the held guard takes over again */
+  /**
+   * The held guard and the coil are re-sent every frame. The guard a shot just met (check, body block, parry)
+   * holds for a moment before the plain guard takes over again; something of his own (a dodge, a caught kick,
+   * a reaction: guardPose '') plays out untouched.
+   */
   const guardPose: [string, string] = ['', ''];
   const guardT: [number, number] = [0, 0];
+  /** which sides the held guard / coil drew last frame */
+  const looped: [boolean, boolean] = [false, false];
   const guardShow = (i: Side, pose: string, dur: number) => {
     arena.play(i, pose, dur);
     guardPose[i] = pose;
     guardT[i] = dur;
   };
+  const leave = (i: Side, dur: number) => {
+    guardPose[i] = '';
+    guardT[i] = Math.max(guardT[i], dur);
+  };
+  /** a sprawl pressed while still coming back from your own strike (or stunned) waits for you while GRAB is held */
+  const sprawlArm: [boolean, boolean] = [false, false];
   /** strings of landed shots: count, last landing, the last few names, the named finishes already called */
   const combo = [{ n: 0, t: -9, names: [] as string[], fired: '', tag: '', tagT: 0 }, { n: 0, t: -9, names: [] as string[], fired: '', tag: '', tagT: 0 }];
   const rangeSide = { side: P as 0 | 1 };
   const vib = () => g.settings.vibration !== false;
-  const buzz = (k: FightHaptic) => fightHaptic(input, k, vib());
+  /** each player feels his own fight on his own pad (the CPU feels nothing) */
+  const buzz = (k: FightHaptic, i: Side = P) => {
+    if (i === P) fightHaptic(input, k, vib(), o.versus?.p1.pad);
+    else if (o.versus) fightHaptic(input, k, vib(), o.versus.p2.pad ?? -1);
+  };
   /** green when you did it, orange when it was done to you (gold for a two-player fight) */
   const who = (a: Side) => (o.versus ? PAL.gold : a === P ? PAL.moss : PAL.ember);
   const callout = (s: string, color: number = PAL.gold, prio = 1) => {
@@ -195,6 +211,15 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     hitFlash[i].part = part;
     hitFlash[i].t = 0.15;
     hitFlash[i].blocked = blocked;
+  };
+  /** Pressed GRAB to sprawl while still busy: it goes the moment he's free, as long as GRAB is held and the shot is live. */
+  const keepSprawl = (i: Side, its: FightIntent[], grab: boolean) => {
+    let now = false;
+    for (const it of its) if (it.type === 'sprawl') now = true;
+    if (now) sprawlArm[i] = true;
+    const sh = L.F[1 - i].act;
+    if (!grab || L.shooting !== 1 - i || !sh || sh.kind !== 'shoot' || sh.done) sprawlArm[i] = false;
+    else if (sprawlArm[i] && !now && !L.F[i].act && L.F[i].stun <= 0.15) its.push({ type: 'sprawl' });
   };
   const comboHit = (a: Side, name: string) => {
     const c = combo[a];
@@ -627,10 +652,13 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         yy -= 10;
       }
     }
-    // over the cage: SHORT / TOO FAR over your head (under the sponsor band), the string you're on under each HP bar
+    // over the cage: SHORT / TOO FAR over your head (between the sponsor band and the arena's callout), the
+    // string you're on under each HP bar. The big prompts (sprawl, JUMP ON HIM, the count) go under the callout
+    // (y 46-62 as it pops in) so the two never print over each other.
+    const PROMPT_Y = 66;
     if (stage === 'fight') {
       if (rangeT > 0 && rangeTag && !autopilot) {
-        const t = hudText(rangeTag, 0, 42, { small: true, color: PAL.ember, shadow: PAL.ink });
+        const t = hudText(rangeTag, 0, 39, { small: true, color: PAL.ember, shadow: PAL.ink });
         t.x = Math.round(AX + L.F[P].x - t.textWidth / 2);
         dyn.addChild(t);
       }
@@ -649,7 +677,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     const sprawlNow = fighting && !autopilot && L.shooting === O && !!shot && shot.kind === 'shoot' && !shot.done;
     if (sprawlNow) {
       const key = touchUi ? 'GRAB' : input.lastDevice === 'gamepad' ? padName('B') : hint('SPACE', '{B}');
-      dyn.addChild(hudText(`TAP ${key} TO SPRAWL!`, 0, 48, { width: FW, align: 'center', color: PAL.gold, scale: 2, shadow: PAL.ink }));
+      dyn.addChild(hudText(`TAP ${key} TO SPRAWL!`, 0, PROMPT_Y, { width: FW, align: 'center', color: PAL.gold, scale: 2, shadow: PAL.ink }));
     }
     // Bleeter steps aside while the big prompts (the sprawl, the count, JUMP ON HIM) are up
     if (feed && !feed.destroyed) feed.visible = !sprawlNow && L.F[0].down <= 0 && L.F[1].down <= 0;
@@ -658,16 +686,17 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       if (L.F[i].down <= 0) continue;
       const mma = (L.rules.koRules ?? 'mma') === 'mma';
       // MMA: no count. He's down: jump on him (any attack) or let him up. Bareknuckle and smokers count.
-      if (!mma) dyn.addChild(hudText(`${L.countOf(i)}`, 0, 40, { width: FW, align: 'center', color: PAL.bone, scale: 3, shadow: PAL.ink }));
-      else if (i !== P && !autopilot) dyn.addChild(hudText('HE\'S DOWN! JUMP ON HIM!', 0, 48, { width: FW, align: 'center', color: PAL.gold, scale: 2, shadow: PAL.ink }));
+      if (!mma) dyn.addChild(hudText(`${L.countOf(i)}`, 0, PROMPT_Y - 2, { width: FW, align: 'center', color: PAL.bone, scale: 3, shadow: PAL.ink }));
+      else if (i !== P && !autopilot) dyn.addChild(hudText('HE\'S DOWN! JUMP ON HIM!', 0, PROMPT_Y, { width: FW, align: 'center', color: PAL.gold, scale: 2, shadow: PAL.ink }));
       if (i === P && !autopilot) {
-        // under MMA rules the same left-right covers you up (he lands in your guard, not the mount)
+        // under MMA rules the same left-right covers you up (he lands in your guard, not the mount); the count sits above
         const red = fumbleT > 0;
-        hudG.rect(FW / 2 - 60, 78, 120, 6).fill(red ? PAL.blood : PAL.night).rect(FW / 2 - 59, 79, Math.round(118 * Math.min(1, L.F[i].getup)), 4).fill(red ? PAL.ember : PAL.gold);
+        const by = mma ? 74 : 90;
+        hudG.rect(FW / 2 - 60, by + 7, 120, 6).fill(red ? PAL.blood : PAL.night).rect(FW / 2 - 59, by + 8, Math.round(118 * Math.min(1, L.F[i].getup)), 4).fill(red ? PAL.ember : PAL.gold);
         // the beat: left, right, left... (the ideal gap between presses)
         const lit = Math.floor(realT / 0.3) % 2;
-        hudG.rect(FW / 2 - 12, 71, 6, 4).fill(lit === 0 ? PAL.gold : PAL.night).rect(FW / 2 + 6, 71, 6, 4).fill(lit === 1 ? PAL.gold : PAL.night);
-        dyn.addChild(hudText(mma ? 'COVER UP!' : 'GET UP!', 0, 88, { width: FW, align: 'center', small: true, color: red ? PAL.ember : PAL.gold, shadow: PAL.ink }));
+        hudG.rect(FW / 2 - 12, by, 6, 4).fill(lit === 0 ? PAL.gold : PAL.night).rect(FW / 2 + 6, by, 6, 4).fill(lit === 1 ? PAL.gold : PAL.night);
+        dyn.addChild(hudText(mma ? 'COVER UP!' : 'GET UP!', 0, by + 17, { width: FW, align: 'center', small: true, color: red ? PAL.ember : PAL.gold, shadow: PAL.ink }));
       }
     }
     if (L.sub) {
@@ -709,7 +738,11 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         // the shot that opens a cut sprays
         let cut = false;
         for (const x of L.events) if (x.type === 'cut' && x.side === d) cut = true;
+        // caught in a held guard (broken by a feint or a stun) or coiling a punch: drop it so the shot shows
+        const held = looped[d];
+        if (held) arena.play(d, 'guard', 0);
         arena.strike(a, JOINT[e.name ?? 'punch'] ?? 'haB', !!e.big, cut || (L.F[d].hp < 55 && Math.random() < 0.5), tgt);
+        if (held) leave(d, 0.45);
         sfx(e.name && /kick|knee/.test(e.name) ? 'kick' : 'punch');
         lastHitTarget[a] = tgt;
         // the picture (and the engine) stops for a beat, longer for bigger shots; flurries don't stutter
@@ -722,8 +755,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
           coCounter = a;
           g.shake(e.big ? 3 : 2, 0.15);
         }
-        if (a === P) buzz(e.big || counter ? 'landBig' : 'land');
-        else if (d === P) buzz(e.big || counter ? 'hurtBig' : 'hurt');
+        buzz(e.big || counter ? 'landBig' : 'land', a);
+        buzz(e.big || counter ? 'hurtBig' : 'hurt', d);
         flashPart(d, tgt, false);
         comboHit(a, e.name ?? '');
         break;
@@ -751,7 +784,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
           arena.blockFx(a, n === 'legkick' ? 'check' : 'block');
         }
         sfx('thud');
-        if (d === P) buzz('blocked');
+        buzz('blocked', d);
         flashPart(a, tgt, true);
         combo[d].n = 0;
         break;
@@ -761,32 +794,38 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         arena.blockFx(a, 'parry');
         callout('PARRY!', who(a), 2);
         sfx('snap');
-        if (d === P) buzz('parried');
+        buzz('parried', d);
         combo[d].n = 0;
         break;
       case 'catch':
-        // he caught the kick: the kicker hops on one leg, wide open
+        // he caught the kick: the kicker hops on one leg, wide open (both poses play out, guard or no guard)
         arena.blockFx(a, 'catch');
+        leave(a, 0.6);
+        leave(d, 0.6);
         callout('CAUGHT THE KICK!', o.versus ? PAL.gold : a === P ? PAL.moss : PAL.ember, 2);
         sfx('grapple');
-        if (d === P) buzz('parried');
+        buzz('parried', d);
         combo[d].n = 0;
         break;
       case 'interrupt':
         // a landed first and took the other man's wind-up away
         arena.play(d, 'hurt', 0.25);
+        leave(d, 0.25);
         callout(a === P ? 'BEAT HIM TO IT!' : o.versus ? 'BEAT HIM TO IT!' : 'HE BEAT YOU TO IT!', who(a), 2);
         sfx('snap');
         break;
       case 'pivot':
         // pinned on the fence: circled off it, or got cut off
         arena.play(a, 'slip', 0.25);
+        leave(a, 0.25);
         if (a === P) callout(e.name === 'escape' ? 'PIVOTED OFF THE FENCE' : 'CUT OFF!', e.name === 'escape' ? who(P) : who(O));
         else if (e.name === 'cutoff') callout('CUT HIM OFF!', who(P));
         sfx('squeak');
         break;
       case 'evade':
+        // (a dodge with the guard held shows the dodge, not the guard)
         arena.play(a, EVADE_POSE[e.name ?? 'slip'] ?? 'slip', 0.3);
+        leave(a, 0.3);
         if (e.big && a === P) callout(e.name === 'roll' ? 'ROLLED UNDER!' : e.name === 'pull' ? 'MADE HIM MISS!' : 'SLIPPED!', who(a));
         break;
       case 'feint': {
@@ -803,6 +842,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         break;
       case 'rocked':
         arena.play(a, 'rocked', 0.9);
+        leave(a, 0.9);
         // a counter that rocks him says both (the engine sends the counter first)
         if (coCounter === d) callout(o.versus || a !== P ? "COUNTER! HE'S ROCKED!" : "COUNTER! YOU'RE ROCKED!", who(d), 3);
         else callout('ROCKED!', who(d), 3);
@@ -818,7 +858,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         lastStopT = realT;
         sfx('slam');
         sfx('roar');
-        buzz('kd');
+        buzz('kd', 0);
+        buzz('kd', 1);
         break;
       case 'pounce': {
         arena.floor(d, 'up');
@@ -829,7 +870,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         else callout(gp === 'guard' ? 'IN HIS GUARD!' : gp === 'half' ? 'HALF GUARD! FINISH IT!' : gp === 'mount' ? 'MOUNT! FINISH IT!' : 'SIDE CONTROL! FINISH IT!', gp === 'guard' ? PAL.gold : who(a), 4);
         sfx('slam');
         sfx('roar');
-        if (d === P) buzz('hurtBig');
+        buzz('hurtBig', d);
         break;
       }
       case 'getup':
@@ -894,8 +935,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
           arena.hitStop = Math.max(arena.hitStop, clamp((e.dmg ?? 3) / 12, 0.25, 1) * 0.04);
           lastStopT = realT;
         }
-        if (a === P) buzz('land');
-        else if (d === P) buzz('hurt');
+        buzz('land', a);
+        buzz('hurt', d);
         flashPart(d, 'head', false);
         break;
       case 'advance':
@@ -923,8 +964,9 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       case 'foul':
         callout(`${(e.name ?? 'FOUL').toUpperCase()}!`);
         arena.play(d, 'hurt', 1.2);
+        leave(d, 1.2);
         sfx('snap');
-        if (d === P) buzz('hurt');
+        buzz('hurt', d);
         break;
       case 'deduction':
         callout('POINT DEDUCTED');
@@ -933,8 +975,9 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       case 'injury':
         callout('INJURY!', who(d));
         arena.play(a, 'hurt', 0.8);
+        leave(a, 0.8);
         sfx('snap');
-        if (a === P) buzz('hurtBig');
+        buzz('hurtBig', a);
         break;
       case 'doctor':
         callout('DOCTOR!');
@@ -950,7 +993,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         arena.flash = 0.6;
         arena.slowMo(1.6);
         sfx('roar');
-        buzz('kd');
+        buzz('kd', 0);
+        buzz('kd', 1);
         break;
       case 'tko':
         arena.over(a);
@@ -1142,10 +1186,11 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       hitFlash[i].t -= dt;
       guardT[i] -= dt;
       combo[i].tagT -= dt;
-      // the heart beats at his real rate; hurt or gassed, you feel yours
+      // the heart beats at his real rate; hurt or gassed, you feel yours (each player his own in a two-player fight)
       const was = Math.floor(beat[i]);
       beat[i] += dt * (L.F[i].bpm / 60);
-      if (i === P && Math.floor(beat[i]) !== was && !autopilot && !paused && stage === 'fight' && L.phase === 'fight' && (L.F[P].hp < 30 || L.F[P].gas < 12)) buzz('heartbeat');
+      const feels = i === P ? !autopilot : !!o.versus;
+      if (feels && Math.floor(beat[i]) !== was && !paused && stage === 'fight' && L.phase === 'fight' && (L.F[i].hp < 30 || L.F[i].gas < 12)) buzz('heartbeat', i);
     }
     if (skipCatch && stage !== 'tape' && stage !== 'intro') {
       skipCatch.destroy();
@@ -1219,6 +1264,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
           move = sample.move.x;
           // still holding block after your own strike: the guard comes back up
           if (fi.isBlocking && !L.F[P].block && !L.F[P].act && L.pos !== 'ground') mine.push({ type: 'block', phase: 'start' });
+          keepSprawl(P, mine, sample.held.has('grab'));
           for (const it of hum) {
             if (it.type !== 'getupFumble') continue;
             fumbleT = 0.35;
@@ -1237,6 +1283,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
           }
           const i2 = fi2.update(s2, dt, { facing: f2, ...L.context(O) });
           if (fi2.isBlocking && !L.F[O].block && !L.F[O].act && L.pos !== 'ground') i2.push({ type: 'block', phase: 'start' });
+          keepSprawl(O, i2, s2.held.has('grab'));
+          for (const it of i2) if (it.type === 'getupFumble') buzz('blocked', O);
           them = { intents: i2, move: s2.move.x };
         }
         const intents: [FightIntent[], FightIntent[]] = P === 0 ? [mine, them.intents] : [them.intents, mine];
@@ -1325,11 +1373,17 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       pad.vibrate = vib();
       padHints();
     }
-    // a loaded punch: you see him coil, a click when the heavy is ready (once per hold)
+    // a loaded punch: you see him coil (not while he's reeling from a shot), a click when the heavy is ready (once per hold)
+    looped[0] = false;
+    looped[1] = false;
     if (fighting && !autopilot && !paused) {
+      const me = L.F[P];
       for (let k = 0; k < 2; k++) {
         const held = fi.heldFor(k === 0 ? 'lead' : 'rear');
-        if (held > FIGHT_TUNING.tapMax && !L.F[P].act && L.pos === 'stand' && L.F[P].down <= 0) arena.play(P, 'coil', 0.06);
+        if (held > FIGHT_TUNING.tapMax && !me.act && L.pos === 'stand' && me.down <= 0 && me.stun <= 0 && me.sinceHit > 0.4 && guardT[P] <= 0) {
+          arena.play(P, 'coil', 0.06);
+          looped[P] = true;
+        }
         if (held >= FIGHT_TUNING.mediumMax && !loaded[k]) {
           loaded[k] = true;
           sfx('click');
@@ -1359,7 +1413,13 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       if (fighting && f.down > 0 && (L.rules.koRules ?? 'mma') !== 'mma') arena.refCount(i, L.countOf(i));
     }
     if (stage === 'fight' && (L.phase === 'fight' || L.phase === 'over')) arena.setMat(L.pos === 'ground' ? (L.top === 0 ? 'atop' : 'btop') : L.pos, L.gpos, L.sub);
-    for (const i of SIDES) if (L.F[i].block && !L.F[i].act && L.phase === 'fight' && L.pos === 'stand') arena.play(i, guardT[i] > 0 ? guardPose[i] : L.F[1 - i].act?.target === 'body' ? 'blockBody' : 'block', 0.06);
+    for (const i of SIDES) {
+      if (!L.F[i].block || L.F[i].act || L.phase !== 'fight' || L.pos !== 'stand') continue;
+      // his own pose is playing (a dodge, a caught kick, a reaction): the guard waits
+      if (guardT[i] > 0 && !guardPose[i]) continue;
+      arena.play(i, guardT[i] > 0 ? guardPose[i] : L.F[1 - i].act?.target === 'body' ? 'blockBody' : 'block', 0.06);
+      looped[i] = true;
+    }
     arena.update(dt);
     drawHud();
   };
