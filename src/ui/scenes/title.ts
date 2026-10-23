@@ -112,7 +112,7 @@ export class TitleScene extends Scene {
     // a solo dev: the support screen (desktop and web builds only)
     if (supportAvailable()) r.addChild(button('SUPPORT THE DEV', W - 96, H - 20, 90, 13, () => openSupport(this.g), { small: true, fill: PAL.blood, border: PAL.gold }));
     setTimeout(() => maybeWhatsNew(this.g), 400);
-    setTimeout(() => maybeComingSoon(this.g), 900);
+    setTimeout(() => maybeComingSoon(this.g, () => this.g.scene === this), 900);
   }
 
   /** The night sky and a far skyline that drifts slower than the street (parallax). */
