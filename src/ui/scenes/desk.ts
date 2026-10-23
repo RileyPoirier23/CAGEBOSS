@@ -12,6 +12,7 @@
  *    recorded on the document as discrepancies; ask the visitor about them.
  */
 import { openReplacementPicker } from '../replace';
+import { hint } from '../hints';
 import { Container, Graphics } from 'pixi.js';
 import { Scene } from '../app';
 import { PAL, C, shade, meterColor } from '../../art/palette';
@@ -265,7 +266,7 @@ export class DeskScene extends Scene {
     if (fresh) rb.addChild(text('NEW', 22, 19, { small: true, color: PAL.blood }));
     props.addChild(rb);
     const on = this.ins.active;
-    const lamp = clickable(new Container(), () => this.toggleInspect(), 'Inspect mode (I / SPACE): click a field, then the field it should match.');
+    const lamp = clickable(new Container(), () => this.toggleInspect(), hint('Inspect mode (I / SPACE): click a field, then the field it should match.', 'Inspect mode: select a field, then the field it should match.'));
     lamp.addChild(box(46, 26, on ? PAL.gold : PAL.shadow, PAL.ink, { bevel: true }));
     lamp.addChild(new Graphics().circle(8, 13, 5).fill(on ? 0xfff2a0 : 0x5a5246).stroke({ color: PAL.ink, width: 1 }));
     lamp.addChild(text(on ? 'INSPECT\nON' : 'INSPECT\n(I)', 16, 6, { small: true, color: on ? PAL.ink : PAL.bone }));
@@ -489,7 +490,7 @@ export class DeskScene extends Scene {
   private itemCard(it: QueueItem): Container {
     const c = paper(DOC_W, 80, 'white', 4);
     c.addChild(text(this.itemLabel(it).text, 8, 8, { width: 224, color: PAL.ink }));
-    c.addChild(text('Click it in the inbox to deal with it.', 8, 30, { small: true, color: PAL.grey }));
+    c.addChild(text(hint('Click it in the inbox to deal with it.', 'Select it in the inbox to deal with it.'), 8, 30, { small: true, color: PAL.grey }));
     return c;
   }
 
@@ -782,7 +783,7 @@ export class DeskScene extends Scene {
         color = PAL.blood;
         ask = !d.meta.asked;
       } else if (this.ins.active) {
-        msg = this.ins.selected ? 'Now click the field it should match (file card, licence, rulebook or face).' : 'INSPECT: click a field on the document, then the field it should match.';
+        msg = hint(this.ins.selected ? 'Now click the field it should match (file card, licence, rulebook or face).' : 'INSPECT: click a field on the document, then the field it should match.', this.ins.selected ? 'Now select the field it should match (file card, licence, rulebook or face).' : 'INSPECT: select a field on the document, then the field it should match.');
         color = PAL.gold;
       }
     }
@@ -949,7 +950,7 @@ export class DeskScene extends Scene {
       this.refresh();
       // read the whole thing
       if (full) alertBox(this.g, 'M.O.A. CITATION', `PROTOCOL VIOLATION\n\n${full.reason}\n\n${full.warning ? 'WARNING. Next time it comes out of your pay.' : `PENALTY: -${money(full.fine, false)} from your pay.`}\n\nAll your citations are in the INBOX.`);
-    }, 'Click to read the whole citation.');
+    }, hint('Click to read the whole citation.', 'Select to read the whole citation.'));
     const w = 150;
     const body = text(sl.reason, 6, 22, { small: true, width: w - 12, color: PAL.ink, maxLines: 4 });
     const more = text('CLICK TO READ IT ALL', 6, 0, { small: true, color: PAL.slate });

@@ -23,6 +23,10 @@ export interface FightOpts {
   plan?: (side: 0 | 1, round: number) => GamePlan | null | undefined;
   /** Fighter Mode: how well the corner worked between rounds (0 = botched .. 1 = perfect; undefined = normal) */
   cornerAid?: (side: 0 | 1, round: number) => number | undefined;
+  /** boss fights: no takedowns or submissions for anybody */
+  noGrappling?: boolean;
+  /** boss fights: this side gets himself disqualified in this round (nothing before it counts) */
+  dq?: { side: 0 | 1; round: number; text: string };
 }
 
 export type GamePlan = 'balanced' | 'pressure' | 'counter' | 'wrestle' | 'grind' | 'legs' | 'subhunt' | 'survive';
@@ -114,8 +118,8 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
       const b0 = base[i];
       S[i].pressure = b0.pressure * m.pressure;
       S[i].kickRate = Math.min(0.85, b0.kick * m.kick);
-      S[i].shootRate = Math.min(0.8, b0.shoot * m.shoot);
-      S[i].subRate = Math.min(1.2, b0.sub * m.sub);
+      S[i].shootRate = opts.noGrappling ? 0 : Math.min(0.8, b0.shoot * m.shoot);
+      S[i].subRate = opts.noGrappling ? 0 : Math.min(1.2, b0.sub * m.sub);
       S[i].counter = Math.min(0.75, b0.counter * m.counter);
       burnMul[i] = m.burn;
     }
@@ -635,6 +639,21 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
 
   const mm = Math.floor(finishT / 60);
   const ss = Math.floor(finishT % 60);
+  if (opts.dq) {
+    // scripted: whatever happened, it ends with a disqualification in this round
+    const v = (1 - opts.dq.side) as 0 | 1;
+    const line = { round: opts.dq.round, t: 107, text: opts.dq.text, side: opts.dq.side, intensity: 3, act: 'foul', pos: 'stand' as Pos, hp: [Math.round(S[0].hp), Math.round(S[1].hp)] as [number, number], key: 'foul_groin' };
+    const kept = keep ? ticker.filter((l) => l.round < opts.dq!.round || (l.round === opts.dq!.round && l.t < 107)) : undefined;
+    if (kept) kept.push(line);
+    return {
+      winner: S[v].f.id, loser: S[opts.dq.side].f.id, method: 'DQ', detail: 'Disqualification (intentional low blow)', round: opts.dq.round, time: '1:47',
+      scores: totals, judges: opts.judges.map((j) => j.name), referee: ref.name, robbery: false, fotn: Math.max(fotn, 70),
+      damage: [Math.min(60, Math.round(100 - Math.max(0, S[0].hp))), Math.min(60, Math.round(100 - Math.max(0, S[1].hp)))],
+      ticker: kept, corners: keep ? corners : undefined, roundScores: keep ? roundScores : undefined,
+      stats: { strikes: [S[0].str, S[1].str], takedowns: [S[0].td, S[1].td], knockdowns: [0, 0] },
+      injuries: [], fouls: [...fouls, { fighter: S[opts.dq.side].f.id, text: 'Groin Strike (intentional)', penalized: true }], pointDeductions: [S[0].ded, S[1].ded], cuts: [S[0].cut, S[1].cut],
+    };
+  }
   return {
     winner: winner === -1 ? null : S[winner].f.id,
     loser: winner === -1 ? null : S[1 - winner].f.id,

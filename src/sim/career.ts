@@ -156,14 +156,14 @@ function applyUnlock(s: GameState, id: string): void {
     case 'ppv_deal': {
       if (s.promotion.tv?.ppv) {
         adjustMeter(s, 'network', 5);
-        break;
-      }
-      const nets = content().networks.filter((n) => n.ppv && n.minAct <= s.act + 1).sort((a, b) => a.tier - b.tier);
-      const n = nets[0];
-      if (n && !s.market.tvOffers.some((o) => o.network === n.id)) {
-        const per = Math.round((n.basePerEvent * (0.6 + s.meters.network / 120 + s.meters.fans / 250)) / 1000) * 1000;
-        s.market.tvOffers.push({ network: n.id, perEvent: per, tier: n.tier, weeks: 104, ppv: true, expires: s.week + 8 });
-        addNews(s, { tags: ['tv_offer', 'business'], vars: { network: n.name, promotion: s.promotion.name }, weight: 4, tone: 0.4 });
+      } else {
+        const nets = content().networks.filter((n) => n.ppv && n.minAct <= s.act + 1).sort((a, b) => a.tier - b.tier);
+        const n = nets[0];
+        if (n && !s.market.tvOffers.some((o) => o.network === n.id)) {
+          const per = Math.round((n.basePerEvent * (0.6 + s.meters.network / 120 + s.meters.fans / 250)) / 1000) * 1000;
+          s.market.tvOffers.push({ network: n.id, perEvent: per, tier: n.tier, weeks: 104, ppv: true, expires: s.week + 8 });
+          addNews(s, { tags: ['tv_offer', 'business'], vars: { network: n.name, promotion: s.promotion.name }, weight: 4, tone: 0.4 });
+        }
       }
       break;
     }

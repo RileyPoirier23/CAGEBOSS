@@ -16,11 +16,15 @@ export type Pose =
   | 'shoot' | 'sprawl' | 'clinch' | 'top' | 'topPunch' | 'bottom' | 'bottomSub' | 'hurt' | 'rocked' | 'down' | 'ko' | 'celebrate'
   | 'taunt' | 'stool' | 'walk1' | 'walk2' | 'block' | 'slip' | 'lifted'
   | 'doubled' | 'touch'
+  // the final round: the other ways down, the knee that goes, the coil before a big shot
+  | 'koFace' | 'koCrumple' | 'legBuckle' | 'coil'
   // directional strikes
   | 'bodyJab' | 'leadHook' | 'bodyHook' | 'overhand' | 'frontKick' | 'spinKick'
   // the clinch: dominant ties, the man in them, the fence, knees and trips
   | 'collar' | 'plum' | 'underhook' | 'clinchDef' | 'cageBack' | 'plumKnee' | 'trip' | 'falling' | 'techUp'
   | 'stand' | 'armUp' | 'headDown' | 'refHold' | 'refRaise' | 'mic' | 'point' | 'flex'
+  // taunts: every fighter has his own
+  | 'flipoff' | 'beckon' | 'beckon2' | 'handsDown' | 'chestPound' | 'shrug' | 'pointUp'
   | GroundPose;
 
 /**
@@ -151,6 +155,14 @@ export const POSES: Record<Pose, Rig> = {
   rocked: P({ neck: [-4, -62], head: [-8, -68], hip: [-3, -36], haF: [8, -46], haB: [2, -44], elF: [8, -48], elB: [0, -46], knF: [8, -16], knB: [-8, -14], ftF: [10, 0], ftB: [-12, 0] }),
   down: P({ hip: [-6, -8], neck: [-18, -30], head: [-22, -38], shF: [-14, -30], shB: [-20, -28], elF: [-8, -18], haF: [-2, -6], elB: [-24, -16], haB: [-26, -4], knF: [10, -14], ftF: [20, 0], knB: [6, -10], ftB: [16, 0] }),
   ko: P({ hip: [0, -4], neck: [-26, -5], head: [-35, -6], shF: [-24, -6], shB: [-26, -4], elF: [-30, -12], haF: [-40, -14], elB: [-20, -2], haB: [-12, -2], knF: [14, -8], ftF: [28, -2], knB: [12, -4], ftB: [26, -1] }),
+  // face first: he goes forward onto his chest, arms under him
+  koFace: P({ hip: [4, -4], neck: [26, -5], head: [36, -5], shF: [22, -7], shB: [26, -3], elF: [34, -11], haF: [40, -6], elB: [20, -2], haB: [28, -2], knF: [-10, -6], ftF: [-24, -2], knB: [-8, -3], ftB: [-22, -1] }),
+  // the legs go and he folds into a heap, knees under him
+  koCrumple: P({ hip: [-4, -10], neck: [-10, -28], head: [-14, -34], shF: [-6, -26], shB: [-14, -24], elF: [2, -16], haF: [8, -8], elB: [-20, -14], haB: [-18, -4], knF: [8, -10], ftF: [4, 0], knB: [-12, -8], ftB: [-18, 0] }),
+  // a leg kick lands: the knee dips, the hands come out for balance
+  legBuckle: P({ hip: [-4, -32], neck: [0, -60], head: [-2, -67], shF: [4, -58], shB: [-5, -57], elF: [12, -50], haF: [18, -44], elB: [-6, -48], haB: [-10, -40], knF: [10, -10], ftF: [14, 0], knB: [-10, -12], ftB: [-16, 0] }),
+  // the coil before a big shot: shoulders back, weight on the rear leg
+  coil: P({ shF: [2, -60], shB: [-8, -60], elF: [6, -52], elB: [-12, -50], haF: [6, -66], haB: [-12, -62], hip: [-4, -40], neck: [-2, -66], head: [-3, -73] }),
   celebrate: P({ elF: [12, -84], haF: [16, -100], elB: [-6, -84], haB: [-10, -100], head: [3, -78] }),
   taunt: P({ elF: [20, -58], haF: [30, -54], elB: [-14, -58], haB: [-24, -54], head: [6, -77] }),
   stool: P({ hip: [0, -26], neck: [2, -52], head: [3, -60], shF: [6, -50], shB: [-2, -50], elF: [16, -38], haF: [22, -32], elB: [-10, -38], haB: [-14, -30], knF: [16, -24], ftF: [16, 0], knB: [12, -22], ftB: [10, 0] }),
@@ -184,6 +196,20 @@ export const POSES: Record<Pose, Rig> = {
   mic: P({ elB: [8, -58], haB: [6, -72], head: [3, -77] }, STAND),
   point: P({ elF: [18, -68], haF: [34, -72], elB: [8, -58], haB: [6, -72], head: [5, -77] }, STAND),
   flex: P({ elF: [16, -72], haF: [12, -86], elB: [-12, -72], haB: [-8, -86], head: [2, -78] }, STAND),
+  // ---- taunts
+  // the bird: near hand up in his face, chin up (the finger is drawn when Look2.bird is set)
+  flipoff: P({ head: [6, -78], neck: [3, -68], elF: [18, -66], haF: [25, -76], elB: [-3, -54], haB: [-2, -44] }, STAND),
+  // come on then: glove out, palm up, curling the fingers
+  beckon: P({ head: [4, -77], elF: [17, -58], haF: [27, -60], elB: [2, -54], haB: [8, -62] }),
+  beckon2: P({ head: [4, -77], elF: [16, -60], haF: [23, -66], elB: [2, -54], haB: [8, -62] }),
+  // hands down, chin out: hit me
+  handsDown: P({ head: [9, -75], neck: [5, -66], shF: [8, -63], shB: [0, -63], elF: [9, -51], haF: [11, -40], elB: [-3, -51], haB: [-2, -40] }),
+  // gloves to the chest, twice
+  chestPound: P({ head: [4, -78], elF: [16, -56], haF: [10, -60], elB: [12, -54], haB: [6, -58] }),
+  // the shrug: was that it?
+  shrug: P({ head: [3, -76], elF: [14, -58], haF: [20, -66], elB: [-10, -58], haB: [-14, -66], shF: [6, -66], shB: [-3, -66] }),
+  // one finger to the sky
+  pointUp: P({ head: [3, -79], elF: [10, -80], haF: [12, -96], elB: [4, -54], haB: [10, -62] }),
 };
 
 export interface Look2 {
@@ -212,6 +238,32 @@ export interface Look2 {
   brows?: number;
   scar?: number;
   glasses?: number;
+  /** 1 = cowboy hat, 2 = leprechaun top hat */
+  hat?: number;
+  /** thin gold chain */
+  chain?: boolean;
+  /** 1 = koi on the shoulder */
+  inkArt?: number;
+  /** the middle finger is up (the flip-off taunt) */
+  bird?: boolean;
+  /** knit beanie, as in his photo */
+  beanie?: boolean;
+  /** freckles across the cheek, as in his photo */
+  freckles?: boolean;
+  /** his own rhythm: idle bounce speed (1 = normal), guard height (+ = lower hands), lean (+ = forward) */
+  tempo?: number;
+  guardY?: number;
+  lean?: number;
+  /** his taunt */
+  taunt?: TauntStyle;
+  /** the weight class in the frame: flyweights slight, heavyweights thick (1 = a lightweight) */
+  frame?: number;
+  /** sweat sheen, 0..1 (builds with the rounds and the damage) */
+  sweat?: number;
+  /** the fight on his face and body: cuts over the eye, swelling, blood running, a bruised body (0..1s, cuts a count) */
+  wear?: { cuts: number; swell: number; blood: number; body: number };
+  /** how gassed he is, 0..1: the mouth hangs open and the hands come down */
+  gassed?: number;
   /** clothing for non-fighters (referee, ring announcer, cutmen) */
   outfit?: { top: number; bottom: number; shirt?: number; tie?: number; bulk?: number; mic?: boolean; shortSleeves?: boolean; hands?: number; patch?: number };
 }
@@ -233,6 +285,20 @@ const COUNTRY_KIT: Record<string, [number, number]> = {
 };
 /** Personalities that wouldn't be caught dead in national colours. */
 const LOUD_TRAITS = ['Showman', 'Diva', 'Clout Chaser', 'Streamer', 'Prankster'];
+
+/** How big a man of this division is on the screen, next to a lightweight. */
+export function frameFor(division: string): number {
+  const d = division.toLowerCase();
+  if (d.includes('straw')) return 0.84;
+  if (d.includes('fly')) return 0.87;
+  if (d.includes('bantam')) return 0.91;
+  if (d.includes('feather')) return 0.95;
+  if (d.includes('lightheavy') || d.includes('light heavy')) return 1.1;
+  if (d.includes('heavy')) return 1.16;
+  if (d.includes('welter')) return 1.02;
+  if (d.includes('middle')) return 1.06;
+  return 1;
+}
 
 export interface Kit {
   trunks: number;
@@ -285,11 +351,86 @@ export function lookFor(f: Fighter, corner: 0 | 1, champ = false): Look2 {
     ears: Math.min(3, f.look.ears + (f.styles.includes('Wrestler') || f.styles.includes('Sub Hunter') ? 1 : 0)),
     brows: f.look.brows,
     scar: f.look.scar,
+    hat: f.look.hat,
+    chain: !!f.look.chain,
+    inkArt: f.look.inkArt,
+    glasses: f.look.glasses === 2 ? 2 : undefined,
+    beanie: !!f.look.beanie,
+    freckles: !!f.look.freckles,
+    frame: frameFor(f.division),
+    ...styleFor(f),
   };
 }
 
+/** Everybody moves a little differently: rhythm, guard, lean, and the taunt (showboats flip you off). */
+function styleFor(f: Fighter): Pick<Look2, 'tempo' | 'guardY' | 'lean' | 'taunt'> {
+  let h = 2166136261;
+  for (const ch of f.id + f.last) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  const loud = f.styles.includes('Showboat') || f.traits.some((t) => LOUD_TRAITS.includes(t));
+  const taunt: TauntStyle = loud ? (['flipoff', 'handsDown', 'beckon'] as TauntStyle[])[h % 3] : TAUNTS[(h >>> 8) % TAUNTS.length];
+  return {
+    tempo: 0.82 + ((h >>> 3) % 9) * 0.05,
+    guardY: ((h >>> 12) % 5) - 2,
+    lean: (((h >>> 16) % 5) - 2) * 0.8,
+    taunt,
+  };
+}
+
+export type TauntStyle = 'flipoff' | 'beckon' | 'handsDown' | 'chestPound' | 'shrug' | 'pointUp' | 'arms';
+const TAUNTS: TauntStyle[] = ['beckon', 'handsDown', 'chestPound', 'shrug', 'pointUp', 'arms', 'flipoff', 'beckon', 'flipoff'];
+
+/** What each taunt says on the broadcast. */
+export const TAUNT_CALL: Record<TauntStyle, string> = {
+  flipoff: 'FLIPS HIM OFF!',
+  beckon: 'COME ON THEN!',
+  handsDown: 'HANDS DOWN! HIT ME!',
+  chestPound: 'POUNDING THE CHEST!',
+  shrug: 'IS THAT IT?',
+  pointUp: 'POINTS TO THE SKY!',
+  arms: 'SHOWBOATING!',
+};
+
+/** A fighter's own taunt, animated. */
+export function tauntRig(L: Look2, t: number): Rig {
+  const beat = Math.floor(t * 3.2) % 2;
+  switch (L.taunt ?? 'arms') {
+    case 'flipoff':
+      return POSES.flipoff;
+    case 'beckon':
+      return beat ? POSES.beckon : POSES.beckon2;
+    case 'handsDown': {
+      const r = { ...POSES.handsDown };
+      const sway = Math.sin(t * 6) * 2.5;
+      r.head = [r.head[0] + sway, r.head[1]];
+      r.neck = [r.neck[0] + sway * 0.6, r.neck[1]];
+      return r;
+    }
+    case 'chestPound':
+      return beat ? POSES.chestPound : { ...POSES.chestPound, haF: [16, -62], haB: [13, -60] };
+    case 'shrug':
+      return POSES.shrug;
+    case 'pointUp':
+      return POSES.pointUp;
+    default:
+      return POSES.taunt;
+  }
+}
+
 /** Stance tweaks applied to the guard pose. */
+/** The three ways a man goes out, by what put him there: an uppercut or a head kick drops him on his back, a hook folds him in a heap, body and leg work put him on his face. */
+export const KO_POSES = new Set<Pose>(['ko', 'koFace', 'koCrumple']);
+export function koPoseFor(act: string): Pose {
+  const a = act.toLowerCase();
+  if (/upper|knee|head ?kick|high kick|flying/.test(a)) return 'ko';
+  if (/hook|overhand|spin|backfist|elbow|cross/.test(a)) return 'koCrumple';
+  if (/body|leg|gnp|ground|liver|kick/.test(a)) return 'koFace';
+  return 'ko';
+}
+/** Big shots are telegraphed: these get a moment's coil before they come. */
+export const HEAVY_POSES = new Set<Pose>(['overhand', 'headkick', 'spinKick', 'uppercut', 'flyknee', 'spin', 'bodykick']);
+
 export function stanceGuard(L: Look2, t: number): Rig {
+  t *= (L.tempo ?? 1) * (1 - 0.35 * (L.gassed ?? 0)); // a gassed man's bounce goes
   const r: Rig = { ...GUARD };
   const add = (j: Joint, dx: number, dy: number) => (r[j] = [r[j][0] + dx, r[j][1] + dy]);
   switch (L.stance) {
@@ -336,6 +477,11 @@ export function stanceGuard(L: Look2, t: number): Rig {
     const k = j === 'knF' || j === 'knB' ? 0.5 : 1;
     r[j] = [r[j][0] + (['head', 'neck'].includes(j) ? sway : sway * 0.4), r[j][1] + bob * k];
   }
+  // his own guard: hands a little higher or lower, leaning in or sitting back
+  const gy = (L.guardY ?? 0) + (L.gassed ?? 0) * 6;
+  const ln = (L.lean ?? 0) + (L.gassed ?? 0) * 1.5;
+  if (gy) for (const j of ['haF', 'haB', 'elF', 'elB'] as Joint[]) add(j, 0, j[0] === 'h' ? gy : gy * 0.5);
+  if (ln) for (const j of ['head', 'neck', 'shF', 'shB', 'elF', 'elB', 'haF', 'haB'] as Joint[]) add(j, ln * (j === 'head' ? 1 : 0.7), Math.abs(ln) * 0.3);
   // hands breathe
   r.haF = [r.haF[0] + Math.sin(t * 4.2) * 1.2, r.haF[1] + Math.cos(t * 3.1)];
   r.haB = [r.haB[0] + Math.cos(t * 3.7) * 1.2, r.haB[1] + Math.sin(t * 2.9)];
@@ -422,12 +568,21 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
     for (const q of segs) limbShade(q.a, q.b, q.wa, q.wm, q.wb, q.shadow);
   };
 
-  // widths
-  const bw = build * (fem ? 0.6 : 1);
-  const UA = { a: 6.4 + bw, m: 7.6 + bw * 1.4, b: 5 + bw * 0.6 }; // upper arm (bicep bulge)
-  const FA = { a: 5.4 + bw * 0.6, m: 5.2 + bw * 0.5, b: 4 }; // forearm
-  const TH = { a: 9.5 + bw * 1.3, m: 9.8 + bw * 1.4, b: 6.4 + bw * 0.4 }; // thigh
-  const CA = { a: 6 + bw * 0.4, m: 7 + bw * 0.6, b: 3.8 }; // calf
+  // widths: the build, and the weight class in the frame
+  const fr = L.frame ?? 1;
+  const bw = build * (fem ? 0.6 : 1) * fr;
+  const UA = { a: 6.4 * fr + bw, m: 7.6 * fr + bw * 1.4, b: 5 * fr + bw * 0.6 }; // upper arm (bicep bulge)
+  const FA = { a: 5.4 * fr + bw * 0.6, m: 5.2 * fr + bw * 0.5, b: 4 * fr }; // forearm
+  const TH = { a: 9.5 * fr + bw * 1.3, m: 9.8 * fr + bw * 1.4, b: 6.4 * fr + bw * 0.4 }; // thigh
+  const CA = { a: 6 * fr + bw * 0.4, m: 7 * fr + bw * 0.6, b: 3.8 * fr }; // calf
+  const wear = L.wear ?? { cuts: 0, swell: 0, blood: 0, body: 0 };
+  const sweat = L.sweat ?? 0;
+  const gassed = L.gassed ?? 0;
+  /** a bead of sweat / a sheen: a soft white dot */
+  const sheen = (p: V, r: number, a: number) => {
+    const Q = T(p);
+    g.circle(Q[0], Q[1], r * s).fill({ color: 0xffffff, alpha: a });
+  };
   const armC = o ? o.top : skin;
   const armFarC = o ? shade(o.top, -0.25) : skinFar;
   // short-sleeved shirts (referees) show the forearms
@@ -480,6 +635,20 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
     g.moveTo(cx - uy * 3.4 * s, cy + ux * 3.4 * s).lineTo(cx + uy * 3.4 * s, cy - ux * 3.4 * s).stroke({ color: OUT, width: 3.4 * s });
     g.moveTo(cx - uy * 2.6 * s, cy + ux * 2.6 * s).lineTo(cx + uy * 2.6 * s, cy - ux * 2.6 * s).stroke({ color: shade(color, near ? -0.35 : -0.5), width: 2 * s });
     g.circle(C[0] + ux * 1.2 * s - 1 * s, C[1] + uy * 1.2 * s - 1.4 * s, 1.1 * s).fill(shade(color, 0.4)); // shine
+    // knuckle-pad stitching, and the open fingers of a 4 oz glove curling out underneath
+    const kx = C[0] + ux * 1.9 * s;
+    const ky = C[1] + uy * 1.9 * s;
+    g.moveTo(kx - uy * 2.6 * s, ky + ux * 2.6 * s).lineTo(kx + uy * 2.6 * s, ky - ux * 2.6 * s).stroke({ color: shade(color, -0.32), width: 0.5 * s });
+    const side = uy * facing > 0 ? 1 : -1;
+    g.circle(C[0] + ux * 1.2 * s - uy * 3 * s * side, C[1] + uy * 1.2 * s + ux * 3 * s * side, 1.3 * s).fill(near ? skin : skinFar);
+    if (near && L.bird) {
+      // the middle finger, straight up
+      const fx = C[0] + ux * 0.5 * s;
+      const fy = C[1] - 2.6 * s;
+      g.moveTo(fx, fy).lineTo(fx + ux * 0.6 * s, fy - 6.5 * s).stroke({ color: OUT, width: 2.6 * s, cap: 'round' });
+      g.moveTo(fx, fy).lineTo(fx + ux * 0.6 * s, fy - 6.5 * s).stroke({ color: skin, width: 1.5 * s, cap: 'round' });
+      g.circle(fx + ux * 0.6 * s, fy - 6.4 * s, 0.5 * s).fill(shade(skin, 0.3));
+    }
   };
 
   // ------------------------------------------------------------ far leg & far arm
@@ -510,7 +679,7 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
   const len = Math.hypot(hp[0] - nk[0], hp[1] - nk[1]) || 1;
   const u: V = [(hp[0] - nk[0]) / len, (hp[1] - nk[1]) / len]; // spine, downward
   const f: V = [-u[1], u[0]].map((v) => -v) as V; // forward (toward facing)
-  const tw = (fem ? 11 : 12.5) + build * 2.4;
+  const tw = ((fem ? 11 : 12.5) + build * 2.4) * fr;
   const P = (along: number, fwd: number): V => add(add(nk, u, len * along), f, fwd);
   const belly = build >= 2 ? 1.6 : 0;
   const torso: V[] = [
@@ -544,7 +713,11 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
       line(P(0.15, tw * 0.45), P(0.22, tw * 0.1), shade(skin, 0.12), 1.2); // pec highlight
       if (build < 2) for (let i = 0; i < 3; i++) line(P(0.56 + i * 0.11, tw * 0.22), P(0.56 + i * 0.11, tw * 0.42), dk, 0.9); // abs
       else line(P(0.62, tw * 0.3), P(0.8, tw * 0.38), dk, 0.9); // gut fold
-      if (L.beard >= 3) g.poly([P(0.22, tw * 0.1), P(0.3, tw * 0.32), P(0.4, tw * 0.12)].flatMap((p) => T(p))).fill(shade(skin, -0.22)); // chest hair
+      line(P(0.03, tw * 0.44), P(0.07, tw * 0.08), shade(skin, 0.14), 0.9); // collarbone
+      if (build < 3) for (let i = 0; i < 3; i++) line(P(0.42 + i * 0.07, tw * 0.52), P(0.46 + i * 0.07, tw * 0.4), dk, 0.6); // serratus
+      line(P(0.7, tw * 0.44 + belly * 0.5), P(0.95, tw * 0.38), dk, 0.7); // the oblique
+      line(P(0.2, -tw * 0.5), P(0.5, -tw * 0.42), shade(skin, -0.24), 0.8); // the lat
+      if (L.beard === 3 || L.beard === 6) g.poly([P(0.22, tw * 0.1), P(0.3, tw * 0.32), P(0.4, tw * 0.12)].flatMap((p) => T(p))).fill(shade(skin, -0.22)); // chest hair
     } else {
       // sports bra
       const bra = [P(0.12, tw * 0.5), P(0.3, tw * 0.62), P(0.46, tw * 0.52), P(0.46, -tw * 0.52), P(0.12, -tw * 0.44)].flatMap((p) => T(p));
@@ -553,6 +726,22 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
       for (let i = 0; i < 2; i++) line(P(0.6 + i * 0.12, tw * 0.22), P(0.6 + i * 0.12, tw * 0.38), dk, 0.8);
     }
     g.circle(...T(P(0.86, tw * 0.3)), 0.7 * s).fill(dk); // navel
+    // the fight on the body: red on the ribs where the body shots went, then purple
+    if (wear.body > 0.25) {
+      const k = Math.min(1, (wear.body - 0.25) * 1.3);
+      g.circle(...T(P(0.5, tw * 0.34)), (1.8 + k * 1.2) * s).fill({ color: k > 0.6 ? 0x6a3050 : 0xa83a3a, alpha: 0.22 + k * 0.35 });
+      g.circle(...T(P(0.62, tw * 0.42)), (1.2 + k) * s).fill({ color: 0x8a3040, alpha: 0.18 + k * 0.3 });
+    }
+    // sweat: a sheen on the shoulders and the chest, beads on the collarbone
+    if (sweat > 0.15) {
+      sheen(P(0.12, tw * 0.3), 1.2, 0.3 * sweat);
+      sheen(P(0.26, tw * 0.5), 0.9, 0.26 * sweat);
+      sheen(P(0.08, -tw * 0.34), 1.1, 0.22 * sweat);
+      if (sweat > 0.5) {
+        sheen(P(0.05, tw * 0.42), 0.5, 0.6);
+        sheen(P(0.34, tw * 0.56), 0.45, 0.55);
+      }
+    }
     const ink = shade(skin, -0.5);
     if (L.tattoo >= 1 && L.ink !== undefined) {
       switch (L.ink % 6) {
@@ -574,6 +763,13 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
           break;
       }
     }
+    if (L.inkArt === 1) {
+      // koi on the shoulder: dark body, red scales
+      line(P(0.04, tw * 0.28), P(0.2, tw * 0.46), ink, 1.3);
+      g.circle(...T(P(0.1, tw * 0.38)), 0.8 * s).fill(0xb0302a);
+      g.circle(...T(P(0.16, tw * 0.43)), 0.6 * s).fill(0xb0302a);
+    }
+    if (L.chain) line(P(0.06, tw * 0.4), P(0.14, -tw * 0.05), 0xe0c060, 0.6);
     if (L.tattoo >= 2) {
       // rib piece: a little script + star
       line(P(0.3, -tw * 0.18), P(0.62, -tw * 0.26), shade(skin, -0.45), 0.8);
@@ -606,6 +802,9 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
   if (!o) {
     line(lerp(rig.knF, rig.ftF, 0.3), lerp(rig.knF, rig.ftF, 0.62), shade(skin, 0.1), 1.3); // shin highlight
     line(lerp(rig.hip, rig.knF, 0.62), lerp(rig.hip, rig.knF, 0.9), shade(skin, -0.18), 1); // quad line
+    g.circle(...T(add(rig.knF, [1.2, -0.6])), 1.3 * s).fill(shade(skin, 0.1)); // kneecap
+    line(add(lerp(rig.knF, rig.ftF, 0.12), [-2.2, 0]), add(lerp(rig.knF, rig.ftF, 0.42), [-2.4, 0]), shade(skin, -0.16), 1.1); // the calf
+    line(lerp(rig.knF, rig.ftF, 0.82), lerp(rig.knF, rig.ftF, 0.9), shade(skin, -0.22), 0.8); // ankle bone
   }
   foot(rig.ftF, rig.knF, skin);
   if (!o) {
@@ -671,10 +870,6 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
   const noseShape: [number, number][] = L.nose === 1 ? [[6.6, -1.2], [9.4, 1.8], [6.4, 2.6]] : L.nose === 2 ? [[6.8, -1.5], [8.4, 0], [9.2, 2], [6.6, 2.4]] : [[6.8, -1.5], [9, 1.6], [6.6, 2.2]];
   g.poly(poly(noseShape)).fill(skin).stroke({ color: OUT, width: 1 * s, join: 'round' });
   g.poly(poly(noseShape)).fill(skin);
-  // ear (cauliflower if he's rolled long enough)
-  const earR = 1.2 + (L.ears ?? 0) * 0.35;
-  g.circle(...hpt(-1.6, 1), earR * s).fill(shade(skin, -0.1));
-  g.circle(...hpt(-1.4, 1.1), Math.max(0.35, earR - 0.9) * s).fill(shade(skin, -0.24));
   // eye: white, pupil, lid; brow (heavier brows for some)
   g.circle(...hpt(4.6, -1.2), 0.95 * s).fill(0xd6cec2);
   g.circle(...hpt(5.1, -1.2), 0.55 * s).fill(0x14100e);
@@ -683,94 +878,220 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
   if (L.tattoo === 3 && !o) g.circle(...hpt(4.4, 0.6), 0.55 * s).fill(shade(skin, -0.65)); // teardrop ink, as on the contract photo
   // scar across the brow
   if ((L.scar ?? 0) > 0) hl([3, -5], [6, -1.6], shade(skin, 0.22), 0.6);
-  // mouth (+ mouthguard flash for fighters)
-  hl([4.6, 3.6], [6.6, 3.2], shade(skin, -0.5), 0.9);
-  if (!o) hl([5.2, 3.4], [6.4, 3.2], L.glove === 0x8e1e1e ? 0xd04040 : 0x3a6ad0, 0.7);
+  // mouth (+ mouthguard flash for fighters); gassed, it hangs open
+  if (!o && gassed > 0.45) {
+    g.circle(...hpt(5.6, 3.6), (0.9 + gassed * 0.5) * s).fill(0x2a1216);
+    hl([5.0, 3.0], [6.4, 2.9], L.glove === 0x8e1e1e ? 0xd04040 : 0x3a6ad0, 0.7);
+  } else {
+    hl([4.6, 3.6], [6.6, 3.2], shade(skin, -0.5), 0.9);
+    if (!o) hl([5.2, 3.4], [6.4, 3.2], L.glove === 0x8e1e1e ? 0xd04040 : 0x3a6ad0, 0.7);
+  }
+  if (!o) {
+    // the fight on his face: the eye swells shut, a cut over it, blood down the cheek, sweat on the brow
+    if (wear.swell > 0.25) {
+      const k = Math.min(1, (wear.swell - 0.25) * 1.2);
+      g.circle(...hpt(3.9, -1.6), (1.5 + k * 1.3) * s).fill({ color: k > 0.6 ? 0x5a2a4a : 0x8a3a52, alpha: 0.25 + k * 0.5 });
+      if (k > 0.5) g.circle(...hpt(4.4, 1.2), (1 + k) * s).fill({ color: 0x7a3048, alpha: 0.2 + k * 0.3 }); // the cheek too
+    }
+    if (wear.cuts >= 1) {
+      hl([3.0, -4.6], [4.8, -3.2], 0xa01818, 0.8 + Math.min(3, wear.cuts) * 0.3);
+      if (wear.cuts >= 3) hl([5.4, -3.6], [6.6, -2.4], 0xa01818, 1); // and the other brow
+    }
+    if (wear.blood > 0.05) {
+      hl([4.4, -3.0], [4.9, 1.6 + wear.blood * 2.4], 0x8a1414, 0.7); // running down past the eye
+      if (wear.blood > 0.5) hl([6.2, 0.4], [6.8, 3.0], 0x8a1414, 0.6); // off the nose
+    }
+    if (sweat > 0.3) {
+      g.circle(...hpt(3.2, -4.4), 0.5 * s).fill({ color: 0xffffff, alpha: 0.5 * sweat });
+      g.circle(...hpt(5.6, -3.8), 0.4 * s).fill({ color: 0xffffff, alpha: 0.45 * sweat });
+    }
+  }
   // hair
   const hc = L.hairColor;
   const hcD = shade(hc, -0.25);
-  const cap = (r: number, from: number, to: number, color: number, width: number) => {
-    // a thick arc over the crown, in head space: angle 0 = face, -90 = top of the head
-    const steps = 8;
-    for (let i = 0; i < steps; i++) {
-      const a0 = from + ((to - from) * i) / steps;
-      const a1 = from + ((to - from) * (i + 1)) / steps;
-      hl([Math.cos(a0) * r / s, Math.sin(a0) * r / s], [Math.cos(a1) * r / s, Math.sin(a1) * r / s], color, width / s);
-    }
-  };
+  const hcL = shade(hc, 0.22);
   const D = Math.PI / 180;
-  // Solid hair seen side-on: a crescent hugging the skull from the hairline over the crown to
-  // the nape. a0 is the hairline (0 = face, -90 = top of head, -180 = back), a1 the nape.
-  const capFill = (a0: number, a1: number, thick: number, color: number, lift = 0) => {
-    const steps = 12;
+  const R = hr / s;
+  const onR = (deg: number, r = R): [number, number] => [Math.cos(deg * D) * r, Math.sin(deg * D) * r];
+  /**
+   * Hair seen side-on, as a real mass: over the crown from the hairline (a0: 0 = the face,
+   * -90 = the top, -180 = the back) to the nape (a1), standing `thick` off the skull, and
+   * covering the whole side of the head above and behind the ear (no bald sides), with an
+   * optional sideburn in front of the ear. Strands and a highlight so it reads as hair.
+   */
+  const mass = (a0: number, a1: number, thick: number, color: number, o2: { lift?: number; sideburn?: boolean; low?: boolean; strands?: boolean } = {}) => {
+    const steps = 14;
     const outer: [number, number][] = [];
-    const inner: [number, number][] = [];
-    const R = hr / s;
     for (let i = 0; i <= steps; i++) {
-      const a = (a0 + ((a1 - a0) * i) / steps) * D;
-      const bulge = Math.sin((Math.PI * i) / steps); // fullest at the crown
-      outer.push([Math.cos(a) * (R + thick * bulge + lift * bulge), Math.sin(a) * (R + thick * bulge + lift * bulge)]);
-      inner.push([Math.cos(a) * (R - 1.2), Math.sin(a) * (R - 1.2)]);
+      const a = a0 + ((a1 - a0) * i) / steps;
+      const bulge = Math.sin((Math.PI * i) / steps);
+      outer.push(onR(a, R + (thick + (o2.lift ?? 0)) * bulge + 0.3));
     }
-    const pts = [...outer, ...inner.reverse()];
-    g.poly(poly(pts)).fill(color).stroke({ color: OUT, width: 0.9 * s, join: 'round' });
-    // a couple of strands so it reads as hair, not a helmet
-    for (let i = 2; i < steps - 1; i += 3) {
-      const a = (a0 + ((a1 - a0) * i) / steps) * D;
-      hl([Math.cos(a) * (R + 0.2), Math.sin(a) * (R + 0.2)], [Math.cos(a) * (R + thick * 0.7), Math.sin(a) * (R + thick * 0.7)], hcD, 0.5);
+    // across the side of the head: behind the ear, over it, the sideburn, the temple
+    const inner: [number, number][] = [
+      onR(a1, R * 0.9),
+      o2.low ? [-4.6, 5] : [-4.4, 2.8],
+      o2.low ? [-2.6, 3.4] : [-3.5, 0.2],
+      [-1.8, -1.7],
+      [0, -1.2],
+      ...(o2.sideburn === false ? [] : ([[0.3, 2.3], [1.4, 2.1]] as [number, number][])),
+      [1.5, -2.6],
+      [3.2, -4.4],
+      onR(a0, R * 0.9),
+    ];
+    g.poly(poly([...outer, ...inner])).fill(color).stroke({ color: OUT, width: 0.7 * s, join: 'round' });
+    if (o2.strands === false) return;
+    // strands sweeping back from the hairline, and the light catching the crown
+    for (let k = 0; k < 4; k++) {
+      const r1 = R - 1.5 + k * ((thick + 1) / 3);
+      const from = a0 - 12 - k * 6;
+      const to = a1 + 25 + k * 4;
+      for (let a = from; a > to; a -= 22) hl(onR(a, r1), onR(a - 14, r1 - 0.4), k % 2 ? hcD : shade(color, -0.12), 0.45);
     }
+    for (let a = a0 - 20; a > a0 - 75; a -= 11) hl(onR(a, R + thick * 0.55), onR(a - 9, R + thick * 0.6), hcL, 0.55);
+    // short strands at the edge of the side so the hairline isn't a hard cut
+    for (const [x0, y0] of [[-3.4, 0.4], [-1.2, -1.4], [1.4, -2.4], [2.8, -4]] as [number, number][]) hl([x0, y0], [x0 - 0.6, y0 + 1.1], color, 0.5);
   };
   const sw = L.sway ?? 0;
-  switch (L.hairStyle) {
+  const long = L.hairStyle === 5 || L.hairStyle === 9 || (fem && (L.hairStyle === 6 || L.hairStyle === 7));
+  // under a beanie only the hair that hangs below it shows
+  switch (L.beanie && !long ? 2 : L.hairStyle) {
     case 0:
       g.circle(...hpt(-1, -4.4), 1.4 * s).fill(shade(skin, 0.28)); // bald shine
       break;
     case 1:
-      capFill(-55, -195, 0.9, shade(hc, -0.05)); // buzz cut: thin, follows the skull
+      // buzz cut: the whole scalp shadowed with short fuzz, a crisp line at the forehead
+      mass(-48, -205, 0.5, lerpColor(hc, skin, 0.3), { strands: false });
+      for (let a = -60; a > -190; a -= 16) hl(onR(a, R - 0.2), onR(a - 7, R - 0.9), lerpColor(hc, skin, 0.15), 0.4);
       break;
     case 3:
       // swept / quiff: full top, the front lifted and pushed back
-      capFill(-40, -200, 2.2, hc, 0.6);
-      g.poly(poly([[1, -6.8], [6.5, -10.5 - sw * 0.3], [7.4, -6.6], [3, -5.6]])).fill(hc).stroke({ color: OUT, width: 0.8 * s });
+      mass(-38, -202, 2.3, hc, { lift: 0.6 });
+      g.poly(poly([[1, -6.8], [6.5, -10.5 - sw * 0.3], [7.6, -6.6], [3, -5.4]])).fill(hc).stroke({ color: OUT, width: 0.8 * s });
+      hl([3, -7.2], [6.4, -9.6 - sw * 0.3], hcL, 0.6);
       break;
     case 4:
-      // mohawk: shaved sides (stubble shadow) and a tall strip over the crown
-      capFill(-50, -190, 0.4, shade(skin, -0.22));
-      g.poly(poly([[-6, -hr / s + 3], [-4.5 - sw * 0.4, -hr / s - 2.5], [-1 - sw * 0.35, -hr / s - 4.5], [2.5 - sw * 0.3, -hr / s - 3.5], [4.5, -hr / s + 1.2]])).fill(hc).stroke({ color: OUT, width: 0.9 * s });
+      // mohawk: shaved sides (stubble shadow all over) and a tall strip over the crown
+      mass(-48, -200, 0.3, lerpColor(hc, skin, 0.5), { strands: false });
+      {
+        // the fin: spiky along the top of the skull, front to back
+        const top: [number, number][] = [];
+        for (let k = 0; k <= 10; k++) {
+          const a = -52 - k * 13;
+          const spike = k % 2 ? 2.4 : 4;
+          const [x1, y1] = onR(a, R + spike);
+          top.push([x1 - sw * 0.3 * (k / 10), y1]);
+        }
+        const base: [number, number][] = [];
+        for (let k = 10; k >= 0; k--) base.push(onR(-52 - k * 13, R - 0.6));
+        g.poly(poly([...top, ...base])).fill(hc).stroke({ color: OUT, width: 0.8 * s, join: 'round' });
+        for (let k = 1; k < 10; k += 2) hl(onR(-52 - k * 13, R + 0.4), onR(-52 - k * 13, R + 2.6), hcL, 0.5);
+      }
       break;
     case 5:
-      // long hair: full top, falling past the neck and swinging
-      capFill(-35, -205, 2.4, hc);
-      g.poly(poly([[-4, -2], [-7.8, -1.5], [-9 - sw, fem ? 13 : 9], [-5.5 - sw * 0.6, fem ? 12 : 8], [-3.5, 3]])).fill(hc).stroke({ color: OUT, width: 1 * s });
+      // long hair: full top, over the ears, falling past the neck and swinging
+      mass(-34, -228, 2.5, hc, { sideburn: false, low: true });
+      g.poly(poly([[-3, -1], [-7.8, -1.5], [-9 - sw, fem ? 13 : 9], [-5.5 - sw * 0.6, fem ? 12.5 : 8.5], [-2.5, 4.5], [-0.5, 3]])).fill(hc).stroke({ color: OUT, width: 1 * s });
       hl([-6.5, 1], [-7.5 - sw * 0.7, fem ? 10 : 7], hcD, 0.6);
+      hl([-4.4, 2], [-5.2 - sw * 0.5, fem ? 11 : 7.5], hcD, 0.5);
+      break;
+    case 8:
+      // curly mop: a big cloud of curls over the whole top and sides
+      mass(-22, -215, 3.4, hc, { lift: 1.2, strands: false });
+      for (let k = 0; k < 9; k++) {
+        const [cx, cy] = onR(-30 - k * 20, R + 2.6);
+        g.circle(...hpt(cx, cy), 1.9 * s).fill(k % 2 ? hc : hcD).stroke({ color: OUT, width: 0.5 * s });
+        g.circle(...hpt(cx - 0.4, cy - 0.5), 0.6 * s).fill(hcL);
+      }
+      for (const [cx, cy] of [[-2.6, -2], [-4.4, 0], [0.6, -3.2]] as [number, number][]) g.circle(...hpt(cx, cy), 1.3 * s).fill(hcD);
+      break;
+    case 9:
+      // long waves: a big mane over the ears, falling past the shoulders, swinging
+      mass(-30, -230, 2.9, hc, { lift: 0.4, sideburn: false, low: true });
+      g.poly(poly([[-2.5, -3], [-8.4, -2.5], [-10.5 - sw, 6], [-10 - sw * 1.1, 13], [-6 - sw * 0.7, 12.5], [-4.5 - sw * 0.5, 7], [-1, 4]])).fill(hc).stroke({ color: OUT, width: 1 * s });
+      hl([-7, 0], [-8.5 - sw * 0.8, 9], hcD, 0.6);
+      hl([-5.2, 2], [-7 - sw * 0.6, 11], hcD, 0.5);
+      hl([-8.6, 2], [-9.6 - sw, 10], hcL, 0.5);
+      // a lock in front of the ear, framing the face
+      g.poly(poly([[0.5, -5.5], [2.4, -4.5], [2, 3], [0, 4.4]])).fill(hc);
+      hl([1.3, -4], [1.2, 2.6], hcD, 0.45);
       break;
     case 6:
-      // braids / cornrows: tight lanes over the crown; women keep a long braid that swings
-      capFill(-45, -200, 1.4, hc);
-      for (let k = 0; k < 4; k++) hl([-5 + k * 2.6, -7.6 + Math.abs(k - 1.5) * 0.6], [-6 + k * 2.6, -3.4], hcD, 0.6);
+      // braids / cornrows: tight lanes over the whole scalp; women keep a long braid that swings
+      mass(-44, -205, 1.3, hc, { strands: false });
+      // the rows: scalp showing between tight braids running front to back
+      for (let k = 0; k < 4; k++) {
+        const r1 = R + 0.2 - k * 1.5;
+        for (let a = -50 - k * 4; a > -195 + k * 6; a -= 10) hl(onR(a, r1), onR(a - 8, r1), shade(skin, -0.25), 0.45);
+        for (let a = -54 - k * 4; a > -195 + k * 6; a -= 10) hl(onR(a, r1 + 0.7), onR(a - 5, r1 + 0.7), hcL, 0.45);
+      }
       if (fem) for (let k = 0; k < 3; k++) hl([-6 - sw * k * 0.3, 2 + k * 4], [-6.5 - sw * (k + 1) * 0.3, 6 + k * 4], k % 2 ? hc : hcD, 1.6);
       break;
     case 7:
-      // man bun / ponytail: pulled back tight, knot at the back of the crown
-      capFill(-45, -195, 1.3, hc);
+      // man bun / ponytail: pulled back tight over the sides, knot at the back of the crown
+      mass(-44, -200, 1.2, hc);
       g.circle(...hpt(-6 - sw * 0.3, -5.5), 3 * s).fill(OUT);
       g.circle(...hpt(-6 - sw * 0.3, -5.5), 2.3 * s).fill(hc);
+      g.circle(...hpt(-6.6 - sw * 0.3, -6.2), 0.8 * s).fill(hcL);
       break;
     default:
-      // short: proper volume on top, tapered at the back and sides
-      capFill(-40, -200, 1.9, hc, 0.3);
-      g.poly(poly([[-1.5, -1], [-2, 2.5], [0.2, 1]])).fill(hc); // sideburn
+      // short: volume on top, tapered at the back and the sides, a sideburn
+      mass(-38, -202, 1.9, hc, { lift: 0.3 });
   }
-  if (L.beard === 3) {
+  // the ear sits on top of short hair (long hair covers it)
+  if (!long) {
+    // ear (cauliflower if he's rolled long enough)
+    const earR = 1.2 + (L.ears ?? 0) * 0.35;
+    g.ellipse(...hpt(-1.6, 1), earR * s, (earR + 0.5) * s).fill(shade(skin, -0.06)).stroke({ color: shade(skin, -0.45), width: 0.45 * s });
+    g.circle(...hpt(-1.4, 1.2), Math.max(0.35, earR - 0.8) * s).fill(shade(skin, -0.26));
+  }
+  if (L.beard === 6) {
+    // a beard to the belt
+    g.poly(poly([[-2.4, 3], [3, 7.6], [5, 14], [3.5, 19], [1.5, 13], [0.5, 8], [0.5, 1.4]])).fill(hc).stroke({ color: OUT, width: 0.7 * s });
+    g.poly(poly([[3, 6], [7, 5.4], [7.3, 3.6], [4.6, 4.4]])).fill(hc);
+    hl([2, 7], [3.6, 15], hcD, 0.6);
+  } else if (L.beard === 3) {
     g.poly(poly([[-2.4, 3], [3, 7.6], [7, 5.4], [7.3, 3.6], [4.6, 4.4], [0.5, 1.4]])).fill(hc); // full beard
     hl([1, 5], [5, 6.6], hcD, 0.6);
   } else if (L.beard === 2 || L.beard === 4) {
     hl([4.4, 2.6], [6.8, 2.4], hc, 1.3); // moustache
     if (L.beard === 2) g.circle(...hpt(5.6, 5.8), 1.4 * s).fill(hc); // goatee
+  } else if (L.beard === 5) {
+    hl([4.8, 2.6], [6.6, 2.5], hc, 0.8); // thin moustache
+    g.circle(...hpt(5.4, 5.2), 0.8 * s).fill(hc); // chin patch
   } else if (L.beard === 1) {
     for (let i = 0; i < 5; i++) g.circle(...hpt(0.6 + i * 1.5, 4.2 + (i % 2)), 0.5 * s).fill(shade(skin, -0.32)); // stubble
   }
+  if (L.freckles) for (const [fx, fy] of [[3.6, 0.6], [5, 1.2], [4.2, 1.8], [2.8, 1.4], [5.8, 0.4]] as [number, number][]) g.circle(...hpt(fx, fy), 0.32 * s).fill(shade(skin, -0.3));
+  if (L.beanie) {
+    // knit beanie pulled down to the brows, a folded cuff
+    const knit = 0x2a2a32;
+    const pts: [number, number][] = [];
+    for (let a = -10; a >= -200; a -= 15) pts.push(onR(a, R + 1.4));
+    pts.push([-6.4, 0.8], [-1, -1.2], [2.6, -3.6], [6.6, -3.2]);
+    g.poly(poly(pts)).fill(knit).stroke({ color: OUT, width: 0.8 * s, join: 'round' });
+    hl([-6.4, -0.6], [6.6, -4.4], 0x3a3a44, 1.6); // the cuff
+    for (let a = -40; a > -180; a -= 20) hl(onR(a, R - 1), onR(a, R + 1), 0x1c1c22, 0.4); // the rib knit
+    g.rect(...hpt(-4.5, -1.6), 1.4 * s, 1 * s).fill(0xd8d8de); // the tag
+  }
   if (L.glasses === 1) hl([3.2, -1.4], [7.2, -1.4], 0x101014, 1.6); // shades (announcers, not fighters)
+  else if (L.glasses === 2) {
+    // nerd frames (a certain referee)
+    g.circle(...hpt(5.4, -1.2), 1.5 * s).stroke({ color: 0x101014, width: 0.6 * s });
+    hl([3.9, -1.4], [1.5, -1.8], 0x101014, 0.5);
+  }
+  if (L.hat === 1) {
+    // cowboy hat: crown and a wide brim
+    g.poly(poly([[-5.5, -7], [-4.5, -12.5], [-1, -11.5], [1.5, -12.8], [4.5, -12], [5.5, -7]])).fill(0x5a3c22).stroke({ color: OUT, width: 0.8 * s });
+    hl([-5.4, -8], [5.4, -8], 0x2a1a0e, 1.1);
+    g.poly(poly([[-11, -6.4], [-9, -7.4], [9, -7.4], [11, -6.4], [9.5, -5.6], [-9.5, -5.6]])).fill(0x7a5432).stroke({ color: OUT, width: 0.7 * s });
+  } else if (L.hat === 2) {
+    // leprechaun top hat
+    g.poly(poly([[-5, -7], [-4.4, -17], [4.6, -16], [5, -7]])).fill(0x1e5a2a).stroke({ color: OUT, width: 0.8 * s });
+    hl([-5, -8.5], [5, -8.5], 0x101010, 1.6);
+    g.rect(...hpt(-0.8, -9.5), 1.8 * s, 1.8 * s).fill(0xd8b040);
+    g.poly(poly([[-9, -6.4], [9, -6.4], [9, -5.4], [-9, -5.4]])).fill(0x2a7a38).stroke({ color: OUT, width: 0.6 * s });
+  }
 
   // ------------------------------------------------------------ near arm (+ glove)
   group(
@@ -788,6 +1109,10 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
   }
   if (!o) {
     line(lerp(rig.shF, rig.elF, 0.25), lerp(rig.shF, rig.elF, 0.6), shade(skin, 0.12), 1.2); // bicep highlight
+    line(lerp(rig.shF, rig.elF, -0.05), lerp(rig.shF, rig.elF, 0.14), shade(skin, 0.18), 1.6); // the cap of the shoulder
+    line(lerp(rig.elF, rig.haF, 0.12), lerp(rig.elF, rig.haF, 0.55), shade(skin, 0.08), 1); // forearm
+    line(lerp(rig.elF, rig.haF, 0.25), lerp(rig.elF, rig.haF, 0.62), shade(skin, -0.14), 0.5); // a tendon down the forearm
+    g.circle(...T(rig.elF), 0.7 * s).fill(shade(skin, -0.2)); // the elbow point
     if (L.tattoo >= 1) {
       // tribal arm band: two dark rings around the upper arm
       for (const t of [0.34, 0.46]) {

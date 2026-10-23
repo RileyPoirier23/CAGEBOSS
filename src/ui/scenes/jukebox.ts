@@ -9,7 +9,8 @@ import { openWindow } from '../widgets';
 import { TRACKS, playTrack, nowPlaying, skipTrack } from '../../audio/music';
 
 export function openJukebox(g: Game): void {
-  const ROW = 15;
+  // rows shrink to fit the whole soundtrack on screen
+  const ROW = Math.max(11, Math.min(15, Math.floor((252 - 44) / TRACKS.length)));
   const win = openWindow(g, 'Jukebox', 300, 44 + TRACKS.length * ROW);
   const draw = () => {
     win.body.removeChildren().forEach((c) => c.destroy({ children: true }));
@@ -26,9 +27,9 @@ export function openJukebox(g: Game): void {
         draw();
       });
       row.addChild(box(288, ROW - 1, playing ? 0x3a3020 : i % 2 ? 0x2a2630 : 0x24212a, playing ? PAL.gold : undefined));
-      const title = text(`${playing ? '▶ ' : ''}${t.title}`, 5, 3, { color: playing ? PAL.gold : PAL.bone, width: 150, maxLines: 1 });
+      const title = text(`${playing ? '▶ ' : ''}${t.title}`, 5, Math.max(1, ROW - 12), { color: playing ? PAL.gold : PAL.bone, width: 150, maxLines: 1 });
       row.addChild(title);
-      row.addChild(text(t.artist, 160, 5, { small: true, color: PAL.ash, width: 124, maxLines: 1 }));
+      row.addChild(text(t.artist, 160, Math.max(3, ROW - 10), { small: true, color: PAL.ash, width: 124, maxLines: 1 }));
       row.position.set(0, 12 + i * ROW);
       win.body.addChild(row);
     });

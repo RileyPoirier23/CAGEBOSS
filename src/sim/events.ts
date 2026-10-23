@@ -2,6 +2,7 @@
  * Fight events: scheduling, automatic matchmaking, running bouts, applying
  * results (records, belts, damage, wounds, suspensions) and event money.
  */
+import { bossSimOpts } from './cast';
 import type { FightOpts } from './fight';
 import { feudResult, getFeud } from './feuds';
 import type { Bout, FightEvent, GameState, Fighter, EventFinancials } from '../core/types';
@@ -341,6 +342,8 @@ export function runBout(s: GameState, ev: FightEvent, bout: Bout, rng: Rng, keep
       ticker: content().templates.ticker,
       keepTicker,
       homeSide: homeSide as 0 | 1 | -1,
+      // the story's boss fights have their own rules (and one very bad referee)
+      ...bossSimOpts(s, bout),
       ...extra,
     },
     rng,

@@ -20,7 +20,7 @@ import type { Input, PadButton } from './input';
 // ------------------------------------------------------------ action table
 
 export type FightButton =
-  | 'lead' | 'rear' | 'kick' | 'block' | 'grab' | 'feint' | 'body'
+  | 'lead' | 'rear' | 'kick' | 'block' | 'grab' | 'feint' | 'body' | 'taunt'
   | 'evadeUp' | 'evadeDown' | 'evadeAway' | 'evadeToward'
   | 'getupLeft' | 'getupRight';
 
@@ -48,6 +48,8 @@ export const DEFAULT_FIGHT_BINDINGS: Record<FightButton, FightBinding> = {
   block: { pad: ['LB'], keys: ['ShiftLeft', 'KeyI'], touch: ['BLOCK'] },
   grab: { pad: ['B'], keys: ['Space'], touch: ['GRAB'] },
   feint: { pad: ['Y'], keys: ['KeyU'] },
+  // everybody has his own: the bird, come-on-then, hands down, chest pound...
+  taunt: { pad: ['X'], keys: ['KeyT'] },
   // hold to send strikes to the body (the stick also works: down + punch)
   body: { pad: ['LT'], keys: ['KeyO'], touch: ['BODY'] },
   // right-stick flicks are read from the stick; these are the digital equivalents
@@ -66,6 +68,7 @@ export const FIGHT_ACTIONS: Record<FightButton, FightActionInfo> = {
   block: { label: 'Block / parry', help: 'Hold to block (head high; body and legs leak through), tap just before a punch lands to parry' },
   grab: { label: 'Grab', help: 'Hold = clinch (toward = shoot). Tap = sprawl. Clinch: up plum, toward underhooks, down trip, away break. Ground: + stick = submission' },
   feint: { label: 'Feint', help: 'Fake a strike: a good one makes him flinch and opens a counter' },
+  taunt: { label: 'Taunt', help: 'Your own taunt (some flip him off). Gets a breath back and gets in his head: he comes forward reckless. Hands are down while you do it' },
   body: { label: 'Body modifier', help: 'Hold with a punch to go to the body (jab, straight, hook). Same as stick down' },
   evadeUp: { label: 'Slip', help: 'Right stick flick up (or arrow)' },
   evadeDown: { label: 'Roll / duck', help: 'Right stick flick down' },
@@ -121,6 +124,7 @@ export type FightIntent =
   | { type: 'shoot' }
   | { type: 'sprawl' }
   | { type: 'feint' }
+  | { type: 'taunt' }
   | { type: 'ground'; move: 'advance' | 'reverse' | 'standup' | 'base' }
   | { type: 'subAttempt'; dir: Dir }
   | { type: 'subTurn'; dir: 1 | -1; turns: number; role: 'attack' | 'defend' }
@@ -193,7 +197,7 @@ export function weightFor(hold: number): Weight {
 export type KeyboardShare = 'full' | 'left' | 'right' | 'none';
 /** Player 2's half of a shared keyboard: arrows to move, the keys around Enter to fight. */
 export const P2_KEYS: Partial<Record<FightButton, string[]>> = {
-  lead: ['Comma'], rear: ['Period'], kick: ['Slash'], block: ['ShiftRight'], grab: ['Enter'], feint: ['Quote'], body: ['Semicolon'],
+  lead: ['Comma'], rear: ['Period'], kick: ['Slash'], block: ['ShiftRight'], grab: ['Enter'], feint: ['Quote'], body: ['Semicolon'], taunt: ['Backslash'],
   getupLeft: ['BracketLeft'], getupRight: ['BracketRight'],
 };
 
@@ -404,6 +408,7 @@ export class FightInput {
     }
 
     if (down('feint')) out.push({ type: 'feint' });
+    if (down('taunt')) out.push({ type: 'taunt' });
 
     if (ctx.grounded) {
       if (down('kick')) {

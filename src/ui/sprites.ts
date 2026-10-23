@@ -133,6 +133,21 @@ export const NAMED_NPCS: Record<string, Omit<PortraitInput, 'id'>> = {
     look: { head: 0, skin: 4, hair: 1, hairColor: 0, beard: 2, brows: 1, eyes: 2, nose: 1, ears: 0, scar: 0, tattoo: 0, build: 1, glasses: 2 },
     gender: 'M', age: 33, variant: 'reporter', attire: 'jersey', accent: 0x18181c,
   },
+  // Xavier "Allstar" Cockett: cowboy hat, big beard, a pearl-snap shirt (played by Xavier Hockett)
+  xavier_cockett: {
+    look: { head: 1, skin: 1, hair: 2, hairColor: 1, beard: 3, brows: 1, eyes: 1, nose: 1, ears: 0, scar: 0, tattoo: 0, build: 1, hat: 1 },
+    gender: 'M', age: 29, variant: 'reporter', attire: 'shirt',
+  },
+  // "Dirty" Daniel Stinkovich: curly mop, a bit pudgy, glasses on the job, referee black (played by Daniel Reed)
+  dirty_daniel: {
+    look: { head: 0, skin: 0, hair: 8, hairColor: 1, beard: 0, brows: 0, eyes: 2, nose: 1, ears: 0, scar: 0, tattoo: 0, build: 2, glasses: 2 },
+    gender: 'M', age: 31, variant: 'reporter', attire: 'jersey', accent: 0x141418,
+  },
+  // Lenny Pratt: Zac's manager. Mustard suit, slick hair, a moustache he thinks is charming
+  lenny_pratt: {
+    look: { head: 2, skin: 1, hair: 3, hairColor: 0, beard: 4, brows: 2, eyes: 2, nose: 1, ears: 0, scar: 0, tattoo: 0, build: 2 },
+    gender: 'M', age: 52, variant: 'reporter', attire: 'suit', accent: 0x8a6a1a,
+  },
   // Mateo: twelve, a hoodie three sizes too big, a fighter's stare
   mateo: {
     look: { head: 0, skin: 3, hair: 2, hairColor: 0, beard: 0, brows: 2, eyes: 0, nose: 0, ears: 0, scar: 0, tattoo: 0, build: 0 },
