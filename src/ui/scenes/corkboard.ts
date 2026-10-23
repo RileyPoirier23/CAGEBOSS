@@ -24,6 +24,7 @@ import { money, record } from '../../core/format';
 import { content } from '../../core/content';
 import { Rng } from '../../core/rng';
 import { sfx } from '../../audio/sfx';
+import { maybeLesson } from '../guide';
 
 export function openCorkboard(g: Game, onClose: () => void): void {
   const s = g.state!;
@@ -236,6 +237,8 @@ export function openCorkboard(g: Game, onClose: () => void): void {
     draw2();
   };
   draw();
+  // the first time: the BOOKING A CARD lesson, over the corkboard
+  maybeLesson(g, 'cards', { over: true });
 }
 
 export { shade };

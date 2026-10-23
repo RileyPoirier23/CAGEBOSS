@@ -4,9 +4,8 @@ name: Godot build
 # the TypeScript (tools/gdport), checks the rules against the TypeScript game (golden tests),
 # then exports Windows, Linux, macOS and Android builds as downloadable artifacts
 # (Actions tab -> the run -> Artifacts). The Electron desktop builds are desktop.yml.
-# The Android APK also goes onto the GitHub release for package.json's version (the website's
-# Android button downloads it from the latest release): the first time that version has a
-# release, or whenever this is run by hand with "publish" ticked.
+# The Android APK players download (the GitHub release) is the Capacitor build now
+# (mobile.yml): this Godot one froze for seconds on END WEEK on phones.
 #
 # Android signing: with the ANDROID_KEYSTORE_BASE64 and ANDROID_KEYSTORE_PASSWORD secrets set
 # (alias "cageboss"), the APK is release-signed with that key, so every update installs over the
@@ -14,11 +13,6 @@ name: Godot build
 # uninstalling the old one first).
 on:
   workflow_dispatch:
-    inputs:
-      publish:
-        description: Put the Android APK on the latest release even if it already has one
-        type: boolean
-        default: false
   push:
     branches: ['main', 'master', 'claude/**']
     paths: ['src/**', 'data/**', 'public/**', 'port/godot/**', 'tools/gdport/**', 'tools/golden/**', '.github/workflows/godot.yml']
@@ -129,24 +123,3 @@ jobs:
           name: cageboss-godot-android
           path: port/godot/build/android
           if-no-files-found: error
-      - name: Android APK onto the release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          FORCE: ${{ inputs.publish }}
-        run: |
-          v="v$(node -p "require('./package.json').version")"
-          apk=port/godot/build/android/CAGE-BOSS-Android.apk
-          # a version bump: desktop.yml is making the release right now, so wait for it (or for
-          # that run to end without one)
-          for i in $(seq 1 60); do
-            if gh release view "$v" >/dev/null 2>&1; then break; fi
-            st=$(gh run list --workflow desktop.yml --commit "$GITHUB_SHA" --json status -q '.[0].status' 2>/dev/null || true)
-            if [ "$st" = completed ] && ! gh release view "$v" >/dev/null 2>&1; then echo "No release $v for this commit"; exit 0; fi
-            [ -z "$st" ] && [ "$i" -gt 4 ] && { echo "No release $v and no desktop build for this commit"; exit 0; }
-            sleep 30
-          done
-          gh release view "$v" >/dev/null 2>&1 || { echo "Release $v didn't appear"; exit 0; }
-          has=$(gh release view "$v" --json assets -q 'any(.assets[]; .name == "CAGE-BOSS-Android.apk")')
-          if [ "$has" = true ] && [ "$FORCE" != true ]; then echo "$v already has an APK"; exit 0; fi
-          gh release upload "$v" "$apk" --clobber
-          echo "Uploaded CAGE-BOSS-Android.apk to $v"

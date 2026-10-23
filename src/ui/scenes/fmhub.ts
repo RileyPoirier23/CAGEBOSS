@@ -7,9 +7,11 @@ import { Container, Graphics } from 'pixi.js';
 import { Scene } from '../app';
 import type { Skills } from '../../core/types';
 import { PAL } from '../../art/palette';
-import { W, H, text, button, box, ScrollBox } from '../kit';
+import { W, H, SW, OX, text, button, box, ScrollBox } from '../kit';
+import { measure } from '../text';
 import { openWindow, confirm, alertBox, selector } from '../widgets';
 import { openHelp } from '../help';
+import { openTutorials, maybeLesson, openLesson, lessonDue } from '../guide';
 import { openSettings } from './settings';
 import { showMoment } from '../moments';
 import { divisionMoves, changeDivision, gym, openGym, upgradeGym, GYM_COST, GYM_UPGRADE } from '../../sim/legacy';
@@ -24,6 +26,7 @@ import { money, record } from '../../core/format';
 import { fmtDate } from '../../core/time';
 import { Rng } from '../../core/rng';
 import { sfx } from '../../audio/sfx';
+import { isTouchDevice } from '../../core/platform';
 import { fullName, overall } from '../../sim/fighters';
 import { divisionName, DIVISION_ORDER } from '../../sim/divisions';
 import { rankLabel, rankOf, undisputed } from '../../sim/rankings';
@@ -96,11 +99,16 @@ export class FMHubScene extends Scene {
       return;
     }
     const ev = st.pending[0];
-    if (!ev) return checkAchievements(this.g);
+    if (!ev) {
+      // the cut opens two weeks out: the MAKING WEIGHT lesson (once)
+      if (cutWindow(s).open) maybeLesson(this.g, 'fm_weight');
+      return checkAchievements(this.g);
+    }
     const frame = new Container();
     const wrap = this.g.modal(frame, { dim: 0.7 });
     const bw = 320;
-    const many = ev.choices.length > 3;
+    // side by side only if every label fits its third (or half) of the box
+    const many = ev.choices.length > 3 || ev.choices.some((c) => measure(c.label, true) > (bw - 16) / ev.choices.length - 12);
     const bh = many ? 74 + ev.choices.length * 17 : 120;
     const bx = (W - bw) / 2;
     const by = (H - bh) / 2;
@@ -128,11 +136,12 @@ export class FMHubScene extends Scene {
   }
 
   build(): void {
+    if (isTouchDevice()) return this.buildPhone();
     const s = this.g.state!;
     const st = fm(s);
     const f = me(s);
     const r = this.root;
-    const bg = new Graphics().rect(0, 0, W, H).fill(0x17141c);
+    const bg = new Graphics().rect(-OX, 0, SW, H).fill(0x17141c);
     bg.rect(0, 0, W, 18).fill(0x0f0d13);
     r.addChild(bg);
     r.addChild(text(`WEEK ${s.week + 1}  •  ${fmtDate(s.week)}`, 6, 5, { color: PAL.gold }));
@@ -141,9 +150,256 @@ export class FMHubScene extends Scene {
     if (susp) r.addChild(text(`SUSPENDED until week ${st.suspendedUntil + 1}`, 160, 5, { small: true, color: PAL.blood }));
 
     // ------------------------------------------------ left: you
-    const L = new Container();
+    const L = this.youPanel();
     L.position.set(6, 22);
     r.addChild(L);
+
+    // ------------------------------------------------ middle: this week
+    const M = new Container();
+    M.position.set(158, 22);
+    r.addChild(M);
+    M.addChild(box(160, 226, PAL.night, PAL.slate));
+    M.addChild(text('THIS WEEK', 6, 4, { color: PAL.gold }));
+    for (let i = 0; i < 3; i++) M.addChild(new Graphics().rect(110 + i * 14, 5, 10, 8).fill(i < st.ap ? PAL.gold : 0x2a2630));
+    const act = (label: string, yy: number, fn: () => void, opts: { disabled?: boolean; fill?: number; tip?: string } = {}) =>
+      M.addChild(button(label, 6, yy, 148, 15, fn, { small: true, fill: opts.fill ?? PAL.steel, disabled: opts.disabled || st.ap <= 0, tooltip: opts.tip }));
+    const run = this.runAction;
+    act('TRAIN…', 17, () => this.trainMenu(), { tip: 'Pick a skill to drill. Peak condition = bigger gains' });
+    act('SPAR…', 32, () => this.sparMenu(run), { tip: 'Big gains, real risk' });
+    const cw = cutWindow(s);
+    act(cw.open ? 'CUT WEIGHT…' : 'CUT WEIGHT (FINAL 2 WKS)', 47, () => this.cutMenu(), { fill: cw.open ? PAL.ember : PAL.shadow, tip: cw.open ? 'Roadwork, sauna or a strict diet' : 'The dedicated cut opens two weeks before the fight' });
+    act('WORK A SHIFT', 62, () => run('work'), { tip: 'Money, but it drains you' });
+    act('REST & RECOVER', 77, () => run('rest'));
+    act('GO OUT TONIGHT', 92, () => run('party'), { fill: PAL.plum, tip: 'Morale up. What could go wrong?' });
+    act('BLEETER / CALLOUTS', 107, () => this.mediaMenu(), { fill: PAL.sky });
+    // free actions
+    const free = (label: string, yy: number, fn: () => void, fill: number = PAL.shadow) => M.addChild(button(label, 6, yy, 148, 14, fn, { small: true, fill }));
+    free(`PAPERWORK${st.inbox.length ? ` (${st.inbox.length})` : ''}`, 126, () => this.paperwork(), st.inbox.length ? PAL.ember : PAL.shadow);
+    free('CONDITION & CLINIC', 141, () => this.conditionMenu());
+    free('STAFF', 156, () => this.staffMenu());
+    free(`${stage(s).short} ROSTER & RANKINGS`, 171, () => this.rankingsMenu());
+    if (st.undergroundOpen) free('THE UNDERGROUND', 186, () => this.undergroundMenu(), 0x1d3a22);
+    if ((st.sparPoints ?? 0) > 0) M.addChild(button(`SPEND ${st.sparPoints} SPARRING POINTS`, 6, 186 + (st.undergroundOpen ? 15 : 0), 148, 14, () => this.sparAllocate(), { small: true, fill: PAL.gold }));
+    const extraRows = (st.undergroundOpen ? 1 : 0) + ((st.sparPoints ?? 0) > 0 ? 1 : 0);
+    if (this.msg) M.addChild(text(this.msg, 6, 187 + extraRows * 15, { small: true, width: 148, color: PAL.bone, maxLines: extraRows >= 2 ? 1 : extraRows ? 2 : 3 }));
+
+    // ------------------------------------------------ right: fights & feed
+    const R = new Container();
+    R.position.set(324, 22);
+    r.addChild(R);
+    R.addChild(box(150, 106, PAL.night, PAL.slate));
+    if (st.fight) {
+      const o = st.fight;
+      const opp = s.fighters[o.opp];
+      R.addChild(text(o.title || o.tierTitle ? 'TITLE FIGHT' : 'NEXT FIGHT', 6, 4, { color: o.title || o.tierTitle ? PAL.gold : PAL.blood }));
+      const op = fighterPortrait(opp, 32);
+      op.position.set(6, 18);
+      R.addChild(op);
+      R.addChild(text(fullName(opp), 42, 18, { small: true, width: 104, color: PAL.bone, maxLines: 2 }));
+      R.addChild(text(`${record(opp.record)}  ${this.rankTag(opp.id)}`, 42, 36, { small: true, color: PAL.ash }));
+      const wk = o.week - s.week;
+      R.addChild(text(`${wk <= 0 ? 'FIGHT WEEK!' : `In ${wk} week${wk > 1 ? 's' : ''}`}  •  ${SLOT_NAME(cardSlot(s), st.tier === 'of')}`, 6, 56, { small: true, color: wk <= 0 ? PAL.gold : PAL.bone }));
+      R.addChild(text(`${money(o.purse)} + ${money(o.win)} win  •  ${o.rounds} rds`, 6, 66, { small: true, color: PAL.ash }));
+      const odds = Math.round(100 / (1 + Math.exp(-(overall(fightReadySkills(s)) - overall(opp.skills)) / 6)));
+      R.addChild(text(`Your odds: about ${odds}%`, 6, 76, { small: true, color: odds >= 50 ? PAL.moss : PAL.ember }));
+    } else if (st.offers.length) {
+      R.addChild(text('FIGHT OFFERS', 6, 4, { color: PAL.gold }));
+      st.offers.slice(0, 3).forEach((o, i) => {
+        const opp = s.fighters[o.opp];
+        const yy = 16 + i * 30;
+        R.addChild(text(`${o.title || o.tierTitle ? 'TITLE: ' : ''}${opp.last} ${record(opp.record)} ${this.rankTag(opp.id)}`, 6, yy, { small: true, width: 102, color: o.title || o.tierTitle ? PAL.gold : PAL.bone, maxLines: 1 }));
+        R.addChild(text(`${money(o.purse)}+${money(o.win)} • wk ${o.week + 1}`, 6, yy + 9, { small: true, color: PAL.ash }));
+        R.addChild(text(o.why, 6, yy + 18, { small: true, color: PAL.ash, width: 102, maxLines: 1 }));
+        R.addChild(button('SIGN', 110, yy + 2, 34, 14, () => { acceptOffer(s, i); sfx('cash'); this.refresh(); this.g.autosave(); }, { small: true, fill: PAL.moss }));
+      });
+    } else {
+      R.addChild(text('NO FIGHT BOOKED', 6, 4, { color: PAL.ash }));
+      R.addChild(text(susp ? 'You are suspended. Train, rest, wait.' : 'Your phone is quiet. Win the internet, train, and offers will come. A manager helps.', 6, 18, { small: true, width: 138, color: PAL.ash, maxLines: 5 }));
+    }
+    R.addChild(box(150, 116, PAL.night, PAL.slate)).position.set(0, 110);
+    R.addChild(text('BLEETER', 6, 114, { color: PAL.sky }));
+    const feed = new ScrollBox(140, 98);
+    feed.position.set(6, 126);
+    let fy = 0;
+    for (const p of st.feed.slice(-8).reverse()) {
+      const t1 = text(p.handle, 0, fy, { small: true, color: PAL.sky });
+      const t2 = text(p.text, 0, fy + 9, { small: true, width: 136, color: PAL.bone, maxLines: 3 });
+      feed.content.addChild(t1);
+      feed.content.addChild(t2);
+      fy += 13 + t2.height;
+    }
+    R.addChild(feed);
+    feed.refresh();
+
+    // ------------------------------------------------ bottom bar
+    if (fightThisWeek(s)) r.addChild(button('FIGHT WEEK: WEIGH-IN →', W - 170, H - 19, 164, 16, () => this.weighIn(), { fill: PAL.blood }));
+    else r.addChild(button('END WEEK →', W - 110, H - 19, 104, 16, () => this.endTheWeek(), { fill: PAL.blood }));
+    r.addChild(button('MENU', 6, H - 19, 50, 16, () => this.menu(), { small: true }));
+    if (st.legacy) r.addChild(button('LEGACY…', 60, H - 19, 60, 16, () => this.legacyMenu(), { small: true, fill: PAL.plum }));
+    r.addChild(text(`Staff ${money(weeklyStaffCost(s))}/wk`, st.legacy ? 126 : 62, H - 14, { small: true, color: PAL.ash }));
+  }
+
+  /**
+   * Phones: the same week laid out for thumbs on the full (wider) screen. Your card on the left;
+   * next fight / offers in a strip; this week's actions as a grid of big buttons; END WEEK big
+   * in the corner. The offers list and the Bleeter feed open in their own windows.
+   */
+  private buildPhone(): void {
+    const s = this.g.state!;
+    const st = fm(s);
+    const r = this.root;
+    r.x = -OX;
+    const FW = SW;
+    const bg = new Graphics().rect(0, 0, FW, H).fill(0x17141c);
+    bg.rect(0, 0, FW, 18).fill(0x0f0d13);
+    r.addChild(bg);
+    r.addChild(text(`WEEK ${s.week + 1}  •  ${fmtDate(s.week)}`, 6, 5, { color: PAL.gold }));
+    r.addChild(text(`CASH ${money(st.money)}`, FW - 126, 5, { color: st.money < 0 ? PAL.blood : PAL.moss, width: 120, align: 'right' }));
+    const susp = s.week < st.suspendedUntil;
+    if (susp) r.addChild(text(`SUSPENDED until week ${st.suspendedUntil + 1}`, 0, 6, { small: true, color: PAL.blood, width: FW, align: 'center' }));
+
+    const L = this.youPanel();
+    L.position.set(4, 22);
+    r.addChild(L);
+
+    const x0 = 156;
+    const rw = FW - x0 - 4;
+    // ---- the fight strip
+    r.addChild(box(rw, 38, PAL.night, PAL.slate)).position.set(x0, 22);
+    if (st.fight) {
+      const o = st.fight;
+      const opp = s.fighters[o.opp];
+      const op = fighterPortrait(opp, 32);
+      op.position.set(x0 + 3, 25);
+      r.addChild(op);
+      const wk = o.week - s.week;
+      r.addChild(text(`${o.title || o.tierTitle ? 'TITLE FIGHT' : 'NEXT FIGHT'}: ${fullName(opp).toUpperCase()}  ${record(opp.record)}`, x0 + 40, 26, { color: o.title || o.tierTitle ? PAL.gold : PAL.blood, width: rw - 44, maxLines: 1 }));
+      const odds = Math.round(100 / (1 + Math.exp(-(overall(fightReadySkills(s)) - overall(opp.skills)) / 6)));
+      r.addChild(text(`${wk <= 0 ? 'FIGHT WEEK!' : `In ${wk} week${wk > 1 ? 's' : ''}`}  •  ${money(o.purse)} + ${money(o.win)} win  •  ${o.rounds} rds`, x0 + 40, 37, { small: true, color: wk <= 0 ? PAL.gold : PAL.bone, width: rw - 44, maxLines: 1 }));
+      r.addChild(text(`Your odds: about ${odds}%`, x0 + 40, 47, { small: true, color: odds >= 50 ? PAL.moss : PAL.ember }));
+    } else if (st.offers.length) {
+      r.addChild(text(`FIGHT OFFERS: ${st.offers.length}`, x0 + 6, 27, { color: PAL.gold }));
+      const best = st.offers[0];
+      const bo = s.fighters[best.opp];
+      r.addChild(text(`${bo.last} ${record(bo.record)}  •  ${money(best.purse)}+${money(best.win)}`, x0 + 6, 41, { small: true, color: PAL.ash, width: rw - 130, maxLines: 1 }));
+      r.addChild(button('SEE OFFERS >', x0 + rw - 112, 27, 106, 24, () => this.offersWindow(), { fill: PAL.moss, border: PAL.gold }));
+    } else {
+      r.addChild(text('NO FIGHT BOOKED', x0 + 6, 27, { color: PAL.ash }));
+      r.addChild(text(susp ? 'You are suspended. Train, rest, wait.' : 'Your phone is quiet. Win the internet, train, and offers will come.', x0 + 6, 39, { small: true, width: rw - 12, color: PAL.ash, maxLines: 2 }));
+    }
+
+    // ---- this week: a grid of big buttons
+    r.addChild(text('THIS WEEK', x0 + 2, 65, { color: PAL.gold }));
+    r.addChild(text('ACTIONS', x0 + rw - 82, 66, { small: true, color: PAL.ash }));
+    for (let i = 0; i < 3; i++) r.addChild(new Graphics().rect(x0 + rw - 40 + i * 14, 65, 10, 8).fill(i < st.ap ? PAL.gold : 0x2a2630));
+    const noAp = st.ap <= 0;
+    const items: { label: string; fn: () => void; fill: number; ap?: boolean }[] = [
+      { label: 'TRAIN', fn: () => this.trainMenu(), fill: PAL.steel, ap: true },
+      { label: 'SPAR', fn: () => this.sparMenu(this.runAction), fill: PAL.steel, ap: true },
+      { label: cutWindow(s).open ? 'CUT WEIGHT' : 'CUT (LAST 2 WKS)', fn: () => this.cutMenu(), fill: cutWindow(s).open ? PAL.ember : PAL.shadow, ap: true },
+      { label: 'WORK A SHIFT', fn: () => this.runAction('work'), fill: PAL.steel, ap: true },
+      { label: 'REST', fn: () => this.runAction('rest'), fill: PAL.steel, ap: true },
+      { label: 'GO OUT', fn: () => this.runAction('party'), fill: PAL.plum, ap: true },
+      { label: 'BLEETER', fn: () => this.mediaMenu(), fill: PAL.sky, ap: true },
+      { label: `PAPERWORK${st.inbox.length ? ` (${st.inbox.length})` : ''}`, fn: () => this.paperwork(), fill: st.inbox.length ? PAL.ember : PAL.shadow },
+      { label: 'CLINIC', fn: () => this.conditionMenu(), fill: PAL.shadow },
+      { label: 'STAFF', fn: () => this.staffMenu(), fill: PAL.shadow },
+      { label: 'RANKINGS', fn: () => this.rankingsMenu(), fill: PAL.shadow },
+      { label: 'THE FEED', fn: () => this.feedWindow(), fill: PAL.shadow },
+      ...(st.undergroundOpen ? [{ label: 'UNDERGROUND', fn: () => this.undergroundMenu(), fill: 0x1d3a22 }] : []),
+      ...((st.sparPoints ?? 0) > 0 ? [{ label: `SPEND ${st.sparPoints} SPAR PTS`, fn: () => this.sparAllocate(), fill: PAL.gold }] : []),
+    ];
+    const cols = rw >= 360 ? 3 : 2;
+    const rows = Math.ceil(items.length / cols);
+    const gy0 = 76;
+    const gh = 212 - gy0; // the grid's height
+    const bh = Math.min(26, Math.floor(gh / rows) - 3);
+    const cw = Math.floor((rw - (cols - 1) * 4) / cols);
+    items.forEach((it, i) => {
+      const cx = x0 + (i % cols) * (cw + 4);
+      const cy = gy0 + Math.floor(i / cols) * (bh + 3);
+      r.addChild(button(it.label, cx, cy, cw, bh, it.fn, { fill: it.fill, disabled: !!it.ap && noAp }));
+    });
+    // what just happened
+    if (this.msg) {
+      r.addChild(box(rw, 32, 0x0f0d13, PAL.shadow)).position.set(x0, 214);
+      r.addChild(text(this.msg, x0 + 5, 218, { small: true, width: rw - 10, color: PAL.bone, maxLines: 3 }));
+    }
+
+    // ---- bottom bar
+    const by = H - 21;
+    if (fightThisWeek(s)) r.addChild(button('FIGHT WEEK: WEIGH-IN >', FW - 180, by, 176, 19, () => this.weighIn(), { fill: PAL.blood, border: PAL.gold }));
+    else r.addChild(button('END WEEK >', FW - 130, by, 126, 19, () => this.endTheWeek(), { fill: PAL.blood, border: PAL.gold }));
+    r.addChild(button('MENU', 4, by, 60, 19, () => this.menu()));
+    if (st.legacy) r.addChild(button('LEGACY', 68, by, 70, 19, () => this.legacyMenu(), { fill: PAL.plum }));
+    r.addChild(text(`Staff ${money(weeklyStaffCost(s))}/wk`, st.legacy ? 144 : 70, by + 7, { small: true, color: PAL.ash }));
+  }
+
+  /** Phones: the offers that sit in the right-hand panel on a desktop. */
+  private offersWindow(): void {
+    const s = this.g.state!;
+    const st = fm(s);
+    const n = Math.min(4, st.offers.length);
+    const win = openWindow(this.g, 'Fight offers', 300, 18 + n * 40);
+    st.offers.slice(0, n).forEach((o, i) => {
+      const opp = s.fighters[o.opp];
+      const yy = 4 + i * 40;
+      const op = fighterPortrait(opp, 32);
+      op.position.set(6, yy);
+      win.body.addChild(op);
+      win.body.addChild(text(`${o.title || o.tierTitle ? 'TITLE: ' : ''}${fullName(opp)} ${record(opp.record)} ${this.rankTag(opp.id)}`, 44, yy, { small: true, width: 190, color: o.title || o.tierTitle ? PAL.gold : PAL.bone, maxLines: 1 }));
+      win.body.addChild(text(`${money(o.purse)} + ${money(o.win)} win  •  week ${o.week + 1}`, 44, yy + 10, { small: true, color: PAL.ash }));
+      win.body.addChild(text(o.why, 44, yy + 20, { small: true, color: PAL.ash, width: 190, maxLines: 1 }));
+      win.body.addChild(button('SIGN', 240, yy + 4, 52, 22, () => {
+        win.close();
+        acceptOffer(s, i);
+        sfx('cash');
+        this.refresh();
+        this.g.autosave();
+      }, { fill: PAL.moss }));
+    });
+  }
+
+  /** Phones: the Bleeter feed from the desktop's right-hand panel. */
+  /** Where someone stands: the CBFC rankings, or your league's ladder below it. */
+  private rankTag(id: string): string {
+    const s = this.g.state!;
+    const st = fm(s);
+    if (st.tier === 'of') return rankLabel(s, id);
+    const i = st.ladder.indexOf(id);
+    return i < 0 ? 'NR' : i === 0 ? 'C' : '#' + i;
+  }
+
+  private feedWindow(): void {
+    const st = fm(this.g.state!);
+    const posts = new Container();
+    let fy = 0;
+    for (const p of st.feed.slice(-12).reverse()) {
+      const t1 = text(p.handle, 0, fy, { small: true, color: PAL.sky });
+      const t2 = text(p.text, 0, fy + 9, { small: true, width: 276, color: PAL.bone, maxLines: 4 });
+      posts.addChild(t1, t2);
+      fy += 13 + t2.height;
+    }
+    if (!st.feed.length) {
+      posts.addChild(text('Nothing yet. Post something.', 0, 0, { small: true, color: PAL.ash }));
+      fy = 12;
+    }
+    // the window fits the feed (a quiet week is a short scroll)
+    const h = Math.max(40, Math.min(160, fy));
+    const win = openWindow(this.g, 'Bleeter: your feed', 300, h + 20);
+    const feed = new ScrollBox(288, h);
+    feed.position.set(6, 2);
+    feed.content.addChild(posts);
+    win.body.addChild(feed);
+    feed.refresh();
+  }
+
+  /** Your fighter and vitals: the left-hand card (146x226), shared by the desktop and phone layouts. */
+  private youPanel(): Container {
+    const s = this.g.state!;
+    const st = fm(s);
+    const f = me(s);
+    const L = new Container();
     L.addChild(box(146, 226, PAL.night, PAL.slate));
     const por = fighterPortrait(f, 64);
     por.position.set(4, 4);
@@ -181,99 +437,22 @@ export class FMHubScene extends Scene {
     if (st.ped.on) L.addChild(text('ON A CYCLE', 4, y + 2, { small: true, color: PAL.blood }));
     L.addChild(button(`CAREER FILE${st.rap?.length ? ` (${st.rap.length} FLAG${st.rap.length > 1 ? 'S' : ''})` : ''}`, 4, 212, 138, 11, () => this.careerFile(), { small: true, fill: st.rap?.length ? 0x3a1a1a : PAL.shadow }));
 
-    // ------------------------------------------------ middle: this week
-    const M = new Container();
-    M.position.set(158, 22);
-    r.addChild(M);
-    M.addChild(box(160, 226, PAL.night, PAL.slate));
-    M.addChild(text('THIS WEEK', 6, 4, { color: PAL.gold }));
-    for (let i = 0; i < 3; i++) M.addChild(new Graphics().rect(110 + i * 14, 5, 10, 8).fill(i < st.ap ? PAL.gold : 0x2a2630));
-    const act = (label: string, yy: number, fn: () => void, opts: { disabled?: boolean; fill?: number; tip?: string } = {}) =>
-      M.addChild(button(label, 6, yy, 148, 15, fn, { small: true, fill: opts.fill ?? PAL.steel, disabled: opts.disabled || st.ap <= 0, tooltip: opts.tip }));
-    const run = (a: ActionId, focus: keyof Skills | 'cheap' | 'pro' | 'partner' | null = null) => {
-      const r2 = this.rng();
-      this.msg = doAction(s, a, focus, r2);
-      this.save(r2);
-      sfx('click');
-      this.refresh();
-      // sparring earns points: spend them now
-      if (a === 'spar' && (st.sparPoints ?? 0) > 0) setTimeout(() => this.sparAllocate(), 120);
-      else setTimeout(() => this.popups(), 100);
-    };
-    act('TRAIN…', 17, () => this.trainMenu(), { tip: 'Pick a skill to drill. Peak condition = bigger gains' });
-    act('SPAR…', 32, () => this.sparMenu(run), { tip: 'Big gains, real risk' });
-    const cw = cutWindow(s);
-    act(cw.open ? 'CUT WEIGHT…' : 'CUT WEIGHT (FINAL 2 WKS)', 47, () => this.cutMenu(), { fill: cw.open ? PAL.ember : PAL.shadow, tip: cw.open ? 'Roadwork, sauna or a strict diet' : 'The dedicated cut opens two weeks before the fight' });
-    act('WORK A SHIFT', 62, () => run('work'), { tip: 'Money, but it drains you' });
-    act('REST & RECOVER', 77, () => run('rest'));
-    act('GO OUT TONIGHT', 92, () => run('party'), { fill: PAL.plum, tip: 'Morale up. What could go wrong?' });
-    act('BLEETER / CALLOUTS', 107, () => this.mediaMenu(), { fill: PAL.sky });
-    // free actions
-    const free = (label: string, yy: number, fn: () => void, fill: number = PAL.shadow) => M.addChild(button(label, 6, yy, 148, 14, fn, { small: true, fill }));
-    free(`PAPERWORK${st.inbox.length ? ` (${st.inbox.length})` : ''}`, 126, () => this.paperwork(), st.inbox.length ? PAL.ember : PAL.shadow);
-    free('CONDITION & CLINIC', 141, () => this.conditionMenu());
-    free('STAFF', 156, () => this.staffMenu());
-    free(`${stage(s).short} ROSTER & RANKINGS`, 171, () => this.rankingsMenu());
-    if (st.undergroundOpen) free('THE UNDERGROUND', 186, () => this.undergroundMenu(), 0x1d3a22);
-    if ((st.sparPoints ?? 0) > 0) M.addChild(button(`SPEND ${st.sparPoints} SPARRING POINTS`, 6, 186 + (st.undergroundOpen ? 15 : 0), 148, 14, () => this.sparAllocate(), { small: true, fill: PAL.gold }));
-    const extraRows = (st.undergroundOpen ? 1 : 0) + ((st.sparPoints ?? 0) > 0 ? 1 : 0);
-    if (this.msg) M.addChild(text(this.msg, 6, 187 + extraRows * 15, { small: true, width: 148, color: PAL.bone, maxLines: extraRows >= 2 ? 1 : extraRows ? 2 : 3 }));
-
-    // ------------------------------------------------ right: fights & feed
-    const R = new Container();
-    R.position.set(324, 22);
-    r.addChild(R);
-    R.addChild(box(150, 106, PAL.night, PAL.slate));
-    if (st.fight) {
-      const o = st.fight;
-      const opp = s.fighters[o.opp];
-      R.addChild(text(o.title || o.tierTitle ? 'TITLE FIGHT' : 'NEXT FIGHT', 6, 4, { color: o.title || o.tierTitle ? PAL.gold : PAL.blood }));
-      const op = fighterPortrait(opp, 32);
-      op.position.set(6, 18);
-      R.addChild(op);
-      R.addChild(text(fullName(opp), 42, 18, { small: true, width: 104, color: PAL.bone, maxLines: 2 }));
-      R.addChild(text(`${record(opp.record)}  ${st.tier === 'of' ? rankLabel(s, opp.id) : '#' + (st.ladder.indexOf(opp.id) + 1)}`, 42, 36, { small: true, color: PAL.ash }));
-      const wk = o.week - s.week;
-      R.addChild(text(`${wk <= 0 ? 'FIGHT WEEK!' : `In ${wk} week${wk > 1 ? 's' : ''}`}  •  ${SLOT_NAME(cardSlot(s), st.tier === 'of')}`, 6, 56, { small: true, color: wk <= 0 ? PAL.gold : PAL.bone }));
-      R.addChild(text(`${money(o.purse)} + ${money(o.win)} win  •  ${o.rounds} rds`, 6, 66, { small: true, color: PAL.ash }));
-      const odds = Math.round(100 / (1 + Math.exp(-(overall(fightReadySkills(s)) - overall(opp.skills)) / 6)));
-      R.addChild(text(`Your odds: about ${odds}%`, 6, 76, { small: true, color: odds >= 50 ? PAL.moss : PAL.ember }));
-    } else if (st.offers.length) {
-      R.addChild(text('FIGHT OFFERS', 6, 4, { color: PAL.gold }));
-      st.offers.slice(0, 3).forEach((o, i) => {
-        const opp = s.fighters[o.opp];
-        const yy = 16 + i * 30;
-        R.addChild(text(`${o.title || o.tierTitle ? 'TITLE: ' : ''}${opp.last} ${record(opp.record)} ${st.tier === 'of' ? rankLabel(s, opp.id) : '#' + (st.ladder.indexOf(opp.id) + 1)}`, 6, yy, { small: true, width: 102, color: o.title || o.tierTitle ? PAL.gold : PAL.bone, maxLines: 1 }));
-        R.addChild(text(`${money(o.purse)}+${money(o.win)} • wk ${o.week + 1}`, 6, yy + 9, { small: true, color: PAL.ash }));
-        R.addChild(text(o.why, 6, yy + 18, { small: true, color: PAL.ash, width: 102, maxLines: 1 }));
-        R.addChild(button('SIGN', 110, yy + 2, 34, 14, () => { acceptOffer(s, i); sfx('cash'); this.refresh(); this.g.autosave(); }, { small: true, fill: PAL.moss }));
-      });
-    } else {
-      R.addChild(text('NO FIGHT BOOKED', 6, 4, { color: PAL.ash }));
-      R.addChild(text(susp ? 'You are suspended. Train, rest, wait.' : 'Your phone is quiet. Win the internet, train, and offers will come. A manager helps.', 6, 18, { small: true, width: 138, color: PAL.ash, maxLines: 5 }));
-    }
-    R.addChild(box(150, 116, PAL.night, PAL.slate)).position.set(0, 110);
-    R.addChild(text('BLEETER', 6, 114, { color: PAL.sky }));
-    const feed = new ScrollBox(140, 98);
-    feed.position.set(6, 126);
-    let fy = 0;
-    for (const p of st.feed.slice(-8).reverse()) {
-      const t1 = text(p.handle, 0, fy, { small: true, color: PAL.sky });
-      const t2 = text(p.text, 0, fy + 9, { small: true, width: 136, color: PAL.bone, maxLines: 3 });
-      feed.content.addChild(t1);
-      feed.content.addChild(t2);
-      fy += 13 + t2.height;
-    }
-    R.addChild(feed);
-    feed.refresh();
-
-    // ------------------------------------------------ bottom bar
-    if (fightThisWeek(s)) r.addChild(button('FIGHT WEEK: WEIGH-IN →', W - 170, H - 19, 164, 16, () => this.weighIn(), { fill: PAL.blood }));
-    else r.addChild(button('END WEEK →', W - 110, H - 19, 104, 16, () => this.endTheWeek(), { fill: PAL.blood }));
-    r.addChild(button('MENU', 6, H - 19, 50, 16, () => this.menu(), { small: true }));
-    if (st.legacy) r.addChild(button('LEGACY…', 60, H - 19, 60, 16, () => this.legacyMenu(), { small: true, fill: PAL.plum }));
-    r.addChild(text(`Staff ${money(weeklyStaffCost(s))}/wk`, st.legacy ? 126 : 62, H - 14, { small: true, color: PAL.ash }));
+    return L;
   }
+
+  /** Spend an action point on `a` (with an optional focus), then refresh and show what happened. */
+  private runAction = (a: ActionId, focus: keyof Skills | 'cheap' | 'pro' | 'partner' | null = null): void => {
+    const s = this.g.state!;
+    const st = fm(s);
+    const r2 = this.rng();
+    this.msg = doAction(s, a, focus, r2);
+    this.save(r2);
+    sfx('click');
+    this.refresh();
+    // sparring earns points: spend them now
+    if (a === 'spar' && (st.sparPoints ?? 0) > 0) setTimeout(() => this.sparAllocate(), 120);
+    else setTimeout(() => this.popups(), 100);
+  };
 
   // ---------------------------------------------------------------- menus
 
@@ -319,6 +498,7 @@ export class FMHubScene extends Scene {
     win.body.addChild(button(ropeMax ? 'JUMP ROPE: cardio MAX' : 'JUMP ROPE: cardio', 6, my + 10, 150, 13, () => { win.close(); openJumpRope(this.g, (sc) => after('cardio', sc)); }, { small: true, fill: PAL.moss, disabled: ropeMax || fm(s).ap <= 0 }));
     win.body.addChild(button(chopMax ? 'TYRE CHOP: power MAX' : 'TYRE CHOP: power', 162, my + 10, 150, 13, () => { win.close(); openTyreChop(this.g, (sc) => after('power', sc)); }, { small: true, fill: PAL.moss, disabled: chopMax || fm(s).ap <= 0 }));
     win.body.addChild(text(`Condition: ${cond.label} (x${cond.mult} gains). Training burns a little weight; the real cut is the last two weeks of camp.`, 6, my + 26, { small: true, width: 306, color: cond.label === 'PEAK CONDITION' ? PAL.gold : PAL.ash, maxLines: 2 }));
+    maybeLesson(this.g, 'fm_train', { over: true });
   }
 
   /** Sparring points: put them where your camp needs them. */
@@ -361,9 +541,10 @@ export class FMHubScene extends Scene {
   private cutMenu(): void {
     const s = this.g.state!;
     const st = fm(s);
-    const win = openWindow(this.g, 'Cut weight', 250, 128);
-    const lim = contractLimit(s);
     const cw = cutWindow(s);
+    // nothing to cut yet: a short note, not a tall empty window
+    const win = openWindow(this.g, 'Cut weight', 250, cw.open ? 128 : 64);
+    const lim = contractLimit(s);
     win.body.addChild(text(`You walk around ${st.walkWeight.toFixed(1)} lbs. ${lim !== weightLimit(s) ? 'Contracted' : 'Limit'} ${lim}. ${st.water > 0 ? `(${st.water.toFixed(1)} lbs is sauna water.)` : ''}`, 6, 4, { small: true, width: 238, color: PAL.bone }));
     if (!cw.open) {
       // too early: the cut is the last two weeks of camp
@@ -420,8 +601,9 @@ export class FMHubScene extends Scene {
         const yy = 4 + i * 20;
         const v = Math.round(st.body[p.id]);
         win.body.addChild(text(`${p.name}  ${v}${p.id === 'head' ? ` / ${Math.round(st.headCap)}` : ''}`, 96, yy, { small: true, color: PAL.bone }));
-        win.body.addChild(text(p.effect, 96, yy + 9, { small: true, width: 170, color: PAL.ash, maxLines: 1 }));
         const cost = clinicCost(s, p.id);
+        // the TREAT button only takes the end of the row when there's something to treat
+        win.body.addChild(text(p.effect, 96, yy + 9, { small: true, width: cost ? 170 : 226, color: PAL.ash, maxLines: 1 }));
         if (cost) win.body.addChild(button(`TREAT ${money(cost)}`, 268, yy, 54, 13, () => { this.msg = treat(s, p.id); draw(); this.refresh(); }, { small: true, fill: PAL.steel, disabled: st.money < cost }));
       });
     };
@@ -461,7 +643,7 @@ export class FMHubScene extends Scene {
     const win = openWindow(this.g, 'Bleeter', 300, 180);
     win.body.addChild(text('Call somebody out. Starts beef, builds hype, sometimes gets you the fight.', 6, 4, { small: true, width: 288, color: PAL.ash }));
     const targets = calloutTargets(s);
-    targets.forEach((t, i) => win.body.addChild(button(`@${t.last.toLowerCase()}  ${rankLabel(s, t.id)}`, 6 + (i % 2) * 146, 20 + Math.floor(i / 2) * 18, 142, 15, () => {
+    targets.forEach((t, i) => win.body.addChild(button(`@${t.last.toLowerCase()}  ${this.rankTag(t.id)}`, 6 + (i % 2) * 146, 20 + Math.floor(i / 2) * 18, 142, 15, () => {
       const r = this.rng();
       this.msg = callOut(s, t.id, r);
       this.save(r);
@@ -612,7 +794,8 @@ export class FMHubScene extends Scene {
     const win = openWindow(this.g, 'Menu', 160, 146);
     win.body.addChild(button('SAVE…', 6, 6, 72, 15, () => { this.g.autosave(); win.close(); openSaveSlots(this.g); }, { small: true }));
     win.body.addChild(button('LOAD…', 82, 6, 72, 15, () => { win.close(); openLoad(this.g, familyOf(this.g.state!)); }, { small: true }));
-    win.body.addChild(button('HELP: HOW TO BE A PRO', 6, 24, 148, 15, () => openHelp(this.g, 'rtc'), { small: true, fill: PAL.shadow, border: PAL.gold }));
+    win.body.addChild(button('TUTORIALS', 6, 24, 72, 15, () => openTutorials(this.g, 'rtc'), { small: true, fill: PAL.shadow, border: PAL.gold }));
+    win.body.addChild(button('HELP', 82, 24, 72, 15, () => openHelp(this.g, 'rtc'), { small: true, fill: PAL.shadow }));
     win.body.addChild(button('SETTINGS', 6, 42, 148, 15, () => openSettings(this.g), { small: true }));
     win.body.addChild(button('TROPHY CASE', 6, 60, 148, 15, () => openAchievements(this.g), { small: true }));
     win.body.addChild(button('RETIRE…', 6, 78, 148, 15, () => { win.close(); confirm(this.g, 'Hang up the gloves for good?', () => this.legacy()); }, { small: true, fill: PAL.ember }));
@@ -680,6 +863,8 @@ export class FMHubScene extends Scene {
   // ---------------------------------------------------------------- fight week
 
   private weighIn(): void {
+    // first weigh-in: the MAKING WEIGHT lesson first, if it hasn't been seen yet
+    if (lessonDue(this.g, 'fm_weight')) return openLesson(this.g, 'fm_weight', { mode: 'auto', onDone: () => this.weighIn() });
     const s = this.g.state!;
     const st0 = fm(s);
     if (st0.inbox.length && !this.paperworkWarned) {
@@ -924,7 +1109,7 @@ export class FMHubScene extends Scene {
         then?.();
       });
     };
-    targets.forEach((t, i) => frame.addChild(button(`CALL OUT ${t.last.toUpperCase()} (${rankLabel(s, t.id)})`, bx + 8, by + 22 + i * 18, bw - 16, 15, () => pick(t.id), { small: true, fill: PAL.blood })));
+    targets.forEach((t, i) => frame.addChild(button(`CALL OUT ${t.last.toUpperCase()} (${this.rankTag(t.id)})`, bx + 8, by + 22 + i * 18, bw - 16, 15, () => pick(t.id), { small: true, fill: PAL.blood })));
     frame.addChild(button('THANK EVERYONE', bx + 8, by + bh - 22, bw - 16, 15, () => pick(null), { small: true, fill: PAL.steel }));
   }
 

@@ -18,7 +18,7 @@
 import { Container, Graphics, UPDATE_PRIORITY } from 'pixi.js';
 import type { Game } from './app';
 import { PAL } from '../art/palette';
-import { W, H, text, box } from './kit';
+import { W, H, SW, OX, text, box } from './kit';
 import { input, Input, type PadButton } from '../core/input';
 import { padGlyph } from './glyphs';
 
@@ -130,7 +130,7 @@ export class VirtualCursor {
 
   private client(x: number, y: number): { clientX: number; clientY: number } {
     const r = this.canvas.getBoundingClientRect();
-    return { clientX: r.left + ((Math.floor(x) + 0.5) * r.width) / W, clientY: r.top + ((Math.floor(y) + 0.5) * r.height) / H };
+    return { clientX: r.left + ((Math.floor(x) + 0.5) * r.width) / SW, clientY: r.top + ((Math.floor(y) + 0.5) * r.height) / H };
   }
 
   private pointer(type: 'pointermove' | 'pointerdown' | 'pointerup', buttons: number): void {
@@ -246,7 +246,7 @@ export class VirtualCursor {
         }
       }
     }
-    this.x = Math.max(0, Math.min(W - 1, this.x));
+    this.x = Math.max(0, Math.min(SW - 1, this.x));
     this.y = Math.max(0, Math.min(H - 1, this.y));
     if (usingPad) {
       this.sendMove();
@@ -312,7 +312,7 @@ export class VirtualCursor {
     const c = new Container();
     const w = 190;
     const h = 22 + HELP_ROWS.length * 12 + 14;
-    c.addChild(new Graphics().rect(0, 0, W, H).fill({ color: 0x000000, alpha: 0.55 }));
+    c.addChild(new Graphics().rect(0, 0, SW, H).fill({ color: 0x000000, alpha: 0.55 }));
     const panel = new Container();
     panel.addChild(box(w, h, PAL.night, PAL.ash, { shadow: true }));
     panel.addChild(text('CONTROLLER', 8, 6, { color: PAL.gold }));
@@ -326,7 +326,7 @@ export class VirtualCursor {
     foot.addChild(yb, text('Fight controls lab', 13, 2, { small: true, color: PAL.ash }));
     foot.position.set(8, h - 12);
     if (this.hooks.onFightLab) panel.addChild(foot);
-    panel.position.set(Math.floor((W - w) / 2), Math.floor((H - h) / 2));
+    panel.position.set(Math.floor((SW - w) / 2), Math.floor((H - h) / 2));
     c.addChild(panel);
     this.help = c;
     this.layer.parent?.addChildAt(c, this.layer.parent.getChildIndex(this.layer));
@@ -351,7 +351,7 @@ export function installController(g: Game, hooks: ControllerHooks = {}): Virtual
     g.toast(`${Input.padName(e.button)} connected. VIEW = controls`, PAL.gold, { background: true });
     if (input.lastDevice !== 'gamepad') {
       // treat plugging in as intent to use it
-      vc.x = W / 2;
+      vc.x = SW / 2;
       vc.y = H / 2;
     }
   });

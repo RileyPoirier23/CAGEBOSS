@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Input, applyDeadzone } from '../src/core/input';
-import { FightInput, stickDir, type FightButton, type FightContext, type FightSample, type FightIntent } from '../src/core/fightinput';
+import { FightInput, stickDir, sampleFight, fightHaptic, DEFAULT_FIGHT_BINDINGS, type FightButton, type FightContext, type FightSample, type FightIntent, type TouchFightButton } from '../src/core/fightinput';
 
 // ------------------------------------------------------------ fake gamepad
 
@@ -196,5 +196,166 @@ describe('fight input', () => {
     const fi = new FightInput();
     fi.bind('lead', { pad: ['X'], keys: ['KeyF'] });
     expect(fi.bindings.lead.pad).toEqual(['X']);
+  });
+});
+
+describe('walking does not change the strike', () => {
+  it('walk in 0.5s then lead = jab; back up then rear = straight, kick = body; a fresh push still picks the hook', () => {
+    const fi = new FightInput();
+    const ctx: FightContext = { facing: 1 };
+    run(fi, sample([], { x: 1, y: 0 }), 0.5, ctx);
+    const a = [...run(fi, sample(['lead'], { x: 1, y: 0 }), DT * 2, ctx), ...run(fi, sample([], { x: 1, y: 0 }), DT, ctx)];
+    expect(a).toMatchObject([{ punch: 'jab' }]);
+    run(fi, sample([], { x: -1, y: 0 }), 0.5, ctx);
+    const b = [...run(fi, sample(['rear'], { x: -1, y: 0 }), DT * 2, ctx), ...run(fi, sample([], { x: -1, y: 0 }), DT, ctx)];
+    expect(b).toMatchObject([{ punch: 'straight' }]);
+    expect(run(fi, sample(['kick'], { x: -1, y: 0 }), DT, ctx)).toEqual([{ type: 'kick', level: 'body' }]);
+    run(fi, sample(), DT, ctx);
+    run(fi, sample([], { x: 1, y: 0 }), 0.1, ctx);
+    const c = [...run(fi, sample(['rear'], { x: 1, y: 0 }), DT * 2, ctx), ...run(fi, sample(), DT, ctx)];
+    expect(c).toMatchObject([{ punch: 'hook' }]);
+    // walking in and dropping the stick down + toward is still an uppercut
+    run(fi, sample([], { x: 1, y: 0 }), 0.5, ctx);
+    const d = [...run(fi, sample(['rear'], { x: 0.8, y: 0.8 }), DT * 2, ctx), ...run(fi, sample(), DT, ctx)];
+    expect(d).toMatchObject([{ punch: 'uppercut' }]);
+  });
+
+  it('a direction pushed just after the press still picks the punch (J and D together)', () => {
+    const fi = new FightInput();
+    const ctx: FightContext = { facing: 1 };
+    run(fi, sample(), 0.1, ctx);
+    const out = [...run(fi, sample(['rear']), 0.04, ctx), ...run(fi, sample(['rear'], { x: 1, y: 0 }), 0.06, ctx), ...run(fi, sample([], { x: 1, y: 0 }), DT, ctx)];
+    expect(out).toMatchObject([{ type: 'punch', hand: 'rear', punch: 'hook' }]);
+    // too late: a push 0.15 s into the hold is footwork, the jab stays a jab
+    run(fi, sample(), 0.3, ctx);
+    const late = [...run(fi, sample(['lead']), 0.15, ctx), ...run(fi, sample(['lead'], { x: 1, y: 0 }), 0.05, ctx), ...run(fi, sample([], { x: 1, y: 0 }), DT, ctx)];
+    expect(late).toMatchObject([{ type: 'punch', hand: 'lead', punch: 'jab' }]);
+  });
+});
+
+describe('inputs are never eaten', () => {
+  const ctx: FightContext = { facing: 1 };
+
+  it('the sprawl comes out on the press, once', () => {
+    const fi = new FightInput();
+    const shot: FightContext = { facing: 1, beingShot: true };
+    run(fi, sample(), DT, shot);
+    expect(fi.update(sample(['grab']), DT, shot)).toEqual([{ type: 'sprawl' }]);
+    expect([...run(fi, sample(['grab']), 0.4, shot), ...run(fi, sample(), DT, shot)]).toEqual([]);
+  });
+
+  it('keyboard submission escapes: W, D, S, A taps through neutral count quarter turns', () => {
+    const fi = new FightInput();
+    const sub: FightContext = { facing: 1, submission: 'defend' };
+    const out: FightIntent[] = [];
+    const taps = [{ x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }];
+    for (const m of taps) out.push(...run(fi, sample([], m), DT * 3, sub), ...run(fi, sample(), DT * 3, sub));
+    expect(out.filter((i) => i.type === 'subTurn').length).toBeGreaterThanOrEqual(3);
+    // a long rest in neutral starts over: no turn from where the stick was a second ago
+    run(fi, sample(), 1, sub);
+    expect(run(fi, sample([], { x: 0, y: -1 }), DT * 3, sub).filter((i) => i.type === 'subTurn')).toEqual([]);
+  });
+
+  it('wiggling up and down is not a roll (keys or the stick through the middle)', () => {
+    const sub: FightContext = { facing: 1, submission: 'defend' };
+    const turns = (moves: { x: number; y: number }[], on: number, off: number) => {
+      const fi = new FightInput();
+      const out: FightIntent[] = [];
+      for (const m of moves) out.push(...run(fi, sample([], m), DT * on, sub), ...run(fi, sample(), DT * off, sub));
+      return out.filter((i) => i.type === 'subTurn').length;
+    };
+    const ws: { x: number; y: number }[] = [];
+    const wdsa: { x: number; y: number }[] = [];
+    const quarter = [{ x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }];
+    for (let k = 0; k < 8; k++) {
+      ws.push(k % 2 ? { x: 0.05, y: 1 } : { x: 0.05, y: -1 });
+      wdsa.push(quarter[k % 4]);
+    }
+    expect(turns(ws, 3, 3)).toBeLessThanOrEqual(1); // W / S taps
+    expect(turns(ws, 2, 1)).toBeLessThanOrEqual(1); // a stick flicked up and down through the centre
+    expect(turns(ws, 2, 0)).toBeLessThanOrEqual(1); // ...or straight across it
+    expect(turns(wdsa, 3, 3)).toBe(7); // a real roll: every quarter after the first counts
+  });
+
+  it('block while a punch is held calls it off (the hold feint)', () => {
+    const fi = new FightInput();
+    run(fi, sample(['rear']), 0.3, ctx);
+    const out = [...run(fi, sample(['rear', 'block']), 0.1, ctx), ...run(fi, sample(), DT, ctx)];
+    expect(out.filter((i) => i.type === 'punch')).toEqual([]);
+    expect(fi.heldFor('rear')).toBe(0);
+  });
+
+  it('DODGE: held with the stick it moves the head that way, alone it pulls', () => {
+    const inp = new Input();
+    const touch = (stick: { x: number; y: number }, held: TouchFightButton[]) => ({ stick, held: new Set(held) });
+    const fi = new FightInput();
+    run(fi, sample(), 0.1, ctx);
+    const roll = fi.update(sampleFight(inp, fi.bindings, touch({ x: 0, y: 1 }, ['EVADE']), 1), DT, ctx);
+    expect(roll).toEqual([{ type: 'evade', kind: 'roll', source: 'flick' }]);
+    run(fi, sample(), 0.1, ctx);
+    // alone it waits a moment for a direction, then pulls (once)
+    const pull: FightIntent[] = [];
+    for (let k = 0; k < 12; k++) pull.push(...fi.update(sampleFight(inp, fi.bindings, touch({ x: 0, y: 0 }, ['EVADE']), 1), DT, ctx));
+    expect(pull).toEqual([{ type: 'evade', kind: 'pull', source: 'flick' }]);
+    expect(DEFAULT_FIGHT_BINDINGS.dodge.keys).toEqual(['KeyH']);
+  });
+
+  it('DODGE a frame before the stick still goes the stick\'s way; a quick tap alone still pulls', () => {
+    const inp = new Input();
+    const touch = (stick: { x: number; y: number }, held: TouchFightButton[]) => ({ stick, held: new Set(held) });
+    const fi = new FightInput();
+    const step = (stick: { x: number; y: number }, held: TouchFightButton[]) => fi.update(sampleFight(inp, fi.bindings, touch(stick, held), 1), DT, ctx);
+    for (let k = 0; k < 6; k++) step({ x: 0, y: 0 }, []);
+    const slip = [...step({ x: 0, y: 0 }, ['EVADE'])];
+    for (let k = 0; k < 10; k++) slip.push(...step({ x: 0, y: -1 }, ['EVADE']));
+    expect(slip).toEqual([{ type: 'evade', kind: 'slip', source: 'flick' }]);
+    for (let k = 0; k < 6; k++) step({ x: 0, y: 0 }, []);
+    // tapped and let go inside the wait: the pull isn't lost
+    const tap = [...step({ x: 0, y: 0 }, ['EVADE']), ...step({ x: 0, y: 0 }, ['EVADE'])];
+    for (let k = 0; k < 6; k++) tap.push(...step({ x: 0, y: 0 }, []));
+    expect(tap).toEqual([{ type: 'evade', kind: 'pull', source: 'flick' }]);
+  });
+});
+
+describe('fight haptics', () => {
+  it('pads rumble with the documented strength per moment', () => {
+    const calls: number[][] = [];
+    const inp = { lastDevice: 'gamepad', rumble: (a: number, b: number, ms: number) => calls.push([a, b, ms]) } as unknown as Input;
+    fightHaptic(inp, 'land');
+    fightHaptic(inp, 'landBig');
+    fightHaptic(inp, 'hurt');
+    fightHaptic(inp, 'hurtBig');
+    fightHaptic(inp, 'blocked');
+    fightHaptic(inp, 'parried');
+    fightHaptic(inp, 'charged');
+    fightHaptic(inp, 'kd');
+    fightHaptic(inp, 'heartbeat');
+    fightHaptic(inp, 'kd', false); // Vibration off
+    expect(calls).toEqual([[0.15, 0.1, 40], [0.6, 0.4, 120], [0.35, 0.2, 90], [0.9, 0.6, 220], [0.2, 0.1, 60], [0.2, 0.1, 60], [0.12, 0.05, 30], [1, 0.7, 400], [0.08, 0, 40]]);
+  });
+
+  it('two players: each rumble goes to that player\'s own pad', () => {
+    const calls: (number | undefined)[] = [];
+    const inp = { lastDevice: 'touch', rumble: (_a: number, _b: number, _ms: number, pad?: number) => calls.push(pad) } as unknown as Input;
+    fightHaptic(inp, 'land', true, 1);
+    fightHaptic(inp, 'hurt', true, 0);
+    fightHaptic(inp, 'kd', true, -1); // a keyboard player: no pad (and no phone buzz)
+    expect(calls).toEqual([1, 0, -1]);
+  });
+
+  it('phones buzz at most once every 60 ms', () => {
+    const buzz: { at: number; p: number | number[] }[] = [];
+    let now = 10000;
+    const spy = vi.spyOn(performance, 'now').mockImplementation(() => now);
+    Object.defineProperty(globalThis.navigator, 'vibrate', { configurable: true, value: (p: number | number[]) => buzz.push({ at: now, p }) });
+    const inp = { lastDevice: 'touch', rumble: () => { throw new Error('no pad on a phone'); } } as unknown as Input;
+    for (let i = 0; i < 20; i++) {
+      fightHaptic(inp, i % 2 ? 'hurt' : 'land');
+      now += 17;
+    }
+    spy.mockRestore();
+    expect(buzz[0]).toEqual({ at: 10000, p: 10 });
+    expect(buzz.length).toBeGreaterThan(3);
+    for (let i = 1; i < buzz.length; i++) expect(buzz[i].at - buzz[i - 1].at).toBeGreaterThanOrEqual(60);
   });
 });

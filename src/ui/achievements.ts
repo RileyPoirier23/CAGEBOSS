@@ -5,7 +5,7 @@
 import { Container, Graphics, type Ticker } from 'pixi.js';
 import type { Game } from './app';
 import { PAL } from '../art/palette';
-import { W, H, text, button, box } from './kit';
+import { W, H, SW, OX, text, button, box } from './kit';
 import { drawTrophy } from './trophyart';
 import { loadJSON, storeJSON } from '../core/save';
 import { ACHIEVEMENTS, earned, type Achievement } from '../sim/achievements';
@@ -103,9 +103,9 @@ export function openAchievements(g: Game): void {
   const wrap = g.modal(root, { dim: 1 });
   const got = ACHIEVEMENTS.filter((a) => have[a.id]).length;
   // the room: dark panelled wall, a rug
-  const room = new Graphics().rect(0, 0, W, H).fill(0x22160f);
-  for (let x = 0; x < W; x += 24) room.rect(x, 0, 1, H).fill(0x1a100a);
-  room.rect(0, H - 12, W, 12).fill(0x3a1a1a);
+  const room = new Graphics().rect(-OX, 0, SW, H).fill(0x22160f);
+  for (let x = -OX; x < SW - OX; x += 24) room.rect(x, 0, 1, H).fill(0x1a100a);
+  room.rect(-OX, H - 12, SW, 12).fill(0x3a1a1a);
   root.addChild(room);
   root.addChild(text('TROPHY CASE', 16, 8, { scale: 2, color: PAL.gold, shadow: 0x000000 }));
   root.addChild(text(`${got} / ${ACHIEVEMENTS.length} WON`, W - 160, 13, { width: 100, align: 'right', small: true, color: PAL.bone }));

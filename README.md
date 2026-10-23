@@ -72,6 +72,15 @@ python3 tools/commentary_src.py            # rebuild commentary & ring announcer
 python3 tools/popculture_src.py            # rebuild the pop-culture parody bank
 ```
 
+## Play anywhere (2.2.0)
+
+- **Phones.** The game runs in a phone browser at 506clicks.ca/play/cageboss and as an Android app. Screens fill the phone, buttons are big enough for thumbs, fights have touch controls, and END WEEK saves in the background instead of freezing.
+- **Tutorials with pictures.** 23 lessons, each with a screenshot of the screen it explains and marks on what to press (PC and phone pictures). New players get them as they reach each screen. TUTORIALS on the title screen and in MENU lists them all.
+- **Smarter fighters.** The CPU strikes from its own range and steps in to land, counters on a whiff, beats a slow shot to the punch, sets up with feints, reads your habits and works the fence. Its counters wait on a human reaction time, so it reads you without reading your mind.
+- **Hands-on fights.** Combos with names, counters, stuffed takedowns, a sprawl prompt, frames and escapes on the ground, and checks, blocks and parries that show.
+- **Watching a fight.** Broadcast pacing (the booth talks over the action, the clock ticks), momentum and crowd heat, knockdown slow motion, instant replays of the finish, NEXT RND and HIGHLIGHTS to hurry things along, and a real Play of the Night. The ref steps between them and the finishes match the shot that did it.
+- **More to see.** Sixteen Quick Fight venues (a beach, an aircraft carrier, a rooftop, Uncle Dale's barn...), and events booked into those rooms. Nine new fighters. A desk phone that rings until you pick it up.
+
 ## The final round (2.1.0)
 
 The last update before the full release, all of it in the cage:

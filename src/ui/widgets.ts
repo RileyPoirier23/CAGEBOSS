@@ -5,7 +5,8 @@
 import { Container, Graphics } from 'pixi.js';
 import type { Game } from './app';
 import { PAL } from '../art/palette';
-import { W, H, box, text, button, btn, paper, PaperKind, hoverTip } from './kit';
+import { isTouchDevice } from '../core/platform';
+import { W, H, SW, OX, box, text, button, btn, paper, PaperKind, hoverTip } from './kit';
 import { sfx } from '../audio/sfx';
 
 export interface WindowOpts {
@@ -15,6 +16,8 @@ export interface WindowOpts {
   dim?: number;
   x?: number;
   y?: number;
+  /** keep it at 1:1 on phones (by default a phone scales windows up to fill the screen) */
+  noScale?: boolean;
 }
 
 /** A centred modal window; returns the body container (local coords inside frame). */
@@ -33,7 +36,8 @@ export function openWindow(g: Game, title: string, w: number, h: number, opts: W
   body.y = 14;
   frame.addChild(body);
   let closed = false;
-  const wrap = g.modal(frame, { dim: opts.dim });
+  // phones scale centred windows up to fill the screen (Game.modal); placed ones stay put
+  const wrap = g.modal(frame, { dim: opts.dim, fit: opts.x === undefined && opts.y === undefined && !opts.noScale });
   const close = () => {
     if (closed) return;
     closed = true;
@@ -77,6 +81,17 @@ export function selector<T>(
     label.setText(options[idx].label);
     onChange(options[idx].value);
   };
+  // phones: the whole box is the control, left half back, right half forward
+  if (isTouchDevice()) {
+    const hit = new Container();
+    hit.eventMode = 'static';
+    hit.hitArea = { contains: (px: number, py: number) => px >= 12 && px < w - 12 && py >= -2 && py < 15 };
+    hit.on('pointertap', (e) => {
+      sfx('click');
+      set(hit.toLocal(e.global).x < w / 2 ? -1 : 1);
+    });
+    c.addChild(hit);
+  }
   c.addChild(button('<', 0, 0, 12, 13, () => set(-1), { small: true }));
   c.addChild(button('>', w - 12, 0, 12, 13, () => set(1), { small: true }));
   return c;
@@ -140,7 +155,8 @@ export function checkbox(x: number, y: number, label: string, value: boolean, on
 
 /** DOM text input overlaid on the canvas at game coordinates. */
 export function domInput(
-  g: Game, x: number, y: number, w: number, h: number, value: string, opts: { multiline?: boolean; maxLength?: number; onChange?: (v: string) => void } = {},
+  g: Game, x: number, y: number, w: number, h: number, value: string,
+  opts: { multiline?: boolean; maxLength?: number; onChange?: (v: string) => void; /** x, y are in this container's coordinates (a window body) */ in?: Container } = {},
 ): { el: HTMLInputElement | HTMLTextAreaElement; remove: () => void; value: () => string } {
   const overlay = document.getElementById('dom-overlay')!;
   const el = document.createElement(opts.multiline ? 'textarea' : 'input') as HTMLInputElement | HTMLTextAreaElement;
@@ -149,14 +165,23 @@ export function domInput(
   overlay.appendChild(el);
   const place = () => {
     const r = g.overlayRect();
-    const s = r.width / W;
+    const s = r.height / H;
     overlay.style.left = r.left + 'px';
     overlay.style.top = r.top + 'px';
-    el.style.left = x * s + 'px';
-    el.style.top = y * s + 'px';
-    el.style.width = w * s + 'px';
-    el.style.height = h * s + 'px';
-    el.style.fontSize = Math.max(10, Math.floor(7 * s)) + 'px';
+    let gx = x + OX;
+    let gy = y;
+    let k = 1;
+    if (opts.in && !opts.in.destroyed) {
+      const p = opts.in.toGlobal({ x, y });
+      gx = p.x;
+      gy = p.y;
+      k = opts.in.worldTransform.a;
+    }
+    el.style.left = gx * s + 'px';
+    el.style.top = gy * s + 'px';
+    el.style.width = w * k * s + 'px';
+    el.style.height = h * k * s + 'px';
+    el.style.fontSize = Math.max(10, Math.floor(7 * k * s)) + 'px';
   };
   place();
   const onResize = () => place();
@@ -168,6 +193,7 @@ export function domInput(
   const owner: Container | undefined = g.modals[g.modals.length - 1] ?? g.scene?.root;
   const ownerIsModal = g.modals.length > 0;
   const sync = () => {
+    if (opts.in) place(); // its window may be scaled / moved after we were made (phones)
     const covered = ownerIsModal ? g.modals[g.modals.length - 1] !== owner : g.modals.length > 0;
     el.style.display = covered ? 'none' : '';
   };

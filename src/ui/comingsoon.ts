@@ -22,14 +22,29 @@ const SHOTS: { file: string; caption: string }[] = [
 
 let shownThisSession = false;
 
-/** Once per version, after What's New has had its turn. */
-export function maybeComingSoon(g: Game): void {
+/**
+ * Once per version, after What's New has had its turn: it waits until nothing else is open, and
+ * only pops up while `here()` (the title screen is still showing); left early, it tries again
+ * next time.
+ */
+export function maybeComingSoon(g: Game, here: () => boolean = () => true): void {
   if (shownThisSession) return;
   shownThisSession = true;
   const seen = loadJSON<string>('cageboss-comingsoon-driveboss', '');
   if (seen === __APP_VERSION__) return;
-  storeJSON('cageboss-comingsoon-driveboss', __APP_VERSION__);
-  openComingSoon(g);
+  const go = (): void => {
+    if (!here()) {
+      shownThisSession = false;
+      return;
+    }
+    if (g.modals.length) {
+      setTimeout(go, 500);
+      return;
+    }
+    storeJSON('cageboss-comingsoon-driveboss', __APP_VERSION__);
+    openComingSoon(g);
+  };
+  go();
 }
 
 export function openComingSoon(g: Game): void {

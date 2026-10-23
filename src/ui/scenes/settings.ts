@@ -46,6 +46,7 @@ export function openSettings(g: Game, onClose?: () => void): void {
   b.addChild(checkbox(8, y, 'Colour-blind palette', s.colorblind, (v) => { s.colorblind = v; save(); g.scene?.refresh(); }));
   y += 12;
   b.addChild(checkbox(8, y, 'Reduce screen shake', s.reduceShake, (v) => { s.reduceShake = v; save(); }));
+  b.addChild(checkbox(160, y, 'Vibration', s.vibration !== false, (v) => { s.vibration = v; save(); }, 'Controller rumble and phone buzz when you land, get hit or load up a heavy'));
   y += 12;
   b.addChild(checkbox(8, y, 'Mute all audio (M)', s.mute, (v) => { s.mute = v; save(); }));
   y += 12;

@@ -177,6 +177,12 @@ export interface TickerLine {
   hp: [number, number];
   key?: string; // template key that produced the line (drives commentary)
   speaker?: string; // commentary booth line (lon, blow, dc, braille, biscuit)
+  // what the watched sim knows about the picture (presentation only; absent = the arena improvises)
+  st?: [number, number]; // stamina 0..100 per side
+  gpos?: 'guard' | 'half' | 'side' | 'mount' | 'back'; // ground position of the man on top (atop/btop lines)
+  tie?: 'collar' | 'under' | 'plum'; // clinch grip (clinch lines)
+  fence?: 0 | 1; // whose back is on the cage (standing and clinch lines)
+  lead?: 0 | 1; // who led this standing exchange
 }
 
 export interface CornerReport {

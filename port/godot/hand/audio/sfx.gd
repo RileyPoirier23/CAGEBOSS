@@ -139,3 +139,57 @@ static func noise(dur, vol = null, filterFreq = null, q = null, delay = null, at
 			out[i] = y * g
 		return out
 	_play(key, render, delay)
+
+# ------------------------------------------------------------------ the desk phone
+
+static var _ring: AudioStreamPlayer = null
+static var _ringStream: AudioStreamWAV = null
+static var _ringGen := 0
+
+## One ring cycle (the ring-ring bursts then the pause) rendered once, looped on its own
+## player: nothing stacks, and stopping fades it out instead of cutting a wave in half.
+static func startRing(cycles = null) -> void:
+	if PXHost.inst == null or M_audio_sfx.muted: return
+	if _ring != null and _ring.playing: return
+	var n = M_audio_sfx.RING_CYCLES if cycles == null else int(cycles)
+	if _ringStream == null:
+		var cyc = float(M_audio_sfx.RING_CYCLE)
+		var total = int(cyc * RATE)
+		var out := PackedFloat32Array()
+		out.resize(total)
+		var phase := 0.0
+		for i in total:
+			var t = float(i) / RATE
+			var g := 0.0
+			for b in M_audio_sfx.RING_BURSTS:
+				var s0 = float(b[0])
+				var s1 = float(b[1])
+				if t >= s0 and t < s1: g = minf(1.0, minf((t - s0) / 0.012, (s1 - t) / 0.012))
+			var f = 1320.0 if int((t - floor(t / 0.65) * 0.65) / 0.035) % 2 == 0 else 1100.0
+			phase = fmod(phase + f / RATE, 1.0)
+			out[i] = (1.0 if phase < 0.5 else -1.0) * 0.09 * g
+		_ringStream = _wav(out)
+		_ringStream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		_ringStream.loop_begin = 0
+		_ringStream.loop_end = total
+	if _ring == null or not is_instance_valid(_ring):
+		_ring = AudioStreamPlayer.new()
+		PXHost.inst.add_child(_ring)
+	_ringGen += 1
+	var gen = _ringGen
+	_ring.stream = _ringStream
+	_ring.volume_db = linear_to_db(maxf(float(M_audio_sfx.sfxVol), 0.0001))
+	_ring.play()
+	# rang out (a newer ring or a stopRing bumps the generation, so this one leaves it alone)
+	var rang_out = func():
+		if gen == _ringGen and is_instance_valid(_ring): _ring.stop()
+	PXHost.inst.get_tree().create_timer(n * float(M_audio_sfx.RING_CYCLE)).timeout.connect(rang_out)
+
+static func stopRing() -> void:
+	M_audio_sfx.ringStoppedAt = JS.now()
+	_ringGen += 1
+	if _ring == null or not is_instance_valid(_ring) or not _ring.playing: return
+	var p = _ring
+	var tw = PXHost.inst.create_tween()
+	tw.tween_property(p, "volume_db", -60.0, 0.03)
+	tw.tween_callback(p.stop)

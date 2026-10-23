@@ -12,6 +12,24 @@ import { openHelp } from './help';
 /** Newest first. Keep each version to a few lines. */
 export const NOTES: { v: string; lines: string[] }[] = [
   {
+    v: '2.2.0',
+    lines: [
+      'PLAY ANYWHERE: on your phone at 506clicks.ca/play/cageboss, and a new Android app.',
+      'Phones fill the screen: big buttons, touch fight controls, skip intros and cutscenes.',
+      'END WEEK no longer freezes phones: saving happens in the background.',
+      'TUTORIALS: picture lessons for every screen (title screen or MENU, any time).',
+      'Smarter fighters: they hold their range, cut you off, feint, counter and sprawl.',
+      'Hands-on fights: snappier controls, combos, counters, sprawls and ground escapes.',
+      'Watching: broadcast pacing, instant replays, knockdown slow-mo, momentum and heat.',
+      'NEXT RND and HIGHLIGHTS hurry a fight along without missing the big moments.',
+      'QUICK FIGHT venues: a beach, an aircraft carrier, a rooftop, Uncle Dale\'s barn and more.',
+      'Book your event at one of them and that\'s where the cage goes.',
+      'Nine new fighters, three of them from the Maritimes.',
+      'The desk phone rings now. Pick it up.',
+      'The rankings wall shows the open spots, and who could fill them.',
+    ],
+  },
+  {
     v: '2.1.0',
     lines: [
       'THE FINAL ROUND: the last update before the full release.',
@@ -98,13 +116,14 @@ export function maybeWhatsNew(g: Game): void {
 export function openWhatsNew(g: Game): void {
   const n = NOTES.find((x) => x.v === __APP_VERSION__) ?? NOTES[0];
   const h = 52 + n.lines.length * 12;
-  const win = openWindow(g, "What's new", 280, h);
+  // wide enough that every line fits on one (a note is a line, not a paragraph)
+  const win = openWindow(g, "What's new", 400, h);
   win.body.addChild(text(`VERSION ${n.v}`, 8, 4, { color: PAL.gold }));
   n.lines.forEach((l, i) => {
     win.body.addChild(text('•', 8, 18 + i * 12, { small: true, color: PAL.gold }));
-    win.body.addChild(text(l, 16, 18 + i * 12, { small: true, color: PAL.bone, width: 256, maxLines: 1 }));
+    win.body.addChild(text(l, 16, 18 + i * 12, { small: true, color: PAL.bone, width: 376, maxLines: 1 }));
   });
   const y = 22 + n.lines.length * 12;
-  win.body.addChild(button('LET ME PLAY', 8, y, 124, 14, () => win.close(), { small: true, fill: PAL.moss }));
-  win.body.addChild(button('OPEN HELP', 148, y, 124, 14, () => { win.close(); openHelp(g); }, { small: true, fill: PAL.shadow, border: PAL.gold }));
+  win.body.addChild(button('LET ME PLAY', 8, y, 184, 14, () => win.close(), { small: true, fill: PAL.moss }));
+  win.body.addChild(button('OPEN HELP', 208, y, 184, 14, () => { win.close(); openHelp(g); }, { small: true, fill: PAL.shadow, border: PAL.gold }));
 }

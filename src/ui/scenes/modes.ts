@@ -4,10 +4,12 @@
  * sandbox with a very small octagon in it.
  */
 import { Container, Graphics } from 'pixi.js';
+import { isTouchDevice } from '../../core/platform';
 import { hint } from '../hints';
 import { Scene, fullBg } from '../app';
 import { PAL } from '../../art/palette';
-import { W, H, text, button, box } from '../kit';
+// full-width screen: on a phone the tunnel spans the whole (wider) canvas
+import { SW as W, OX, H, text, button, box } from '../kit';
 import { POSES, drawRig, type Look2 } from '../rig';
 import { CAST } from '../cutscene';
 import { sfx } from '../../audio/sfx';
@@ -43,7 +45,8 @@ export class ModesScene extends Scene {
 
   build(): void {
     const r = this.root;
-    r.addChild(fullBg(0x0c0b10));
+    r.x = -OX;
+    r.addChild(new Graphics().rect(0, 0, W, H).fill(0x0c0b10));
     r.addChild(this.tunnel());
     this.lights = new Graphics();
     r.addChild(this.lights);
@@ -128,7 +131,7 @@ export class ModesScene extends Scene {
     ];
     const x0 = Math.round((W - (modes.length * CW + (modes.length - 1) * 6)) / 2);
     modes.forEach((m, i) => r.addChild(this.card(m, x0 + i * (CW + 6), 46)));
-    r.addChild(text(hint('ESC = BACK', '{B} = BACK'), 0, H - 10, { small: true, width: W, align: 'center', color: PAL.grey }));
+    if (!isTouchDevice()) r.addChild(text(hint('ESC = BACK', '{B} = BACK'), 0, H - 10, { small: true, width: W, align: 'center', color: PAL.grey }));
   }
 
   private card(m: Mode, x: number, y: number): Container {

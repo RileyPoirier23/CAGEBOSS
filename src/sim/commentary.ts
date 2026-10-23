@@ -14,6 +14,7 @@ import { pronounize } from './fighters';
 import { divisionName } from './divisions';
 import { rematchTag, roman } from './events';
 import { expandPop } from './popculture';
+import { stepMomentum, momLead } from './momentum';
 
 export const BOOTH_IDS = ['lon', 'blow', 'dc', 'braille', 'biscuit'] as const;
 
@@ -169,6 +170,8 @@ interface Ctx {
   B: Fighter;
   rng: Rng;
   used: Set<string>;
+  /** lines already heard tonight (other bouts on the card): picked only when nothing fresh is left */
+  avoid: Set<string> | null;
   booth: string[];
 }
 
@@ -211,21 +214,42 @@ function fill(t: string, v: Record<string, string>, f: Fighter, seed?: number): 
   return letters.length > 8 && caps / letters.length > 0.8 ? out.toUpperCase() : out;
 }
 
-/** Pick an unused line for speaker/situation (with fallbacks). */
+/** Pick an unused line for speaker/situation (with fallbacks), preferring one not heard earlier tonight. */
 function pickLine(c: Ctx, sp: string, sit: string): string | null {
   const bank = content().commentary.booth[sp];
   if (!bank) return null;
   const chain = [sit, ...(content().commentary.fallback[sit] ?? [])];
   if (sp === 'braille' || sp === 'biscuit') chain.push('any');
-  for (const k of chain) {
-    const lines = (bank[k] ?? []).filter((l) => !c.used.has(l));
-    if (lines.length) {
-      const l = c.rng.pick(lines);
-      c.used.add(l);
-      return l;
+  // first a line nobody has heard tonight (down the fallback chain if need be), then one not yet said this bout
+  const av = c.avoid;
+  for (let pass = av ? 0 : 1; pass < 2; pass++) {
+    for (const k of chain) {
+      const lines = (bank[k] ?? []).filter((l) => !c.used.has(l) && (pass === 1 || !av || !av.has(l)));
+      if (lines.length) {
+        const l = c.rng.pick(lines);
+        c.used.add(l);
+        if (av) av.add(l);
+        return l;
+      }
     }
   }
   return null;
+}
+
+/** Who had the round: the judges' majority, else whoever has taken less damage, else the red corner. */
+function roundLeader(bout: Bout, L: TickerLine): 0 | 1 {
+  const rs = bout.result?.roundScores?.[L.round - 1];
+  if (rs) {
+    let a = 0;
+    let b = 0;
+    for (const sc of rs) {
+      if (sc[0] > sc[1]) a++;
+      else if (sc[1] > sc[0]) b++;
+    }
+    if (a > b) return 0;
+    if (b > a) return 1;
+  }
+  return L.hp[1] > L.hp[0] ? 1 : 0;
 }
 
 function line(c: Ctx, base: TickerLine | null, sp: string, sit: string, xi: number, round: number): TickerLine | null {
@@ -245,12 +269,12 @@ export function slotKey(b: Bout): 'open_main' | 'open_comain' | 'open_card' | 'o
   return b.position === 0 ? 'open_main' : b.position === 1 ? 'open_comain' : b.position < 5 ? 'open_card' : 'open_prelim';
 }
 
-/** Booth lines before the opening bell. */
-export function boothOpen(s: GameState, ev: FightEvent, bout: Bout, seed: number): TickerLine[] {
+/** Booth lines before the opening bell. avoid: lines already heard tonight (it gets this bout's picks added). */
+export function boothOpen(s: GameState, ev: FightEvent, bout: Bout, seed: number, avoid?: Set<string>): TickerLine[] {
   const A = s.fighters[bout.a];
   const B = s.fighters[bout.b];
   if (!A || !B) return [];
-  const c: Ctx = { s, ev, bout, A, B, rng: new Rng(seed), used: new Set(), booth: boothFor(s, ev, bout) };
+  const c: Ctx = { s, ev, bout, A, B, rng: new Rng(seed), used: new Set(), avoid: avoid ?? null, booth: boothFor(s, ev, bout) };
   const slot = slotKey(bout);
   const kind = bout.title ? 'open_title' : (bout.meeting ?? 1) > 1 ? 'open_rematch' : slot;
   const out: (TickerLine | null)[] = [];
@@ -265,64 +289,85 @@ export function boothOpen(s: GameState, ev: FightEvent, bout: Bout, seed: number
   return out.filter((x): x is TickerLine => !!x);
 }
 
-/** Interleave booth commentary into a fight's ticker. Deterministic per seed. */
-export function commentate(s: GameState, ev: FightEvent, bout: Bout, lines: TickerLine[], seed: number): TickerLine[] {
+/**
+ * Interleave booth commentary into a fight's ticker. Deterministic per seed (and avoid's contents).
+ * avoid: lines already heard tonight; this bout's picks are added to it.
+ */
+export function commentate(s: GameState, ev: FightEvent, bout: Bout, lines: TickerLine[], seed: number, avoid?: Set<string>): TickerLine[] {
   const A = s.fighters[bout.a];
   const B = s.fighters[bout.b];
   if (!A || !B) return lines;
-  const c: Ctx = { s, ev, bout, A, B, rng: new Rng(seed ^ 0x5bd1e995), used: new Set(), booth: boothFor(s, ev, bout) };
+  const c: Ctx = { s, ev, bout, A, B, rng: new Rng(seed ^ 0x5bd1e995), used: new Set(), avoid: avoid ?? null, booth: boothFor(s, ev, bout) };
   const colors: string[] = c.booth.filter((x) => x !== 'lon');
   const guests: string[] = c.booth.filter((x) => x === 'braille' || x === 'biscuit');
   const out: TickerLine[] = [];
   let gap = 3;
   const bones = A.id === 'bro_bones' || B.id === 'bro_bones';
+  // momentum, as the watch screen's tug-of-war bar sees it: a swing from one man to the other gets called
+  const mom: [number, number] = [0, 0];
+  let momSide = -1;
   for (const L of lines) {
     out.push(L);
     gap++;
-    const sit = situation(L.key);
-    if (!sit) continue;
-    const xi = L.side === 1 ? 1 : 0;
-    const finish = FINISH.has(sit);
-    const urgent = finish || sit === 'hurt' || sit === 'knockdown' || sit === 'lateref';
-    if (!urgent && gap < 3) continue;
-    if (!finish && !c.rng.chance(CHANCE[sit] ?? 0.3)) continue;
-    const said: (TickerLine | null)[] = [];
-    if (finish) {
-      const wi = L.side === 1 ? 1 : 0;
-      const winIdx = bout.result?.winner === B.id ? 1 : 0;
-      said.push(line(c, L, 'lon', sit, sit === 'decision' || sit === 'robbery' ? winIdx : wi, L.round));
-      const cs = c.rng.pick(colors.filter((x) => !guests.includes(x)));
-      said.push(line(c, L, cs, sit, winIdx, L.round));
-      if (c.rng.chance(0.5)) said.push(line(c, L, c.rng.pick(colors.filter((x) => x !== cs)), sit, winIdx, L.round));
-    } else {
-      let sp: string;
-      let use = sit;
-      const actor = xi === 1 ? B : A;
-      if (sit === 'round_start') sp = 'lon';
-      else if (sit === 'hurt' || sit === 'knockdown') sp = c.booth.includes('blow') && c.rng.chance(0.65) ? 'blow' : c.rng.pick(['lon', ...colors]);
-      else if (sit === 'wrestling') {
-        sp = c.rng.pick([...colors.filter((x) => x === 'blow' || x === 'dc'), 'lon']);
-        if (sp === 'blow' && isWrestler(actor) && c.rng.chance(0.35)) use = 'fav_wrestler';
-      } else if (sit === 'bjj') {
-        sp = c.booth.includes('blow') && c.rng.chance(0.7) ? 'blow' : c.rng.pick(['lon', ...colors]);
-        if (sp === 'blow' && isBJJ(actor) && c.rng.chance(0.35)) use = 'fav_bjj';
-      } else if (sit === 'lull') {
-        sp = c.rng.pick(['lon', ...colors, ...colors]);
-        if (sp === 'lon') use = c.rng.pick(['lull', 'lull', 'controversy', 'controversy', 'stats']);
-        if (sp === 'dc') use = c.rng.pick(['lull', 'texted', 'texted', 'name_mixup', ...(bones ? ['bones'] : [])]);
-        if (sp === 'blow' && c.rng.chance(0.15)) use = 'bias';
-      } else sp = c.rng.pick(['lon', ...colors]);
-      if (guests.length && sp !== 'lon' && ['lull', 'round_end', 'hurt', 'flashy', 'wrestling'].includes(sit) && c.rng.chance(0.25)) {
-        sp = c.rng.pick(guests);
-        use = 'any';
-      }
-      if (sp === 'dc' && use !== 'name_mixup' && c.rng.chance(0.08)) use = 'name_mixup';
-      said.push(line(c, L, sp, use, xi, L.round));
+    let swing = -1;
+    if (!L.speaker) {
+      stepMomentum(mom, L);
+      if (L.key === 'opening' || L.key === 'round_start') momSide = -1;
+      const lead = momLead(mom);
+      const now = lead >= 0.45 ? 0 : lead <= -0.45 ? 1 : momSide;
+      if (momSide >= 0 && now !== momSide) swing = now;
+      momSide = now;
     }
-    const got = said.filter((x): x is TickerLine => !!x);
-    if (got.length) {
-      out.push(...got);
-      gap = 0;
+    const sit = situation(L.key);
+    // bell, round start and crowd lines belong to nobody: talk about whoever had the round
+    const xi = L.side === 1 ? 1 : L.side === 0 ? 0 : roundLeader(bout, L);
+    const finish = sit ? FINISH.has(sit) : false;
+    const urgent = finish || sit === 'hurt' || sit === 'knockdown' || sit === 'lateref';
+    if (sit && (urgent || gap >= 3) && (finish || c.rng.chance(CHANCE[sit] ?? 0.3))) {
+      const said: (TickerLine | null)[] = [];
+      if (finish) {
+        const wi = L.side === 1 ? 1 : 0;
+        const winIdx = bout.result?.winner === B.id ? 1 : 0;
+        said.push(line(c, L, 'lon', sit, sit === 'decision' || sit === 'robbery' ? winIdx : wi, L.round));
+        const cs = c.rng.pick(colors.filter((x) => !guests.includes(x)));
+        said.push(line(c, L, cs, sit, winIdx, L.round));
+        if (c.rng.chance(0.5)) said.push(line(c, L, c.rng.pick(colors.filter((x) => x !== cs)), sit, winIdx, L.round));
+      } else {
+        let sp: string;
+        let use = sit;
+        const actor = xi === 1 ? B : A;
+        if (sit === 'round_start') sp = 'lon';
+        else if (sit === 'hurt' || sit === 'knockdown') sp = c.booth.includes('blow') && c.rng.chance(0.65) ? 'blow' : c.rng.pick(['lon', ...colors]);
+        else if (sit === 'wrestling') {
+          sp = c.rng.pick([...colors.filter((x) => x === 'blow' || x === 'dc'), 'lon']);
+          if (sp === 'blow' && isWrestler(actor) && c.rng.chance(0.35)) use = 'fav_wrestler';
+        } else if (sit === 'bjj') {
+          sp = c.booth.includes('blow') && c.rng.chance(0.7) ? 'blow' : c.rng.pick(['lon', ...colors]);
+          if (sp === 'blow' && isBJJ(actor) && c.rng.chance(0.35)) use = 'fav_bjj';
+        } else if (sit === 'lull') {
+          sp = c.rng.pick(['lon', ...colors, ...colors]);
+          if (sp === 'lon') use = c.rng.pick(['lull', 'lull', 'controversy', 'controversy', 'stats']);
+          if (sp === 'dc') use = c.rng.pick(['lull', 'texted', 'texted', 'name_mixup', ...(bones ? ['bones'] : [])]);
+          if (sp === 'blow' && c.rng.chance(0.15)) use = 'bias';
+        } else sp = c.rng.pick(['lon', ...colors]);
+        if (guests.length && sp !== 'lon' && ['lull', 'round_end', 'hurt', 'flashy', 'wrestling'].includes(sit) && c.rng.chance(0.25)) {
+          sp = c.rng.pick(guests);
+          use = 'any';
+        }
+        if (sp === 'dc' && use !== 'name_mixup' && c.rng.chance(0.08)) use = 'name_mixup';
+        said.push(line(c, L, sp, use, xi, L.round));
+      }
+      const got = said.filter((x): x is TickerLine => !!x);
+      for (const g of got) out.push(g);
+      if (got.length) gap = 0;
+    }
+    if (swing >= 0) {
+      const sp = c.booth.includes('blow') && c.rng.chance(0.5) ? 'blow' : c.rng.pick(c.booth.includes('dc') ? ['lon', 'dc'] : ['lon']);
+      const m = line(c, L, sp, 'momentum', swing, L.round);
+      if (m) {
+        out.push(m);
+        gap = 0;
+      }
     }
   }
   return out;

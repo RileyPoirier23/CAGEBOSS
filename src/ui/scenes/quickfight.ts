@@ -4,11 +4,11 @@
  * keyboard, or both of you on one keyboard). Nothing is saved; nobody's career is touched.
  */
 import { Graphics } from 'pixi.js';
-import { isConsole } from '../../core/platform';
+import { isConsole, isTouchDevice } from '../../core/platform';
 import { Scene } from '../app';
 import type { Bout, FightEvent, Fighter, GameState } from '../../core/types';
 import { PAL } from '../../art/palette';
-import { W, H, text, button, box } from '../kit';
+import { W, H, SW, OX, text, button, box } from '../kit';
 import { selector, alertBox } from '../widgets';
 import { fighterPortrait } from '../sprites';
 import { createNewGame } from '../../sim/newgame';
@@ -17,7 +17,9 @@ import { DIVISION_ORDER, divisionName } from '../../sim/divisions';
 import { overall } from '../../sim/fighters';
 import { record } from '../../core/format';
 import { content } from '../../core/content';
-import { sponsorColor } from '../../sim/sponsorship';
+import { sponsorColor, venueRoom } from '../../sim/sponsorship';
+import { ROOMS, leagueRoom, paintRoom, type Room } from '../rooms';
+import { lerpColor } from '../../art/palette';
 import { openLiveFight } from '../livefight';
 import { input } from '../../core/input';
 import { Rng } from '../../core/rng';
@@ -27,6 +29,36 @@ import { sfx } from '../../audio/sfx';
 import { unlockedStoryFighters } from '../../sim/cast';
 
 type Mode = 'cpu' | 'versus';
+
+/** Where the fight is: the leagues' rooms and the venues nobody should have booked. */
+interface QFVenue {
+  label: string;
+  /** data/venues id (its name and blurb); none for the warehouse */
+  venue?: string;
+  style: CanvasStyle;
+  logo?: string;
+  bare?: boolean;
+  event: string;
+}
+const VENUES: QFVenue[] = [
+  { label: 'The Ape-X', venue: 'ape_x', style: 'cbfc', event: 'CBFC Exhibition' },
+  { label: 'The Lounge', venue: 'nightclub', style: 'pfl', logo: 'PFL LOUNGE', event: 'Lounge Fight Night' },
+  { label: 'Casino Ballroom', venue: 'casino_ballroom', style: 'regional', logo: 'LUCKY BUCK', event: 'Lucky Buck Brawl' },
+  { label: 'VFW Hall', venue: 'vfw_hall', style: 'local', logo: 'POST 1138', event: 'Bingo Night Fights' },
+  { label: 'Warehouse', style: 'bk', logo: 'BAREKNUCKLE', bare: true, event: 'Bareknuckle Exhibition' },
+  { label: 'Fight Island', venue: 'fight_island', style: 'cbfc', event: 'Fight Island Exhibition' },
+  { label: 'USS Sponsorship', venue: 'aircraft_carrier', style: 'cbfc', event: 'Fleet Week Fights' },
+  { label: 'Rooftop', venue: 'rooftop', style: 'regional', logo: 'LEVEL 7', event: 'Rooftop Rumble' },
+  { label: "Dale's Barn", venue: 'barn', style: 'local', logo: "DALE'S", event: "Uncle Dale's Barn Burner" },
+  { label: 'The Yard', venue: 'prison_yard', style: 'local', logo: 'GOOD BEHAVIOR', event: 'Charity Fight Night' },
+  { label: 'Waffle Hut Lot', venue: 'waffle_lot', style: 'local', logo: 'MIDNIGHT', event: 'Midnight Waffle Brawl' },
+  { label: 'Church Gym', venue: 'church_gym', style: 'regional', logo: 'EAGLES', event: 'Fellowship Fight Night' },
+  { label: 'Bowling Alley', venue: 'bowling_alley', style: 'regional', logo: 'LUCKY STRIKE', event: 'Lanes & Brawl' },
+  { label: 'Cruise Deck', venue: 'cruise_ship', style: 'pfl', logo: 'AT SEA', event: 'Fights At Sea' },
+  { label: 'The Big Lawn', venue: 'white_house_lawn', style: 'cbfc', event: 'Fights On The Lawn' },
+  { label: 'Hangar 9', venue: 'military_base', style: 'cbfc', event: 'Troops Fight Night' },
+];
+const roomOf = (v: QFVenue): Room => (v.venue && venueRoom(v.venue)) || leagueRoom(v.style);
 type Plan = 'balanced' | 'pressure' | 'counter' | 'wrestle';
 
 let world: GameState | null = null;
@@ -38,11 +70,13 @@ function roster(): GameState {
 
 export class QuickFightScene extends Scene {
   music = 'title' as const;
+  /** the first visit: the QUICK FIGHT lesson (src/ui/guidelessons.ts) */
+  tutorialKey = 'quickfight';
   private div = 'light';
   private pick: [number, number] = [0, 1];
   private mode: Mode = 'cpu';
   private rounds: 3 | 5 = 3;
-  private canvas: CanvasStyle = 'cbfc';
+  private venue = 0;
   private cpu: Plan = 'balanced';
 
   private list(): Fighter[] {
@@ -60,19 +94,26 @@ export class QuickFightScene extends Scene {
     return [...ranked, ...rest].slice(0, 40);
   }
 
+  /** phones: the corners move out to the screen's real edges */
+  private get FW(): number {
+    return isTouchDevice() ? SW : W;
+  }
+
   build(): void {
     const r = this.root;
-    const bg = new Graphics().rect(0, 0, W, H).fill(0x15121a);
-    for (let y = 0; y < H; y += 6) bg.rect(0, y, W, 1).fill({ color: 0x000000, alpha: 0.25 });
+    const FW = this.FW;
+    r.x = FW === W ? 0 : -OX;
+    const bg = new Graphics().rect(0, 0, FW, H).fill(0x15121a);
+    for (let y = 0; y < H; y += 6) bg.rect(0, y, FW, 1).fill({ color: 0x000000, alpha: 0.25 });
     r.addChild(bg);
-    r.addChild(text('QUICK FIGHT', 0, 6, { width: W, align: 'center', color: PAL.gold, scale: 2 }));
-    r.addChild(text('Any two fighters. No careers on the line. Probably some brain damage.', 0, 24, { width: W, align: 'center', small: true, color: PAL.ash }));
+    r.addChild(text('QUICK FIGHT', 0, 6, { width: FW, align: 'center', color: PAL.gold, scale: 2 }));
+    r.addChild(text('Any two fighters. No careers on the line. Probably some brain damage.', 0, 24, { width: FW, align: 'center', small: true, color: PAL.ash }));
     const fighters = this.list();
     this.pick = [Math.min(this.pick[0], fighters.length - 1), Math.min(this.pick[1], fighters.length - 1)];
     if (this.pick[0] === this.pick[1]) this.pick[1] = (this.pick[0] + 1) % fighters.length;
     // the two corners
     for (const side of [0, 1] as const) {
-      const x = side === 0 ? 8 : W - 172;
+      const x = side === 0 ? 8 : FW - 172;
       const f = fighters[this.pick[side]];
       r.addChild(box(164, 150, PAL.night, side === 0 ? 0x9e2a2a : 0x284a86, { bevel: true })).position.set(x, 36);
       r.addChild(text(side === 0 ? (this.mode === 'versus' ? 'RED CORNER  •  P1' : 'RED CORNER  •  YOU') : this.mode === 'versus' ? 'BLUE CORNER  •  P2' : 'BLUE CORNER  •  CPU', x + 6, 40, { small: true, color: side === 0 ? 0xd86a6a : 0x6a8ad8 }));
@@ -88,26 +129,53 @@ export class QuickFightScene extends Scene {
       r.addChild(button('VS ANYONE', x + 84, 168, 74, 13, () => this.anyone(side), { small: true, fill: PAL.shadow }));
     }
     // the middle: settings
-    const mx = 180;
+    const mx = Math.round((FW - 120) / 2);
     const row = (label: string, y: number) => r.addChild(text(label, mx, y + 3, { small: true, color: PAL.ash }));
     row('DIVISION', 40);
     const divOpts = DIVISION_ORDER.map((d) => ({ value: d, label: divisionName(d) }));
     if (unlockedStoryFighters().length >= 2) divOpts.unshift({ value: 'story', label: 'Story fighters' });
     r.addChild(selector(mx + 40, 40, 80, divOpts, this.div, (v) => { this.div = v; this.pick = [0, 1]; this.refresh(); }));
-    if (unlockedStoryFighters().length < 2) r.addChild(text('Beat Road To Champion chapters to unlock its fighters here.', mx, 204, { small: true, width: 120, color: PAL.grey, maxLines: 2 }));
+    if (unlockedStoryFighters().length < 2) r.addChild(text('Beat Road To Champion chapters to unlock its fighters here.', mx, 172, { small: true, width: 120, color: PAL.grey, maxLines: 2 }));
     row('PLAYERS', 58);
     r.addChild(selector(mx + 40, 58, 80, [{ value: 'cpu' as Mode, label: '1P vs CPU' }, { value: 'versus' as Mode, label: '2P versus' }], this.mode, (v) => { this.mode = v; this.refresh(); }));
     row('ROUNDS', 76);
     r.addChild(selector(mx + 40, 76, 80, [{ value: 3 as const, label: '3 rounds' }, { value: 5 as const, label: '5 rounds' }], this.rounds, (v) => (this.rounds = v)));
-    row('CANVAS', 94);
-    r.addChild(selector(mx + 40, 94, 80, [{ value: 'cbfc' as CanvasStyle, label: 'CBFC' }, { value: 'pfl' as CanvasStyle, label: 'The Lounge' }, { value: 'regional' as CanvasStyle, label: 'Regional' }, { value: 'local' as CanvasStyle, label: 'Bingo hall' }, { value: 'bk' as CanvasStyle, label: 'Bareknuckle' }], this.canvas, (v) => (this.canvas = v)));
     if (this.mode === 'cpu') {
-      row('CPU PLAN', 112);
-      r.addChild(selector(mx + 40, 112, 80, [{ value: 'balanced' as Plan, label: 'Balanced' }, { value: 'pressure' as Plan, label: 'Pressure' }, { value: 'counter' as Plan, label: 'Counter' }, { value: 'wrestle' as Plan, label: 'Wrestle' }], this.cpu, (v) => (this.cpu = v)));
+      row('CPU PLAN', 94);
+      r.addChild(selector(mx + 40, 94, 80, [{ value: 'balanced' as Plan, label: 'Balanced' }, { value: 'pressure' as Plan, label: 'Pressure' }, { value: 'counter' as Plan, label: 'Counter' }, { value: 'wrestle' as Plan, label: 'Wrestle' }], this.cpu, (v) => (this.cpu = v)));
     }
-    r.addChild(text(this.controlsNote(), mx, 132, { small: true, width: 120, color: PAL.ash, maxLines: 7 }));
+    r.addChild(text(this.controlsNote(), mx, 114, { small: true, width: 120, color: PAL.ash, maxLines: 8 }));
+    this.venuePanel();
     r.addChild(button('← BACK', 8, H - 20, 60, 14, () => void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g))), { small: true }));
-    r.addChild(button('FIGHT!', W / 2 - 50, H - 24, 100, 18, () => this.fight(), { fill: PAL.blood }));
+    r.addChild(button('FIGHT!', FW / 2 - 50, H - 24, 100, 18, () => this.fight(), { fill: PAL.blood }));
+  }
+
+  /** Under the corners: where tonight's fight is, with a look at the room. */
+  private venuePanel(): void {
+    const r = this.root;
+    const v = VENUES[this.venue];
+    const room = roomOf(v);
+    const info = v.venue ? content().venues.find((x) => x.id === v.venue) : undefined;
+    const y = 190;
+    const FW = this.FW;
+    r.addChild(box(FW - 16, 52, PAL.night, PAL.slate, { bevel: true })).position.set(8, y);
+    // the room, small: its band, a row of heads, the top of the cage
+    const pv = new Graphics();
+    paintRoom(pv, room, lerpColor, 60);
+    for (let x = 4; x < 480; x += 9) if (Math.sin(x * 7.3) > 1 - ROOMS[room].fill * 1.6) pv.circle(x, 52, 3).fill(0x141016).rect(x - 3, 54, 7, 6).fill(0x141016);
+    pv.rect(0, 57, 480, 3).fill(0x2a2a30);
+    pv.scale.set(0.42);
+    pv.position.set(13, y + 5);
+    r.addChild(pv);
+    r.addChild(box(202, 26, 0x000000, PAL.slate, { alpha: 0 })).position.set(12, y + 4);
+    r.addChild(text('VENUE', 220, y + 6, { small: true, color: PAL.ash }));
+    r.addChild(selector(250, y + 4, FW - 264, VENUES.map((x, i) => ({ value: i, label: x.label })), this.venue, (i) => { this.venue = i; this.refresh(); }));
+    const name = info?.name ?? 'An Unmarked Warehouse';
+    const blurb = info?.blurb ?? 'No permits, no gloves, no address on the flyer. Bring cash.';
+    r.addChild(text(name.toUpperCase(), 220, y + 21, { small: true, color: PAL.gold, width: FW - 234, maxLines: 1 }));
+    r.addChild(text(blurb, 220, y + 29, { small: true, color: PAL.ash, width: FW - 234, maxLines: 2 }));
+    const cap = info ? `CAPACITY ${info.capacity.toLocaleString('en-US')}` : 'CAPACITY: WHOEVER FITS';
+    r.addChild(text(`${v.bare ? 'BARE KNUCKLE  •  ' : ''}${ROOMS[room].day ? 'DAYLIGHT  •  ' : ''}${cap}`, 13, y + 36, { small: true, color: PAL.grey, width: 200, maxLines: 1 }));
   }
 
   /** Who plays with what. */
@@ -123,6 +191,7 @@ export class QuickFightScene extends Scene {
     const n = input.padList().length;
     if (n >= 2) return 'P1: controller 1.\nP2: controller 2.\nPlug in a third and nobody cares.';
     if (isConsole) return n >= 2 ? 'P1: controller 1.\nP2: controller 2.' : 'Connect a second controller for two players.';
+    if (isTouchDevice()) return n === 1 ? 'P1: the touch screen.\nP2: the controller.\n(Pair a second controller to give P1 one too.)' : 'Pair a controller with this phone or tablet: P1 plays on the touch screen, P2 on the controller.';
     if (n === 1) return 'P1: keyboard.\nP2: the controller.\n(Plug in a second controller to give P1 one too.)';
     return 'One keyboard, two people.\nP1: WASD move, J K L punch/kick, I block, Space grab.\nP2: arrows move, , . / punch/kick, R-Shift block, Enter grab.';
   }
@@ -144,7 +213,8 @@ export class QuickFightScene extends Scene {
     const B = l[this.pick[1]];
     if (!A || !B || A === B) return alertBox(this.g, 'Pick two fighters', 'Pick two different fighters.');
     sfx('bell');
-    const ev: FightEvent = { id: 'qf_' + Date.now(), name: 'CBFC Exhibition', number: null, week: s.week, venue: 'ape_x', region: 'na', card: [], status: 'scheduled', ppv: false, notes: ['started'] };
+    const v = VENUES[this.venue];
+    const ev: FightEvent = { id: 'qf_' + Date.now(), name: v.event, number: null, week: s.week, venue: v.venue ?? 'ape_x', region: 'na', card: [], status: 'scheduled', ppv: false, notes: ['started'] };
     const bout: Bout = makeBout(s, ev, A, B, 0, null);
     bout.rounds = this.rounds;
     ev.card.push(bout);
@@ -156,8 +226,8 @@ export class QuickFightScene extends Scene {
     openLiveFight(this.g, {
       bout, A, B, skills: [A.skills, B.skills], player: 0, plan: 'balanced', oppPlan: this.cpu, cutTier: 2, seed: rng.int(1, 1e9),
       event: ev.name, judges: off.judges.map((j) => j.name), referee: off.referee.name,
-      sponsors: sp.map((name) => ({ name, color: sponsorColor(name) })), canvas: { style: this.canvas, logo: this.canvas === 'cbfc' ? undefined : this.canvas === 'pfl' ? 'PFL LOUNGE' : this.canvas === 'bk' ? 'BAREKNUCKLE' : 'EXHIBITION' },
-      bare: this.canvas === 'bk', state: s, ev, versus: this.mode === 'versus' ? this.assign() : undefined,
+      sponsors: sp.map((name) => ({ name, color: sponsorColor(name) })), canvas: { style: v.style, logo: v.logo, room: roomOf(v) },
+      bare: !!v.bare, state: s, ev, versus: this.mode === 'versus' ? this.assign() : undefined,
       done: (res) => {
         this.g.state = prev;
         const w = res.winner ? s.fighters[res.winner] : null;

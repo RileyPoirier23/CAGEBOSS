@@ -19,13 +19,59 @@ import { openLedgerPeek } from './ui/scenes/ledger';
 import { openNegotiation } from './ui/scenes/negotiation';
 import { openFighterEditor } from './ui/scenes/editor_fighter';
 import { openFightLab } from './ui/scenes/fightlab';
+import { openArenaLab } from './ui/scenes/arenalab';
 import { installTouch, attachTouchCanvas } from './ui/touch';
 import { installController } from './ui/controller';
-import { installNative } from './native';
+import { installNative, importLegacySaves } from './native';
 import { platform } from './core/platform';
 import { installSaveFiles, syncPlatformAchievements } from './desktopsync';
+import { FMHubScene } from './ui/scenes/fmhub';
+import { DeskScene } from './ui/scenes/desk';
+import { setAsyncCompressor, flushSaves } from './core/save';
+
+/** The autosave's compression on a worker; anything wrong with it and saves stay on the main thread. */
+function installSaveWorker(): void {
+  let w: Worker;
+  try {
+    w = new Worker(new URL('./saveworker.ts', import.meta.url), { type: 'module' });
+  } catch {
+    return;
+  }
+  let n = 0;
+  const waiting = new Map<number, { ok: (lz: string) => void; fail: () => void }>();
+  const failAll = () => {
+    setAsyncCompressor(null);
+    for (const p of waiting.values()) p.fail();
+    waiting.clear();
+  };
+  w.onerror = failAll;
+  w.onmessage = (e: MessageEvent<{ id: number; lz: string | null }>) => {
+    const p = waiting.get(e.data.id);
+    waiting.delete(e.data.id);
+    if (p) (e.data.lz !== null ? p.ok(e.data.lz) : p.fail());
+  };
+  setAsyncCompressor(
+    (json) =>
+      new Promise<string>((ok, fail) => {
+        const id = ++n;
+        waiting.set(id, { ok, fail });
+        w.postMessage({ id, json });
+        // a worker that never answers: fall back to writing it here
+        setTimeout(() => {
+          if (waiting.delete(id)) fail();
+        }, 15000);
+      }),
+  );
+  // leaving the app (home button, app switcher, closing the tab): write what's still queued
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushSaves();
+  });
+  window.addEventListener('pagehide', () => flushSaves());
+}
 
 async function boot() {
+  await importLegacySaves(); // Android: saves from the old (Godot) app, before anything reads storage
+  installSaveWorker();
   installSaveFiles(); // desktop: saves mirrored to files (Steam Cloud syncs those)
   syncPlatformAchievements();
   loadBrowserContent();
@@ -34,6 +80,24 @@ async function boot() {
   installTouch(); // before Pixi's event system, so pinch-zoom can claim the second finger
   await game.init(document.getElementById('game')!);
   attachTouchCanvas(game.app.canvas);
+  // leaving the app (home button, app switcher, closing the tab): phones may never come back, so
+  // the week so far is saved too, not just what was already queued
+  const keepWeek = () => {
+    if (game.scene instanceof FMHubScene || game.scene instanceof DeskScene) game.autosave();
+    flushSaves();
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') keepWeek();
+  });
+  window.addEventListener('pagehide', keepWeek);
+  // Phones drop the WebGL context under memory pressure (or after a long freeze): the canvas goes
+  // black and never comes back. Keep the week (between screens the state is whole) and restart.
+  game.app.canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    if (game.scene instanceof FMHubScene || game.scene instanceof DeskScene) game.autosave();
+    flushSaves();
+    setTimeout(() => location.reload(), 200);
+  });
   const pad = installController(game, {
     // Menu button: the in-career menu on the desk, settings anywhere else
     onMenu: () =>
@@ -49,10 +113,13 @@ async function boot() {
   (window as any).__open = {
     roster: openRoster, rankings: openRankings, inbox: openInbox, chart: openChart, corkboard: openCorkboard, settings: openSettings,
     credits: openCredits, gamemenu: openGameMenu, jukebox: openJukebox, load: openLoad, ledger: openLedgerPeek, negotiation: openNegotiation,
-    editor: openFighterEditor, fightlab: openFightLab,
+    editor: openFighterEditor, fightlab: openFightLab, arenalab: openArenaLab,
   };
   game.goto(new TitleScene(game));
-  if (new URLSearchParams(location.search).has('fightlab')) openFightLab(game);
+  const params = new URLSearchParams(location.search);
+  if (params.has('fightlab')) openFightLab(game);
+  // after the title's own pop-ups (what's new, coming soon), so the lab is on top
+  if (params.has('arenalab')) setTimeout(() => openArenaLab(game, params.get('arenalab') || 'strikes'), 1200);
 }
 
 boot().catch((e) => {

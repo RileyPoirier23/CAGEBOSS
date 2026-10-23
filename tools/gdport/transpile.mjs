@@ -1557,7 +1557,8 @@ class ModuleEmitter {
     const sf = d.getSourceFile();
     if (ts.isClassDeclaration(d)) return `${moduleClass(sf.fileName)}.${clsName(d.name.text)}`;
     if (ts.isFunctionDeclaration(d) && isModuleLevel(d)) return `${moduleClass(sf.fileName)}.${safe(d.name.text)}`;
-    if (isModuleLevel(d)) return `${moduleClass(sf.fileName)}.${safe(text)}`;
+    // by its declared name: `import { W as DESIGN_W }` still means kit's W
+    if (isModuleLevel(d)) return `${moduleClass(sf.fileName)}.${safe(d.name && ts.isIdentifier(d.name) ? d.name.text : text)}`;
     if (ts.isImportSpecifier(d) || ts.isImportClause(d) || ts.isNamespaceImport(d)) {
       report(n, 'unresolved import ' + text);
       return safe(text);

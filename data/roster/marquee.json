@@ -6759,6 +6759,675 @@
    "hiddenTraits": [],
    "debutAct": 1,
    "startWith": "us"
+  },
+  {
+   "id": "tai_shoey",
+   "first": "Tai",
+   "last": "Shoey-Vasa",
+   "nick": "Bam Bam",
+   "gender": "M",
+   "age": 32,
+   "division": "heavy",
+   "country": "Australia",
+   "hometown": "Sydney",
+   "look": {
+    "head": 3,
+    "skin": 4,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 3,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 2,
+    "ears": 2,
+    "scar": 0,
+    "tattoo": 3,
+    "build": 2
+   },
+   "skills": {
+    "striking": 78,
+    "power": 92,
+    "wrestling": 55,
+    "grappling": 50,
+    "cardio": 58,
+    "chin": 84,
+    "fightIQ": 66,
+    "durability": 80,
+    "heart": 86,
+    "weightCut": 30
+   },
+   "styles": [
+    "Brawler"
+   ],
+   "traits": [
+    "Party Animal",
+    "Showman",
+    "Wholesome"
+   ],
+   "marquee": {
+    "archetype": "The Funniest Man in the Building",
+    "arc": "The Funniest Man in the Building"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "leftHook",
+     "bigOverhand"
+    ],
+    "celebration": "dances"
+   },
+   "record": {
+    "w": 15,
+    "l": 7,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 80,
+   "primeAge": 31,
+   "moneyIQ": 35,
+   "social": {
+    "followers": 900000,
+    "style": "live streams"
+   },
+   "bio": "{first} celebrates every win by drinking out of a shoe, and every loss by drinking out of someone else's shoe. The crowd loves him. Podiatrists have concerns.",
+   "hiddenTraits": [],
+   "parody": "Tai Tuivasa",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "kev_hollandaise",
+   "first": "Kevin",
+   "last": "Hollandaise",
+   "nick": "Trailblazer",
+   "gender": "M",
+   "age": 32,
+   "division": "welter",
+   "country": "USA",
+   "hometown": "Kansas City, KS",
+   "look": {
+    "head": 1,
+    "skin": 4,
+    "hair": 2,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 80,
+    "power": 76,
+    "wrestling": 60,
+    "grappling": 72,
+    "cardio": 74,
+    "chin": 78,
+    "fightIQ": 64,
+    "durability": 74,
+    "heart": 80,
+    "weightCut": 60
+   },
+   "styles": [
+    "Showboat",
+    "Kickboxer"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Showman",
+    "Prankster"
+   ],
+   "marquee": {
+    "archetype": "The Unfiltered Jabber",
+    "arc": "The Unfiltered Jabber"
+   },
+   "anim": {
+    "stance": "handsLow",
+    "signature": [
+     "spinningBackKick",
+     "counterRight"
+    ],
+    "celebration": "shrug"
+   },
+   "record": {
+    "w": 27,
+    "l": 12,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 76,
+   "primeAge": 30,
+   "moneyIQ": 55,
+   "social": {
+    "followers": 1200000,
+    "style": "live streams"
+   },
+   "bio": "{first} talks to his opponent the entire fight, to the referee between rounds and to the cameraman during the walkout. He has stopped a carjacking. He will tell you about it.",
+   "hiddenTraits": [],
+   "parody": "Kevin Holland",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "kai_karafries",
+   "first": "Kai",
+   "last": "Kara-Fries",
+   "nick": "Don't Blink",
+   "gender": "M",
+   "age": 31,
+   "division": "fly",
+   "country": "New Zealand",
+   "hometown": "Auckland",
+   "look": {
+    "head": 0,
+    "skin": 3,
+    "hair": 1,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 0
+   },
+   "skills": {
+    "striking": 84,
+    "power": 78,
+    "wrestling": 58,
+    "grappling": 62,
+    "cardio": 80,
+    "chin": 80,
+    "fightIQ": 76,
+    "durability": 78,
+    "heart": 84,
+    "weightCut": 70
+   },
+   "styles": [
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Wholesome",
+    "Gym Rat"
+   ],
+   "marquee": {
+    "archetype": "The Nicest Killer",
+    "arc": "The Nicest Killer"
+   },
+   "anim": {
+    "stance": "bouncy",
+    "signature": [
+     "leftHook",
+     "blitz"
+    ],
+    "celebration": "shaka"
+   },
+   "record": {
+    "w": 25,
+    "l": 11,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 80,
+   "primeAge": 30,
+   "moneyIQ": 45,
+   "social": {
+    "followers": 400000,
+    "style": "gym selfies"
+   },
+   "bio": "The friendliest flyweight alive until the bell, at which point {first} becomes a small, fast, extremely polite problem. Says sorry after knockdowns. Means it.",
+   "hiddenTraits": [],
+   "parody": "Kai Kara-France",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "darren_tillt",
+   "first": "Darren",
+   "last": "Tillt",
+   "nick": "The Gorilla",
+   "gender": "M",
+   "age": 33,
+   "division": "middle",
+   "country": "England",
+   "hometown": "Liverpool",
+   "look": {
+    "head": 2,
+    "skin": 1,
+    "hair": 3,
+    "hairColor": 1,
+    "beard": 4,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 2,
+    "build": 1
+   },
+   "skills": {
+    "striking": 80,
+    "power": 82,
+    "wrestling": 52,
+    "grappling": 55,
+    "cardio": 62,
+    "chin": 78,
+    "fightIQ": 70,
+    "durability": 74,
+    "heart": 74,
+    "weightCut": 25
+   },
+   "styles": [
+    "Counter Striker"
+   ],
+   "traits": [
+    "Trash Talker",
+    "Party Animal",
+    "Clout Chaser"
+   ],
+   "marquee": {
+    "archetype": "The Scouse Sensation",
+    "arc": "The Scouse Sensation"
+   },
+   "anim": {
+    "stance": "handsLow",
+    "signature": [
+     "leftHand",
+     "counterLeft"
+    ],
+    "celebration": "pointsAtCrowd"
+   },
+   "record": {
+    "w": 18,
+    "l": 5,
+    "d": 1,
+    "nc": 0
+   },
+   "potential": 74,
+   "primeAge": 30,
+   "moneyIQ": 40,
+   "social": {
+    "followers": 2000000,
+    "style": "all caps rants"
+   },
+   "bio": "Missed weight so badly once that the commission asked if he'd brought a second fighter. {first}'s left hand is real, his posts are funnier, and his diet is a rumour.",
+   "hiddenTraits": [],
+   "parody": "Darren Till",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "marvin_vettoreye",
+   "first": "Marvin",
+   "last": "Vettor-Eye",
+   "nick": "The Italian Dream",
+   "gender": "M",
+   "age": 31,
+   "division": "middle",
+   "country": "Italy",
+   "hometown": "Mezzocorona",
+   "look": {
+    "head": 1,
+    "skin": 1,
+    "hair": 4,
+    "hairColor": 0,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 76,
+    "power": 72,
+    "wrestling": 74,
+    "grappling": 74,
+    "cardio": 86,
+    "chin": 94,
+    "fightIQ": 70,
+    "durability": 90,
+    "heart": 90,
+    "weightCut": 60
+   },
+   "styles": [
+    "Pressure Striker"
+   ],
+   "traits": [
+    "Hothead",
+    "Devout"
+   ],
+   "marquee": {
+    "archetype": "The Unstoppable Motor",
+    "arc": "The Unstoppable Motor"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "volume",
+     "cageGrind"
+    ],
+    "celebration": "roar"
+   },
+   "record": {
+    "w": 19,
+    "l": 7,
+    "d": 1,
+    "nc": 0
+   },
+   "potential": 76,
+   "primeAge": 31,
+   "moneyIQ": 50,
+   "social": {
+    "followers": 600000,
+    "style": "gym selfies"
+   },
+   "bio": "Has a chin certified by three separate doctors as 'not normal'. {first} walks through everything, argues every decision, and once ate a head kick and asked the referee what time it was.",
+   "hiddenTraits": [],
+   "parody": "Marvin Vettori",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "bigi_rozenstruck",
+   "first": "Jairzinho",
+   "last": "Rozenstruck",
+   "nick": "Bigi Boy",
+   "gender": "M",
+   "age": 37,
+   "division": "heavy",
+   "country": "Suriname",
+   "hometown": "Paramaribo",
+   "look": {
+    "head": 0,
+    "skin": 5,
+    "hair": 0,
+    "hairColor": 0,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 2,
+    "ears": 2,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 80,
+    "power": 94,
+    "wrestling": 40,
+    "grappling": 38,
+    "cardio": 50,
+    "chin": 80,
+    "fightIQ": 62,
+    "durability": 82,
+    "heart": 70,
+    "weightCut": 40
+   },
+   "styles": [
+    "Counter Striker"
+   ],
+   "traits": [
+    "Shy",
+    "Family First"
+   ],
+   "marquee": {
+    "archetype": "The Silent Executioner",
+    "arc": "The Silent Executioner"
+   },
+   "anim": {
+    "stance": "upright",
+    "signature": [
+     "overhandRight"
+    ],
+    "celebration": "bows"
+   },
+   "record": {
+    "w": 14,
+    "l": 6,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 70,
+   "primeAge": 33,
+   "moneyIQ": 40,
+   "social": {
+    "followers": 300000,
+    "style": "prayer emojis"
+   },
+   "bio": "Throws maybe four punches a round. {first} has knocked people out with three of them. The other one was a feint so convincing the opponent fell over anyway.",
+   "hiddenTraits": [],
+   "parody": "Jairzinho Rozenstruik",
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "gaston_homard",
+   "first": "Gaston",
+   "last": "Arsenault",
+   "nick": "Le Homard",
+   "gender": "M",
+   "age": 27,
+   "division": "light",
+   "country": "Canada",
+   "hometown": "Shediac, NB",
+   "look": {
+    "head": 2,
+    "skin": 0,
+    "hair": 5,
+    "hairColor": 3,
+    "beard": 2,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 1,
+    "ears": 1,
+    "scar": 0,
+    "tattoo": 0,
+    "build": 1
+   },
+   "skills": {
+    "striking": 70,
+    "power": 72,
+    "wrestling": 80,
+    "grappling": 78,
+    "cardio": 82,
+    "chin": 80,
+    "fightIQ": 72,
+    "durability": 78,
+    "heart": 88,
+    "weightCut": 55
+   },
+   "styles": [
+    "Wrestler",
+    "Ground & Pound"
+   ],
+   "traits": [
+    "Family First",
+    "Wholesome",
+    "Gym Rat"
+   ],
+   "marquee": {
+    "archetype": "The Good Ol' Boy",
+    "arc": "The Good Ol' Boy"
+   },
+   "anim": {
+    "stance": "wrestler",
+    "signature": [
+     "doubleLeg",
+     "groundAndPound"
+    ],
+    "celebration": "wavesToKids"
+   },
+   "record": {
+    "w": 11,
+    "l": 2,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 82,
+   "primeAge": 29,
+   "moneyIQ": 60,
+   "social": {
+    "followers": 40000,
+    "style": "gym selfies"
+   },
+   "bio": "Fished lobster with his father every spring since he was nine, which explains the grip. {first} trains in Moncton, speaks Chiac, and has never once lost a scramble to anybody who didn't grow up on a boat.",
+   "hiddenTraits": [],
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "moira_fog",
+   "first": "Moira",
+   "last": "MacInnis",
+   "nick": "Fog Machine",
+   "gender": "W",
+   "age": 29,
+   "division": "wbantam",
+   "country": "Canada",
+   "hometown": "Glace Bay, NS",
+   "look": {
+    "head": 1,
+    "skin": 0,
+    "hair": 2,
+    "hairColor": 5,
+    "beard": 0,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 0,
+    "ears": 0,
+    "scar": 1,
+    "tattoo": 1,
+    "build": 1
+   },
+   "skills": {
+    "striking": 74,
+    "power": 68,
+    "wrestling": 72,
+    "grappling": 80,
+    "cardio": 86,
+    "chin": 82,
+    "fightIQ": 76,
+    "durability": 80,
+    "heart": 90,
+    "weightCut": 60
+   },
+   "styles": [
+    "Sub Hunter"
+   ],
+   "traits": [
+    "Loyal",
+    "Family First"
+   ],
+   "marquee": {
+    "archetype": "The Choke Collector",
+    "arc": "The Choke Collector"
+   },
+   "anim": {
+    "stance": "sway",
+    "signature": [
+     "rearNakedChoke",
+     "backTake"
+    ],
+    "celebration": "bows"
+   },
+   "record": {
+    "w": 10,
+    "l": 3,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 80,
+   "primeAge": 30,
+   "moneyIQ": 55,
+   "social": {
+    "followers": 25000,
+    "style": "gym selfies"
+   },
+   "bio": "Comes from a long line of Cape Breton coal miners and fiddlers, and fights like both: relentless, then suddenly very fast. {first}'s finishes come out of nowhere, like the weather back home.",
+   "hiddenTraits": [],
+   "debutAct": 1,
+   "startWith": "free"
+  },
+  {
+   "id": "dwayne_doubledouble",
+   "first": "Dwayne",
+   "last": "Doucette",
+   "nick": "Double-Double",
+   "gender": "M",
+   "age": 34,
+   "division": "welter",
+   "country": "Canada",
+   "hometown": "Dieppe, NB",
+   "look": {
+    "head": 3,
+    "skin": 0,
+    "hair": 1,
+    "hairColor": 1,
+    "beard": 1,
+    "brows": 1,
+    "eyes": 0,
+    "nose": 2,
+    "ears": 2,
+    "scar": 1,
+    "tattoo": 0,
+    "build": 2
+   },
+   "skills": {
+    "striking": 72,
+    "power": 80,
+    "wrestling": 62,
+    "grappling": 58,
+    "cardio": 60,
+    "chin": 86,
+    "fightIQ": 64,
+    "durability": 84,
+    "heart": 82,
+    "weightCut": 45
+   },
+   "styles": [
+    "Brawler"
+   ],
+   "traits": [
+    "Party Animal",
+    "Wholesome",
+    "Gambler"
+   ],
+   "marquee": {
+    "archetype": "The Backyard Legend",
+    "arc": "The Backyard Legend"
+   },
+   "anim": {
+    "stance": "brawler",
+    "signature": [
+     "overhandRight",
+     "awkwardFlurry"
+    ],
+    "celebration": "flexes"
+   },
+   "record": {
+    "w": 16,
+    "l": 9,
+    "d": 0,
+    "nc": 0
+   },
+   "potential": 66,
+   "primeAge": 31,
+   "moneyIQ": 30,
+   "social": {
+    "followers": 15000,
+    "style": "live streams"
+   },
+   "bio": "Works nights plowing snow, fights on weekends, and has never once warmed up properly. {first} is the most beloved man in every rink, legion and parking lot in southeastern New Brunswick.",
+   "hiddenTraits": [],
+   "debutAct": 1,
+   "startWith": "free"
   }
  ]
 }

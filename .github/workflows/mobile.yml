@@ -1,0 +1,154 @@
+name: Mobile build
+
+# The phone apps: the same web game as 506clicks.ca/play/cageboss (vite build) wrapped by
+# Capacitor (capacitor.config.ts, android/, ios/).
+#
+# Android: a release APK (Actions tab -> the run -> Artifacts). It replaces the Godot APK, which
+# froze for seconds on END WEEK on phones; it keeps the old app's id and imports its saves. On
+# main, or when run by hand with "publish" ticked, it goes onto the GitHub release for
+# package.json's version as CAGE-BOSS-Android.apk (the website's Android button).
+# Signing: the ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD secrets (alias "cageboss", the
+# same key godot.yml used) so it installs over the old app; without them it's signed with a
+# throwaway key (uninstall the old app first).
+#
+# iOS: always checks the Xcode project builds. With these secrets it also archives a signed build
+# and uploads it to TestFlight (then add testers in App Store Connect):
+#   APPLE_TEAM_ID            the 10-character Team ID (developer.apple.com -> Membership)
+#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8_BASE64
+#                            an App Store Connect API key (Users and Access -> Integrations ->
+#                            App Store Connect API, role App Manager), the .p8 file base64'd
+# The app record (bundle id ca.506clicks.cageboss) must exist in App Store Connect first.
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Put the Android APK on the release for package.json's version (replacing the one there)
+        type: boolean
+        default: false
+  push:
+    branches: ['main', 'master', 'claude/**']
+    paths: ['src/**', 'data/**', 'public/**', 'index.html', 'android/**', 'ios/**', 'capacitor.config.ts', 'package.json', 'vite.config.ts', '.github/workflows/mobile.yml']
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync android
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASS" ]; then
+            printf '%s' "$KEYSTORE_B64" | base64 -d > "$HOME/release.keystore"
+            echo "SIGN=-PcbKeystore=$HOME/release.keystore -PcbKeyAlias=cageboss" >> "$GITHUB_ENV"
+            echo "SIGN_PASS=$KEYSTORE_PASS" >> "$GITHUB_ENV"
+          else
+            echo "::warning::No Android release key (ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD secrets): the APK is signed with a throwaway key"
+            keytool -genkeypair -keystore "$HOME/throwaway.keystore" -storepass android -alias throwaway -keypass android -dname "CN=CAGE BOSS,O=506Clicks,C=CA" -keyalg RSA -keysize 2048 -validity 10000
+            echo "SIGN=-PcbKeystore=$HOME/throwaway.keystore -PcbKeyAlias=throwaway" >> "$GITHUB_ENV"
+            echo "SIGN_PASS=android" >> "$GITHUB_ENV"
+          fi
+      - name: Build the APK
+        working-directory: android
+        run: |
+          v=$(node -p "require('../package.json').version")
+          code=$(node -p "const [a,b,c]=require('../package.json').version.split('.').map(Number); a*10000+b*100+c")
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease -PcbVersionName="$v" -PcbVersionCode="$code" $SIGN -PcbKeystorePassword="$SIGN_PASS"
+          mkdir -p ../build/android
+          cp app/build/outputs/apk/release/app-release.apk ../build/android/CAGE-BOSS-Android.apk
+          ls -la ../build/android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cageboss-android
+          path: build/android
+          if-no-files-found: error
+      - name: Android APK onto the release
+        if: github.event_name == 'workflow_dispatch' && inputs.publish || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="v$(node -p "require('./package.json').version")"
+          # a version bump: desktop.yml is making the release right now, so wait for it
+          for i in $(seq 1 60); do
+            gh release view "$v" >/dev/null 2>&1 && break
+            st=$(gh run list --workflow desktop.yml --commit "$GITHUB_SHA" --json status -q '.[0].status' 2>/dev/null || true)
+            if [ "$st" = completed ] || { [ -z "$st" ] && [ "$i" -gt 4 ]; }; then break; fi
+            sleep 30
+          done
+          gh release view "$v" >/dev/null 2>&1 || { echo "No release $v yet"; exit 0; }
+          gh release upload "$v" build/android/CAGE-BOSS-Android.apk --clobber
+          echo "Uploaded CAGE-BOSS-Android.apk to $v"
+
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync ios
+      - name: Build (simulator, unsigned)
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath build/ios-sim \
+            CODE_SIGNING_ALLOWED=NO build | tail -20
+          test "${PIPESTATUS[0]}" = 0
+      - name: Archive and upload to TestFlight
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+          KEY_P8: ${{ secrets.ASC_KEY_P8_BASE64 }}
+        run: |
+          if [ -z "$TEAM" ] || [ -z "$KEY_ID" ] || [ -z "$ISSUER" ] || [ -z "$KEY_P8" ]; then
+            echo "::notice::No Apple signing secrets (APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8_BASE64): skipping TestFlight"
+            exit 0
+          fi
+          key="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
+          printf '%s' "$KEY_P8" | base64 -d > "$key"
+          v=$(node -p "require('./package.json').version")
+          auth=(-allowProvisioningUpdates -authenticationKeyPath "$key" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath build/ios/CAGEBOSS.xcarchive \
+            DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic MARKETING_VERSION="$v" CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
+            "${auth[@]}" archive | tail -20
+          test "${PIPESTATUS[0]}" = 0
+          cat > "$RUNNER_TEMP/export.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM</string>
+            <key>signingStyle</key><string>automatic</string>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive -archivePath build/ios/CAGEBOSS.xcarchive -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
+            -exportPath build/ios/export "${auth[@]}" | tail -20
+          test "${PIPESTATUS[0]}" = 0
+          echo "Uploaded $v ($GITHUB_RUN_NUMBER) to TestFlight"

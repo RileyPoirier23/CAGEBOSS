@@ -12,8 +12,9 @@
 import { Assets, Container, Graphics, Sprite, type Texture, type Ticker } from 'pixi.js';
 import type { Game } from './app';
 import { PAL } from '../art/palette';
-import { W, H, text, button } from './kit';
+import { W, H, SW, OX, text, button } from './kit';
 import { setMusicContext } from '../audio/music';
+import { isTouchDevice } from '../core/platform';
 import { FRIENDS, ARTISTS, SUPPORTERS } from './creditsdata';
 
 type Kind = 'h' | 'n' | 'g' | 's' | 'b';
@@ -64,6 +65,10 @@ const ROLL: [string, Kind][] = [
   ['Instagram: @506clicks  •  @rpoirier07', 'n'],
   ['TikTok: iheartgrannies69  •  Discord: gldmonkey', 'n'],
   ['', 'n'],
+  ['The friends above play themselves, with their blessing.', 'n'],
+  ['Everybody else in here is fictional: satirical archetypes.', 'n'],
+  ['No energy drinks were harmed. Several were consumed.', 'n'],
+  ['', 'n'],
   ['Made in Moncton, New Brunswick', 's'],
   ['506clicks.ca', 'n'],
   ['', 'n'],
@@ -81,7 +86,7 @@ const THANKS = 'From a bingo-hall smoker to the biggest fight in the world. Than
 export function openEndCredits(g: Game, done: () => void, opts: { menu?: boolean } = {}): void {
   const root = new Container();
   const wrap = g.modal(root, { dim: 1 });
-  root.addChild(new Graphics().rect(0, 0, W, H).fill(0x060508));
+  root.addChild(new Graphics().rect(-OX, 0, SW, H).fill(0x060508));
   setMusicContext('title');
   // no Esc / back out of this one (from the menu, Esc skips ahead to the memorial)
   const popKeys = g.pushKeyHandler((e) => {
@@ -133,7 +138,10 @@ export function openEndCredits(g: Game, done: () => void, opts: { menu?: boolean
     thanks = null;
     showMemorial();
   };
-  let skip: Container | null = opts.menu ? button('SKIP TO THE END', W - 92, H - 16, 86, 12, toMemorial, { small: true, fill: 0x2a262c }) : null;
+  // phones: a bigger one, in the screen's corner
+  let skip: Container | null = !opts.menu ? null : isTouchDevice()
+    ? button('SKIP TO THE END >>', SW - OX - 124, H - 24, 118, 19, toMemorial, { fill: 0x2a262c, border: PAL.gold })
+    : button('SKIP TO THE END', W - 92, H - 16, 86, 12, toMemorial, { small: true, fill: 0x2a262c });
   if (skip) root.addChild(skip);
   const tick = (tk: Ticker) => {
     const dt = Math.min(0.05, tk.deltaMS / 1000);
@@ -173,7 +181,7 @@ export function openEndCredits(g: Game, done: () => void, opts: { menu?: boolean
 /** In Memoriam. `waitSec`: how long before CONTINUE appears. */
 export function buildMemorial(g: Game, close: () => void, waitSec = 0): Container {
   const c = new Container();
-  c.addChild(new Graphics().rect(0, 0, W, H).fill(0x060508));
+  c.addChild(new Graphics().rect(-OX, 0, SW, H).fill(0x060508));
   // her portrait, framed like a photo on the left
   const px = 32;
   const py = 42;

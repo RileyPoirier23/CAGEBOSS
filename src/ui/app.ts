@@ -6,15 +6,16 @@ import { maybeTutorial } from './tutorial';
 import { checkAchievements } from './achievements';
 import { openHelp } from './help';
 import { input } from '../core/input';
-import { Application, Container, TextureStyle, Graphics, Ticker } from 'pixi.js';
+import { Application, Container, TextureStyle, Graphics, Ticker, UPDATE_PRIORITY } from 'pixi.js';
 import type { GameState } from '../core/types';
-import { loadJSON, storeJSON, saveToSlot, autoSlot } from '../core/save';
+import { loadJSON, storeJSON, saveToSlotSoon, autoSlot } from '../core/save';
 import { setColorblind, PAL } from '../art/palette';
 import { setMuted, setMusic, setVolumes, sfx, unlock as sfxUnlock } from '../audio/sfx';
-import { W, H, tooltip, clearChildren, dimmer, box, text } from './kit';
+import { W, H, SW, OX, setScreenWidth, tooltip, clearChildren, dimmer, box, text } from './kit';
 import { bus } from '../core/events';
 import { setTextResolution, setBleep, setFontMode, type FontMode } from './text';
 import { desktop } from '../desktop';
+import { isTouchDevice } from '../core/platform';
 import { LoadingScreen } from './loading';
 import { configureMusic, setMusicContext, skipTrack, unlockMusic, onTrackChange, type MusicContext } from '../audio/music';
 
@@ -39,6 +40,7 @@ export interface Settings {
   tutorial?: boolean; // offer the tutorial on new careers
   handsOn?: boolean; // Fighter Mode: control your fighter in real time (default on)
   tvSafe?: number; // TV-safe margin in % of each edge (consoles / TVs)
+  vibration?: boolean; // controller rumble and phone buzz in hands-on fights (default on)
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -79,6 +81,8 @@ export abstract class Scene {
 
 export class Game {
   app!: Application;
+  /** the 480-wide design, centred on a wider phone screen (x = OX) */
+  frame = new Container();
   stage = new Container(); // shaken
   sceneLayer = new Container();
   modalLayer = new Container();
@@ -115,8 +119,12 @@ export class Game {
       textureGCActive: false,
     });
     parent.appendChild(this.app.canvas);
-    this.app.stage.addChild(this.stage);
+    this.app.stage.addChild(this.frame);
+    this.frame.addChild(this.stage);
     this.stage.addChild(this.sceneLayer, this.toastLayer, this.modalLayer, this.feedbackLayer);
+    // notices are for reading, not tapping: a toast over END WEEK must not swallow the tap
+    this.toastLayer.eventMode = 'none';
+    this.feedbackLayer.eventMode = 'none';
     this.app.stage.addChild(this.tipLayer, this.loadLayer);
     tooltip.attach(this.tipLayer);
     this.app.stage.eventMode = 'static';
@@ -153,7 +161,16 @@ export class Game {
     const ah = (host?.clientHeight || window.innerHeight) * safe;
     const dpr = window.devicePixelRatio || 1;
     let s = this.settings.uiScale;
-    if (!s) {
+    // phones: fill the screen. The game takes the full height and the canvas widens to the
+    // screen's shape (up to 640 game pixels), so there are no black bars at the sides.
+    const phone = !s && isTouchDevice() && matchMedia('(pointer: coarse)').matches;
+    let sw = W;
+    if (phone) {
+      sw = Math.max(W, Math.min(640, Math.floor(aw / Math.min(ah / H, aw / W))));
+      // browser bars coming and going nudge the size: don't re-lay-out the screen for a few pixels
+      if (SW > W && Math.abs(sw - SW) < 8) sw = SW;
+      s = Math.min(ah / H, aw / sw);
+    } else if (!s) {
       // whole *device* pixels per game pixel keeps nearest-neighbour sharp on high-DPI screens
       const fit = Math.min((aw * dpr) / W, (ah * dpr) / H);
       let dev = Math.max(1, Math.floor(fit + 1e-6));
@@ -163,10 +180,16 @@ export class Game {
     }
     this.scale = s;
     const res = s * dpr;
-    this.app.renderer.resize(W, H, res);
+    const widthChanged = sw !== SW;
+    if (widthChanged) setScreenWidth(sw);
+    this.frame.x = OX;
+    this.loadLayer.x = OX;
+    this.app.renderer.resize(SW, H, res);
     setTextResolution(res);
-    c.style.width = W * s + 'px';
+    c.style.width = SW * s + 'px';
     c.style.height = H * s + 'px';
+    // the screen got wider or narrower (rotation, browser bars): lay the current screen out again
+    if (widthChanged && this.scene) this.scene.refresh();
     bus.emit('resize', s);
   }
 
@@ -228,10 +251,12 @@ export class Game {
   }
 
   /** Push a modal container (gets a dimmer behind it). */
-  modal(content: Container, opts: { dim?: number; closeOnDim?: boolean } = {}): Container {
+  modal(content: Container, opts: { dim?: number; closeOnDim?: boolean; fit?: boolean } = {}): Container {
     const wrap = new Container();
     wrap.addChild(dimmer(opts.dim ?? 0.6, opts.closeOnDim ? () => this.closeModal(wrap) : undefined));
     wrap.addChild(content);
+    // phones: once it's built (next tick, before it's drawn), a dialog smaller than the screen grows to fill it
+    if (opts.fit !== false && isTouchDevice()) this.app.ticker.addOnce(() => fitToScreen(content), undefined, UPDATE_PRIORITY.HIGH);
     this.modalLayer.addChild(wrap);
     this.modals.push(wrap);
     tooltip.hide();
@@ -268,7 +293,7 @@ export class Game {
     const c = new Container();
     c.addChild(box(w, h, PAL.night, PAL.ash, { shadow: true }));
     c.addChild(t);
-    c.x = opts.top ? Math.floor((W - w) / 2) : W - w - 4;
+    c.x = opts.top ? Math.floor((W - w) / 2) : SW - OX - w - 4;
     c.y = opts.top ? 2 : H - 4 - h - this.toasts.length * (h + 2);
     (this.modals.length && !opts.background ? this.feedbackLayer : this.toastLayer).addChild(c);
     this.toasts.push({ node: c, t: 2.6 });
@@ -279,6 +304,9 @@ export class Game {
 
   private showNowPlaying(title: string, artist: string): void {
     this.nowPlaying?.node.destroy({ children: true });
+    this.nowPlaying = null;
+    // a fight on screen has the booth talking in that corner (and the Butler names the walkout song)
+    if (this.inLiveFight || this.watchingFight) return;
     const c = new Container();
     const label = text('NOW PLAYING', 13, 2, { small: true, color: PAL.ash });
     const song = text(`${title.toUpperCase()}  -  ${artist.toUpperCase()}`, 13, 9, { small: true, color: PAL.gold, width: 200, maxLines: 1 });
@@ -302,7 +330,7 @@ export class Game {
     const IN = 0.35, HOLD = 3, OUT = 0.6;
     const a = np.t < IN ? np.t / IN : np.t < IN + HOLD ? 1 : 1 - (np.t - IN - HOLD) / OUT;
     np.node.alpha = Math.max(0, Math.min(1, a));
-    np.node.x = 4 - Math.round((1 - np.node.alpha) * 6);
+    np.node.x = 4 - OX - Math.round((1 - np.node.alpha) * 6);
     if (np.t > IN + HOLD + OUT) {
       np.node.destroy({ children: true });
       this.nowPlaying = null;
@@ -310,11 +338,13 @@ export class Game {
   }
 
   autosave(): void {
-    if (this.state) saveToSlot(this.state, autoSlot(this.state));
+    if (this.state) saveToSlotSoon(this.state, autoSlot(this.state));
   }
 
   /** a hands-on fight is running (View / F1 cycles its camera instead of opening HELP) */
   inLiveFight = false;
+  /** a watched fight is on screen (fight night) */
+  watchingFight = false;
   /** an unskippable sequence (end credits) is playing: no HELP pop-ups */
   cutscene = false;
 
@@ -381,8 +411,24 @@ export class Game {
   }
 }
 
+/**
+ * Phones: scale a dialog up (to 1.6x) to fill the screen and centre it, so its text and buttons are
+ * finger-sized. Full-screen content (cutscenes, fights) measures as big as the screen and is left alone.
+ */
+export function fitToScreen(c: Container): void {
+  if (c.destroyed) return;
+  const b = c.getLocalBounds();
+  if (b.width < 8 || b.height < 8) return;
+  const k = Math.min(1.6, (SW - 10) / b.width, (H - 8) / b.height);
+  if (k < 1.08) return;
+  const kk = Math.floor(k * 20) / 20;
+  c.pivot.set(b.x + b.width / 2, b.y + b.height / 2);
+  c.scale.set(kk);
+  c.position.set(Math.round(W / 2), Math.round(H / 2));
+}
+
 export function fullBg(color: number): Graphics {
-  return new Graphics().rect(0, 0, W, H).fill(color);
+  return new Graphics().rect(-OX, 0, SW, H).fill(color);
 }
 
 export { clearChildren };

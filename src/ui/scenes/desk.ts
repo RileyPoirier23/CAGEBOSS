@@ -13,14 +13,14 @@
  */
 import { openReplacementPicker } from '../replace';
 import { hint } from '../hints';
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, type Rectangle } from 'pixi.js';
 import { Scene } from '../app';
 import { PAL, C, shade, meterColor } from '../../art/palette';
-import { W, H, text, button, box, clickable, ScrollBox, hoverTip, paper, makeDraggable } from '../kit';
+import { W, H, SW, OX, text, button, box, clickable, ScrollBox, hoverTip, paper, makeDraggable } from '../kit';
 import type { DeskDoc, Stamp, StoryletInstance, Negotiation } from '../../core/types';
 import { Inspector, renderDoc, renderFileCard, renderIdCard, ruleField, PAGE_RULE_KEYS, PAGE_FOR_TYPE, RULE_KEY_RULE } from '../docview';
 import { stampDoc, compareFields, spendMinutes } from '../../sim/week';
-import { checkPair } from '../../sim/docs';
+import { checkPair, tutorialDocs } from '../../sim/docs';
 import { interrogate, takeBribe, refuseBribe, secondaryAction, doSecondary, closeDeskDay, deskTally, type Reply } from '../../sim/deskops';
 import { fmtClock, fmtDate, DAY_MINUTES, fmtFightDate } from '../../core/time';
 import { money } from '../../core/format';
@@ -29,7 +29,7 @@ import { def } from '../../storylets/engine';
 import { playStorylet } from '../dialog';
 import { namedPortrait, fighterPortrait, reporterPortrait, npcPortrait } from '../sprites';
 import { content } from '../../core/content';
-import { sfx } from '../../audio/sfx';
+import { sfx, startRing, stopRing, RING_CYCLE, RING_CYCLES, RING_BURSTS } from '../../audio/sfx';
 import { eventThisWeek, upcomingEvents } from '../../sim/events';
 import { routePhase } from '../flow';
 import { confirm, alertBox } from '../widgets';
@@ -39,11 +39,13 @@ import { openRoster } from './roster';
 import { openCorkboard } from './corkboard';
 import { openRankings } from './rankings';
 import { openInbox, openTvOffer } from './inbox';
+import { isTouchDevice } from '../../core/platform';
 import { openGameMenu } from './gamemenu';
 import { openLedgerPeek } from './ledger';
 import { Rng } from '../../core/rng';
 import { METER_KEYS } from '../../core/types';
 import { openChart } from './chart';
+import { maybeLesson, openLesson, lessonDue } from '../guide';
 
 type QueueItem =
   | { kind: 'doc'; id: string; doc: DeskDoc }
@@ -61,6 +63,16 @@ const STAMP_FILL: Record<Stamp, () => number> = {
 const STAMP_INK: Record<Stamp, string> = { approve: 'APPROVED', deny: 'DENIED', escalate: 'ESCALATED', bury: 'BURIED' };
 
 /** Centre column geometry. */
+/** Phones that can buzz do (Android); everything else ignores it. */
+function vibrate(pattern: number | number[]): void {
+  if (!isTouchDevice()) return;
+  try {
+    navigator.vibrate?.(pattern);
+  } catch {
+    /* no vibration motor */
+  }
+}
+
 const DOC_X = 122;
 const DOC_Y = 84;
 const DOC_W = 240;
@@ -68,6 +80,18 @@ const STRIP_Y = H - 16;
 
 export class DeskScene extends Scene {
   tutorialKey = 'desk';
+  /**
+   * Phones: the desk spans the whole (wider) screen. Everything keeps its desktop x, and the extra
+   * width goes to the right-hand column (inbox + stamps) and the nav buttons. Tap the document to
+   * read it big. FW = screen width, RX/RW = the right column.
+   */
+  private phone = isTouchDevice();
+  private get FW(): number {
+    return this.phone ? SW : W;
+  }
+  private get RW(): number {
+    return this.FW - 366 - 4;
+  }
   ins = new Inspector();
   private selected: string | null = null;
   rulebookOpen = false;
@@ -98,6 +122,18 @@ export class DeskScene extends Scene {
   enter(): void {
     // the morning bulletin (if any) is the first thing on the desk
     const s = this.g.state!;
+    // day one with lessons on: two practice agreements (one clean, one with a tenfold purse) right after the
+    // bulletin, so the DESK lesson's catch is on the player's own desk
+    if (s.week === 0 && lessonDue(this.g, 'desk') && !s.flags.tut_docs) {
+      const r = new Rng(s.rng);
+      const docs = tutorialDocs(s, r);
+      s.rng = r.state;
+      if (docs.length === 2) {
+        const at = s.desk.queue.findIndex((d) => d.meta.bulletin) + 1;
+        s.desk.queue.splice(at, 0, docs[1], docs[0]);
+      }
+      s.flags.tut_docs = 1;
+    }
     const bulletin = s.desk.queue.find((d) => d.meta.bulletin);
     if (bulletin) this.selected = bulletin.id;
     super.enter();
@@ -122,10 +158,12 @@ export class DeskScene extends Scene {
     };
 
     // ---------------------------------------------------------- office wall
+    if (this.phone) r.x = -OX;
+    const FW = this.FW;
     const wall = new Graphics();
-    wall.rect(0, 0, W, 80).fill(0x3a3036);
-    for (let x = 0; x < W; x += 16) wall.rect(x, 0, 1, 80).fill(0x342b31);
-    wall.rect(0, 76, W, 4).fill(0x241d22);
+    wall.rect(0, 0, FW, 80).fill(0x3a3036);
+    for (let x = 0; x < FW; x += 16) wall.rect(x, 0, 1, 80).fill(0x342b31);
+    wall.rect(0, 76, FW, 4).fill(0x241d22);
     r.addChild(wall);
     // the doorway where visitors stand
     const win = new Graphics();
@@ -134,6 +172,7 @@ export class DeskScene extends Scene {
     for (let i = 0; i < 30; i++) win.rect(8 + ((i * 37) % 186), 40 + ((i * 13) % 30), 2, 2).fill(i % 3 ? 0x4a5a6a : 0x8a7a4a);
     r.addChild(win);
     this.drawVisitor(r);
+    this.drawWallPhone(r);
 
     // clock
     const clock = new Graphics();
@@ -180,23 +219,27 @@ export class DeskScene extends Scene {
     r.addChild(ms);
     // nav
     const nav: [string, () => void, string][] = [
-      ['ROSTER', () => openRoster(this.g, () => this.refresh()), 'Filing cabinet: fighter dossiers, scouting, free agents'],
+      ['ROSTER', () => { openRoster(this.g, () => this.refresh()); maybeLesson(this.g, 'signing', { over: true }); }, 'Filing cabinet: fighter dossiers, scouting, free agents'],
       ['CARDS', () => openCorkboard(this.g, () => this.refresh()), 'Matchmaking corkboard'],
       ['RANKS', () => openRankings(this.g), 'Rankings wall & belts'],
       ['RATINGS', () => openChart(this.g), 'PPV & TV ratings vs other combat sports'],
       ['INBOX', () => openInbox(this.g, () => this.refresh()), 'Messages, offers, citations'],
       ['MENU', () => openGameMenu(this.g, () => this.refresh()), 'Save / load / settings'],
     ];
-    nav.forEach(([label, fn, tip], i) => r.addChild(button(label, 396 + (i % 2) * 42, 4 + Math.floor(i / 2) * 15, 40, 13, fn, { small: true, fill: PAL.shadow, tooltip: tip })));
+    // phones: the nav grows into the extra width, a little taller
+    const nw = this.phone ? Math.floor((FW - 396 - 4 - 2) / 2) : 40;
+    const nh = this.phone ? 14 : 13;
+    nav.forEach(([label, fn, tip], i) => r.addChild(button(label, 396 + (i % 2) * (nw + 2), 4 + Math.floor(i / 2) * (nh + 2), nw, nh, fn, { small: true, fill: PAL.shadow, tooltip: tip })));
     const unread = s.inbox.filter((m) => !m.read).length + s.market.tvOffers.length;
-    if (unread) r.addChild(text(String(unread), 474, 34, { small: true, color: PAL.gold }));
-    r.addChild(button(ev ? 'END DAY → FIGHT NIGHT' : 'END DAY →', 396, 50, 82, 22, () => this.endDay(), { fill: PAL.blood, small: true }));
+    if (unread) r.addChild(text(String(unread), 396 + nw * 2 + 2 - 6, 34, { small: true, color: PAL.gold }));
+    r.addChild(button(ev ? 'END DAY → FIGHT NIGHT' : 'END DAY →', 396, 50, FW - 400, 23, () => this.endDay(), { fill: PAL.blood, small: true, border: this.phone ? PAL.gold : undefined }));
 
     // ---------------------------------------------------------- desk surface
     const desk = new Graphics();
-    desk.rect(0, 80, W, H - 80).fill(PAL.wood);
-    for (let y = 82; y < H; y += 5) desk.rect(0, y, W, 1).fill(shade(PAL.wood, (y % 15) / 150 - 0.04));
+    desk.rect(0, 80, FW, H - 80).fill(PAL.wood);
+    for (let y = 82; y < H; y += 5) desk.rect(0, y, FW, 1).fill(shade(PAL.wood, (y % 15) / 150 - 0.04));
     r.addChild(desk);
+    r.addChild(this.drawClutter());
 
     const item = this.currentItem();
     const doc = item?.kind === 'doc' ? item.doc : null;
@@ -236,6 +279,19 @@ export class DeskScene extends Scene {
       centre.addChild(empty);
     }
 
+    if (this.phone && item?.kind === 'doc') {
+      // phones: tap the paper (outside inspect mode) to read it big, or the READ tab
+      centre.eventMode = 'static';
+      let down: { x: number; y: number } | null = null;
+      centre.on('pointerdown', (e) => (down = { x: e.global.x, y: e.global.y }));
+      centre.on('pointertap', (e) => {
+        const moved = down ? Math.hypot(e.global.x - down.x, e.global.y - down.y) : 0;
+        if (!this.ins.active && moved < 6) this.openReader();
+      });
+      // on the paper's header bar, top-right
+      r.addChild(button('READ', DOC_X + DOC_W - 41, DOC_Y + 1, 40, 12, () => this.openReader(), { fill: PAL.slate, border: PAL.gold }));
+    }
+
     // right: queue + stamps
     r.addChild(this.drawQueue());
     if (item?.kind === 'doc') r.addChild(this.drawStamps(item.doc));
@@ -253,7 +309,203 @@ export class DeskScene extends Scene {
     this.updateClock();
   }
 
+  /**
+   * Phones: the document and its file card side by side, big enough to read (up to 1.8x), with
+   * the stamps along the bottom. Look-only: INSPECT works on the desk itself.
+   */
+  private openReader(): void {
+    const s = this.g.state!;
+    const d = this.currentDoc();
+    if (!d || this.anim) return;
+    sfx('paper');
+    const FW = SW;
+    const root = new Container();
+    root.x = -OX;
+    const wrap = this.g.modal(root, { dim: 0.85, fit: false });
+    const close = () => this.g.closeModal(wrap);
+    root.addChild(new Graphics().rect(0, 0, FW, H).fill({ color: 0x1a1410, alpha: 0.97 }));
+    const ins = new Inspector(); // inactive: taps here don't inspect
+    const body = new Container();
+    const fc = renderFileCard(d, 114, ins, s);
+    body.addChild(fc);
+    if (d.type === 'bout') {
+      const idc = renderIdCard(d, d.subject ? s.fighters[d.subject] ?? null : null, 114, ins);
+      if (idc) {
+        idc.y = fc.height + 4;
+        body.addChild(idc);
+      }
+    }
+    const dv = renderDoc(d, DOC_W, ins, s.week);
+    dv.x = 120;
+    body.addChild(dv);
+    const bw = 120 + DOC_W;
+    const k = Math.min(1.8, (FW - 12) / bw);
+    body.scale.set(k);
+    body.x = Math.max(0, Math.round((FW - 8 - bw * k) / 2));
+    const sb = new ScrollBox(FW - 8, H - 30);
+    sb.position.set(4, 3);
+    sb.content.addChild(body);
+    root.addChild(sb);
+    sb.refresh();
+    // the bottom bar: back, and the stamps
+    const by = H - 24;
+    root.addChild(new Graphics().rect(0, by - 3, FW, 27).fill(0x120d0a));
+    root.addChild(button('< DESK', 4, by, 64, 21, close, { fill: PAL.shadow }));
+    if (d.type === 'memo' || d.type === 'letter') {
+      root.addChild(button('FILE IT', FW - 124, by, 120, 21, () => { close(); this.stamp('approve'); }, { fill: PAL.moss }));
+      return;
+    }
+    const labels = this.stampLabels(d);
+    const order: Stamp[] = ['approve', 'deny', 'escalate', 'bury'];
+    const x0 = 74;
+    const sw = Math.floor((FW - x0 - 4 - 3 * 4) / 4);
+    order.forEach((st, i) => root.addChild(button(labels[st], x0 + i * (sw + 4), by, sw, 21, () => {
+      close();
+      this.stamp(st);
+    }, { fill: STAMP_FILL[st](), small: text(labels[st], 0, 0).textWidth > sw - 4 })));
+  }
+
   // ------------------------------------------------------------ props
+
+  /** What lives on the desk under the paperwork: the nameplate, a cold coffee, a photo. */
+  private drawClutter(): Container {
+    const s = this.g.state!;
+    const c = new Container();
+    c.eventMode = 'none';
+    const g = new Graphics();
+    // coffee rings from every long night
+    for (const [x, y, r] of [[300, 236, 7], [312, 241, 6], [168, 226, 7]]) g.circle(x, y, r).stroke({ color: shade(PAL.wood, -0.25), width: 1, alpha: 0.6 });
+    // the mug
+    g.rect(326, 216, 14, 16).fill(0xe8e2d4).rect(326, 216, 14, 3).fill(0x3a2418).rect(340, 220, 4, 8).stroke({ color: 0xe8e2d4, width: 2 });
+    g.rect(328, 222, 10, 5).fill(PAL.blood); // a promotion mug, chipped
+    g.rect(330, 208, 1, 4).fill({ color: 0xffffff, alpha: 0.3 }).rect(334, 205, 1, 5).fill({ color: 0xffffff, alpha: 0.25 });
+    // a pen, a stapler
+    g.rect(132, 222, 22, 2).fill(0x2a3a8a).rect(152, 222, 3, 2).fill(0xc4a04a);
+    g.roundRect(128, 232, 26, 7, 2).fill(0x3a3a40).roundRect(128, 230, 24, 4, 2).fill(0x8a2a2a);
+    // a framed photo: the cage on opening night
+    g.rect(16, 168, 40, 32).fill(0x8a6a3a).rect(19, 171, 34, 26).fill(0x1a1a24);
+    g.ellipse(36, 190, 13, 4).fill(0xcfc8b9).rect(24, 178, 24, 10).stroke({ color: 0x5a5a62, width: 1 });
+    g.circle(33, 183, 2).fill(0xe0b48c).circle(40, 183, 2).fill(0x8a5a3a);
+    // a stress ball that has seen things
+    g.circle(86, 196, 6).fill(PAL.blood).circle(84, 194, 2).fill({ color: 0xffffff, alpha: 0.3 });
+    c.addChild(g);
+    // the nameplate
+    const plate = new Graphics().rect(0, 0, 124, 13).fill(0x2a1a10).rect(0, 0, 124, 2).fill(0x4a3420).rect(4, 13, 116, 2).fill(shade(PAL.wood, -0.3));
+    plate.position.set(180, 248);
+    c.addChild(plate);
+    c.addChild(text(`PRESIDENT ${s.president.name}`.toUpperCase(), 180, 252, { small: true, color: PAL.gold, width: 124, align: 'center', maxLines: 1 }));
+    return c;
+  }
+
+  // ------------------------------------------------------------ the phone
+
+  /** the wall phone's moving parts (rebuilt with the desk; the ring itself lives on the scene) */
+  private wallPhone: { body: Container; handset: Graphics; light: Graphics; tag: Container } | null = null;
+  /** the call ringing now (its queue id), how long it's been ringing, the calls that already rang */
+  private ringing: string | null = null;
+  private ringT = 0;
+  private rang = new Set<string>();
+
+  /** The first phone call waiting in the inbox. */
+  private pendingCall(): QueueItem | null {
+    return this.items().find((it) => it.kind === 'story' && def(it.inst.id)?.scenes[0]?.type === 'phone') ?? null;
+  }
+
+  /** On the office wall under the calendar: tap it to answer the call that's waiting. */
+  private drawWallPhone(r: Container): void {
+    const ph = clickable(new Container(), () => this.answerPhone(), 'The phone: pick up when it rings');
+    ph.position.set(270, 45);
+    const body = new Container();
+    const g = new Graphics();
+    g.rect(13, 5, 2, 18).fill(0x1a1416); // the cord, coiled down the wall
+    for (let y = 7; y < 22; y += 2) g.rect(12, y, 4, 1).fill(0x2a2226);
+    g.roundRect(0, 4, 28, 24, 3).fill(0xd8ccb0).stroke({ color: 0x5a4a3a, width: 1 });
+    for (let k = 0; k < 12; k++) g.rect(5 + (k % 3) * 7, 11 + Math.floor(k / 3) * 4, 4, 2).fill(0x8a7a64);
+    body.addChild(g);
+    const light = new Graphics().circle(24, 8, 1.5).fill(0x3a1a1a);
+    body.addChild(light);
+    const handset = new Graphics();
+    handset.roundRect(-2, 0, 32, 5, 2).fill(0xc8bca0).stroke({ color: 0x5a4a3a, width: 1 });
+    handset.rect(-3, -1, 7, 7).fill(0xc8bca0).rect(24, -1, 7, 7).fill(0xc8bca0);
+    body.addChild(handset);
+    ph.addChild(body);
+    // cartoon ring lines either side (the meters start right after it)
+    const tag = new Graphics();
+    for (const [x0, x1] of [[-3, -8], [31, 36]]) {
+      tag.moveTo(x0, 9).lineTo(x1, 5).moveTo(x0, 15).lineTo(x1 + (x1 > x0 ? 1 : -1), 15).moveTo(x0, 21).lineTo(x1, 25);
+    }
+    tag.stroke({ color: PAL.gold, width: 1 });
+    tag.visible = false;
+    ph.addChild(tag);
+    // a fat target on touch screens
+    if (this.phone) ph.hitArea = { contains: (x: number, y: number) => x >= -6 && x < 40 && y >= -4 && y < 34 };
+    r.addChild(ph);
+    this.wallPhone = { body, handset, light, tag };
+    this.animatePhone();
+  }
+
+  /** Pick up: the waiting call plays, the ringing stops. Nobody calling: a dial tone. */
+  private answerPhone(): void {
+    const call = this.pendingCall();
+    this.silenceRing();
+    stopRing(); // off the hook: the call opens with a pickup, not another ring
+    if (call) this.selectItem(call);
+    else {
+      sfx('click');
+      this.flash('Dial tone. Nobody is calling you. Enjoy it.', PAL.ash, 2);
+    }
+  }
+
+  private silenceRing(): void {
+    if (!this.ringing) return;
+    this.ringing = null;
+    stopRing();
+    vibrate(0);
+  }
+
+  /** Each frame: start ringing for a new call (once per call), stop when it's answered, shake. */
+  private updatePhone(dt: number): void {
+    const call = this.pendingCall();
+    if (this.ringing && call?.id !== this.ringing) this.silenceRing();
+    if (call && !this.ringing && !this.rang.has(call.id) && !this.g.modals.length && !this.anim) {
+      this.rang.add(call.id);
+      this.ringing = call.id;
+      this.ringT = 0;
+      startRing(RING_CYCLES);
+      // the first call: the CALLS & VISITORS lesson (on day one the desk lesson goes first)
+      if (lessonDue(this.g, 'desk_calls') && !lessonDue(this.g, 'desk')) maybeLesson(this.g, 'desk_calls', { delay: 1800 });
+      const buzz: number[] = [];
+      for (let c = 0; c < RING_CYCLES; c++) buzz.push(450, 200, 450, Math.round((RING_CYCLE - 1.1) * 1000));
+      vibrate(buzz);
+    }
+    if (this.ringing) {
+      this.ringT += dt;
+      // rang out: nobody picked up (the call is still in the inbox, the light keeps blinking)
+      if (this.ringT >= RING_CYCLES * RING_CYCLE) {
+        this.ringing = null;
+        stopRing();
+      }
+    }
+    this.animatePhone();
+  }
+
+  private animatePhone(): void {
+    const p = this.wallPhone;
+    if (!p) return;
+    const ph = this.ringT % RING_CYCLE;
+    const burst = !!this.ringing && RING_BURSTS.some(([a, b]) => ph >= a && ph < b);
+    const f = Math.floor(this.ringT * 30) % 2;
+    p.body.x = burst ? (f ? 1 : -1) : 0;
+    p.handset.y = burst ? -1 - f : 0;
+    p.tag.visible = burst;
+    const waiting = !!this.pendingCall();
+    p.light.clear().circle(24, 8, 1.5).fill(waiting && (burst || Math.floor(performance.now() / 500) % 2) ? 0xff3a3a : 0x3a1a1a);
+  }
+
+  exit(): void {
+    this.silenceRing();
+    super.exit();
+  }
 
   private drawProps(): Container {
     const props = new Container();
@@ -269,7 +521,7 @@ export class DeskScene extends Scene {
     const lamp = clickable(new Container(), () => this.toggleInspect(), hint('Inspect mode (I / SPACE): click a field, then the field it should match.', 'Inspect mode: select a field, then the field it should match.'));
     lamp.addChild(box(46, 26, on ? PAL.gold : PAL.shadow, PAL.ink, { bevel: true }));
     lamp.addChild(new Graphics().circle(8, 13, 5).fill(on ? 0xfff2a0 : 0x5a5246).stroke({ color: PAL.ink, width: 1 }));
-    lamp.addChild(text(on ? 'INSPECT\nON' : 'INSPECT\n(I)', 16, 6, { small: true, color: on ? PAL.ink : PAL.bone }));
+    lamp.addChild(text(on ? 'INSPECT\nON' : this.phone ? 'INSPECT\nOFF' : 'INSPECT\n(I)', 16, 6, { small: true, color: on ? PAL.ink : PAL.bone }));
     lamp.position.set(40, 0);
     props.addChild(lamp);
     const calcBtn = clickable(new Container(), () => this.toggleCalc(), 'Calculator (C): auto-tallies camp expense reports.');
@@ -398,27 +650,52 @@ export class DeskScene extends Scene {
   }
 
   private drawQueue(): Container {
+    this.rowNodes.clear();
     const c = new Container();
     c.position.set(366, 84);
     const items = this.items();
-    c.addChild(box(110, 108, 0x2a1f18, PAL.woodDark));
+    // phones: as wide as the screen allows, taller rows in the big face
+    const qw = this.phone ? this.RW : 110;
+    const rh = this.phone ? 16 : 12;
+    c.addChild(box(qw, 108, 0x2a1f18, PAL.woodDark));
     c.addChild(text(`INBOX (${items.length})`, 4, 3, { small: true, color: PAL.gold }));
-    const sb = new ScrollBox(106, 92);
+    const sb = new ScrollBox(qw - 4, 92);
     sb.position.set(2, 12);
     items.forEach((it, i) => {
       const label = this.itemLabel(it);
       const sel = it.id === this.selected;
       const row = clickable(new Container(), () => this.selectItem(it));
-      row.addChild(box(100, 12, sel ? PAL.slate : shade(0x2a1f18, 0.08)));
-      row.addChild(box(3, 12, label.color));
-      row.addChild(text(label.text, 6, 3, { small: true, color: PAL.bone, width: 92, maxLines: 1 }));
-      if (it.kind === 'doc' && String(it.doc.meta.flagged ?? '')) row.addChild(text('!', 95, 3, { small: true, color: PAL.blood }));
-      row.position.set(0, i * 13);
+      row.addChild(box(qw - 10, rh, sel ? PAL.slate : shade(0x2a1f18, 0.08)));
+      row.addChild(box(3, rh, label.color));
+      row.addChild(text(label.text, 6, this.phone ? 4 : 3, { small: !this.phone, color: PAL.bone, width: qw - 18, maxLines: 1 }));
+      if (it.kind === 'doc' && String(it.doc.meta.flagged ?? '')) row.addChild(text('!', qw - 15, 3, { small: true, color: PAL.blood }));
+      row.position.set(0, i * (rh + 1));
       sb.content.addChild(row);
+      this.rowNodes.set(it.id, row);
     });
     c.addChild(sb);
     sb.scrollTo(this.queueScroll);
+    this.queueBox = sb;
     return c;
+  }
+
+  /** inbox rows by item id, and the box they scroll in (for the tutorial's 'your turn' arrow) */
+  private rowNodes = new Map<string, Container>();
+  private queueBox: ScrollBox | null = null;
+
+  /** Tutorial hook: where a thing is on screen ('bout' = the practice agreement's inbox row, else the first bout agreement). */
+  guideRect(what: string): Rectangle | null {
+    if (what !== 'bout') return null;
+    const items = this.items();
+    const it = items.find((x) => x.kind === 'doc' && x.doc.meta.tutorial === 'dodgy') ?? items.find((x) => x.kind === 'doc' && x.doc.type === 'bout');
+    const row = it ? this.rowNodes.get(it.id) : null;
+    const sb = this.queueBox;
+    if (!row || row.destroyed || !sb || sb.destroyed) return null;
+    const r = row.getBounds().rectangle;
+    const b = sb.getBounds().rectangle;
+    // scrolled out of the inbox: nothing to point at
+    if (r.y + r.height / 2 < b.y || r.y + r.height / 2 > b.y + b.height) return null;
+    return r;
   }
 
   private itemLabel(it: QueueItem): { text: string; color: number } {
@@ -450,6 +727,9 @@ export class DeskScene extends Scene {
     this.lastEvent = { kind: 'select' };
     sfx('paper');
     if (it.kind === 'story') {
+      if (this.ringing === it.id) this.silenceRing();
+      // the first call or visit: the CALLS & VISITORS lesson, then the call (before the clock runs)
+      if (lessonDue(this.g, 'desk_calls')) return openLesson(this.g, 'desk_calls', { mode: 'auto', onDone: () => this.selectItem(it) });
       spendMinutes(this.g.state!, 20);
       playStorylet(this.g, it.inst, (res) => {
         if (res) this.flash(res, PAL.bone);
@@ -485,12 +765,14 @@ export class DeskScene extends Scene {
     if (page) this.rulePage = page;
     spendMinutes(this.g.state!, 2);
     this.refresh();
+    // the first medical, expense report, weigh-in sheet...: the OTHER PAPERWORK lesson
+    if (it.doc.type !== 'bout' && it.doc.type !== 'memo' && it.doc.type !== 'letter' && lessonDue(this.g, 'desk_docs')) maybeLesson(this.g, 'desk_docs', { delay: 400 });
   }
 
   private itemCard(it: QueueItem): Container {
     const c = paper(DOC_W, 80, 'white', 4);
     c.addChild(text(this.itemLabel(it).text, 8, 8, { width: 224, color: PAL.ink }));
-    c.addChild(text(hint('Click it in the inbox to deal with it.', 'Select it in the inbox to deal with it.'), 8, 30, { small: true, color: PAL.grey }));
+    c.addChild(text(this.phone ? 'Tap it in the inbox to deal with it.' : hint('Click it in the inbox to deal with it.', 'Select it in the inbox to deal with it.'), 8, 30, { small: true, color: PAL.grey }));
     return c;
   }
 
@@ -505,10 +787,15 @@ export class DeskScene extends Scene {
   private drawStamps(d: DeskDoc): Container {
     const c = new Container();
     c.position.set(366, 196);
-    c.addChild(box(110, 70, 0x2a1f18, PAL.woodDark));
+    // phones: the stamps get the extra width; no keyboard letters
+    const P = this.phone;
+    const cw = P ? this.RW : 110;
+    const half = P ? Math.floor((cw - 9) / 2) : 52;
+    const x2 = P ? 6 + half : 56; // the second column
+    c.addChild(box(cw, 70, 0x2a1f18, PAL.woodDark));
     if (d.type === 'memo' || d.type === 'letter') {
-      c.addChild(text(d.meta.bulletin ? 'Read it. The rulebook\nhas been updated.' : 'Nothing to inspect.', 6, 6, { small: true, color: PAL.ash, width: 100 }));
-      c.addChild(button('FILE IT (A)', 4, 36, 102, 18, () => this.stamp('approve'), { fill: PAL.moss }));
+      c.addChild(text(d.meta.bulletin ? 'Read it. The rulebook\nhas been updated.' : 'Nothing to inspect.', 6, 6, { small: true, color: PAL.ash, width: cw - 10 }));
+      c.addChild(button(P ? 'FILE IT' : 'FILE IT (A)', 4, 36, cw - 8, 20, () => this.stamp('approve'), { fill: PAL.moss }));
       return c;
     }
     const labels = this.stampLabels(d);
@@ -516,23 +803,23 @@ export class DeskScene extends Scene {
     const block = (st: Stamp, x: number, key: string) => {
       const b = clickable(new Container(), () => this.stamp(st), `${labels[st]} (${key})`);
       const col = STAMP_FILL[st]();
-      b.addChild(new Graphics().rect(15, 0, 22, 9).fill(shade(PAL.wood, 0.25)).stroke({ color: PAL.ink, width: 1 })); // handle
-      b.addChild(new Graphics().rect(18, -3, 16, 4).fill(shade(PAL.wood, 0.4)));
-      b.addChild(box(52, 22, col, PAL.ink, { bevel: true })).position.set(0, 9);
-      b.addChild(text(labels[st], 0, 14, { small: true, color: PAL.bone, width: 52, align: 'center', maxLines: 1 }));
-      b.addChild(text(key, 0, 22, { small: true, color: shade(col, 0.5), width: 52, align: 'center' }));
+      b.addChild(new Graphics().rect(half / 2 - 11, 0, 22, 9).fill(shade(PAL.wood, 0.25)).stroke({ color: PAL.ink, width: 1 })); // handle
+      b.addChild(new Graphics().rect(half / 2 - 8, -3, 16, 4).fill(shade(PAL.wood, 0.4)));
+      b.addChild(box(half, 22, col, PAL.ink, { bevel: true })).position.set(0, 9);
+      b.addChild(text(labels[st], 0, P ? 16 : 14, { small: !P || text(labels[st], 0, 0).textWidth > half - 4, color: PAL.bone, width: half, align: 'center', maxLines: 1 }));
+      if (!P) b.addChild(text(key, 0, 22, { small: true, color: shade(col, 0.5), width: half, align: 'center' }));
       b.position.set(x, 6);
       return b;
     };
     c.addChild(block('approve', 3, 'A'));
-    c.addChild(block('deny', 56, 'D'));
-    c.addChild(button('ESCALATE (E)', 3, 40, 52, 11, () => this.stamp('escalate'), {
+    c.addChild(block('deny', x2, 'D'));
+    c.addChild(button(P ? 'ESCALATE' : 'ESCALATE (E)', 3, 40, half, P ? 13 : 11, () => this.stamp('escalate'), {
       small: true, fill: STAMP_FILL.escalate(), tooltip: d.type === 'weighin' ? 'Catchweight: the bout goes on, the offender forfeits 25% of the purse.' : 'Send to legal: always "safe" but costs a fee and time, and the board hates overuse.',
     }));
-    c.addChild(button('BURY (B)', 56, 40, 51, 11, () => this.stamp('bury'), { small: true, fill: STAMP_FILL.bury(), tooltip: 'Make it disappear. Deliberate. Tracked. It may resurface.' }));
+    c.addChild(button(P ? 'BURY' : 'BURY (B)', x2, 40, P ? half : 51, P ? 13 : 11, () => this.stamp('bury'), { small: true, fill: STAMP_FILL.bury(), tooltip: 'Make it disappear. Deliberate. Tracked. It may resurface.' }));
     const sec = secondaryAction(d);
-    if (sec) c.addChild(button(sec.label, 3, 54, 104, 12, () => this.secondary(), { small: true, fill: PAL.ember, tooltip: sec.tip }));
-    else c.addChild(text(this.ins.active ? 'Inspecting...' : 'I = inspect   R = rulebook', 4, 57, { small: true, color: PAL.grey }));
+    if (sec) c.addChild(button(sec.label, 3, 55, cw - 6, 12, () => this.secondary(), { small: true, fill: PAL.ember, tooltip: sec.tip }));
+    else c.addChild(text(this.ins.active ? 'Inspecting...' : P ? 'Tap the paper to read it big' : 'I = inspect   R = rulebook', 4, 57, { small: true, color: PAL.grey }));
     return c;
   }
 
@@ -571,9 +858,11 @@ export class DeskScene extends Scene {
       this.drawStrings();
     }, { w: bw, h: bh });
     hoverTip(handle, 'Drag me anywhere. +/- or [ ] to zoom.');
-    c.addChild(button('X', bw - 13, 2, 11, 10, () => this.toggleRulebook(), { small: true, fill: PAL.blood }));
-    c.addChild(button('+', bw - 39, 2, 11, 10, () => this.zoomRulebook(0.25), { small: true, fill: PAL.steel, tooltip: 'Zoom in' }));
-    c.addChild(button('-', bw - 26, 2, 11, 10, () => this.zoomRulebook(-0.25), { small: true, fill: PAL.steel, tooltip: 'Zoom out' }));
+    // phones: wider buttons (the touch slop does the rest)
+    const tb = this.phone ? 16 : 11;
+    c.addChild(button('X', bw - tb - 2, 2, tb, 10, () => this.toggleRulebook(), { small: true, fill: PAL.blood }));
+    c.addChild(button('+', bw - tb * 3 - 6, 2, tb, 10, () => this.zoomRulebook(0.25), { small: true, fill: PAL.steel, tooltip: 'Zoom in' }));
+    c.addChild(button('-', bw - tb * 2 - 4, 2, tb, 10, () => this.zoomRulebook(-0.25), { small: true, fill: PAL.steel, tooltip: 'Zoom out' }));
     // page flipper
     const flip = (d: number) => {
       idx = (idx + d + pages.length) % pages.length;
@@ -581,8 +870,9 @@ export class DeskScene extends Scene {
       sfx('paper');
       this.refresh();
     };
-    c.addChild(button('<', 4, 13, 12, 11, () => flip(-1), { small: true, fill: PAL.slate }));
-    c.addChild(button('>', bw - 16, 13, 12, 11, () => flip(1), { small: true, fill: PAL.slate }));
+    const fw = this.phone ? 20 : 12;
+    c.addChild(button('<', 4, 13, fw, 11, () => flip(-1), { small: true, fill: PAL.slate }));
+    c.addChild(button('>', bw - fw - 4, 13, fw, 11, () => flip(1), { small: true, fill: PAL.slate }));
     const pageNew = page?.rules.some((r) => fresh.has(r.id));
     c.addChild(text(`${(page?.page ?? '').toUpperCase()}  ${idx + 1}/${pages.length}${pageNew ? '  NEW!' : ''}`, 18, 16, { small: true, color: pageNew ? PAL.gold : PAL.bone, width: bw - 36, align: 'center' }));
     if (!page) return c;
@@ -783,7 +1073,8 @@ export class DeskScene extends Scene {
         color = PAL.blood;
         ask = !d.meta.asked;
       } else if (this.ins.active) {
-        msg = hint(this.ins.selected ? 'Now click the field it should match (file card, licence, rulebook or face).' : 'INSPECT: click a field on the document, then the field it should match.', this.ins.selected ? 'Now select the field it should match (file card, licence, rulebook or face).' : 'INSPECT: select a field on the document, then the field it should match.');
+        const verb = this.phone ? 'tap' : hint('click', 'select');
+        msg = this.ins.selected ? `Now ${verb} the field it should match (file card, licence, rulebook or face).` : `INSPECT: ${verb} a field on the document, then the field it should match.`;
         color = PAL.gold;
       }
     }
@@ -794,7 +1085,7 @@ export class DeskScene extends Scene {
     const h = t.textHeight + 7;
     c.addChild(box(244, h, PAL.ink, color));
     c.addChild(t);
-    if (ask) c.addChild(button('ASK', 204, Math.floor((h - 11) / 2), 36, 11, () => this.ask(), { small: true, fill: PAL.blood, tooltip: 'Ask the visitor about it. Excuses, fixes, envelopes. (8 min)' }));
+    if (ask) c.addChild(button('ASK', 204, Math.max(1, Math.floor((h - (this.phone ? 14 : 11)) / 2)), 36, this.phone ? 14 : 11, () => this.ask(), { small: true, fill: PAL.blood, tooltip: 'Ask the visitor about it. Excuses, fixes, envelopes. (8 min)' }));
     c.position.set(DOC_X - 2, Math.min(STRIP_Y, H - h - 1));
     return c;
   }
@@ -953,7 +1244,7 @@ export class DeskScene extends Scene {
     }, hint('Click to read the whole citation.', 'Select to read the whole citation.'));
     const w = 150;
     const body = text(sl.reason, 6, 22, { small: true, width: w - 12, color: PAL.ink, maxLines: 4 });
-    const more = text('CLICK TO READ IT ALL', 6, 0, { small: true, color: PAL.slate });
+    const more = text(isTouchDevice() ? 'TAP TO READ IT ALL' : 'CLICK TO READ IT ALL', 6, 0, { small: true, color: PAL.slate });
     const foot = text(sl.warning ? 'WARNING. Next time it comes out of your pay.' : `PENALTY: -${money(sl.fine, false)} from your pay`, 6, 0, { small: true, color: sl.warning ? PAL.slate : PAL.blood, width: w - 12 });
     const h = 40 + body.textHeight + foot.textHeight;
     foot.y = h - foot.textHeight - 14;
@@ -1042,6 +1333,7 @@ export class DeskScene extends Scene {
       }
     }
     this.updateClock();
+    this.updatePhone(dt);
     if (this.anim) {
       const a = this.anim;
       a.t += dt;

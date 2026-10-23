@@ -8,7 +8,7 @@ import { Container, Graphics } from 'pixi.js';
 import type { Game } from './app';
 import type { Bout, EventFinancials, FightEvent, TickerLine } from '../core/types';
 import { PAL } from '../art/palette';
-import { W, H, text, box, button } from './kit';
+import { W, H, SW as SCREEN_W, OX, text, box, button } from './kit';
 import type { PixelText } from './text';
 import { reporterPortrait } from './sprites';
 import { ArenaView } from './arena';
@@ -48,7 +48,7 @@ export class NewsRecap extends Container {
     this.rng = new Rng((s.rng ^ 0x5c3a) >>> 0);
     // the TV set
     const tv = new Graphics();
-    tv.rect(0, 0, W, H).fill(0x0c0a0e);
+    tv.rect(-OX, 0, SCREEN_W, H).fill(0x0c0a0e);
     tv.roundRect(SX - 8, SY - 6, SW + 16, SH + 12, 6).fill(0x1a1a1e).stroke({ color: 0x2c2c32, width: 2 });
     tv.rect(SX, SY, SW, SH).fill(0x0e1a34);
     // studio: gradient & light bars
@@ -192,7 +192,14 @@ export class NewsRecap extends Container {
             arena.mask = m;
             this.seg.addChild(m, arena);
             arena.setMode('tv');
-            this.replay = { arena, lines: replayLines(best), i: 0, t: 0.6 };
+            const lines = replayLines(best);
+            // pick it up mid-fight, where the replay starts (not back in the walkout)
+            const f0 = lines[0];
+            if (f0) {
+              arena.cue({ round: f0.round, t: Math.max(0, f0.t - 1), text: '', side: -1, intensity: 1, act: 'idle', pos: f0.pos, hp: f0.hp, key: 'round_start' }, true);
+              arena.settle();
+            }
+            this.replay = { arena, lines, i: 0, t: 0.6 };
           }
           const r = best.result;
           const k = ['KO', 'TKO'].includes(r.method) ? 'ko_take' : r.method === 'SUB' ? 'sub_take' : r.robbery ? 'robbery_take' : 'dec_take';
@@ -262,11 +269,27 @@ export class NewsRecap extends Container {
   }
 }
 
-/** A short staged replay of how a bout ended, for the highlight package. */
-function replayLines(b: Bout): TickerLine[] {
+/**
+ * A short replay of how a bout ended, for the highlight package. A watched bout still has its ticker:
+ * the last six exchanges of the finishing round, ending on the finish (a decision: the last six of the
+ * final round). A simmed one gets a staged version, carrying the result so the right hold or fall plays.
+ */
+export function replayLines(b: Bout): TickerLine[] {
   const r = b.result!;
+  const tk = r.ticker;
+  if (tk && tk.length) {
+    const acts = tk.filter((l) => !l.speaker && l.round === r.round && l.act !== 'end');
+    let end = acts.length - 1;
+    for (let i = acts.length - 1; i >= 0; i--) {
+      if (acts[i].act === 'ko' || acts[i].act === 'tko' || acts[i].act === 'tap') {
+        end = i;
+        break;
+      }
+    }
+    if (end >= 0) return acts.slice(Math.max(0, end - 5), end + 1);
+  }
   const w: 0 | 1 = r.winner === b.b ? 1 : 0;
-  const L = (act: string, side: 0 | 1 | -1, intensity: number, pos: TickerLine['pos'] = 'stand', hp: [number, number] = [70, 70]): TickerLine => ({ round: r.round, t: 200, text: '', side, intensity, act, pos, hp });
+  const L = (act: string, side: 0 | 1 | -1, intensity: number, pos: TickerLine['pos'] = 'stand', hp: [number, number] = [70, 70]): TickerLine => ({ round: r.round, t: 200, text: r.detail, side, intensity, act, pos, hp });
   const top: TickerLine['pos'] = w === 0 ? 'atop' : 'btop';
   switch (r.method) {
     case 'KO':

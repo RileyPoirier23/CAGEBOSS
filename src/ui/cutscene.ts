@@ -10,11 +10,12 @@ import { Container, Graphics, type Ticker } from 'pixi.js';
 import type { Game } from './app';
 import type { Fighter } from '../core/types';
 import { PAL } from '../art/palette';
-import { W, H, text, button, box } from './kit';
+import { W, H, SW, OX, text, button, box } from './kit';
 import { POSES, drawRig, lookFor, tauntRig, type Look2, type Pose } from './rig';
 import { input } from '../core/input';
 import { sfx } from '../audio/sfx';
 import { drawShow, showLabels, type TvShow } from './tvshows';
+import { isTouchDevice } from '../core/platform';
 
 export type Bg = 'gym' | 'tv' | 'street' | 'bingo' | 'hotel' | 'locker' | 'office' | 'presser' | 'stage' | 'cage' | 'lot' | 'booth' | 'landlord' | 'black';
 
@@ -419,7 +420,7 @@ function drawBg(g: Graphics, fg: Graphics, bg: Bg, tv?: Shot['tv']): void {
       break;
     }
     case 'black':
-      g.rect(0, 0, W, H).fill(0x060508);
+      g.rect(-OX, 0, SW, H).fill(0x060508);
       break;
   }
 }
@@ -591,8 +592,13 @@ export function playCutscene(g: Game, scene: Cutscene, done: (choice: string | n
     if (ln.flash) flash = 0.35;
     if (ln.sfx) sfx(ln.sfx);
   };
-  const navBack = button('< BACK', W - 104, H - 27, 40, 10, () => back(), { small: true, fill: PAL.shadow });
-  const navNext = button('NEXT >', W - 60, H - 27, 40, 10, () => advance(), { small: true, fill: PAL.moss });
+  // phones: bigger, in the letterbox under the dialogue box
+  const navBack = isTouchDevice()
+    ? button('< BACK', W - 132, H - 12, 56, 12, () => back(), { fill: PAL.shadow })
+    : button('< BACK', W - 104, H - 27, 40, 10, () => back(), { small: true, fill: PAL.shadow });
+  const navNext = isTouchDevice()
+    ? button('NEXT >', W - 72, H - 12, 56, 12, () => advance(), { fill: PAL.moss })
+    : button('NEXT >', W - 60, H - 27, 40, 10, () => advance(), { small: true, fill: PAL.moss });
   ui.addChild(navBack, navNext);
   const choicesBox = new Container();
   ui.addChild(choicesBox);
@@ -623,15 +629,20 @@ export function playCutscene(g: Game, scene: Cutscene, done: (choice: string | n
     if (ln && shown < ln.text.length) shown = ln.text.length;
     else nextLine();
   };
-  const skipBtn = button('SKIP', W - 44, 1, 40, 11, () => {
+  // phones: a big SKIP in the top-right corner of the screen (above the title card, added below)
+  const touch = isTouchDevice();
+  const skipAll = () => {
     // skipping still lands on the choices (and BACK still works from there)
+    titleT = 0;
     setupShot(scene.shots.length - 1, true);
     lineIdx = scene.shots[shotIdx].lines.length - 1;
     reapplyPoses();
     end();
-  }, { small: true, fill: PAL.shadow });
-  root.addChild(skipBtn);
-  const hit = new Graphics().rect(0, 0, W, H).fill({ color: 0, alpha: 0.001 });
+  };
+  const skipBtn = touch
+    ? button('SKIP >>', SW - OX - 66, 3, 62, 18, () => skipAll(), { fill: PAL.shadow, border: PAL.gold })
+    : button('SKIP', W - 44, 1, 40, 11, () => skipAll(), { small: true, fill: PAL.shadow });
+  const hit = new Graphics().rect(-OX, 0, SW, H).fill({ color: 0, alpha: 0.001 });
   hit.eventMode = 'static';
   hit.on('pointertap', advance);
   root.addChildAt(hit, 1);
@@ -642,9 +653,11 @@ export function playCutscene(g: Game, scene: Cutscene, done: (choice: string | n
     return true;
   });
   const titleC = new Container();
+  titleC.eventMode = 'none'; // a tap during the title card goes through to `hit` and skips it
   root.addChild(titleC);
+  root.addChild(skipBtn);
   if (scene.title) {
-    titleC.addChild(new Graphics().rect(0, 0, W, H).fill(0x060508));
+    titleC.addChild(new Graphics().rect(-OX, 0, SW, H).fill(0x060508));
     titleC.addChild(text(scene.title, 0, H / 2 - 8, { width: W, align: 'center', color: PAL.gold, scale: 2 }));
   }
   startShot(0);
@@ -693,7 +706,7 @@ export function playCutscene(g: Game, scene: Cutscene, done: (choice: string | n
     if (bg === 'gym' || bg === 'tv') for (let k = 0; k < 4; k++) fx.circle(400 + Math.sin(t * 1.5 + k) * 6, 110 - ((t * 14 + k * 9) % 36), 3).fill({ color: 0xffffff, alpha: 0.15 });
     if ((bg === 'presser' || bg === 'stage') && Math.random() < dt * 3) fx.rect(Math.random() * W, H - 40 + Math.random() * 20, 6, 6).fill(0xffffff);
     if (flash > 0) {
-      fx.rect(0, 0, W, H).fill({ color: 0xffffff, alpha: Math.min(0.6, flash) });
+      fx.rect(-OX, 0, SW, H).fill({ color: 0xffffff, alpha: Math.min(0.6, flash) });
       flash -= dt;
     }
     drawDialog();

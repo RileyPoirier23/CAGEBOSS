@@ -8,9 +8,9 @@ import { W, H, text, button, box, ScrollBox, clickable } from '../kit';
 import { fighterPortrait } from '../sprites';
 import { openWindow, selector, domInput } from '../widgets';
 import { spend } from '../../sim/econ';
-import { undisputed, interim } from '../../sim/rankings';
+import { undisputed, interim, RANKED } from '../../sim/rankings';
 import { divisionShort, divisionName, DIVISION_ORDER } from '../../sim/divisions';
-import { fullName } from '../../sim/fighters';
+import { fullName, overall } from '../../sim/fighters';
 import { record, money } from '../../core/format';
 import { openRoster } from './roster';
 
@@ -76,6 +76,40 @@ export function openRankings(g: Game): void {
       row.position.set(0, i * 17);
       sb.content.addChild(row);
     });
+    // a young promotion's wall has gaps: show them, and who's out there to fill them
+    const ranked = (s.rankings[div] ?? []).filter((id) => s.fighters[id]).length;
+    let y = ranked * 17;
+    for (let i = ranked; i < RANKED; i++) {
+      const row = new Container();
+      row.addChild(box(W - 184, 16, i % 2 ? 0x221f28 : 0x1e1b24));
+      row.addChild(text(`#${i + 1}`, 3, 4, { color: PAL.grey }));
+      row.addChild(text('open spot: sign someone at this weight', 42, 5, { small: true, color: PAL.grey }));
+      row.position.set(0, y);
+      sb.content.addChild(row);
+      y += 17;
+    }
+    const free = Object.values(s.fighters)
+      .filter((f) => f.division === div && f.status === 'free-agent' && !f.legend)
+      .sort((a, b) => overall(b.skills) - overall(a.skills))
+      .slice(0, 8);
+    if (free.length) {
+      y += 6;
+      sb.content.addChild(text('FREE AGENTS AT THIS WEIGHT (TAP TO SCOUT)', 3, y, { small: true, color: PAL.gold }));
+      y += 10;
+      free.forEach((f, i) => {
+        const row = clickable(new Container(), () => openRoster(g, () => {}, f.id));
+        row.addChild(box(W - 184, 16, i % 2 ? 0x26302a : 0x222a26));
+        const p = fighterPortrait(f, 24);
+        p.scale.set(0.6);
+        p.position.set(24, 1);
+        row.addChild(p);
+        row.addChild(text(fullName(f), 42, 4, { color: PAL.bone, width: 150, maxLines: 1 }));
+        row.addChild(text(`${record(f.record)}  •  age ${f.age}  •  ${f.country}`, 196, 5, { small: true, color: PAL.ash, width: W - 384, maxLines: 1 }));
+        row.position.set(0, y);
+        sb.content.addChild(row);
+        y += 17;
+      });
+    }
     win.body.addChild(sb);
     sb.refresh();
     win.body.addChild(text(`Rankings voted by a media panel. Media meter: ${Math.round(s.meters.media)} (hostile panels get weird).`, 160, H - 32, { small: true, color: PAL.grey }));
@@ -136,8 +170,7 @@ export function openBeltDesigner(g: Game, beltId: string, onDone: () => void): v
     }));
   });
   win.body.addChild(text('NAME', 10, 106, { small: true, color: PAL.ash }));
-  const p = win.frame.position;
-  const input = domInput(g, p.x + 60, p.y + 14 + 102, 228, 13, name, { maxLength: 48, onChange: (v) => (name = v) });
+  const input = domInput(g, 60, 102, 228, 13, name, { maxLength: 48, onChange: (v) => (name = v), in: win.body });
   win.body.addChild(button(free ? 'SAVE DESIGN' : `COMMISSION IT (${money(cost)})`, 60, 128, 228, 16, () => {
     if (!free) spend(s, 'belts', cost);
     belt.design = { ...d };

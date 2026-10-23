@@ -4,7 +4,9 @@
     "ac",
     "unlock",
     "tone",
-    "noise"
+    "noise",
+    "startRing",
+    "stopRing"
   ],
   "src/audio/music.ts": [
     "base"
