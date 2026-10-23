@@ -647,8 +647,8 @@ export const LESSONS: Lesson[] = [
       },
       {
         title: "THE VENUE", pic: "qf_4",
-        pc: "Pick the room under the corners: the CBFC's Ape-X, a casino ballroom, a barn with a judgemental goat, a waffle house parking lot, or a warehouse with no gloves (bareknuckle rules).",
-        phone: "Pick the room under the corners: the CBFC's Ape-X, a casino ballroom, a barn with a judgemental goat, a waffle house parking lot, or a warehouse with no gloves (bareknuckle rules).",
+        pc: "Pick the room under the corners, sixteen of them: the CBFC's Ape-X, Fight Island, an aircraft carrier, a rooftop, a barn with a judgemental goat, a waffle house parking lot, or a warehouse with no gloves (bareknuckle rules).",
+        phone: "Pick the room under the corners, sixteen of them: the CBFC's Ape-X, Fight Island, an aircraft carrier, a rooftop, a barn with a judgemental goat, a waffle house parking lot, or a warehouse with no gloves (bareknuckle rules).",
       },
       {
         title: "FIGHT!", pic: "qf_5",

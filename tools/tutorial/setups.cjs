@@ -364,6 +364,9 @@ module.exports = {
     await c.ev(() => { const sc = window.__game.scene; for (const b of sc.live()) sc.simBout(b, true); sc.finish(); });
     await c.wait(2500);
     await c.closeAll();
+    // an achievement (first event...) waits for a clear screen, then pops up: let it, and close it too
+    await c.wait(1500);
+    await c.closeAll();
     const name = await c.ev(() => window.__game.scene.constructor.name);
     if (name !== 'LedgerScene') throw new Error('expected the ledger, got ' + name);
   },

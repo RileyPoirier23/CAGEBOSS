@@ -127,7 +127,7 @@ module.exports = [
   { name: 'wt_2', setup: 'S_cut', crop: 'win()', marks: [{ k: 'box', at: "btn(/^ROADWORK/)", n: 1 }, { k: 'box', at: "btn(/^STRICT DIET/)", n: 2 }, { k: 'box', at: "btn(/^SAUNA/)", n: 3 }] },
   { name: 'wt_3', setup: 'S_weighin', crop: "phone ? top(win(), btn('SKIP IT, PAY FINE')[1] + btn('SKIP IT, PAY FINE')[3] + 3 - win()[1]) : win()", marks: [{ k: 'box', at: 'text(/^You (walk|\'re on)/)', n: 1 }, { k: 'box', at: "btn('SENSIBLE CUT')", n: 2 }, { k: 'box', at: "btn('BRUTAL SAUNA CUT')", n: 3 }, { k: 'box', at: "btn('SKIP IT, PAY FINE')", n: 4 }] },
   { name: 'wt_5', setup: 'S_gameplan', crop: 'phone ? top(win(), 152) : top(win(), 150)', marks: [{ k: 'box', at: 'text(/^Scouting:/)', n: 1 }, { k: 'tap', at: "btn('BALANCED')", n: 2 }] },
-  { name: 'fmn_1', setup: 'S_fm_card', crop: C(8, 16, 468, 150), marks: [{ k: 'box', at: "rowOfBtn('FIGHT!')", n: 1 }, { k: 'tap', at: "btn('FIGHT!')", n: 2 }, { k: 'box', at: "btnNear('WATCH', 'FIGHT!')", n: 3 }, { k: 'box', at: "btnNear('SIM', 'FIGHT!')", n: 3 }] },
+  { name: 'fmn_1', setup: 'S_fm_card', crop: `phone ? S(6,16,520,150) : ${C(8, 16, 468, 150)}`, marks: [{ k: 'box', at: "rowOfBtn('FIGHT!')", n: 1 }, { k: 'tap', at: "btn('FIGHT!')", n: 2 }, { k: 'box', at: "btnNear('WATCH', 'FIGHT!')", n: 3 }, { k: 'box', at: "btnNear('SIM', 'FIGHT!')", n: 3 }] },
 
   // ---------------------------------------------------------------- the corner
   { name: 'corner_1', setup: 'S_corner', crop: C(6, 0, 468, 104), marks: [{ k: 'box', at: C(148, 18, 170, 16), n: 1 }, { k: 'box', at: C(336, 64, 138, 20), n: 2 }, { k: 'box', at: C(6, 20, 134, 32), n: 3 }] },
