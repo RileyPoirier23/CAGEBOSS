@@ -52,3 +52,54 @@ describe('the final round: how a man goes down', () => {
     expect(HEAVY_POSES.has('jab')).toBe(false);
   });
 });
+
+import { GUARD, JOINTS, rotateRig, CELEB_ALIAS, type Pose, type Rig, type Joint } from '../src/ui/rig';
+import { content } from '../src/core/content';
+
+const bone = (r: Rig, a: Joint, b: Joint) => Math.hypot(r[a][0] - r[b][0], r[a][1] - r[b][1]);
+const BONES: [Joint, Joint][] = [['shF', 'elF'], ['elF', 'haF'], ['shB', 'elB'], ['elB', 'haB'], ['hip', 'knF'], ['knF', 'ftF'], ['hip', 'knB'], ['knB', 'ftB']];
+
+describe('defence, feints, finishes, the referee and the celebrations', () => {
+  const NEW: Pose[] = [
+    'roll', 'pull', 'lean', 'parry', 'check', 'blockBody', 'catchKick', 'hop', 'paw', 'shoulderFeint', 'levelFeint', 'kneel', 'koStiff',
+    'refWave1', 'refWave2', 'refCover', 'refBreak', 'refPoint', 'refCount', 'refWatch', 'bow', 'roar', 'shush',
+  ];
+  it('every new pose is a whole skeleton with sane arms and legs', () => {
+    for (const p of NEW) {
+      const r = POSES[p];
+      expect(Object.keys(r), p).toHaveLength(13);
+      for (const j of JOINTS) expect(r[j], `${p}.${j}`).toHaveLength(2);
+      for (const [a, b] of BONES) {
+        const k = bone(r, a, b) / bone(GUARD, a, b);
+        expect(k, `${p} ${a}-${b}`).toBeGreaterThanOrEqual(0.7);
+        expect(k, `${p} ${a}-${b}`).toBeLessThanOrEqual(1.4);
+      }
+    }
+  });
+  it('a topple turns the skeleton about a pivot without stretching it', () => {
+    expect(rotateRig(GUARD, 0, 0, 0)).toEqual(GUARD);
+    const r = rotateRig(GUARD, -1.3, 1, 0);
+    for (const [a, b] of BONES) expect(bone(r, a, b)).toBeCloseTo(bone(GUARD, a, b), 6);
+    expect(r.head[0]).toBeLessThan(-60); // backwards...
+    expect(r.head[1]).toBeGreaterThan(GUARD.head[1]); // ...and down
+  });
+  it('the way a man goes out is unchanged', () => {
+    expect(koPoseFor('ko_kick headkick')).toBe('ko');
+    expect(koPoseFor('Left Hook')).toBe('koCrumple');
+    expect(koPoseFor('liver shot')).toBe('koFace');
+  });
+  it('every roster celebration maps to a style the arena knows (or to its own pick)', () => {
+    loadTestContent();
+    const KNOWN = new Set(['flex', 'bow', 'roar', 'point', 'pointUp', 'prays', 'shrug', 'strut', 'walkAway', 'shush', 'flipoff', 'backflip', 'dances']);
+    const seen = new Set<string>();
+    for (const f of content().roster) if (f.anim?.celebration) seen.add(f.anim.celebration);
+    expect(seen.size).toBeGreaterThan(5);
+    for (const c of seen) {
+      const style = CELEB_ALIAS[c] ?? '';
+      expect(style === '' || KNOWN.has(style), c).toBe(true);
+    }
+    expect(CELEB_ALIAS.none ?? '').toBe('');
+    expect(CELEB_ALIAS.flexes).toBe('flex');
+    expect(CELEB_ALIAS.middleFingerPose).toBe('flipoff');
+  });
+});

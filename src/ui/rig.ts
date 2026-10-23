@@ -25,6 +25,16 @@ export type Pose =
   | 'stand' | 'armUp' | 'headDown' | 'refHold' | 'refRaise' | 'mic' | 'point' | 'flex'
   // taunts: every fighter has his own
   | 'flipoff' | 'beckon' | 'beckon2' | 'handsDown' | 'chestPound' | 'shrug' | 'pointUp'
+  // defence that reads: the head moves, the shin comes up, the kick gets caught (and its owner hops)
+  | 'roll' | 'pull' | 'lean' | 'parry' | 'check' | 'blockBody' | 'catchKick' | 'hop'
+  // feints: half a jab, a shoulder dip, a level change
+  | 'paw' | 'shoulderFeint' | 'levelFeint'
+  // finishes: on a knee from a body shot, the fencing response on the way down
+  | 'kneel' | 'koStiff'
+  // the referee at work
+  | 'refWave1' | 'refWave2' | 'refCover' | 'refBreak' | 'refPoint' | 'refCount' | 'refWatch'
+  // celebrations
+  | 'bow' | 'roar' | 'shush'
   | GroundPose;
 
 /**
@@ -210,6 +220,68 @@ export const POSES: Record<Pose, Rig> = {
   shrug: P({ head: [3, -76], elF: [14, -58], haF: [20, -66], elB: [-10, -58], haB: [-14, -66], shF: [6, -66], shB: [-3, -66] }),
   // one finger to the sky
   pointUp: P({ head: [3, -79], elF: [10, -80], haF: [12, -96], elB: [4, -54], haB: [10, -62] }),
+  // ---- defence (played over the stance guard, so a crouched man stays crouched)
+  // under the hook: knees bent, head dipped and in, hands up by the temples
+  roll: P({ head: [11, -63], neck: [7, -56], shF: [10, -53], elF: [22, -50.5], haF: [16, -61], shB: [2, -53], elB: [12.5, -47.5], haB: [9, -59], hip: [-2, -31], knF: [17, -22], knB: [5.5, -11.5] }),
+  // leaning back out of range, weight on the back foot
+  pull: P({ head: [-10, -73], neck: [-7, -66], shF: [-3, -63], elF: [4.5, -53.5], haF: [12, -63], shB: [-11, -63], elB: [-2.5, -54.5], haB: [1, -66], hip: [-4, -40], knF: [5.5, -21], knB: [-3, -19], ftB: [-14, 0] }),
+  // head off the line, forward and to the side
+  lean: P({ head: [15, -68], neck: [10, -62], shF: [13, -59], elF: [24, -54.5], haF: [21, -66], shB: [5, -60], elB: [14, -52], haB: [15, -64], hip: [2, -37], knF: [16.5, -22], knB: [2, -16] }),
+  // the lead hand slaps the shot down
+  parry: P({ head: [4, -75], shF: [8, -63], elF: [13.5, -52.5], haF: [25, -56], elB: [6, -55], haB: [11, -66], knB: [-2.5, -19] }),
+  // shin up to meet the leg kick
+  check: P({ head: [4, -77], elF: [18, -59], haF: [16, -71], elB: [8.5, -58], haB: [9, -70], hip: [0, -42], knF: [16, -36], ftF: [14, -17], knB: [-5.5, -21.5], ftB: [-12, 0] }),
+  // elbows down over the ribs
+  blockBody: P({ head: [7, -71], neck: [4, -64], shF: [8, -61], elF: [9, -49], haF: [14, -60], shB: [-1, -61], elB: [1, -49], haB: [8, -59], hip: [0, -38], knF: [13.5, -22], knB: [0.5, -17] }),
+  // the kick trapped under the arm, cradling the shin
+  catchKick: P({ head: [6, -74], neck: [4, -66], elF: [14, -54.5], haF: [22, -45], elB: [5, -54.5], haB: [17, -52], hip: [-2, -40], knF: [6.5, -21], knB: [-2, -19] }),
+  // ...and the kicker hopping on one leg, arms out for balance
+  hop: P({ head: [-6, -75], neck: [-4, -67], shF: [0, -64], shB: [-8, -64], elF: [8, -70], haF: [14, -78], elB: [-17, -56], haB: [-24, -66], hip: [-2, -42], knB: [16, -44], ftB: [32, -45], knF: [-1, -21], ftF: [-2, 0] }),
+  // ---- feints
+  paw: P({ elF: [18.5, -60], haF: [30, -63], elB: [4.5, -54], knB: [-2.5, -19] }),
+  shoulderFeint: P({ head: [8, -73], neck: [5, -65], shF: [10, -61], elF: [17, -51], haF: [22, -62], shB: [0, -62], elB: [6, -51.5], haB: [12, -62], hip: [1, -39], knF: [13, -22], knB: [-0.5, -18] }),
+  levelFeint: P({ head: [8, -68], neck: [5, -60], shF: [9, -57], elF: [16.5, -47.5], haF: [21, -59], shB: [0, -57], elB: [6.5, -47], haB: [13, -57], hip: [-2, -33], knF: [16, -22], knB: [4.5, -13] }),
+  // ---- finishes
+  // down on one knee from a body shot, a glove on the canvas
+  kneel: P({ head: [12, -54], neck: [7, -48], shF: [9, -46], elF: [0.5, -37.5], haF: [12, -34], shB: [3, -46], elB: [9, -35.5], haB: [2, -26], hip: [-4, -24], knF: [17, -21.5], ftF: [13, 0], knB: [-6, -3], ftB: [-24, -1] }),
+  // the fencing response: out cold on his feet, one arm locked up in the air
+  koStiff: P({ head: [-9, -71], neck: [-6, -64], shF: [-2, -61], elF: [4.5, -71], haF: [12, -81], shB: [-10, -61], elB: [-22, -60.5], haB: [-16, -50], hip: [-2, -38], knF: [11, -21.5], ftF: [14, 0], knB: [1.5, -17.5], ftB: [-12, 0] }),
+  // ---- the referee
+  // waving it off: arms scissoring over his head
+  refWave1: P({ elF: [2, -76], haF: [-4, -86], elB: [-1, -76], haB: [6, -86] }, STAND),
+  refWave2: P({ elF: [13, -72], haF: [20, -82], elB: [-11, -72], haB: [-18, -82] }, STAND),
+  // diving in over the man on the canvas, pushing the winner off
+  refCover: P({ hip: [-2, -30], neck: [10, -52], head: [14, -58], shF: [12, -50], shB: [6, -50], elF: [20, -40], haF: [26, -34], elB: [-5, -45], haB: [-10, -56], knF: [6, -14], ftF: [14, 0], knB: [-8, -12], ftB: [-26, 0] }),
+  // break: arms out between them
+  refBreak: P({ elF: [15, -58], haF: [26, -62], elB: [-12, -56], haB: [-22, -62] }, STAND),
+  refPoint: P({ elF: [14, -58], haF: [24, -46] }, STAND),
+  refCount: P({ elF: [12, -70], haF: [16, -82] }, STAND),
+  // hands on his knees, in close on the ground work
+  refWatch: P({ hip: [-4, -34], neck: [6, -60], head: [9, -67], shF: [8, -58], shB: [2, -58], elF: [10, -46], haF: [10, -34], elB: [4, -46], haB: [4, -34], knF: [8, -18], knB: [-8, -18] }, STAND),
+  // ---- celebrations
+  bow: P({ head: [20, -64], neck: [14, -60], shF: [16, -57], elF: [21.5, -46], haF: [17, -35], shB: [11, -58], elB: [16.5, -47], haB: [12, -36] }, STAND),
+  roar: P({ head: [1, -80], neck: [0, -69], shF: [4, -66], elF: [13, -58], haF: [25, -60], shB: [-4, -66], elB: [-11.5, -56.5], haB: [-23, -60] }, STAND),
+  shush: P({ head: [4, -77], elF: [17, -63], haF: [10, -73], elB: [-0.5, -52] }, STAND),
+};
+
+/**
+ * What a fighter's celebration (Fighter.anim.celebration) looks like in the cage. Anything not
+ * listed (and 'none') maps to '' and the arena picks a party piece of its own.
+ */
+export const CELEB_ALIAS: Record<string, string> = {
+  flex: 'flex', flexes: 'flex', gunShow: 'flex',
+  bow: 'bow', bows: 'bow',
+  roar: 'roar', howls: 'roar',
+  point: 'point', shaka: 'point', pointsAtCrowd: 'point', pointsAtWatch: 'point',
+  pointUp: 'pointUp', pointsUp: 'pointUp', crownGesture: 'pointUp',
+  prays: 'prays', crossesHimself: 'prays',
+  shrug: 'shrug',
+  strut: 'strut', billyStrut: 'strut', billyWalk: 'strut',
+  walkAway: 'walkAway', walksAway: 'walkAway',
+  shush: 'shush', shushesCrowd: 'shush',
+  flipoff: 'flipoff', middleFingerPose: 'flipoff', mockery: 'flipoff',
+  backflip: 'backflip',
+  dances: 'dances',
 };
 
 export interface Look2 {
@@ -246,6 +318,8 @@ export interface Look2 {
   inkArt?: number;
   /** the middle finger is up (the flip-off taunt) */
   bird?: boolean;
+  /** the mouthpiece has been knocked out (it's lying on the canvas) */
+  noGuard?: boolean;
   /** knit beanie, as in his photo */
   beanie?: boolean;
   /** freckles across the cheek, as in his photo */
@@ -492,6 +566,19 @@ export function stanceGuard(L: Look2, t: number): Rig {
 export function mirrorRig(r: Rig): Rig {
   const o = {} as Rig;
   for (const j of JOINTS) o[j] = [-r[j][0], r[j][1]];
+  return o;
+}
+
+/** Every joint turned by `ang` radians about the point (px, py): a man toppling from the ankles. */
+export function rotateRig(r: Rig, ang: number, px: number, py: number): Rig {
+  const c = Math.cos(ang);
+  const s = Math.sin(ang);
+  const o = {} as Rig;
+  for (const j of JOINTS) {
+    const dx = r[j][0] - px;
+    const dy = r[j][1] - py;
+    o[j] = [px + dx * c - dy * s, py + dx * s + dy * c];
+  }
   return o;
 }
 
@@ -881,10 +968,10 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
   // mouth (+ mouthguard flash for fighters); gassed, it hangs open
   if (!o && gassed > 0.45) {
     g.circle(...hpt(5.6, 3.6), (0.9 + gassed * 0.5) * s).fill(0x2a1216);
-    hl([5.0, 3.0], [6.4, 2.9], L.glove === 0x8e1e1e ? 0xd04040 : 0x3a6ad0, 0.7);
+    if (!L.noGuard) hl([5.0, 3.0], [6.4, 2.9], mouthguardColor(L), 0.7);
   } else {
     hl([4.6, 3.6], [6.6, 3.2], shade(skin, -0.5), 0.9);
-    if (!o) hl([5.2, 3.4], [6.4, 3.2], L.glove === 0x8e1e1e ? 0xd04040 : 0x3a6ad0, 0.7);
+    if (!o && !L.noGuard) hl([5.2, 3.4], [6.4, 3.2], mouthguardColor(L), 0.7);
   }
   if (!o) {
     // the fight on his face: the eye swells shut, a cut over it, blood down the cheek, sweat on the brow
@@ -1128,6 +1215,11 @@ export function drawRig(g: Graphics, rig: Rig, x: number, y: number, facing: 1 |
     }
   }
   glove(rig.haF, rig.elF, L.glove, true);
+}
+
+/** The mouthpiece matches the corner: red or blue. */
+export function mouthguardColor(L: Look2): number {
+  return L.glove === 0x8e1e1e ? 0xd04040 : 0x3a6ad0;
 }
 
 export function trunksFor(corner: 0 | 1): number {
