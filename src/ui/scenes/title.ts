@@ -11,7 +11,7 @@ import { SW as W, OX, H, text, button } from '../kit';
 import { isTouchDevice } from '../../core/platform';
 import { sfx } from '../../audio/sfx';
 import { openSettings } from './settings';
-import { openHelp } from '../help';
+import { openTutorials, seenAny } from '../guide';
 import { openAchievements } from '../achievements';
 import { maybeWhatsNew } from '../whatsnew';
 import { maybeComingSoon, openComingSoon } from '../comingsoon';
@@ -38,6 +38,8 @@ export class TitleScene extends Scene {
   private strip = new Container();
   private far = new Graphics();
   private scroll = 0;
+  /** first run (no save, no lesson seen yet): a bobbing 'NEW? START HERE' arrow at TUTORIALS & HELP */
+  private startHere: Container | null = null;
 
   build(): void {
     const r = this.root;
@@ -76,7 +78,7 @@ export class TitleScene extends Scene {
       ['LOAD', () => openLoad(this.g)],
       ['TROPHY CASE', () => openAchievements(this.g)],
       ['SETTINGS', () => openSettings(this.g)],
-      ['HELP', () => openHelp(this.g)],
+      ['TUTORIALS & HELP', () => openTutorials(this.g, 'start')],
       // the credits roll, the thank-you, and the memorial
       ['CREDITS', () => openCredits(this.g)],
       ['COMING SOON: DRIVEBOSS', () => openComingSoon(this.g)],
@@ -84,9 +86,25 @@ export class TitleScene extends Scene {
     if (desktop) items.push(['QUIT GAME', () => desktop!.quit()]);
     // phones: every row the same thumb-sized height, in the big face
     const touch = isTouchDevice();
+    const fresh = !last && !seenAny();
+    this.startHere = null;
     items.forEach(([label, fn, fill], i) => {
       const big = i < (last ? 2 : 1);
-      menu.addChild(button(label, 0, i * 19 + (big || touch ? 0 : 4), 146, big || touch ? 17 : 14, fn, { fill: fill ?? PAL.night, border: big ? PAL.gold : PAL.slate, small: !big }));
+      const guide = fresh && label === 'TUTORIALS & HELP';
+      const y = i * 19 + (big || touch ? 0 : 4);
+      const h = big || touch ? 17 : 14;
+      menu.addChild(button(label, 0, y, 146, h, fn, { fill: fill ?? PAL.night, border: big || guide ? PAL.gold : PAL.slate, small: !big }));
+      if (guide) {
+        // new here: point at the lessons
+        const sh = new Container();
+        const tag = text('NEW? START HERE', 13, 0, { small: true, color: PAL.ink });
+        sh.addChild(new Graphics().poly([0, 3, 6, -1, 6, 7]).fill(PAL.gold).rect(6, 2, 4, 3).fill(PAL.gold));
+        sh.addChild(new Graphics().rect(11, -2, tag.textWidth + 4, 9).fill(PAL.gold));
+        sh.addChild(tag);
+        sh.position.set(150, y + Math.floor(h / 2) - 3);
+        menu.addChild(sh);
+        this.startHere = sh;
+      }
     });
     menu.position.set(14, 92);
     r.addChild(menu);
@@ -119,6 +137,7 @@ export class TitleScene extends Scene {
 
   update(dt: number): void {
     this.t += dt;
+    if (this.startHere && !this.startHere.destroyed) this.startHere.x = 150 + Math.round(Math.sin(this.t * 6) * 2 + 2);
     this.scroll = (this.scroll + dt * 16) % STREET_W;
     this.strip.x = -Math.round(this.scroll);
     this.far.x = -Math.round((this.scroll * 0.3) % W);

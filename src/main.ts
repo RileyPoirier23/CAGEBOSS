@@ -80,6 +80,16 @@ async function boot() {
   installTouch(); // before Pixi's event system, so pinch-zoom can claim the second finger
   await game.init(document.getElementById('game')!);
   attachTouchCanvas(game.app.canvas);
+  // leaving the app (home button, app switcher, closing the tab): phones may never come back, so
+  // the week so far is saved too, not just what was already queued
+  const keepWeek = () => {
+    if (game.scene instanceof FMHubScene || game.scene instanceof DeskScene) game.autosave();
+    flushSaves();
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') keepWeek();
+  });
+  window.addEventListener('pagehide', keepWeek);
   // Phones drop the WebGL context under memory pressure (or after a long freeze): the canvas goes
   // black and never comes back. Keep the week (between screens the state is whole) and restart.
   game.app.canvas.addEventListener('webglcontextlost', (e) => {

@@ -17,6 +17,7 @@ import { sfx } from '../audio/sfx';
 import { Rng } from '../core/rng';
 import { fm, resolveDoc, comparePair, type FMDoc } from '../sim/fighter';
 import { isTouchDevice } from '../core/platform';
+import { maybeLesson } from './guide';
 
 const DOC_X = 122;
 const DOC_Y = 40;
@@ -100,7 +101,7 @@ export function openFMDesk(g: Game, onDone: () => void): void {
       let y = 14;
       const rows: Container[] = [];
       cur.ref.lines.forEach((l, i) => {
-        const { node: fnode, h } = fieldNode('ref.' + i, l.label, l.value, REF_W - 6, ins, { labelW: 40, small: true, kind: l.kind === 'sig' ? 'sig' : undefined });
+        const { node: fnode, h } = fieldNode('ref.' + i, l.label, l.value, REF_W - 6, ins, { labelW: 50, small: true, kind: l.kind === 'sig' ? 'sig' : undefined });
         fnode.position.set(3, y);
         rows.push(fnode);
         y += h + 2;
@@ -128,10 +129,12 @@ export function openFMDesk(g: Game, onDone: () => void): void {
     const ctl = new Container();
     ctl.position.set(4, DOC_Y + 156);
     ctl.addChild(box(112, 70, 0x2a1f18, 0x4a3628));
-    ctl.addChild(button(ins.active ? 'INSPECTING (I)' : 'INSPECT (I)', 4, 4, 104, 14, () => toggleInspect(), { small: true, fill: ins.active ? PAL.gold : PAL.steel, disabled: !cur }));
-    ctl.addChild(button('SIGN IT (A)', 4, 21, 104, 14, () => stamp('sign'), { small: true, fill: PAL.moss, disabled: !cur }));
-    ctl.addChild(button(cur?.kind === 'sponsor' ? 'TURN DOWN (D)' : 'DISPUTE (D)', 4, 38, 104, 14, () => stamp('dispute'), { small: true, fill: PAL.blood, disabled: !cur }));
-    ctl.addChild(button(hint('DONE (ESC)', 'DONE'), 4, 55, 104, 12, () => close(), { small: true, fill: PAL.shadow }));
+    // keyboard keys in the labels, except on a touch screen (nothing to press there)
+    const key = (k: string): string => (isTouchDevice() ? '' : ` (${k})`);
+    ctl.addChild(button((ins.active ? 'INSPECTING' : 'INSPECT') + key('I'), 4, 4, 104, 14, () => toggleInspect(), { small: true, fill: ins.active ? PAL.gold : PAL.steel, disabled: !cur }));
+    ctl.addChild(button('SIGN IT' + key('A'), 4, 21, 104, 14, () => stamp('sign'), { small: true, fill: PAL.moss, disabled: !cur }));
+    ctl.addChild(button((cur?.kind === 'sponsor' ? 'TURN DOWN' : 'DISPUTE') + key('D'), 4, 38, 104, 14, () => stamp('dispute'), { small: true, fill: PAL.blood, disabled: !cur }));
+    ctl.addChild(button(isTouchDevice() ? 'DONE' : hint('DONE (ESC)', 'DONE'), 4, 55, 104, 12, () => close(), { small: true, fill: PAL.shadow }));
     layer.addChild(ctl);
 
     // ------------------------------------------------ strip (what the inspection says)
@@ -141,10 +144,13 @@ export function openFMDesk(g: Game, onDone: () => void): void {
       line = 'DISCREPANCY: ' + found.text;
       color = PAL.blood;
     } else if (!line && ins.active) {
-      line = hint(ins.selected ? 'Now click the line it should match on the reference card.' : 'INSPECT: click a line on the document, then the line it should match.', ins.selected ? 'Now select the line it should match on the reference card.' : 'INSPECT: select a line on the document, then the line it should match.');
+      const verb = isTouchDevice() ? 'tap' : 'click';
+      line = hint(ins.selected ? `Now ${verb} the line it should match on the reference card.` : `INSPECT: ${verb} a line on the document, then the line it should match.`, ins.selected ? 'Now select the line it should match on the reference card.' : 'INSPECT: select a line on the document, then the line it should match.');
       color = PAL.gold;
     } else if (!line && cur) {
-      line = 'Press INSPECT (I) to compare lines. Sign it (A) if it matches what you agreed; dispute it (D) if it does not.';
+      line = isTouchDevice()
+        ? 'Tap INSPECT to compare lines. SIGN IT if it matches what you agreed; DISPUTE it if it does not.'
+        : 'Press INSPECT (I) to compare lines. Sign it (A) if it matches what you agreed; dispute it (D) if it does not.';
       color = PAL.ash;
     }
     if (line) {
@@ -333,6 +339,19 @@ export function openFMDesk(g: Game, onDone: () => void): void {
     popKeys();
     onDone();
   });
+  // automation hook (tests / the tutorial's capture tool): drive the table without the mouse
+  const lineKey = (label: string): [string | null, string | null] => {
+    if (!cur) return [null, null];
+    const di = cur.fields.findIndex((f) => f.label === label);
+    const ri = cur.ref.lines.findIndex((l) => l.label === label);
+    return [di >= 0 ? 'doc.' + di : null, ri >= 0 ? 'ref.' + ri : null];
+  };
+  (window as unknown as { __fmdesk?: unknown }).__fmdesk = {
+    ins, compare: (a: string, b: string) => compare(a, b), toggleInspect: () => toggleInspect(), stamp: (a: 'sign' | 'dispute') => stamp(a),
+    slip: () => (slip?.node && !slip.node.destroyed ? slip.node.getBounds().rectangle : null), keyFor: lineKey,
+  };
   draw();
   if (!cur) msg = { text: 'Nothing to sign. Enjoy it while it lasts.', color: PAL.ash, t: 99 };
+  // the first paper on the table: the YOUR PAPERWORK lesson, over it
+  else maybeLesson(g, 'fm_paper', { over: true });
 }

@@ -12,12 +12,13 @@ import { Container, Graphics, type Ticker } from 'pixi.js';
 import { hint } from './hints';
 import type { Game } from './app';
 import { PAL } from '../art/palette';
-import { W, H, text, box } from './kit';
+import { W, H, text, box, button } from './kit';
 import { input } from '../core/input';
 import { setPadUiMode } from './controller';
 import { prompt } from './glyphs';
 import { sfx } from '../audio/sfx';
 import { isTouchDevice } from '../core/platform';
+import { maybeLesson } from './guide';
 
 interface Run {
   frame: Container;
@@ -26,7 +27,7 @@ interface Run {
   finish: (score: number) => void;
 }
 
-function shell(g: Game, title: string, help: string, done: (score: number) => void, step: (r: Run, dt: number, press: boolean, held: boolean, release: boolean) => void): void {
+function shell(g: Game, title: string, help: string, done: (score: number) => void, step: (r: Run, dt: number, press: boolean, held: boolean, release: boolean) => void, lessonKey?: string): void {
   const frame = new Container();
   const wrap = g.modal(frame, { dim: 0.85 });
   setPadUiMode('game');
@@ -37,7 +38,7 @@ function shell(g: Game, title: string, help: string, done: (score: number) => vo
   frame.addChild(box(bw, bh, PAL.night, PAL.gold, { bevel: true })).position.set(bx, by);
   frame.addChild(text(title, bx + 8, by + 6, { color: PAL.gold }));
   frame.addChild(text(help, bx + 8, by + 18, { small: true, width: bw - 16, color: PAL.ash }));
-  frame.addChild(prompt({ pad: 'B', key: 'Esc' }, 'SKIP', bx + bw - 50, by + 6, PAL.ash));
+  if (!isTouchDevice()) frame.addChild(prompt({ pad: 'B', key: 'Esc' }, 'SKIP', bx + bw - 50, by + 6, PAL.ash));
   const gfx = new Graphics();
   gfx.position.set(bx, by);
   frame.addChild(gfx);
@@ -58,7 +59,12 @@ function shell(g: Game, title: string, help: string, done: (score: number) => vo
   let keyPress = false;
   let keyRelease = false;
   let skip = false;
+  // phones have no Esc: a real button (the panel itself is the action button)
+  if (isTouchDevice()) frame.addChild(button('SKIP', bx + bw - 52, by + 4, 48, 16, () => (skip = true), { small: true, fill: PAL.shadow }));
+  // a lesson card on top of the panel gets the keys (its Esc must not skip the game)
+  const onTop = () => g.modals[g.modals.length - 1] === wrap;
   const kd = (e: KeyboardEvent) => {
+    if (!onTop()) return;
     if (e.code === 'Escape') skip = true;
     if ((e.code === 'Space' || e.code === 'Enter') && !keys.has(e.code)) { keys.add(e.code); keyPress = true; }
     e.preventDefault();
@@ -82,6 +88,11 @@ function shell(g: Game, title: string, help: string, done: (score: number) => vo
   let wait = 0.4; // swallow the click that opened it
   const tick = (t: Ticker) => {
     const dt = Math.min(0.05, t.deltaMS / 1000);
+    // a lesson card on top: the game waits (and forgets presses meant for the card)
+    if (!onTop()) {
+      mousePress = keyPress = mouseRelease = keyRelease = false;
+      return;
+    }
     if (wait > 0) {
       wait -= dt;
       mousePress = keyPress = mouseRelease = keyRelease = false;
@@ -101,6 +112,10 @@ function shell(g: Game, title: string, help: string, done: (score: number) => vo
     setPadUiMode('cursor');
   };
   g.app.ticker.add(tick);
+  // automation hook (tests / the tutorial's capture tool): the panel's graphics (its top-left is the panel's)
+  (window as unknown as { __minigame?: unknown }).__minigame = { panel: gfx, zone: () => null };
+  // the first time: this mini game's lesson, over the panel (the game waits for it)
+  if (lessonKey) maybeLesson(g, lessonKey, { over: true, delay: 50 });
   wrap.once('destroyed', () => {
     // closed from outside (Esc / B): counts as a skip
     if (!closed) {
@@ -207,7 +222,7 @@ export function openJumpRope(g: Game, done: (score: number) => void): void {
     r.dyn.addChild(text(`${judged}/${N}`, 270, 36, { small: true, color: PAL.bone }));
     if (flashT > 0) r.dyn.addChild(text(flash, 140, 60, { color: flash === 'TRIPPED!' ? PAL.blood : PAL.gold }));
     if (judged >= N) r.finish(hits / N);
-  });
+  }, 'fm_rope');
 }
 
 export function openTyreChop(g: Game, done: (score: number) => void): void {
@@ -269,5 +284,7 @@ export function openTyreChop(g: Game, done: (score: number) => void): void {
     r.dyn.addChild(text(`${swings}/${N}`, 270, 36, { small: true, color: PAL.bone }));
     if (flashT > 0) r.dyn.addChild(text(flash, 220, 80, { color: flash === 'WHIFF' ? PAL.blood : PAL.gold }));
     if (swings >= N) r.finish(total / N);
-  });
+  }, 'fm_tyre');
+  const mg = (window as unknown as { __minigame?: { zone: () => number | null } }).__minigame;
+  if (mg) mg.zone = () => zone;
 }
