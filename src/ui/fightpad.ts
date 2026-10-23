@@ -6,6 +6,10 @@
  * The pad follows the fight (setMode): the clinch turns KICK into KNEE and GRAB into TIE,
  * the ground into MOVE / SUB, a submission into two MASH buttons (roll the stick to
  * fight it), and a knockdown swaps everything for two big GET UP buttons to alternate.
+ * The fight can also say what a button will do right now (setLabel: PLUM, ARMBAR, PASS...),
+ * show a punch charging (setCharge: a ring that goes grey, gold, red) and dim the strike
+ * buttons while you're still recovering (setBusy). A quick tap on BODY keeps it lit for the
+ * next punch, so one thumb can throw a body hook.
  */
 import { Container, Graphics, type FederatedPointerEvent } from 'pixi.js';
 import { PAL } from '../art/palette';
@@ -57,6 +61,13 @@ export function fightPadLayout(W = DESIGN_W): FightPadLayout {
 
 export const FIGHT_PAD_LAYOUT: FightPadLayout = fightPadLayout();
 
+/** Charge ring thresholds (seconds held): light, medium, heavy (FIGHT_TUNING.tapMax / mediumMax). */
+const CHARGE_MED = 0.16;
+const CHARGE_HEAVY = 0.42;
+/** A BODY tap shorter than this latches it; the latch lasts this long at most. */
+const BODY_TAP = 0.2;
+const BODY_LATCH = 1.5;
+
 function pixelCircle(g: Graphics, cx: number, cy: number, r: number, color: number, alpha: number): void {
   for (let y = -r; y <= r; y++) {
     const w = Math.round(Math.sqrt(r * r - y * y));
@@ -72,12 +83,29 @@ export class TouchFightPad extends Container {
   /** pressed since the last state(): a tap shorter than a frame still counts as one frame held */
   private fresh = new Set<TouchFightButton>();
   private gfx = new Graphics();
+  /** what changes while you fight (charge rings, the busy sweep): redrawn only when it looks different */
+  private fx = new Graphics();
+  private fxKey = -1;
+  private fxMode: PadMode | '' = '';
   private labels = new Container();
   private mode: PadMode = 'stand';
+  /** BODY latch: when BODY went down, until when it stays lit, and whether it lets go after the next state() */
+  private bodyDownT = -1;
+  private bodyOff = false;
+  private latchUntil = 0;
+  private latchEnd = false;
+  private chargeLead = 0;
+  private chargeRear = 0;
+  private busy = 0;
+  /** labels the fight set for this moment (PLUM, ARMBAR, PASS...), and buttons with nothing to do */
+  private over: Partial<Record<TouchFightButton, string>> = {};
+  private dim: Partial<Record<TouchFightButton, boolean>> = {};
+  /** the button tick on press (Settings > Vibration) */
+  vibrate = true;
 
   constructor(public layout: FightPadLayout = FIGHT_PAD_LAYOUT) {
     super();
-    this.addChild(this.gfx, this.labels);
+    this.addChild(this.gfx, this.fx, this.labels);
     this.eventMode = 'static';
     this.hitArea = { contains: (x: number, y: number) => this.hit(x, y) !== null };
     this.on('pointerdown', (e: FederatedPointerEvent) => this.down(e));
@@ -91,7 +119,49 @@ export class TouchFightPad extends Container {
   state(): TouchPadState {
     const held = new Set([...this.st.held, ...this.fresh]);
     this.fresh.clear();
+    if (this.latchUntil > 0) {
+      // a punch let go since the last frame still sees BODY this once; then the latch lets go
+      const t = now();
+      if (this.latchEnd || t <= this.latchUntil) held.add('BODY');
+      if (this.latchEnd || t > this.latchUntil) {
+        this.latchUntil = 0;
+        this.latchEnd = false;
+        this.draw();
+      }
+    }
     return { stick: { ...this.st.stick }, held };
+  }
+
+  /** BODY stops being lit (a new round, the pause menu). */
+  clearLatch(): void {
+    if (this.latchUntil <= 0) return;
+    this.latchUntil = 0;
+    this.latchEnd = false;
+    this.draw();
+  }
+
+  /** How long LEAD / REAR has been held: a ring around it, grey (light), gold (medium), red (heavy). */
+  setCharge(id: 'LEAD' | 'REAR', held: number): void {
+    if (id === 'LEAD') this.chargeLead = held;
+    else this.chargeRear = held;
+    this.drawFx();
+  }
+
+  /** Still recovering from your own strike: LEAD, REAR and KICK dim, the shade drains as he recovers (frac = time left / total). */
+  setBusy(frac: number): void {
+    this.busy = Math.max(0, Math.min(1, frac));
+    this.drawFx();
+  }
+
+  /** What a button does right now (6 letters at most), or null for the mode's own name; dim = nothing to do from here. */
+  setLabel(id: TouchFightButton, label: string | null, dim = false): void {
+    const was = this.over[id] ?? null;
+    if (was === label && !!this.dim[id] === dim) return;
+    if (label === null) delete this.over[id];
+    else this.over[id] = label;
+    this.dim[id] = dim;
+    this.buildLabels();
+    this.draw();
   }
 
   /** Relabel / show the buttons for what the fight is doing. */
@@ -109,8 +179,16 @@ export class TouchFightPad extends Container {
       this.stickPtr = null;
       this.st.stick = { x: 0, y: 0 };
     }
+    // the labels the last mode asked for don't carry over
+    this.over = {};
+    this.dim = {};
+    if (!this.visible_('BODY')) {
+      this.latchUntil = 0;
+      this.latchEnd = false;
+    }
     this.buildLabels();
     this.draw();
+    this.drawFx();
   }
 
   private visible_(id: TouchFightButton): boolean {
@@ -124,7 +202,7 @@ export class TouchFightPad extends Container {
   private buildLabels(): void {
     this.labels.removeChildren().forEach((c) => c.destroy());
     for (const b of this.shown()) {
-      const t = text(b.labels[this.mode]!, 0, 0, { small: b.r < 20, color: PAL.bone, shadow: PAL.ink });
+      const t = text(this.over[b.id] ?? b.labels[this.mode]!, 0, 0, { small: b.r < 20, color: this.dim[b.id] ? PAL.grey : PAL.bone, shadow: PAL.ink });
       t.x = Math.round(b.x - t.textWidth / 2);
       t.y = Math.round(b.y - (b.r < 20 ? 2 : 3));
       this.labels.addChild(t);
@@ -163,10 +241,19 @@ export class TouchFightPad extends Container {
       this.btnPtr.set(e.pointerId, h);
       this.st.held.add(h);
       this.fresh.add(h);
-      try {
-        navigator.vibrate?.(8);
-      } catch {
-        /* no haptics */
+      if (h === 'BODY') {
+        // a tap on a lit BODY puts it out again
+        this.bodyOff = this.latchUntil > 0;
+        this.latchUntil = 0;
+        this.latchEnd = false;
+        this.bodyDownT = now();
+      }
+      if (this.vibrate) {
+        try {
+          navigator.vibrate?.(8);
+        } catch {
+          /* no haptics */
+        }
       }
     }
     this.draw();
@@ -196,6 +283,10 @@ export class TouchFightPad extends Container {
     if (b) {
       this.btnPtr.delete(e.pointerId);
       if (![...this.btnPtr.values()].includes(b)) this.st.held.delete(b);
+      // a quick tap on BODY keeps it lit for the next punch; that punch's release lets it go
+      if (b === 'BODY' && !this.bodyOff && this.bodyDownT >= 0 && now() - this.bodyDownT < BODY_TAP) this.latchUntil = now() + BODY_LATCH;
+      if (b === 'BODY') this.bodyDownT = -1;
+      if ((b === 'LEAD' || b === 'REAR') && this.latchUntil > 0) this.latchEnd = true;
     }
     this.draw();
   }
@@ -211,9 +302,56 @@ export class TouchFightPad extends Container {
       pixelCircle(g, Math.round(cx + this.st.stick.x * s.r * 0.7), Math.round(cy + this.st.stick.y * s.r * 0.7), 11, PAL.ash, 0.75);
     }
     for (const b of this.shown()) {
-      const on = this.st.held.has(b.id);
+      const on = this.st.held.has(b.id) || (b.id === 'BODY' && this.latchUntil > 0);
       pixelCircle(g, b.x, b.y + 1, b.r, 0x000000, 0.4);
-      pixelCircle(g, b.x, b.y + (on ? 1 : 0), b.r, b.color, on ? 0.95 : 0.7);
+      pixelCircle(g, b.x, b.y + (on ? 1 : 0), b.r, b.color, this.dim[b.id] ? 0.3 : on ? 0.95 : 0.7);
+      // latched BODY: a bright rim so you can see it's armed
+      if (b.id === 'BODY' && this.latchUntil > 0) ring(g, b.x, b.y + 1, b.r + 1, 1, PAL.bone, 0.9);
     }
+  }
+
+  /** Charge rings and the busy sweep: cheap, and only redrawn when they'd look different. */
+  private drawFx(): void {
+    const busy = Math.round(this.busy * 10);
+    const key = chargeStep(this.chargeLead) + chargeStep(this.chargeRear) * 128 + busy * 16384;
+    if (key === this.fxKey && this.mode === this.fxMode) return;
+    this.fxKey = key;
+    this.fxMode = this.mode;
+    const g = this.fx.clear();
+    for (const b of this.shown()) {
+      if (busy > 0 && (b.id === 'LEAD' || b.id === 'REAR' || b.id === 'KICK')) {
+        // a shade over the top part of the button that drains as the recovery runs out
+        const rows = Math.round(b.r * 2 * (busy / 10));
+        for (let y = -b.r; y < -b.r + rows; y++) {
+          const w = Math.round(Math.sqrt(b.r * b.r - y * y));
+          g.rect(b.x - w, b.y + y, w * 2, 1).fill({ color: 0x000000, alpha: 0.5 });
+        }
+      }
+      const held = b.id === 'LEAD' ? this.chargeLead : b.id === 'REAR' ? this.chargeRear : 0;
+      if (held > 0) {
+        const c = held < CHARGE_MED ? PAL.ash : held < CHARGE_HEAVY ? PAL.gold : PAL.blood;
+        ring(g, b.x, b.y, b.r + 3, Math.min(1, held / CHARGE_HEAVY), c, 1);
+      }
+    }
+  }
+}
+
+function now(): number {
+  return performance.now() / 1000;
+}
+
+/** How a charge ring looks (0 = none): 21 lengths times 3 colours, so it's only redrawn when one changes. */
+function chargeStep(v: number): number {
+  if (v <= 0) return 0;
+  return 1 + Math.min(20, Math.floor((v / CHARGE_HEAVY) * 20)) + (v < CHARGE_MED ? 0 : v < CHARGE_HEAVY ? 32 : 64);
+}
+
+/** A dotted pixel ring, from 12 o'clock clockwise, `frac` of the way round. */
+function ring(g: Graphics, cx: number, cy: number, r: number, frac: number, color: number, alpha: number): void {
+  const n = Math.max(8, Math.round(r * 2.4));
+  const m = Math.round(n * frac);
+  for (let k = 0; k < m; k++) {
+    const a = -Math.PI / 2 + (k / n) * Math.PI * 2;
+    g.rect(Math.round(cx + Math.cos(a) * r) - 1, Math.round(cy + Math.sin(a) * r) - 1, 2, 2).fill({ color, alpha });
   }
 }
