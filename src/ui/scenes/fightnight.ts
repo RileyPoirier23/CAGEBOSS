@@ -14,7 +14,7 @@ import { eventSponsors, sponsorColor, eventCanvas } from '../../sim/sponsorship'
 import { setMusicContext, walkoutFor } from '../../audio/music';
 import { NewsRecap } from '../newsrecap';
 import { PAL, shade } from '../../art/palette';
-import { W, H, text, button, box, ScrollBox, paper, clickable, type ButtonOpts } from '../kit';
+import { W, H, SW, OX, text, button, box, ScrollBox, paper, clickable, type ButtonOpts } from '../kit';
 import { PixelText, measure } from '../text';
 import { fighterPortrait, reporterPortrait } from '../sprites';
 import { ArenaView, cornerView, RingCardWalk, preloadRingCards, AW, AH } from '../arena';
@@ -181,8 +181,15 @@ export class FightNightScene extends Scene {
     else if (this.ev.notes.includes('started')) this.step = 'card';
   }
 
+  exit(): void {
+    this.g.watchingFight = false;
+    super.exit();
+  }
+
   build(): void {
     const r = this.root;
+    this.g.watchingFight = this.step === 'watch';
+    r.x = 0; // (the card widens itself on phones)
     r.addChild(fullBg(0x120e14));
     if (this.opts.onWrap && (this.step === 'bonus' || this.step === 'presser' || this.step === 'recap' || this.step === 'done')) {
       const done = this.opts.onWrap;
@@ -306,9 +313,17 @@ export class FightNightScene extends Scene {
   private buildCard(): void {
     const s = this.g.state!;
     const r = this.root;
+    // phones: the card runs the full width of the screen, with bigger buttons and rows
+    const P = isTouchDevice();
+    const FW = P ? SW : W;
+    if (P) {
+      r.x = -OX;
+      r.addChild(new Graphics().rect(0, 0, FW, H).fill(0x120e14)); // (fullBg assumes an unshifted root)
+    }
+    const rh = P ? 27 : 24;
     r.addChild(text(this.ev.name.toUpperCase() + '  •  THE CARD', 8, 6, { color: PAL.gold }));
     const live = this.live();
-    const sb = new ScrollBox(W - 16, H - 52);
+    const sb = new ScrollBox(FW - 16, H - 52);
     sb.position.set(8, 18);
     // show in running order: prelims first
     const order = live.slice().reverse();
@@ -317,39 +332,45 @@ export class FightNightScene extends Scene {
       const B = s.fighters[b.b];
       const row = new Container();
       const done = b.status === 'done' && b.result;
-      row.addChild(box(W - 22, 22, done ? 0x1e1a20 : b.position === 0 ? 0x3a2228 : 0x2a2430, PAL.shadow));
+      row.addChild(box(FW - 22, rh - 2, done ? 0x1e1a20 : b.position === 0 ? 0x3a2228 : 0x2a2430, PAL.shadow));
       row.addChild(text(b.position === 0 ? 'MAIN' : b.position === 1 ? 'CO-MAIN' : b.position < 5 ? 'MAIN CARD' : 'PRELIM', 4, 3, { small: true, color: b.position === 0 ? PAL.gold : PAL.ash }));
-      row.addChild(text(`${A ? fullName(A) : '?'}  vs  ${B ? fullName(B) : '?'}${rematchTag(b)}${b.title ? '  ★ ' + (s.belts[b.title]?.name ?? '') : ''}`, 4, 11, { color: PAL.bone, width: 300, maxLines: 1 }));
+      row.addChild(text(`${A ? fullName(A) : '?'}  vs  ${B ? fullName(B) : '?'}${rematchTag(b)}${b.title ? '  ★ ' + (s.belts[b.title]?.name ?? '') : ''}`, 4, 11, { color: PAL.bone, width: FW - 180, maxLines: 1 }));
       if (done) {
         const res = b.result!;
         const w = res.winner ? s.fighters[res.winner] : null;
-        row.addChild(text(w ? `${w.last} by ${res.method} (${res.detail}) R${res.round} ${res.time}` : `${res.detail}`, 300, 7, { small: true, color: PAL.moss, width: W - 330 }));
+        row.addChild(text(w ? `${w.last} by ${res.method} (${res.detail}) R${res.round} ${res.time}` : `${res.detail}`, FW - 180, 7, { small: true, color: PAL.moss, width: 150 }));
       } else {
         const fmb = this.fmFor(b);
-        if (fmb?.live && this.g.settings.handsOn !== false) row.addChild(button('FIGHT!', W - 130, 4, 36, 14, () => this.liveFight(b), { small: true, fill: PAL.gold }));
-        row.addChild(button('WATCH', W - 92, 4, 34, 14, () => this.watch(b), { small: true, fill: PAL.blood }));
-        row.addChild(button('SIM', W - 56, 4, 30, 14, () => this.simBout(b), { small: true, fill: PAL.slate }));
+        // [x, w] of FIGHT / WATCH / SIM from the row's right edge
+        const bw = P ? [[150, 46], [100, 46], [50, 42]] : [[130, 36], [92, 34], [56, 30]];
+        const bh = P ? 19 : 14;
+        if (fmb?.live && this.g.settings.handsOn !== false) row.addChild(button('FIGHT!', FW - bw[0][0], P ? 3 : 4, bw[0][1], bh, () => this.liveFight(b), { small: true, fill: PAL.gold }));
+        row.addChild(button('WATCH', FW - bw[1][0], P ? 3 : 4, bw[1][1], bh, () => this.watch(b), { small: true, fill: PAL.blood }));
+        row.addChild(button('SIM', FW - bw[2][0], P ? 3 : 4, bw[2][1], bh, () => this.simBout(b), { small: true, fill: PAL.slate }));
       }
-      row.position.set(0, i * 24);
+      row.position.set(0, i * rh);
       sb.content.addChild(row);
     });
     r.addChild(sb);
     sb.refresh();
     const remaining = live.filter((b) => b.status === 'scheduled');
     const prelims = remaining.filter((b) => b.position >= 5);
+    // (what's left is worked out on the tap: a bout can finish between the redraw and the tap)
     r.addChild(button('SIM ALL PRELIMS', 8, H - 26, 100, 18, () => {
-      prelims.sort((a, b) => b.position - a.position).forEach((b) => this.simBout(b, true));
+      live.filter((b) => b.status === 'scheduled' && b.position >= 5).sort((a, b) => b.position - a.position).forEach((b) => this.simBout(b, true));
       this.refresh();
     }, { small: true, disabled: !prelims.length }));
     r.addChild(button('SIM EVERYTHING', 112, H - 26, 100, 18, () => {
-      remaining.sort((a, b) => b.position - a.position).forEach((b) => this.simBout(b, true));
+      live.filter((b) => b.status === 'scheduled').sort((a, b) => b.position - a.position).forEach((b) => this.simBout(b, true));
       this.refresh();
     }, { small: true, disabled: !remaining.length }));
-    if (!remaining.length) r.addChild(button(this.opts.onWrap ? 'CONTRACT TIME →' : 'BONUSES & WRAP UP →', W - 150, H - 26, 142, 18, () => { this.step = 'bonus'; this.refresh(); }, { fill: PAL.blood }));
+    if (!remaining.length) r.addChild(button(this.opts.onWrap ? 'CONTRACT TIME →' : 'BONUSES & WRAP UP →', FW - 150, H - 26, 142, 18, () => { this.step = 'bonus'; this.refresh(); }, { fill: PAL.blood }));
     else r.addChild(text('Watch a fight, or sim it. Prelims run first, main event last.', 220, H - 21, { small: true, color: PAL.ash }));
   }
 
   private simBout(b: Bout, quiet = false): void {
+    // a bout is fought once: a second tap on a stale SIM button must not add another result
+    if (b.status === 'done') return;
     const s = this.g.state!;
     const rng = new Rng(s.rng);
     runBout(s, this.ev, b, rng, false, this.fmFor(b)?.extra() ?? {});
@@ -358,6 +379,7 @@ export class FightNightScene extends Scene {
     if (!quiet) {
       this.postBout(b, false);
       this.afterOther(b);
+      this.refresh();
     }
   }
 
@@ -387,6 +409,7 @@ export class FightNightScene extends Scene {
 
   // ------------------------------------------------------------ watch
   private watch(b: Bout): void {
+    if (b.status === 'done') return;
     const s = this.g.state!;
     const simRng = s.rng;
     const rng = new Rng(s.rng);
@@ -406,6 +429,7 @@ export class FightNightScene extends Scene {
       replayIn: 0, replayFrom: 0, replayTo: -1, rpIdx: 0, rpT: 0, rpTail: -1,
     };
     this.step = 'watch';
+    this.g.watchingFight = true;
     this.tapeShown = false;
     // walkout music: the red corner's song for the intro, straight into the fight if there's no intro
     setMusicContext(intro.length ? 'walkout' : 'fight', walkoutFor(b.a));

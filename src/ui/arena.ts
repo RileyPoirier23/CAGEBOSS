@@ -9,7 +9,7 @@ import { Assets, Container, Graphics, Sprite, type Texture } from 'pixi.js';
 import type { Fighter, TickerLine, CornerReport } from '../core/types';
 import { PAL, shade, lerpColor } from '../art/palette';
 import { text } from './kit';
-import { PixelText, pixelArtResolution } from './text';
+import { PixelText, pixelArtResolution, measure } from './text';
 import { portrait } from './sprites';
 import { sfx, type Sfx } from '../audio/sfx';
 import { heightStr } from '../core/format';
@@ -2390,9 +2390,16 @@ export class ArenaView extends Container {
    * A callout slammed onto the screen. prio: 5 KO, 4 KD, 3 COUNTER/ROCKED, 2 PARRY/CAUGHT/STUFFED,
    * 1 everything else; a lower one waits its turn while a higher one still has more than 0.6 s to go.
    */
+  /** A long callout is up (it reaches the corners of the screen, where the Bleeter feed sits). */
+  calloutWide(): boolean {
+    return this.calloutT > 0 && this.calloutW > 150;
+  }
+  private calloutW = 0;
+
   showCallout(s: string, color: number = PAL.gold, prio = 1): void {
     if (prio < this.calloutPrio && this.calloutT > 0.6) return;
     this.callout.setText(s);
+    this.calloutW = measure(s) * 2;
     if (color !== this.calloutColor) {
       this.calloutColor = color;
       this.callout.setColor(color);

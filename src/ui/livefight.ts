@@ -594,6 +594,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     }
     // centre: clock + where the fight is
     if (!touchUi) dyn.addChild(hudText(`ROUND ${L.round}/${L.rounds}   ${L.clockText()}`, 0, y0 + 3, { width: FW, align: 'center', color: PAL.gold }));
+    // phones: a compact clock between the two names (the jumbotron's is hard to read over its lights)
+    else dyn.addChild(hudText(`R${L.round}/${L.rounds}  ${L.clockText()}`, TX0, y0 + 4, { width: TX1 - TX0, align: 'center', small: true, color: PAL.gold }));
     const sy = touchUi ? y0 + 40 : y0 + 14;
     if (autopilot) dyn.addChild(hudText(touchUi ? 'AUTOPILOT (PAUSE to take over)' : hint('AUTOPILOT (ESC to take over)', 'AUTOPILOT ({Menu} to take over)'), cx0, sy, { width: cx1 - cx0, align: 'center', small: true, color: PAL.ember }));
     const sit = situation();
@@ -680,7 +682,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       dyn.addChild(hudText(`TAP ${key} TO SPRAWL!`, 0, PROMPT_Y, { width: FW, align: 'center', color: PAL.gold, scale: 2, shadow: PAL.ink }));
     }
     // Bleeter steps aside while the big prompts (the sprawl, the count, JUMP ON HIM) are up
-    if (feed && !feed.destroyed) feed.visible = !sprawlNow && L.F[0].down <= 0 && L.F[1].down <= 0;
+    if (feed && !feed.destroyed) feed.visible = !sprawlNow && L.F[0].down <= 0 && L.F[1].down <= 0 && !arena.calloutWide();
     // overlays: the count, submission struggle
     for (const i of SIDES) {
       if (L.F[i].down <= 0) continue;

@@ -122,6 +122,9 @@ export class Game {
     this.app.stage.addChild(this.frame);
     this.frame.addChild(this.stage);
     this.stage.addChild(this.sceneLayer, this.toastLayer, this.modalLayer, this.feedbackLayer);
+    // notices are for reading, not tapping: a toast over END WEEK must not swallow the tap
+    this.toastLayer.eventMode = 'none';
+    this.feedbackLayer.eventMode = 'none';
     this.app.stage.addChild(this.tipLayer, this.loadLayer);
     tooltip.attach(this.tipLayer);
     this.app.stage.eventMode = 'static';
@@ -301,6 +304,9 @@ export class Game {
 
   private showNowPlaying(title: string, artist: string): void {
     this.nowPlaying?.node.destroy({ children: true });
+    this.nowPlaying = null;
+    // a fight on screen has the booth talking in that corner (and the Butler names the walkout song)
+    if (this.inLiveFight || this.watchingFight) return;
     const c = new Container();
     const label = text('NOW PLAYING', 13, 2, { small: true, color: PAL.ash });
     const song = text(`${title.toUpperCase()}  -  ${artist.toUpperCase()}`, 13, 9, { small: true, color: PAL.gold, width: 200, maxLines: 1 });
@@ -337,6 +343,8 @@ export class Game {
 
   /** a hands-on fight is running (View / F1 cycles its camera instead of opening HELP) */
   inLiveFight = false;
+  /** a watched fight is on screen (fight night) */
+  watchingFight = false;
   /** an unskippable sequence (end credits) is playing: no HELP pop-ups */
   cutscene = false;
 
