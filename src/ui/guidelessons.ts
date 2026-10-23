@@ -247,8 +247,8 @@ export const LESSONS: Lesson[] = [
       },
       {
         title: "WATCHING", pic: "fn_3",
-        pc: "While you watch: SPEED, PAUSE, CAM (side, TV or top-down) and SKIP to the end. The booth calls it, the Juiced Butler announces it, Bleeter loses its mind. Between rounds the corners patch up their guys.",
-        phone: "While you watch: SPEED, PAUSE, CAM (side, TV or top-down) and SKIP to the end. The booth calls it, the Juiced Butler announces it, Bleeter loses its mind. Between rounds the corners patch up their guys.",
+        pc: "While you watch: the speed (SLOW to BLITZ), PAUSE, CAM (side, TV or top-down), NEXT RND and HIGHLIGHTS (rushes the quiet stretches), and SKIP TO END. Big moments get an instant replay. Between rounds the corners patch up their guys.",
+        phone: "While you watch: the speed (SLOW to BLITZ), PAUSE, CAM (side, TV or top-down), NEXT RND and HIGHLIGHTS (rushes the quiet stretches), and SKIP TO END. Big moments get an instant replay. Between rounds the corners patch up their guys.",
       },
       {
         title: "BONUSES", pic: "fn_4",

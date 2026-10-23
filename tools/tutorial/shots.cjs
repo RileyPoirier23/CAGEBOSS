@@ -71,8 +71,8 @@ module.exports = [
 
   // ---------------------------------------------------------------- fight night
   { name: 'fn_1', setup: 'S_fn_intro', hires: true, crop: C(4, 4, 472, 264), marks: [{ k: 'box', at: 'btn(/^PRESS CONFERENCE/)', n: 1 }, { k: 'tap', at: "btn('START THE EVENT →')", n: 2 }] },
-  { name: 'fn_2', setup: 'S_fn_card', crop: C(8, 16, 468, 150), marks: [{ k: 'tap', at: "btn('WATCH', 0)", n: 1 }, { k: 'tap', at: "btn('SIM', 0)", n: 2 }] },
-  { name: 'fn_3', setup: 'S_fn_watch', hires: true, crop: C(0, 0, 480, 270), marks: [{ k: 'box', at: 'btn(/^SPEED/)', n: 1 }, { k: 'box', at: "btn('PAUSE')", n: 2 }, { k: 'box', at: 'btn(/^CAM/)', n: 3 }, { k: 'box', at: 'btn(/^SKIP/)', n: 4 }] },
+  { name: 'fn_2', setup: 'S_fn_card', crop: `phone ? S(6,16,520,150) : ${C(8, 16, 468, 150)}`, marks: [{ k: 'tap', at: "btn('WATCH', 0)", n: 1 }, { k: 'tap', at: "btn('SIM', 0)", n: 2 }] },
+  { name: 'fn_3', setup: 'S_fn_watch', hires: true, crop: C(0, 0, 480, 270), marks: [{ k: 'box', at: 'btn(/^(SLOW|NORMAL|FAST|BLITZ)$/)', n: 1 }, { k: 'box', at: "btn('PAUSE')", n: 2 }, { k: 'box', at: 'btn(/^CAM/)', n: 3 }, { k: 'box', at: "union(btn('NEXT RND'), btn(/^HIGHLIGHTS/))", n: 4 }, { k: 'box', at: 'btn(/^SKIP/)', n: 5 }] },
   { name: 'fn_4', setup: 'S_fn_bonus', crop: C(8, 0, 468, 150), marks: [{ k: 'tap', at: 'firstBonus()', n: 1 }, { k: 'box', at: 'text(/^Each bonus costs/)', n: 2 }] },
 
   // ---------------------------------------------------------------- the ledger

@@ -342,7 +342,7 @@ export class FightNightScene extends Scene {
       } else {
         const fmb = this.fmFor(b);
         // [x, w] of FIGHT / WATCH / SIM from the row's right edge
-        const bw = P ? [[150, 46], [100, 46], [50, 42]] : [[130, 36], [92, 34], [56, 30]];
+        const bw = P ? [[168, 46], [118, 46], [68, 42]] : [[130, 36], [92, 34], [56, 30]];
         const bh = P ? 19 : 14;
         if (fmb?.live && this.g.settings.handsOn !== false) row.addChild(button('FIGHT!', FW - bw[0][0], P ? 3 : 4, bw[0][1], bh, () => this.liveFight(b), { small: true, fill: PAL.gold }));
         row.addChild(button('WATCH', FW - bw[1][0], P ? 3 : 4, bw[1][1], bh, () => this.watch(b), { small: true, fill: PAL.blood }));

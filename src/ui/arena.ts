@@ -648,7 +648,8 @@ export class ArenaView extends Container {
     this.topWorld.cacheAsTexture({ resolution: res, antialias: false });
     this.drawBg();
     this.drawTopStatic();
-    // shadowed: the sky behind them is bright at an outdoor venue
+    // shadowed, on a faint plate (drawHud): the sky is bright outdoors, and lamps and banners hang behind them
+    this.nameW = [Math.min(120, measure(`${A.first[0]}. ${A.last}`)), Math.min(120, measure(`${B.first[0]}. ${B.last}`))];
     this.hud.addChild(text(`${A.first[0]}. ${A.last}`, 6, 3, { color: PAL.bone, shadow: PAL.ink }));
     this.hud.addChild(text(`${B.first[0]}. ${B.last}`, AW - 126, 3, { color: PAL.bone, width: 120, align: 'right', shadow: PAL.ink }));
     this.clock = text('R1 5:00', 0, 3, { width: AW, align: 'center', color: PAL.gold, shadow: PAL.ink });
@@ -836,7 +837,10 @@ export class ArenaView extends Container {
       t.visible = showAd;
       if (showAd) {
         const a = sp[(slot + i) % sp.length];
-        t.setText(a.name.toUpperCase());
+        // the screen's 56 px wide: as many whole words as fit, not a name cut off with dots
+        const words = a.name.toUpperCase().split(' ');
+        while (words.length > 1 && measure(words.join(' '), true) > 56) words.pop();
+        t.setText(words.join(' '));
         t.tint = a.color;
       }
     });
@@ -2395,6 +2399,8 @@ export class ArenaView extends Container {
     return this.calloutT > 0 && this.calloutW > 150;
   }
   private calloutW = 0;
+  /** the HUD names' widths, for the plates behind them */
+  private nameW = [0, 0];
 
   showCallout(s: string, color: number = PAL.gold, prio = 1): void {
     if (prio < this.calloutPrio && this.calloutT > 0.6) return;
@@ -3445,6 +3451,7 @@ export class ArenaView extends Container {
     const tv = this.mode === 'tv';
     this.clock.visible = this.scene === 'fight';
     if (this.scene === 'fight') {
+      h.rect(3, 2, this.nameW[0] + 6, 10).fill({ color: 0x000000, alpha: 0.75 }).rect(AW - 9 - this.nameW[1], 2, this.nameW[1] + 6, 10).fill({ color: 0x000000, alpha: 0.75 });
       // HP bars: the chunk just lost shows pale, holds a beat and drains away; a real hit flashes the bar white
       for (const i of [0, 1] as const) {
         const hp = Math.max(0, Math.min(100, this.hp[i]));
