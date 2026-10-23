@@ -135,6 +135,16 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
   const injuries: FightResult['injuries'] = [];
   const roundScores: [number, number][][] = [];
   const keep = opts.keepTicker !== false;
+  // what the watched picture shows (ground position, clinch tie, fence, who's pressing) draws from its own
+  // stream, so it never changes how a fight goes
+  const vis = rng.fork('vis');
+  const usedTpl = new Set<string>(); // ticker variants this fight has used, as key:index
+  let vLead = -1; // who led the last standing exchange, and how many in a row
+  let vLeadRun = 0;
+  let vLeadNow = -1; // the leader of the exchange being played out (-1: not a standing exchange)
+  let vFence = -1; // whose back is on the cage
+  let vTie = '';
+  let vGpos = '';
 
   const female = a.gender === 'W' && b.gender === 'W';
   const fem = (x: string) =>
@@ -144,14 +154,49 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
   const say = (key: string, ai: number, act: string, intensity = 1, extra?: Record<string, string>) => {
     if (!keep) return;
     const list = tpl[key];
-    let line = list && list.length ? list[Math.floor(rng.next() * list.length)] : `{a}: ${key}`;
+    let line = `{a}: ${key}`;
+    if (list && list.length) {
+      // one draw, as always (so outcomes never change), then walk on to a variant this fight hasn't used
+      let i = Math.floor(rng.next() * list.length);
+      for (let k = 0; k < list.length && usedTpl.has(key + ':' + i); k++) i = (i + 1) % list.length;
+      usedTpl.add(key + ':' + i);
+      let all = true;
+      for (let k = 0; k < list.length; k++) if (!usedTpl.has(key + ':' + k)) all = false;
+      // the bank is spent: start it over (except the line just said)
+      if (all) for (let k = 0; k < list.length; k++) if (k !== i) usedTpl.delete(key + ':' + k);
+      line = list[i];
+    }
     if (extra) for (const k in extra) line = line.replace(new RegExp('\\{' + k + '\\}', 'g'), extra[k]);
-    ticker.push({
+    const tl: TickerLine = {
       round, t, text: fill(line, ai), side: ai as 0 | 1 | -1, intensity, act, pos, key,
       hp: [Math.round(Math.max(0, S[0].hp)), Math.round(Math.max(0, S[1].hp))],
-    });
+      st: [Math.round(S[0].stam), Math.round(S[1].stam)],
+    };
+    if (pos === 'atop' || pos === 'btop') {
+      if (!vGpos) vGpos = 'guard';
+      tl.gpos = vGpos as TickerLine['gpos'];
+    }
+    if (pos === 'clinch' && vTie) tl.tie = vTie as TickerLine['tie'];
+    if (vFence >= 0 && (pos === 'stand' || pos === 'clinch')) tl.fence = vFence as 0 | 1;
+    if (vLeadNow >= 0) tl.lead = vLeadNow as 0 | 1;
+    ticker.push(tl);
   };
   const sayN = (key: string, act: string, intensity = 1, extra?: Record<string, string>) => say(key, -1 as any, act, intensity, extra);
+
+  /** The man on top works his way up the ladder now and then (guard, half, side, mount; the back from side or mount). */
+  const vAdvance = (top: number) => {
+    if (vis.next() >= 0.12 + (S[top].sk.grappling - S[1 - top].sk.grappling) / 400) return;
+    if ((vGpos === 'side' || vGpos === 'mount') && vis.next() < 0.3) vGpos = 'back';
+    else vGpos = GPOS_UP[vGpos || 'guard'];
+  };
+  /** Who grabs what as he ties up: the Thai plum, a wrestler's underhooks, or a collar tie (sometimes another). */
+  const vClinch = (ai: number) => {
+    const st = S[ai].f.styles;
+    vTie = st.includes('Muay Thai') ? 'plum' : st.includes('Wrestler') || st.includes('Judoka') || st.includes('Boring But Effective') ? 'under' : 'collar';
+    if (vis.next() < 0.2) vTie = TIE_ELSE[vTie][vis.next() < 0.5 ? 0 : 1];
+    // the grinders walk their man straight onto the cage
+    if (st.includes('Wrestler') || st.includes('Pressure Striker') || st.includes('Boring But Effective') || st.includes('Ground & Pound')) vFence = 1 - ai;
+  };
 
   const eff = (s: Side, k: keyof Skills) => {
     let v = s.sk[k];
@@ -290,6 +335,7 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
       A.r.td++;
       pos = ai === 0 ? 'atop' : 'btop';
       B.hp -= 2;
+      vGpos = vis.next() < 0.25 + A.sk.grappling / 400 ? 'half' : 'guard';
       say('takedown', ai, 'td', 1);
       if (rng.chance(0.0025)) doInjury(1 - ai, 'torn ACL', 3, 40, {}, 'injury_knee');
       else if (rng.chance(0.003)) doInjury(ai, 'dislocated shoulder', 2, 16, { wrestling: 15, grappling: 12, power: 6 }, 'injury_shoulder');
@@ -313,6 +359,7 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
     const roll = rng.next();
     const hold = forced ?? (roll < 0.62 ? rng.pick(SUBS_CHOKE) : roll < 0.985 ? rng.pick(SUBS_LIMB) : rng.pick(SUBS_RARE));
     const p = 0.05 + (eff(A, 'grappling') - eff(B, 'grappling')) / 240 + (1 - B.stam / 100) * 0.1 + B.hurt * 0.08 + (A.f.styles.includes('Sub Hunter') ? 0.04 : 0);
+    if (hold === 'Rear-Naked Choke' && (pos === 'atop' ? 0 : pos === 'btop' ? 1 : -1) === ai) vGpos = 'back';
     say('sub_attempt', ai, 'sub', 2, { hold });
     if (rng.chance(Math.max(0.02, Math.min(0.6, p)))) {
       const limb = SUBS_LIMB.includes(hold);
@@ -326,6 +373,7 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
       say('tap', ai, 'tap', 3, { hold });
       end({ method: 'SUB', detail: hold, winner: ai as 0 | 1 });
     } else {
+      if (vGpos) vGpos = GPOS_RECOVER[vGpos];
       say('escape', 1 - ai, 'escape', 1, { hold });
       if (SUBS_LIMB.includes(hold) && rng.chance(0.03)) doInjury(1 - ai, 'sprained elbow', 1, 6, { striking: 5, grappling: 5 }, 'injury_elbow');
     }
@@ -385,12 +433,15 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
     if (stall >= standupAfter && rng.chance(0.55)) {
       pos = 'stand';
       stall = 0;
+      vGpos = '';
+      vFence = -1;
       sayN('standup', 'standup', 0);
       return;
     }
     if (roll < botEsc) {
       pos = 'stand';
       stall = 0;
+      vGpos = '';
       say('getup', bot, 'getup', 1);
     } else if (roll < botEsc + Bt.subRate * 0.25) {
       stall = 0;
@@ -398,6 +449,7 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
     } else if (roll < botEsc + Bt.subRate * 0.25 + 0.05 + eff(Bt, 'grappling') / 2000) {
       pos = pos === 'atop' ? 'btop' : 'atop';
       stall = 0;
+      vGpos = vis.next() < 0.3 ? 'mount' : 'half';
       say('sweep', bot, 'sweep', 2);
     } else if (rng.chance(T.subRate * 0.35)) {
       stall = 0;
@@ -409,6 +461,7 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
         T.str++;
         T.r.str += 0.7;
         let dmg = (1.8 + eff(T, 'power') / 18) * rng.float(0.6, 1.5) * (1.1 - eff(Bt, 'durability') / 250);
+        vAdvance(top);
         if (rng.chance(0.15)) {
           dmg *= 1.5;
           say('gnp_elbow', top, 'gnp', 2);
@@ -424,6 +477,7 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
         refCheck(top, 0);
       }
     } else {
+      vAdvance(top);
       say('ground_control', top, 'ctrl', 0);
     }
     if (!finish && rng.chance(0.012 * (T.f.traits.includes('Hothead') ? 2 : 1))) foul(top);
@@ -436,12 +490,22 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
     const wB = S[1].pressure * (0.6 + S[1].stam / 250) * (S[1].hurt > 1 ? 0.6 : 1);
     const ai = rng.chance(wA / (wA + wB)) ? 0 : 1;
     const A = S[ai];
+    // the picture: a man who keeps leading (and is the one pressing) walks the other onto the fence
+    if (ai === vLead) vLeadRun++;
+    else {
+      vLead = ai;
+      vLeadRun = 1;
+    }
+    if (vLeadRun >= 2 && A.pressure >= S[1 - ai].pressure) vFence = 1 - ai;
+    if (pos === 'stand') vLeadNow = ai;
     if (pos === 'clinch') {
       const r = rng.next();
       if (r < 0.35) strike(ai);
       else if (r < 0.55) takedown(ai);
       else if (r < 0.72) {
         pos = 'stand';
+        vFence = -1;
+        vTie = '';
         say('break_clinch', ai, 'break', 0);
       } else {
         A.ctrl += 10;
@@ -455,6 +519,7 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
     if (r < A.shootRate * (hurtOpp ? 0.5 : 1)) takedown(ai);
     else if (r < A.shootRate + 0.05) {
       pos = 'clinch';
+      vClinch(ai);
       say('clinch', ai, 'clinch', 0);
     } else if (r < 0.92 || hurtOpp) {
       strike(ai);
@@ -551,12 +616,20 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
     for (const s of S) s.r = { str: 0, dmg: 0, td: 0, ctrl: 0, agg: 0, kd: 0 };
     if (opts.plan) applyPlans();
     pos = 'stand';
+    vFence = -1;
+    vTie = '';
+    vGpos = '';
+    vLead = -1;
+    vLeadRun = 0;
     if (keep) sayN(round === 1 ? 'opening' : 'round_start', 'idle', 1);
     while (!finish) {
       t += rng.int(8, 20);
       if (t >= 300) break;
       if ((pos as Pos) === 'atop' || (pos as Pos) === 'btop') groundExchange();
-      else standExchange();
+      else {
+        standExchange();
+        vLeadNow = -1;
+      }
       for (const s of S) {
         const burn = (0.9 + (100 - s.sk.cardio) / 60 + (s.f.addiction > 50 ? 0.5 : 0)) * burnMul[s === S[0] ? 0 : 1];
         s.stam = Math.max(5, s.stam - burn * rng.float(0.5, 1.2));
@@ -570,7 +643,9 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
     if (finish) break;
     t = 300;
     scoreRound();
+    vFence = -1; // the horn: they walk back to their corners
     sayN('round_end', 'bell', 1);
+    vGpos = '';
     if (round < opts.rounds && cornerPhase()) break;
   }
   if (finish) round = Math.min(round, opts.rounds);
@@ -681,6 +756,12 @@ export function simulateFight(a: Fighter, b: Fighter, opts: FightOpts, rng: Rng)
     cuts: [S[0].cut, S[1].cut],
   };
 }
+
+/** Presentation ladders for the man on top: the next spot up, and where the man underneath recovers to (live.ts). */
+const GPOS_UP: Record<string, string> = { guard: 'half', half: 'side', side: 'mount', mount: 'mount', back: 'back' };
+const GPOS_RECOVER: Record<string, string> = { back: 'guard', mount: 'half', side: 'half', half: 'guard', guard: 'guard' };
+/** The other clinch ties, for when somebody grabs something unexpected. */
+const TIE_ELSE: Record<string, string[]> = { plum: ['collar', 'under'], under: ['collar', 'plum'], collar: ['under', 'plum'] };
 
 const FOUL_NAMES: Record<string, string> = {
   eyepoke: 'Eye Poke', groin: 'Groin Strike', fence: 'Fence Grab', backhead: 'Strikes to the Back of the Head',

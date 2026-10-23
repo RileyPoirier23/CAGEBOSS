@@ -29,14 +29,20 @@
    "{a} loads up a haymaker. {b} saw it coming from the parking lot.",
    "{a} throws a wild right that misses by a full foot.",
    "{a} pumps the jab, {b} slips it.",
-   "{a} lunges in with a right hand. Air."
+   "{a} lunges in with a right hand. Air.",
+   "{a} reaches with a hook. {b} leans out of the way.",
+   "{a} throws the right hand. {b} rolls under it.",
+   "{a} leaps in with a lead hook and finds nothing."
   ],
   "land_jab": [
    "{a} lands a stiff jab.",
    "{a} snaps {b}'s head back with the jab.",
    "Double jab from {a}.",
    "{a} pops the jab. Simple, effective, boring, and it's working.",
-   "{a} finds a home for the jab."
+   "{a} finds a home for the jab.",
+   "{a} sticks the jab in the face of {b}.",
+   "{a} keeps {b} on the end of the jab.",
+   "{a} doubles up on the jab and it lands."
   ],
   "land_cross": [
    "{a} lands a hard right hand!",
@@ -193,7 +199,11 @@
    "{a} sprawls and stuffs the takedown.",
    "{a} stuffs the shot and pushes the head down.",
    "Great takedown defense from {a}.",
-   "{a} defends the shot beautifully."
+   "{a} defends the shot beautifully.",
+   "{a} sees the shot coming a mile away and sprawls.",
+   "{b} shoots, {a} sprawls. Nothing doing.",
+   "{a} stuffs it and gets straight back to the middle.",
+   "{a} whizzers out of it. {b} comes up empty."
   ],
   "sub_attempt": [
    "{a} is hunting a {hold}!",
@@ -212,7 +222,11 @@
   "escape": [
    "{a} escapes the {hold}!",
    "{a} fights out of the {hold}!",
-   "{a} pops free from the {hold}. Close call!"
+   "{a} pops free from the {hold}. Close call!",
+   "{a} escapes! The crowd breathes again.",
+   "{a} slips out at the last second!",
+   "{a} turns into it and pops free!",
+   "Somehow {a} gets out of that one!"
   ],
   "wont_tap": [
    "{a} REFUSES to tap... OH NO. That's... that's broken.",
@@ -233,7 +247,11 @@
   "getup": [
    "{a} works back to the feet.",
    "{a} scrambles up against the cage.",
-   "{a} wall-walks back up."
+   "{a} wall-walks back up.",
+   "{a} stands up! Back to the feet.",
+   "{a} explodes up and shakes {b} off.",
+   "{a} gets a knee under him and climbs back up.",
+   "{a} hand-fights his way back to the feet."
   ],
   "sweep": [
    "{a} reverses position! Great sweep!",
@@ -243,7 +261,12 @@
   "gnp": [
    "{a} lands ground and pound.",
    "{a} postures up and lands some punches.",
-   "{a} drops hammerfists from the top."
+   "{a} drops hammerfists from the top.",
+   "{a} rains down short punches from the top.",
+   "{a} drops a heavy right hand on {b}.",
+   "{a} pins the wrist and lands a couple of clean shots.",
+   "Ground and pound from {a}. {b} covers up.",
+   "{a} punches the body, then the head. {b} has to do something here."
   ],
   "gnp_elbow": [
    "{a} drops a vicious elbow from the top!",
@@ -253,20 +276,41 @@
    "{a} holds top position.",
    "{a} controls {b} on the mat. Riveting stuff.",
    "{a} lies on {b}. The crowd starts booing.",
-   "{a} grinds on top. Somebody in the crowd yells 'GET A ROOM'."
+   "{a} grinds on top. Somebody in the crowd yells 'GET A ROOM'.",
+   "{a} keeps {b} flat on the mat.",
+   "{a} settles into a heavy top position.",
+   "{b} is looking for a way out. {a} is not offering one.",
+   "{a} controls the wrists and smothers {b}."
   ],
   "clinch": [
    "{a} ties {b} up in the clinch.",
-   "{a} pushes {b} into the fence."
+   "{a} pushes {b} into the fence.",
+   "{a} closes the distance and grabs hold of {b}.",
+   "{a} clinches up. {b} is not thrilled about it.",
+   "{a} wraps {b} up before he can throw anything else.",
+   "{a} grabs a collar tie and drags {b} in close.",
+   "{a} digs for an underhook and gets inside on {b}.",
+   "Clinch! {a} and {b} are chest to chest."
   ],
   "clinch_work": [
    "{a} works for underhooks against the cage.",
    "Grinding clinch work from {a}.",
-   "{a} leans on {b} against the fence. Fans check their phones."
+   "{a} leans on {b} against the fence. Fans check their phones.",
+   "{a} fights for the underhook. {b} fights for the same underhook. Nobody gets it.",
+   "{a} lands a short knee to the thigh in the clinch.",
+   "{a} pins {b} against the cage and leans. And leans.",
+   "{a} works the wrists, looking for an opening.",
+   "Hand-fighting in the clinch. {ref} edges closer, ready to split them up."
   ],
   "break_clinch": [
    "{a} breaks away from the clinch.",
-   "They separate."
+   "They separate.",
+   "{a} shoves off and resets in the middle.",
+   "{a} spins off and gets back to range.",
+   "{a} frames on the face and creates some space.",
+   "They break apart. {ref} looks relieved.",
+   "{a} pummels free and circles out.",
+   "{a} pushes {b} away and backs off to striking range."
   ],
   "feint": [
    "{a} feints, {b} flinches.",
