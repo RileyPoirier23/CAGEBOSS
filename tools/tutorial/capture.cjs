@@ -435,9 +435,9 @@ async function captureDevice(pw, dev, pics, report, hires = false) {
       const marks = shot.marks.filter((m) => !m.dev || m.dev === dev);
       const base = shot.png ? files[shot.png] : null;
       if (shot.png && !base) throw new Error(`${shot.png} has to be taken before ${shot.name}`);
-      const res = await resolve(page, base ? null : shot.crop, marks);
-      for (const e of res.errors) report.warn.push(`${dev} ${shot.name}: ${e}`);
-      let crop = base ? base.crop : res.crop;
+      const got = await resolve(page, base ? null : shot.crop, marks);
+      for (const e of got.errors) report.warn.push(`${dev} ${shot.name}: ${e}`);
+      let crop = base ? base.crop : got.crop;
       if (!crop) throw new Error('no crop');
       crop = [Math.max(0, crop[0]), Math.max(0, crop[1]), crop[2], crop[3]];
       crop[2] = Math.min(crop[2], canvas.sw - crop[0]);
@@ -454,8 +454,8 @@ async function captureDevice(pw, dev, pics, report, hires = false) {
         report.files++;
       }
       files[shot.name] = { crop, file };
-      const pm = packSlots(res.marks.map((m) => toPicture(m, crop)).filter(Boolean));
-      if (pm.length < res.marks.length) report.warn.push(`${dev} ${shot.name}: ${res.marks.length - pm.length} mark(s) outside the picture`);
+      const pm = packSlots(got.marks.map((m) => toPicture(m, crop)).filter(Boolean));
+      if (pm.length < got.marks.length) report.warn.push(`${dev} ${shot.name}: ${got.marks.length - pm.length} mark(s) outside the picture`);
       pics[shot.name] = pics[shot.name] || {};
       pics[shot.name][dev] = { file, w: crop[2], h: crop[3], ...(res !== 1 ? { r: res } : {}), marks: pm };
       console.log(`  ${dev} ${shot.name.padEnd(9)} ${crop.join(',').padEnd(18)} ${pm.length} marks${base ? ' (= ' + shot.png + ')' : ''}`);
