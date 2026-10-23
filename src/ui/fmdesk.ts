@@ -129,10 +129,12 @@ export function openFMDesk(g: Game, onDone: () => void): void {
     const ctl = new Container();
     ctl.position.set(4, DOC_Y + 156);
     ctl.addChild(box(112, 70, 0x2a1f18, 0x4a3628));
-    ctl.addChild(button(ins.active ? 'INSPECTING (I)' : 'INSPECT (I)', 4, 4, 104, 14, () => toggleInspect(), { small: true, fill: ins.active ? PAL.gold : PAL.steel, disabled: !cur }));
-    ctl.addChild(button('SIGN IT (A)', 4, 21, 104, 14, () => stamp('sign'), { small: true, fill: PAL.moss, disabled: !cur }));
-    ctl.addChild(button(cur?.kind === 'sponsor' ? 'TURN DOWN (D)' : 'DISPUTE (D)', 4, 38, 104, 14, () => stamp('dispute'), { small: true, fill: PAL.blood, disabled: !cur }));
-    ctl.addChild(button(hint('DONE (ESC)', 'DONE'), 4, 55, 104, 12, () => close(), { small: true, fill: PAL.shadow }));
+    // keyboard keys in the labels, except on a touch screen (nothing to press there)
+    const key = (k: string): string => (isTouchDevice() ? '' : ` (${k})`);
+    ctl.addChild(button((ins.active ? 'INSPECTING' : 'INSPECT') + key('I'), 4, 4, 104, 14, () => toggleInspect(), { small: true, fill: ins.active ? PAL.gold : PAL.steel, disabled: !cur }));
+    ctl.addChild(button('SIGN IT' + key('A'), 4, 21, 104, 14, () => stamp('sign'), { small: true, fill: PAL.moss, disabled: !cur }));
+    ctl.addChild(button((cur?.kind === 'sponsor' ? 'TURN DOWN' : 'DISPUTE') + key('D'), 4, 38, 104, 14, () => stamp('dispute'), { small: true, fill: PAL.blood, disabled: !cur }));
+    ctl.addChild(button(isTouchDevice() ? 'DONE' : hint('DONE (ESC)', 'DONE'), 4, 55, 104, 12, () => close(), { small: true, fill: PAL.shadow }));
     layer.addChild(ctl);
 
     // ------------------------------------------------ strip (what the inspection says)
@@ -142,10 +144,13 @@ export function openFMDesk(g: Game, onDone: () => void): void {
       line = 'DISCREPANCY: ' + found.text;
       color = PAL.blood;
     } else if (!line && ins.active) {
-      line = hint(ins.selected ? 'Now click the line it should match on the reference card.' : 'INSPECT: click a line on the document, then the line it should match.', ins.selected ? 'Now select the line it should match on the reference card.' : 'INSPECT: select a line on the document, then the line it should match.');
+      const verb = isTouchDevice() ? 'tap' : 'click';
+      line = hint(ins.selected ? `Now ${verb} the line it should match on the reference card.` : `INSPECT: ${verb} a line on the document, then the line it should match.`, ins.selected ? 'Now select the line it should match on the reference card.' : 'INSPECT: select a line on the document, then the line it should match.');
       color = PAL.gold;
     } else if (!line && cur) {
-      line = 'Press INSPECT (I) to compare lines. Sign it (A) if it matches what you agreed; dispute it (D) if it does not.';
+      line = isTouchDevice()
+        ? 'Tap INSPECT to compare lines. SIGN IT if it matches what you agreed; DISPUTE it if it does not.'
+        : 'Press INSPECT (I) to compare lines. Sign it (A) if it matches what you agreed; dispute it (D) if it does not.';
       color = PAL.ash;
     }
     if (line) {

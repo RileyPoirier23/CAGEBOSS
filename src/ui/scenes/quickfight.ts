@@ -191,6 +191,7 @@ export class QuickFightScene extends Scene {
     const n = input.padList().length;
     if (n >= 2) return 'P1: controller 1.\nP2: controller 2.\nPlug in a third and nobody cares.';
     if (isConsole) return n >= 2 ? 'P1: controller 1.\nP2: controller 2.' : 'Connect a second controller for two players.';
+    if (isTouchDevice()) return n === 1 ? 'P1: the touch screen.\nP2: the controller.\n(Pair a second controller to give P1 one too.)' : 'Pair a controller with this phone or tablet: P1 plays on the touch screen, P2 on the controller.';
     if (n === 1) return 'P1: keyboard.\nP2: the controller.\n(Plug in a second controller to give P1 one too.)';
     return 'One keyboard, two people.\nP1: WASD move, J K L punch/kick, I block, Space grab.\nP2: arrows move, , . / punch/kick, R-Shift block, Enter grab.';
   }

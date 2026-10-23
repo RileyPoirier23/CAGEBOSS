@@ -107,12 +107,14 @@ describe('the tutorial pictures', () => {
         if (!info) continue;
         const file = join(PUBLIC, info.file);
         expect(existsSync(file), `${name}: ${info.file}`).toBe(true);
-        expect(pngSize(file), `${name}: ${info.file}`).toEqual([info.w, info.h]);
+        const r = info.r ?? 1;
+        expect(pngSize(file), `${name}: ${info.file}`).toEqual([info.w * r, info.h * r]);
         // at most a phone screen: bigger than its frame on the card is fine (shrunk to fit), bigger than the screen is a bad crop
         expect(info.w, name).toBeLessThanOrEqual(532);
-        expect(info.h, name).toBeLessThanOrEqual(260);
-        if (info.file.startsWith('pc/') && e.pc === info) {
-          // PC pictures fit a frame 1:1: beside the text (340 x 204) or above it (468 x 152)
+        expect(info.h, name).toBeLessThanOrEqual(270);
+        expect([1, 2, 3], name).toContain(info.r ?? 1);
+        if (info.file.startsWith('pc/') && e.pc === info && (info.r ?? 1) === 1) {
+          // PC pictures fit a frame 1:1: beside the text (340 x 204) or above it (468 x 152); only 2x ones may shrink
           expect((info.w <= 340 && info.h <= 204) || (info.w <= 468 && info.h <= 152), `${name} ${info.w}x${info.h}`).toBe(true);
         }
       }

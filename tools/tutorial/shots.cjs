@@ -13,8 +13,9 @@
  *   shell(x, y[, w, h])      mini game panel coordinates          C(x, y, w, h) design coords on a centred screen
  *   S(x, y, w, h)            screen coords                        pt(x, y) a point
  *   around(r, w, h)          a w x h crop centred on r           grow(r, d)
- *   phone (bool), OX, SW
+ *   cutR(r, x)               r with its right edge cut at x       phone (bool), OX, SW
  * Rects are [x, y, w, h] in screen game pixels; tap / hold / arrow / swipe use a rect's centre.
+ * hires: true takes a PC picture at 2x (for a whole screen or window that has to shrink to fit the card).
  * Crops: at most 340 x 204 (beside the text) or 468 x 152 (above it) on PC; on the 532-wide
  * reference phone at most 330 x 204 or 520 x 152.
  *
@@ -29,9 +30,9 @@ module.exports = [
   { name: 'basics_3', setup: 'S_gamemenu', png: 'basics_2', marks: [{ k: 'tap', at: "btn('TUTORIALS')", n: 1 }, { k: 'box', at: "btn('HELP')", n: 2 }, { k: 'box', at: "btn('SETTINGS')", n: 3 }] },
 
   // ---------------------------------------------------------------- PROMOTER: the paper
-  { name: 'paper_1', setup: 'S_paper', crop: C(20, 10, 336, 200).replace('336', 'phone ? 330 : 336'), marks: [{ k: 'box', at: C(26, 46, 224, 34), n: 1 }, { k: 'box', at: C(254, 44, 100, 166), n: 2 }] },
-  { name: 'paper_2', setup: 'S_paper', crop: 'phone ? S(318,12,214,200) : S(292,12,188,200)', marks: [{ k: 'box', at: C(382, 46, 94, 50), n: 1 }, { k: 'box', at: C(382, 95, 94, 32), n: 2 }] },
-  { name: 'paper_4', setup: 'S_paper', crop: 'phone ? S(318,150,214,120) : S(292,150,188,120)', marks: [{ k: 'tap', at: "btn('TO THE DESK →')", n: 1 }, { k: 'box', at: "btn('CAREER')", n: 2 }] },
+  { name: 'paper_1', setup: 'S_paper', crop: "phone ? C(24,10,330,200) : C(20,10,336,200)", marks: [{ k: 'box', at: C(26, 46, 224, 34), n: 1 }, { k: 'box', at: C(254, 44, 100, 166), n: 2 }] },
+  { name: 'paper_2', setup: 'S_paper', crop: C(376, 12, 104, 200), marks: [{ k: 'box', at: C(382, 46, 94, 50), n: 1 }, { k: 'box', at: C(382, 95, 94, 32), n: 2 }] },
+  { name: 'paper_4', setup: 'S_paper', crop: C(376, 202, 104, 66), marks: [{ k: 'tap', at: "btn('TO THE DESK →')", n: 1 }, { k: 'box', at: "btn('CAREER')", n: 2 }] },
   { name: 'paper_3', setup: 'S_paper_career', crop: 'phone ? S(166,10,330,200) : S(140,10,336,200)', marks: [{ k: 'box', at: C(148, 32, 170, 170), n: 1 }, { k: 'box', at: C(330, 32, 136, 30), n: 2 }] },
 
   // ---------------------------------------------------------------- the desk
@@ -47,31 +48,31 @@ module.exports = [
 
   // ---------------------------------------------------------------- calls and visitors
   { name: 'calls_1', setup: 'S_desk_call', crop: 'phone ? S(176,0,330,116) : S(176,0,304,112)', marks: [{ k: 'tap', at: 'S(262,42,46,36)', n: 1 }, { k: 'box', at: 'inboxRow(0)', label: 'OR', n: 2 }] },
-  { name: 'calls_2', setup: 'S_desk_callopen', crop: 'phone ? S(14,46,330,200) : S(30,36,336,200)', marks: [{ k: 'box', at: 'union(btns())' }] },
+  { name: 'calls_2', setup: 'S_desk_callopen', hires: true, crop: 'win()', marks: [{ k: 'box', at: 'union(btns())' }] },
   { name: 'calls_3', setup: 'S_desk_door', crop: 'phone ? S(0,0,330,170) : S(0,0,336,170)', marks: [{ k: 'box', at: 'S(6,4,190,70)', n: 1 }, { k: 'box', at: 'S(122,84,240,80)', n: 2 }] },
 
   // ---------------------------------------------------------------- other paperwork
-  { name: 'docs_1', setup: 'S_desk_medical', crop: 'S(122,80,336,190)', marks: [{ k: 'box', at: "spot('doc.doctor')", n: 1 }, { k: 'box', at: "spot('rule.doctors')", n: 2 }, { k: 'line', at: "spot('doc.doctor')", to: "spot('rule.doctors')", n: 2 }] },
+  { name: 'docs_1', setup: 'S_desk_medical', crop: 'S(122,80,336,190)', marks: [{ k: 'box', at: "cutR(spot('doc.doctor'), spot('rule.doctors')[0] - 10)", n: 1 }, { k: 'box', at: "spot('rule.doctors')", n: 2 }, { k: 'line', at: "cutR(spot('doc.doctor'), spot('rule.doctors')[0] - 10)", to: "spot('rule.doctors')", n: 2 }] },
   { name: 'docs_3', setup: 'S_desk_weighin', crop: 'phone ? S(198,80,330,190) : S(140,80,340,190)', marks: [{ k: 'box', at: "union(spot('doc.weightA'), spot('doc.weightB'))", n: 1 }, { k: 'box', at: 'union(phone ? S(369,199,SW-374,34) : S(369,199,105,34), btn(/^ESCALATE/), btn(/^BURY/))', n: 2 }] },
   { name: 'docs_2', setup: 'S_desk_expense', crop: 'S(0,80,336,190)', marks: [{ k: 'box', at: 'S(8,188,106,64)', n: 1 }, { k: 'tap', at: "btn('CITE IT')", n: 2 }, { k: 'box', at: "spot('doc.total')", n: 3 }] },
 
   // ---------------------------------------------------------------- the corkboard
-  { name: 'cards_1', setup: 'S_cork', crop: C(4, 10, 468, 60), marks: [{ k: 'box', at: 'union(btns(/( #\\d+| FN)$/))', n: 1 }, { k: 'box', at: C(228, 32, 236, 10), n: 2 }] },
+  { name: 'cards_1', setup: 'S_cork', crop: C(4, 13, 468, 48), marks: [{ k: 'box', at: 'union(btns(/( #\\d+| FN)$/))', n: 1 }, { k: 'box', at: C(228, 32, 236, 10), n: 2 }] },
   { name: 'cards_5', setup: 'S_cork', crop: 'phone ? S(326,10,180,52) : S(300,10,180,52)', marks: [{ k: 'tap', at: "btn('AUTO-FILL')", n: 1 }, { k: 'tap', at: "btn('+ NEW EVENT')", n: 2 }] },
   { name: 'cards_2', setup: 'S_cork_venue', crop: 'phone ? top(win(), 250) : top(win(), 204)', marks: [{ k: 'box', at: 'rowText(window.__cap.venue)' }] },
-  { name: 'cards_3', setup: 'S_cork_pick', crop: 'phone ? top(win(), 152) : S(20,15,336,200)', marks: [{ k: 'box', at: "union(btnsInRowOf('ALL'))", n: 1 }, { k: 'tap', at: 'row(0)', n: 2 }] },
-  { name: 'cards_4', setup: 'S_cork_problem', crop: C(6, 48, 468, 112), marks: [{ k: 'box', at: "union(btn('↑', 0), btn('X', 1))", n: 1 }, { k: 'box', at: 'text(/PROBLEM/)', n: 2 }, { k: 'tap', at: "btn('REPLACE')", n: 3 }] },
+  { name: 'cards_3', setup: 'S_cork_pick', crop: 'phone ? top(win(), 152) : S(20,15,336,200)', marks: [{ k: 'box', at: "union(btnsInRowOf('ALL'))", n: 1 }, { k: 'tap', at: 'pt(row(0)[0] + 60, row(0)[1] + row(0)[3] / 2)', n: 2 }] },
+  { name: 'cards_4', setup: 'S_cork_problem', crop: C(6, 61, 468, 90), marks: [{ k: 'box', at: "union(btn('↑', 0), btn('X', 1))", n: 1 }, { k: 'box', at: 'text(/PROBLEM/)', n: 2 }, { k: 'tap', at: "btn('REPLACE')", n: 3 }] },
 
   // ---------------------------------------------------------------- signing
   { name: 'sign_1', setup: 'S_roster_free', crop: 'phone ? S(30,4,330,200) : S(4,4,336,200)', marks: [{ k: 'tap', at: "btn('FREE')", n: 1 }, { k: 'box', at: 'row(0)', n: 2 }] },
   { name: 'sign_2', setup: 'S_roster_free', crop: 'phone ? S(210,62,296,200) : S(184,62,296,200)', marks: [{ k: 'box', at: C(258, 66, 214, 18), n: 1 }, { k: 'tap', at: 'btn(/^BUY TAPE/)', n: 2 }, { k: 'box', at: "btn('OFFER CONTRACT')", n: 3 }] },
-  { name: 'sign_3', setup: 'S_neg', crop: 'phone ? D(40,100,400,132) : D(40,100,400,150)', marks: [{ k: 'box', at: 'D(48,106,180,58)', n: 1 }, { k: 'box', at: 'union(btns(/^[-+]$/))', n: 2 }, { k: 'box', at: 'text(/^Patience/)', n: 3 }] },
+  { name: 'sign_3', setup: 'S_neg', crop: 'phone ? D(40,100,400,126) : D(40,100,400,150)', marks: [{ k: 'box', at: 'D(48,106,180,58)', n: 1 }, { k: 'box', at: 'union(btns(/^[-+]$/))', n: 2 }, { k: 'box', at: 'text(/^Patience/)', n: 3 }] },
   { name: 'sign_4', setup: 'S_neg_counter', crop: 'D(40,160,400,90)', marks: [{ k: 'box', at: 'D(48,195,384,30)', n: 1 }, { k: 'tap', at: "btn('MAKE OFFER')", n: 2 }, { k: 'box', at: "btn('MEET THEIR ASK')", n: 3 }, { k: 'box', at: "btn('LATER')", n: 4 }] },
 
   // ---------------------------------------------------------------- fight night
-  { name: 'fn_1', setup: 'S_fn_intro', crop: C(6, 120, 468, 150), marks: [{ k: 'box', at: 'btn(/^PRESS CONFERENCE/)', n: 1 }, { k: 'tap', at: "btn('START THE EVENT →')", n: 2 }] },
+  { name: 'fn_1', setup: 'S_fn_intro', hires: true, crop: C(4, 4, 472, 264), marks: [{ k: 'box', at: 'btn(/^PRESS CONFERENCE/)', n: 1 }, { k: 'tap', at: "btn('START THE EVENT →')", n: 2 }] },
   { name: 'fn_2', setup: 'S_fn_card', crop: C(8, 16, 468, 150), marks: [{ k: 'tap', at: "btn('WATCH', 0)", n: 1 }, { k: 'tap', at: "btn('SIM', 0)", n: 2 }] },
-  { name: 'fn_3', setup: 'S_fn_watch', crop: C(6, 120, 468, 150), marks: [{ k: 'box', at: 'btn(/^SPEED/)', n: 1 }, { k: 'box', at: "btn('PAUSE')", n: 2 }, { k: 'box', at: 'btn(/^CAM/)', n: 3 }, { k: 'box', at: 'btn(/^SKIP/)', n: 4 }] },
+  { name: 'fn_3', setup: 'S_fn_watch', hires: true, crop: C(0, 0, 480, 270), marks: [{ k: 'box', at: 'btn(/^SPEED/)', n: 1 }, { k: 'box', at: "btn('PAUSE')", n: 2 }, { k: 'box', at: 'btn(/^CAM/)', n: 3 }, { k: 'box', at: 'btn(/^SKIP/)', n: 4 }] },
   { name: 'fn_4', setup: 'S_fn_bonus', crop: C(8, 0, 468, 150), marks: [{ k: 'tap', at: 'firstBonus()', n: 1 }, { k: 'box', at: 'text(/^Each bonus costs/)', n: 2 }] },
 
   // ---------------------------------------------------------------- the ledger
@@ -88,12 +89,14 @@ module.exports = [
       { k: 'box', at: "union(btn(/^TRAIN/), btn('BLEETER / CALLOUTS'))", n: 2, dev: 'pc' },
       { k: 'box', at: 'union(btn(/^PAPERWORK/), btn(/RANKINGS$/))', n: 3, dev: 'pc' },
       { k: 'box', at: 'S(486,63,42,12)', n: 1, dev: 'phone' },
-      { k: 'box', at: 'union(btns(/^(TRAIN|SPAR|CUT|WORK A SHIFT|REST|GO OUT|BLEETER)/))', n: 2, dev: 'phone' },
-      { k: 'box', at: 'union(btns(/^(PAPERWORK|CLINIC|CONDITION|STAFF|RANKINGS|THE FEED)/))', n: 3, dev: 'phone' },
+      { k: 'box', at: 'union(btns(/^(TRAIN|SPAR|CUT|WORK A SHIFT|REST|GO OUT)/))', n: 2, dev: 'phone' },
+      { k: 'box', at: 'btn(/^BLEETER/)', n: 2, dev: 'phone' },
+      { k: 'box', at: 'union(btns(/^(PAPERWORK|CLINIC|CONDITION)/))', n: 3, dev: 'phone' },
+      { k: 'box', at: 'union(btns(/^(STAFF|RANKINGS|THE FEED)/))', n: 3, dev: 'phone' },
     ],
   },
   { name: 'hub_5', setup: 'S_hub', crop: 'phone ? S(2,196,152,58) : S(4,196,152,58)', marks: [{ k: 'box', at: 'phone ? S(32,207,116,15) : S(34,207,116,15)' }] },
-  { name: 'hub_6', setup: 'S_hub', crop: 'phone ? S(330,200,202,70) : S(270,200,206,70)', marks: [{ k: 'tap', at: 'btn(/^END WEEK/)' }] },
+  { name: 'hub_6', setup: 'S_hub', crop: 'phone ? S(0,236,532,34) : S(6,228,468,40)', marks: [{ k: 'tap', at: 'btn(/^END WEEK/)' }, { k: 'box', at: "btn('MENU')", n: 2 }] },
   { name: 'hub_3', setup: 'S_hub', dev: 'pc', crop: 'S(322,20,154,110)', marks: [{ k: 'box', at: 'S(328,36,104,28)', n: 1 }, { k: 'tap', at: "btn('SIGN')", n: 2 }] },
   { name: 'hub_3', setup: 'S_offers', dev: 'phone', crop: 'top(win(), 152)', marks: [{ k: 'box', at: 'firstOffer()', n: 1 }, { k: 'tap', at: "btn('SIGN')", n: 2 }] },
   { name: 'hub_4', setup: 'S_bleeter', crop: 'phone ? top(win(), 250) : top(win(), 204)', marks: [{ k: 'box', at: 'union(btns(/^(@|CALL OUT)/))', n: 1 }, { k: 'box', at: "btn('POST SOMETHING WHOLESOME')", n: 2 }] },
@@ -113,7 +116,7 @@ module.exports = [
   { name: 'tyre_3', setup: 'S_tyre_hold', png: 'tyre_1', marks: [{ k: 'box', at: "phone ? btn('SKIP') : shell(270,4,48,12)" }] },
 
   // ---------------------------------------------------------------- the kitchen table
-  { name: 'kt_5', setup: 'S_hub_signed', crop: 'phone ? S(276,128,130,36) : S(156,140,170,30)', marks: [{ k: 'tap', at: 'btn(/^PAPERWORK/)' }] },
+  { name: 'kt_5', setup: 'S_hub_signed', crop: 'phone ? S(154,60,378,134) : S(156,20,166,200)', marks: [{ k: 'tap', at: 'btn(/^PAPERWORK/)' }] },
   { name: 'kt_1', setup: 'S_fmdesk', crop: C(4, 36, 468, 150), marks: [{ k: 'box', at: C(4, 40, 112, 150), n: 1 }, { k: 'box', at: C(122, 40, 240, 150), n: 2 }, { k: 'box', at: C(368, 40, 108, 150), n: 3 }] },
   { name: 'kt_2', setup: 'S_fmdesk_inspect', crop: C(4, 100, 468, 150), marks: [{ k: 'tap', at: 'btn(/^INSPECT/)', n: 1 }, { k: 'tap', at: "spot(fmKey('Win bonus')[0])", n: 2 }, { k: 'tap', at: "spot(fmKey('Win bonus')[1])", n: 3 }, { k: 'line', at: "spot(fmKey('Win bonus')[0])", to: "spot(fmKey('Win bonus')[1])", n: 3 }] },
   { name: 'kt_3', setup: 'S_fmdesk_found', crop: 'phone ? S(30,186,364,84) : S(4,186,364,84)', marks: [{ k: 'box', at: 'btn(/^SIGN IT/)', n: 1 }, { k: 'box', at: 'btn(/^DISPUTE/)', n: 2 }, { k: 'box', at: 'text(/^DISCREPANCY/)', n: 3 }] },
@@ -127,15 +130,15 @@ module.exports = [
   { name: 'fmn_1', setup: 'S_fm_card', crop: C(8, 16, 468, 150), marks: [{ k: 'box', at: "rowOfBtn('FIGHT!')", n: 1 }, { k: 'tap', at: "btn('FIGHT!')", n: 2 }, { k: 'box', at: "btnNear('WATCH', 'FIGHT!')", n: 3 }, { k: 'box', at: "btnNear('SIM', 'FIGHT!')", n: 3 }] },
 
   // ---------------------------------------------------------------- the corner
-  { name: 'corner_1', setup: 'S_corner', crop: 'phone ? S(26,0,468,104) : S(0,0,468,104)', marks: [{ k: 'box', at: C(148, 18, 170, 16), n: 1 }, { k: 'box', at: C(336, 64, 138, 20), n: 2 }, { k: 'box', at: C(6, 20, 134, 32), n: 3 }] },
+  { name: 'corner_1', setup: 'S_corner', crop: C(6, 0, 468, 104), marks: [{ k: 'box', at: C(148, 18, 170, 16), n: 1 }, { k: 'box', at: C(336, 64, 138, 20), n: 2 }, { k: 'box', at: C(6, 20, 134, 32), n: 3 }] },
   { name: 'corner_2', setup: 'S_corner', crop: 'phone ? S(26,0,180,64) : S(0,0,180,64)', marks: [{ k: 'tap', at: C(40, 20, 30, 22), n: 1 }, { k: 'box', at: C(6, 42, 134, 4), n: 2 }] },
   { name: 'corner_4', setup: 'S_corner', crop: 'phone ? S(356,0,150,104) : S(330,0,150,104)', marks: [{ k: 'box', at: C(340, 84, 60, 10), n: 1 }, { k: 'box', at: C(336, 64, 138, 20), n: 2 }] },
-  { name: 'corner_3', setup: 'S_corner_press', crop: 'phone ? S(26,0,468,150) : S(0,0,468,150)', marks: [{ k: 'hold', at: 'cornerZone(0)', n: 1 }, { k: 'box', at: C(340, 18, 128, 10), n: 2 }] },
+  { name: 'corner_3', setup: 'S_corner_press', crop: C(6, 0, 468, 150), marks: [{ k: 'hold', at: 'cornerZone(0)', n: 1 }, { k: 'box', at: C(340, 18, 128, 10), n: 2 }] },
   { name: 'corner_5', setup: 'S_corner_plan', crop: 'top(win(), 150)', marks: [{ k: 'box', at: 'union(text(/^Corner work/), text(/^Coach:/))', n: 1 }, { k: 'tap', at: "btn('BALANCED')", n: 2 }] },
 
   // ---------------------------------------------------------------- hands-on fights (retake after the fight overhaul merges)
   {
-    name: 'fb_1', setup: 'S_live_stand', crop: 'phone ? S(118,150,300,48) : S(4,150,468,120)',
+    name: 'fb_1', setup: 'S_live_stand', crop: 'phone ? S(118,150,268,48) : S(4,150,468,120)',
     marks: [
       { k: 'box', at: 'S(4,152,104,44)', n: 1, dev: 'pc' }, { k: 'box', at: 'S(10,192,20,30)', n: 2, dev: 'pc' }, { k: 'box', at: 'S(372,152,104,44)', n: 3, dev: 'pc' },
       { k: 'box', at: 'S(122,153,112,40)', n: 1, dev: 'phone' }, { k: 'box', at: 'S(296,153,116,40)', n: 2, dev: 'phone' },
@@ -157,9 +160,9 @@ module.exports = [
     ],
   },
   { name: 'fd_1', setup: 'S_live_block', crop: 'phone ? S(24,150,508,120) : S(6,0,468,150)', marks: [{ k: 'legend', at: 'pt(12,24)', items: [['[block]', 'BLOCK / PARRY']], dev: 'pc' }, { k: 'hold', at: "pad('BLOCK')", dev: 'phone' }] },
-  { name: 'fd_4', setup: 'S_live_tired', crop: 'phone ? S(118,150,150,48) : S(4,150,240,60)', marks: [{ k: 'box', at: 'text(/BPM/)', n: 1 }, { k: 'box', at: 'phone ? S(144,171,74,8) : S(40,172,74,8)', n: 2 }] },
+  { name: 'fd_4', setup: 'S_live_tired', crop: 'phone ? S(118,150,150,48) : S(4,150,190,60)', marks: [{ k: 'box', at: 'text(/BPM/)', n: 1 }, { k: 'box', at: 'phone ? S(144,171,74,8) : S(40,172,74,8)', n: 2 }] },
   { name: 'fc_1', setup: 'S_live_clinch', crop: 'phone ? S(24,150,508,120) : S(6,0,468,150)', marks: [{ k: 'legend', at: 'pt(12,24)', items: [['[grab]', 'HOLD: CLINCH']], dev: 'pc' }, { k: 'hold', at: "pad('GRAB')", label: 'TIE', n: 1, dev: 'phone' }, { k: 'box', at: 'text(/THAI PLUM/)', n: 2, dev: 'phone' }] },
-  { name: 'fg_1', setup: 'S_live_ground', crop: 'phone ? S(24,150,508,120) : S(6,60,468,150)', marks: [{ k: 'box', at: 'grow2(text(/HALF GUARD/), 0, 8)', n: 1 }, { k: 'box', at: "pad('KICK')", n: 2, dev: 'phone' }, { k: 'box', at: "pad('GRAB')", n: 2, dev: 'phone' }] },
+  { name: 'fg_1', setup: 'S_live_ground', crop: 'phone ? S(24,150,508,120) : S(6,44,468,150)', marks: [{ k: 'box', at: 'grow2(text(/HALF GUARD/), 0, 8)', n: 1 }, { k: 'box', at: "pad('KICK')", n: 2, dev: 'phone' }, { k: 'box', at: "pad('GRAB')", n: 2, dev: 'phone' }] },
   {
     name: 'fg_4', setup: 'S_live_sub', crop: 'phone ? S(24,150,508,120) : S(6,0,468,150)',
     marks: [
@@ -174,7 +177,7 @@ module.exports = [
   // ---------------------------------------------------------------- Quick Fight
   { name: 'qf_1', setup: 'S_qf', crop: 'phone ? S(4,34,330,152) : S(4,34,336,152)', marks: [{ k: 'box', at: 'S(8,36,164,150)', n: 1 }, { k: 'tap', at: "btn('>', 0)", n: 2 }, { k: 'box', at: "btn('RANDOM', 0)", n: 3 }, { k: 'box', at: "btn('VS ANYONE', 0)", n: 3 }] },
   { name: 'qf_2', setup: 'S_qf', crop: C(170, 34, 144, 162), marks: [{ k: 'box', at: C(180, 38, 124, 72), n: 1 }, { k: 'box', at: C(180, 112, 124, 50), n: 2 }] },
-  { name: 'qf_4', setup: 'S_qf', crop: 'phone ? S(8,188,508,56) : S(8,188,464,56)', marks: [{ k: 'tap', at: "lastBtn('>')", n: 1 }, { k: 'box', at: 'S(12,194,202,26)', n: 2 }] },
+  { name: 'qf_4', setup: 'S_qf', crop: 'phone ? S(8,188,508,56) : S(8,188,464,56)', marks: [{ k: 'tap', at: "lastBtn('>')", n: 1 }, { k: 'box', at: 'union(text(/^THE APE-X/), text(/^Empty TV studio/))', n: 2 }] },
   { name: 'qf_5', setup: 'S_qf', crop: 'around(btn(\'FIGHT!\'), 200, 38)', marks: [{ k: 'tap', at: "btn('FIGHT!')" }] },
   { name: 'qf_3', setup: 'S_qf_versus', crop: C(170, 34, 144, 162), marks: [{ k: 'box', at: C(180, 56, 124, 16), n: 1 }, { k: 'box', at: C(180, 94, 124, 70), n: 2 }] },
 ];

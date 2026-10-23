@@ -140,8 +140,13 @@ const fmDesk = async (c) => {
     const m = await import('/src/sim/fighter.ts');
     const s = window.__game.state;
     const d = m.fm(s).inbox[0];
+    // the agreement as agreed (it may have come with a random mistake of its own), then the lesson's one: a $0 win bonus
+    for (const f of d.fields) {
+      const r = d.ref.lines.find((x) => x.label === f.label);
+      if (r) { f.value = r.value; f.bad = false; }
+    }
     const f = d.fields.find((x) => x.label === 'Win bonus');
-    if (f) f.value = '$0';
+    if (f) { f.value = '$0'; f.bad = true; }
     d.fault = 'Win bonus';
     window.__game.scene.paperwork();
   });
@@ -185,7 +190,8 @@ const live = async (c, hold, after) => {
     await c.wait(1200);
   }
 };
-const STILL = 'L.pos = "stand"; L.sub = null; L.shooting = -1; L.clinch.dom = -1; for (const F of L.F) { F.act = null; F.down = 0; F.stun = 3; F.block = false; F.evade = null; F.hp = Math.max(F.hp, 90); F.gas = Math.max(F.gas, 85); } L.F[0].x = 220; L.F[1].x = 262;';
+// standing just outside jab range (a jab reaches 56): close enough to fight, far enough to read as two men
+const STILL = 'L.pos = "stand"; L.sub = null; L.shooting = -1; L.clinch.dom = -1; for (const F of L.F) { F.act = null; F.down = 0; F.stun = 3; F.block = false; F.evade = null; F.hp = Math.max(F.hp, 90); F.gas = Math.max(F.gas, 85); } L.F[0].x = 210; L.F[1].x = 272;';
 
 const docOnDesk = async (c, type, force) => {
   await career(c);
@@ -352,12 +358,14 @@ module.exports = {
     await c.click('MAKE OFFER');
     await c.wait(600);
   },
+  // the books after the first fight night: a gate in INCOME, purses in EXPENSES
   S_ledger: async (c) => {
-    await career(c);
-    await desk(c);
-    await c.ev(() => window.__game.scene.finishDay());
+    await fightNight(c);
+    await c.ev(() => { const sc = window.__game.scene; for (const b of sc.live()) sc.simBout(b, true); sc.finish(); });
     await c.wait(2500);
     await c.closeAll();
+    const name = await c.ev(() => window.__game.scene.constructor.name);
+    if (name !== 'LedgerScene') throw new Error('expected the ledger, got ' + name);
   },
   S_fn_intro: fightNight,
   S_fn_card: async (c) => {
@@ -374,7 +382,8 @@ module.exports = {
     await c.ev(() => { const sc = window.__game.scene; const l = sc.live(); sc.watch(l[l.length - 1]); });
     await c.wait(1500);
     await c.ev(() => { const sc = window.__game.scene; if (sc.step === 'watch' && sc.endIntro) sc.endIntro(); });
-    await c.wait(6000);
+    // into the round: the booth talking, the fighters fighting
+    await c.wait(11000);
   },
   S_fn_bonus: async (c) => {
     await fightNight(c);
@@ -487,7 +496,8 @@ module.exports = {
   S_live_stand: async (c) => live(c, STILL),
   S_live_block: async (c) => live(c, STILL + ' L.F[0].block = true;'),
   S_live_tired: async (c) => live(c, STILL + ' L.F[0].gas = 22; L.F[0].bpm = 168;'),
-  S_live_clinch: async (c) => live(c, STILL + " L.pos = 'clinch'; L.clinch.dom = 0; L.clinch.tie = 'plum'; L.F[1].x = L.F[0].x + 24;"),
+  // a clinch starts at most 54 apart and the gap never closes past 34
+  S_live_clinch: async (c) => live(c, STILL + " L.pos = 'clinch'; L.clinch.dom = 0; L.clinch.tie = 'plum'; L.F[0].x = 224; L.F[1].x = 258;"),
   S_live_ground: async (c) => live(c, STILL + " L.pos = 'ground'; L.top = 0; L.gpos = 'half'; L.gprog = 0.4;"),
   S_live_sub: async (c) => live(c, STILL + " L.pos = 'ground'; L.top = 0; L.gpos = 'mount'; L.gprog = 0.4; L.sub = { atk: 0, prog: 0.35, name: 'armbar' };"),
   // a real knockdown (the arena drops him), then the count held short so the referee never waves it off

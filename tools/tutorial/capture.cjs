@@ -4,7 +4,7 @@
  * (shots.cjs), writes public/tutorial/<pc|phone>/<name>.png at 1:1 game pixels and
  * src/ui/guidepics.ts (the manifest + the marks, in picture pixels). See README.md.
  *
- *   node tools/tutorial/capture.cjs [url] [--only=desk_,paper_1] [--dev=pc|phone] [--list]
+ *   node tools/tutorial/capture.cjs [url] [--only=desk_,paper_1] [--dev=pc|phone] [--list] [--full=dir] [--phone-res=2]
  *
  * url defaults to http://localhost:5299/ (a `npx vite --port 5299` dev server of this checkout).
  * --only / --dev retake a subset and merge it into the existing guidepics.ts.
@@ -29,12 +29,22 @@ const OUT = path.join(ROOT, 'public/tutorial');
 const PICS_TS = path.join(ROOT, 'src/ui/guidepics.ts');
 const SHOTS = require('./shots.cjs');
 const SETUPS = require('./setups.cjs');
+const { shrink } = require('./pngpal.cjs');
 
 const args = process.argv.slice(2);
 const opt = (k) => (args.find((a) => a.startsWith(`--${k}=`)) || '').split('=')[1] || null;
 const URL = args.find((a) => !a.startsWith('--')) || 'http://localhost:5299/';
 const ONLY = opt('only') ? opt('only').split(',') : null;
 const DEVS = opt('dev') ? [opt('dev')] : ['pc', 'phone'];
+/** --full=<dir>: also save the whole screen once per setup (to plan crops) */
+const FULL = opt('full');
+/**
+ * Phone pictures are taken at 2 device pixels per game pixel (the PNG is twice the picture's
+ * size, `r: 2` in the manifest). Phones scale their dialogs by odd amounts (x1.13...), and a
+ * 1:1 capture of that drops or doubles pixel columns, so the text comes out mangled; a real
+ * phone renders at 2-4 device pixels per game pixel and never looks like that.
+ */
+const PHONE_RES = Number(opt('phone-res') || 2);
 const wanted = (name) => !ONLY || ONLY.some((p) => name === p || (p.endsWith('_') || p.endsWith('*') ? name.startsWith(p.replace(/\*$/, '')) : false));
 
 if (args.includes('--list')) {
@@ -174,6 +184,8 @@ async function installHelpers(page, dev) {
     T.top = (r, h) => [r[0], r[1], r[2], Math.min(r[3], h)];
     T.bottom = (r, h) => [r[0], r[1] + Math.max(0, r[3] - h), r[2], Math.min(r[3], h)];
     T.grow = (r, d) => [r[0] - d, r[1] - d, r[2] + 2 * d, r[3] + 2 * d];
+    /** r with its right edge cut at x (the part of a line another window doesn't cover) */
+    T.cutR = (r, x) => [r[0], r[1], Math.max(2, Math.min(r[2], x - r[0])), r[3]];
     T.grow2 = (r, dx, dy) => [r[0] - dx, r[1], r[2] + 2 * dx, r[3] + dy];
     T.around = (r, w, h) => {
       const x = Math.round(Math.max(0, Math.min(kit.SW - w, r[0] + r[2] / 2 - w / 2)));
@@ -336,12 +348,18 @@ function writePics(pics) {
   fs.writeFileSync(PICS_TS, `${head}export const PICS: Record<string, { pc?: PicInfo; phone?: PicInfo }> = {\n${body}\n};\n`);
 }
 
-async function captureDevice(pw, dev, pics, report) {
+/**
+ * One device's pictures. PC pictures are 1:1, except `hires: true` shots (a screen that has to
+ * be shrunk to fit the card): those come from a second pass at 2 device pixels per game pixel,
+ * so they shrink without going soft.
+ */
+async function captureDevice(pw, dev, pics, report, hires = false) {
   const phone = dev === 'phone';
+  const res = phone ? PHONE_RES : hires ? 2 : 1;
   const browser = await pw.chromium.launch();
   const ctx = await browser.newContext(phone
-    ? { viewport: { width: 532, height: 270 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1 }
-    : { viewport: { width: 480, height: 270 }, deviceScaleFactor: 1 });
+    ? { viewport: { width: 532, height: 270 }, isMobile: true, hasTouch: true, deviceScaleFactor: PHONE_RES }
+    : { viewport: { width: 480, height: 270 }, deviceScaleFactor: res });
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', (e) => errs.push(e.message));
@@ -366,7 +384,7 @@ async function captureDevice(pw, dev, pics, report) {
     const r = window.__game.app.canvas.getBoundingClientRect();
     return { x: r.left, y: r.top, w: r.width, h: r.height, sw: window.__game.app.screen.width };
   });
-  console.log(`${dev}: canvas ${canvas.w}x${canvas.h} at ${canvas.x},${canvas.y} (screen ${canvas.sw} game px)`);
+  console.log(`${dev}${res !== 1 ? ` x${res}` : ""}: canvas ${canvas.w}x${canvas.h} at ${canvas.x},${canvas.y} (screen ${canvas.sw} game px)`);
   const ev = (fn, arg) => page.evaluate(fn, arg);
   const c = {
     page, dev, phone, ev,
@@ -397,6 +415,7 @@ async function captureDevice(pw, dev, pics, report) {
   const files = {};
   for (const shot of SHOTS) {
     if (shot.dev && shot.dev !== dev) continue;
+    if (!phone && !!shot.hires !== hires) continue;
     // a picture other pictures reuse is retaken with them
     if (!wanted(shot.name) && !SHOTS.some((o) => o.png === shot.name && wanted(o.name))) continue;
     try {
@@ -407,6 +426,10 @@ async function captureDevice(pw, dev, pics, report) {
         if (!setup) throw new Error('no setup ' + shot.setup);
         await setup(c);
         current = shot.setup;
+        if (FULL) {
+          fs.mkdirSync(FULL, { recursive: true });
+          await page.screenshot({ path: path.join(FULL, `${dev}-${shot.setup}.png`), clip: { x: canvas.x, y: canvas.y, width: canvas.w, height: canvas.h } });
+        }
       }
       await installHelpers(page, dev);
       const marks = shot.marks.filter((m) => !m.dev || m.dev === dev);
@@ -423,7 +446,8 @@ async function captureDevice(pw, dev, pics, report) {
       if (base) file = base.file;
       else {
         file = `${dev}/${shot.name}.png`;
-        const buf = await page.screenshot({ clip: { x: canvas.x + crop[0], y: canvas.y + crop[1], width: crop[2], height: crop[3] } });
+        // (a palette PNG when it has 256 colours or fewer: same pixels, smaller file)
+        const buf = shrink(await page.screenshot({ clip: { x: canvas.x + crop[0], y: canvas.y + crop[1], width: crop[2], height: crop[3] } }));
         fs.mkdirSync(path.join(OUT, dev), { recursive: true });
         fs.writeFileSync(path.join(OUT, file), buf);
         report.bytes += buf.length;
@@ -433,7 +457,7 @@ async function captureDevice(pw, dev, pics, report) {
       const pm = packSlots(res.marks.map((m) => toPicture(m, crop)).filter(Boolean));
       if (pm.length < res.marks.length) report.warn.push(`${dev} ${shot.name}: ${res.marks.length - pm.length} mark(s) outside the picture`);
       pics[shot.name] = pics[shot.name] || {};
-      pics[shot.name][dev] = { file, w: crop[2], h: crop[3], marks: pm };
+      pics[shot.name][dev] = { file, w: crop[2], h: crop[3], ...(res !== 1 ? { r: res } : {}), marks: pm };
       console.log(`  ${dev} ${shot.name.padEnd(9)} ${crop.join(',').padEnd(18)} ${pm.length} marks${base ? ' (= ' + shot.png + ')' : ''}`);
     } catch (e) {
       report.fail.push(`${dev} ${shot.name}: ${e.message.split('\n')[0]}`);
@@ -449,10 +473,14 @@ async function captureDevice(pw, dev, pics, report) {
   const pw = loadPlaywright();
   const pics = readPics();
   const report = { files: 0, bytes: 0, warn: [], fail: [] };
-  for (const dev of DEVS) await captureDevice(pw, dev, pics, report);
+  for (const dev of DEVS) {
+    await captureDevice(pw, dev, pics, report);
+    const more = (s) => s.hires && (!s.dev || s.dev === dev) && (!ONLY || wanted(s.name) || SHOTS.some((o) => o.png === s.name && wanted(o.name)));
+    if (dev === 'pc' && SHOTS.some(more)) await captureDevice(pw, dev, pics, report, true);
+  }
   // a phone picture identical to the PC one: keep one file
   for (const [name, e] of Object.entries(pics)) {
-    if (!e.pc || !e.phone || e.phone.file === e.pc.file || !e.phone.file.startsWith('phone/')) continue;
+    if (!e.pc || !e.phone || e.phone.file === e.pc.file || !e.phone.file.startsWith('phone/') || (e.phone.r || 1) !== (e.pc.r || 1)) continue;
     const a = path.join(OUT, e.pc.file);
     const b = path.join(OUT, e.phone.file);
     if (fs.existsSync(a) && fs.existsSync(b) && fs.readFileSync(a).equals(fs.readFileSync(b))) {

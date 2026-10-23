@@ -16,6 +16,7 @@ npx vite --port 5299            # a dev server of this checkout (leave it runnin
 node tools/tutorial/capture.cjs  # every picture, PC then phone (about 10 minutes)
 node tools/tutorial/capture.cjs --only=desk_,fn_3 --dev=pc   # retake some, merge into the manifest
 node tools/tutorial/capture.cjs --list                        # what there is
+node tools/tutorial/capture.cjs --only=fn_1 --full=/tmp/full  # also save the whole screen of each setup (to plan a crop)
 npx vitest run tests/tutorial.test.ts                         # checks the manifest and the files
 ```
 
@@ -30,6 +31,15 @@ touch screen (the reference phone: the canvas widens to 532 game pixels, OX = 26
 switches lessons, music and screen shake off and uses the pixel font, so nothing pops into a
 picture.
 
+Phone pictures are taken at 2 device pixels per game pixel (`r: 2` in the manifest: the PNG is
+twice the picture's size). Phones draw their windows scaled up by odd amounts, and a 1:1 shot
+of that mangles the pixel text; a real phone renders at 2-4 device pixels per game pixel.
+PC pictures are 1:1, except a shot marked `hires: true` (a whole screen or window that has to
+shrink to fit the card), which is taken at 2x in a second pass so it shrinks without going soft.
+
+Every PNG goes through `pngpal.cjs`: 256 colours or fewer becomes a palette PNG (same pixels,
+about a third smaller). `node tools/tutorial/pngpal.cjs public/tutorial/*/*.png` does it by hand.
+
 ## When to retake
 
 After a screen changes (a button moves, a panel is redrawn), retake the pictures of that screen
@@ -43,7 +53,7 @@ the arena, the HUD or the touch fight pad change. The diagrams (`dirs:punch`, `p
 2. Add an entry to `shots.cjs`: the setup (a game state from `setups.cjs`; add one if needed),
    the crop and the marks. Crops fit the card: at most 340 x 204 (beside the text) or
    468 x 152 (above it) on PC, 330 x 204 or 520 x 152 on the reference phone. Bigger pictures
-   are shrunk to fit.
+   are shrunk to fit (on PC mark them `hires: true`).
 3. `node tools/tutorial/capture.cjs --only=cards_6`, then look at it in the game: MENU >
    TUTORIALS, or `openLesson(game, key, { mode: 'list' })` from the console.
 
