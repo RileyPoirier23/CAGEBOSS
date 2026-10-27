@@ -5,6 +5,7 @@
 const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
+const presence = require('./presence.cjs');
 
 // music should start without waiting for a click, like a real game
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -113,6 +114,11 @@ ipcMain.on('cageboss:achievement', (_e, id) => {
   }
 });
 
+// ------------------------------------------------------------------ Discord
+// "Playing CAGE BOSS" on the player's Discord profile (electron/presence.cjs). The game says what
+// they're doing; without Discord running this does nothing.
+ipcMain.on('cageboss:presence', (_e, activity) => presence.update(activity));
+
 ipcMain.on('cageboss:quit', () => app.quit());
 ipcMain.on('cageboss:fullscreen', (_e, on) => win && win.setFullScreen(!!on));
 ipcMain.handle('cageboss:isFullscreen', () => (win ? win.isFullScreen() : false));
@@ -177,6 +183,7 @@ initSteam();
 
 app.whenReady().then(() => {
   createWindow();
+  presence.start(app.getVersion());
   // Steam builds are updated by Steam
   if (!app.isPackaged || steam) return;
   // Windows installer and Linux AppImage update themselves; the portable .exe and the (unsigned)
@@ -185,3 +192,4 @@ app.whenReady().then(() => {
   setTimeout(() => (self ? checkInstalled() : checkPortable()), 4000);
 });
 app.on('window-all-closed', () => app.quit());
+app.on('will-quit', () => presence.stop());

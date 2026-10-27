@@ -224,6 +224,7 @@ export class Game {
     this.sceneLayer.addChild(scene.root);
     setMusicContext(scene.music);
     scene.enter();
+    bus.emit('scene', scene);
     if (scene.tutorialKey) maybeTutorial(this, scene.tutorialKey);
     // anything earned since the last screen gets its congratulations
     if (this.state) setTimeout(() => checkAchievements(this), 1500);

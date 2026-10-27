@@ -25,6 +25,7 @@ import { installController } from './ui/controller';
 import { installNative, importLegacySaves } from './native';
 import { platform } from './core/platform';
 import { installSaveFiles, syncPlatformAchievements } from './desktopsync';
+import { installPresence } from './presence';
 import { FMHubScene } from './ui/scenes/fmhub';
 import { DeskScene } from './ui/scenes/desk';
 import { setAsyncCompressor, flushSaves } from './core/save';
@@ -115,6 +116,7 @@ async function boot() {
     credits: openCredits, gamemenu: openGameMenu, jukebox: openJukebox, load: openLoad, ledger: openLedgerPeek, negotiation: openNegotiation,
     editor: openFighterEditor, fightlab: openFightLab, arenalab: openArenaLab,
   };
+  installPresence(game); // desktop: what you're playing, on your Discord profile
   game.goto(new TitleScene(game));
   const params = new URLSearchParams(location.search);
   if (params.has('fightlab')) openFightLab(game);

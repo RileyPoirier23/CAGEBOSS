@@ -1,4 +1,4 @@
-// The only bridge between the game and the desktop: quit, fullscreen, save files and Steam.
+// The only bridge between the game and the desktop: quit, fullscreen, save files, Steam and Discord.
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('cagebossDesktop', {
@@ -12,4 +12,6 @@ contextBridge.exposeInMainWorld('cagebossDesktop', {
     remove: (key) => ipcRenderer.send('cageboss:files:remove', String(key)),
   },
   achievement: (id) => ipcRenderer.send('cageboss:achievement', String(id)),
+  // the Discord profile line ("Playing CAGE BOSS": details, state)
+  presence: (a) => ipcRenderer.send('cageboss:presence', { details: String(a?.details ?? ''), state: String(a?.state ?? '') }),
 });

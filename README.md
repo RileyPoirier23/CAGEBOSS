@@ -29,6 +29,30 @@ It starts fullscreen; `F11` or `Alt+Enter` toggles windowed. Saves live in your 
 that folder up, copy it to another computer, or let Steam Cloud sync it: see
 [`docs/STEAM.md`](docs/STEAM.md)).
 
+### Discord
+
+With Discord open on the same computer, the desktop build shows **Playing CAGE BOSS** on your
+profile, with the game's icon, the mode, what you're doing and how long you've been playing:
+"Running the promotion / At the desk • Week 14", "Road To Champion / Regional promotion • Week 4",
+"Quick Fight / In the cage". To hide it, go to Discord's User Settings → Activity Privacy.
+
+How it works:
+- `electron/presence.cjs` (the main process) talks to the Discord app over its local pipe with
+  `@xhayper/discord-rpc`, as the CAGE BOSS app in the 506clicks Discord developer team (client ID
+  `1564513128614731826`; a client ID is public, so there's no secret, login or token).
+- The game works out the two lines (`src/presence.ts`: the screen, the save's mode and week, a
+  hands-on fight) and sends them over the preload bridge (`cagebossDesktop.presence`) on every
+  screen change, and every 5 seconds if they've changed. The timer counts from launch.
+- Updates go out at most one every 4 seconds (Discord takes 5 per 20 seconds). Discord not running,
+  or closing mid-game: nothing happens and nothing waits on it. The shell looks for Discord again
+  every 30 seconds.
+- The large picture is the game's icon as served by the website (`public/icon-512.png` at
+  506clicks.ca/play/cageboss). To use an Art Asset instead, upload it in the Discord Developer
+  Portal (the app → Rich Presence → Art Assets) and put its key in `LARGE_IMAGE` in
+  `electron/presence.cjs`.
+- Desktop only: the browser version, the Discord Activity and the phone apps have no bridge, so
+  none of this runs there.
+
 ### Building it yourself
 
 ```bash
