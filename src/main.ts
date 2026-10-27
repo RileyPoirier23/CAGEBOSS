@@ -27,7 +27,10 @@ import { platform } from './core/platform';
 import { installSaveFiles, syncPlatformAchievements } from './desktopsync';
 import { FMHubScene } from './ui/scenes/fmhub';
 import { DeskScene } from './ui/scenes/desk';
+import { QuickFightScene } from './ui/scenes/quickfight';
 import { setAsyncCompressor, flushSaves } from './core/save';
+import { duel } from './net/duel';
+import { PAL } from './art/palette';
 
 /** The autosave's compression on a worker; anything wrong with it and saves stay on the main thread. */
 function installSaveWorker(): void {
@@ -115,6 +118,10 @@ async function boot() {
     credits: openCredits, gamemenu: openGameMenu, jukebox: openJukebox, load: openLoad, ledger: openLedgerPeek, negotiation: openNegotiation,
     editor: openFighterEditor, fightlab: openFightLab, arenalab: openArenaLab,
   };
+  // the Discord Activity: when someone else opens CAGE BOSS in it, say where to fight them
+  duel()?.on((m) => {
+    if (m.t === 'peer' && m.here && !(game.scene instanceof QuickFightScene)) game.toast('Someone else is playing in this Activity: MODES, QUICK FIGHT, 2P online to fight them', PAL.gold, { small: true });
+  });
   game.goto(new TitleScene(game));
   const params = new URLSearchParams(location.search);
   if (params.has('fightlab')) openFightLab(game);

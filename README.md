@@ -97,6 +97,21 @@ The last update before the full release, all of it in the cage:
 - Fight view: `CAM` button switches wide / TV / top-down cameras; `SKIP INTRO` skips Juiced Butler.
 - `Esc` closes windows.
 
+## 2-player online (Discord)
+
+Inside the High Road Arcade (the 506clicks Discord Activity), two people in the same Activity can fight each
+other: MODES > QUICK FIGHT > PLAYERS: **2P online** (picked by itself when someone else is already in). Each picks
+their own corner; the guest presses READY, the host picks the rounds and the room and presses FIGHT!.
+
+How it works (`src/net/duel.ts`): the arcade opens the game with `?room=<its Activity instance>`, and the game
+connects to the relay that runs in the 506clicks bot (WebSocket at the Activity's `/relay` URL mapping). The first
+one in is the host (red corner): its game runs the fight, with the guest's moves for the blue corner, and sends
+the fight 30 times a second (`LiveFight.snapshot`, about 1 KB). The guest's game never runs the engine: it sends its
+moves and draws the host's fight (`LiveFight.restore`), so the two can't drift apart. Online there are no walkouts
+and no cutman game between rounds (both would hold the fight up for the other player), and `Esc` doesn't pause:
+it offers to leave, which ends it as a no contest for both. Outside the arcade there's no room and none of this runs.
+Testing without Discord: `?room=test&relay=ws://127.0.0.1:8790/relay` with the bot running.
+
 ## Modding
 
 All content is JSON under `data/`: roster, storylets, headlines, reporters, outlets, sponsors,

@@ -219,6 +219,10 @@ export interface LiveRules {
   koRules?: 'mma' | 'count';
 }
 
+/** The fight's state as plain data (LiveFight.snapshot). */
+export type LiveSnapshot = Record<string, unknown> & { __snapshot?: never };
+const SNAP_SKIP = new Set(['A', 'B', 'rules', 'rng', 'rounds', 'log', 'events']);
+
 export class LiveFight {
   F: [LiveFighter, LiveFighter];
   rules: LiveRules = {};
@@ -1187,6 +1191,26 @@ export class LiveFight {
     this.F[a].act = null;
     this.ev({ type: 'pounce', side: a });
     this.line(a, 'pounce', `${this.name(a)} jumps on him! ${this.gpos === 'mount' ? 'FULL MOUNT, and the hammers are coming!' : this.gpos === 'side' ? 'Side control, and the hammers are coming!' : `${this.name(d)} covers up and gets to ${GPOS_NAME[this.gpos]}.`}`, 3);
+  }
+
+  /**
+   * Online play: the fight as plain data, for the other machine to draw from (it never runs the
+   * engine itself). Leaves out what it already has: the fighters, their skills, the rules, the dice,
+   * and the play-by-play and events (those travel on their own, as they happen).
+   */
+  snapshot(): LiveSnapshot {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(this)) if (!SNAP_SKIP.has(k)) out[k] = k === 'F' ? this.F.map(({ sk: _sk, ...f }) => f) : v;
+    return out as LiveSnapshot;
+  }
+
+  /** Online play: take on the host's fight (see snapshot). */
+  restore(s: LiveSnapshot): void {
+    for (const [k, v] of Object.entries(s)) {
+      if (SNAP_SKIP.has(k)) continue;
+      if (k === 'F') (v as Partial<LiveFighter>[]).forEach((f, i) => Object.assign(this.F[i], f));
+      else (this as unknown as Record<string, unknown>)[k] = v;
+    }
   }
 
   /** Count shown to the player: 1..10 */

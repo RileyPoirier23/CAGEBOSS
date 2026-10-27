@@ -1,12 +1,14 @@
 /**
  * QUICK FIGHT: pick any two fighters from the roster and fight it out hands-on.
- * Against the CPU, or local 2-player versus (two controllers, a controller and the
- * keyboard, or both of you on one keyboard). Nothing is saved; nobody's career is touched.
+ * Against the CPU, local 2-player versus (two controllers, a controller and the
+ * keyboard, or both of you on one keyboard), or, inside the Discord Activity, 2-player
+ * online against the other person in it (src/net/duel.ts). Nothing is saved; nobody's
+ * career is touched.
  */
 import { Graphics } from 'pixi.js';
 import { isConsole, isTouchDevice } from '../../core/platform';
 import { Scene } from '../app';
-import type { Bout, FightEvent, Fighter, GameState } from '../../core/types';
+import type { Bout, FightEvent, FightResult, Fighter, GameState } from '../../core/types';
 import { PAL } from '../../art/palette';
 import { W, H, SW, OX, text, button, box } from '../kit';
 import { selector, alertBox } from '../widgets';
@@ -27,8 +29,9 @@ import type { KeyboardShare } from '../../core/fightinput';
 import type { CanvasStyle } from '../arena';
 import { sfx } from '../../audio/sfx';
 import { unlockedStoryFighters } from '../../sim/cast';
+import { duel, type DuelMsg, type Role } from '../../net/duel';
 
-type Mode = 'cpu' | 'versus';
+type Mode = 'cpu' | 'versus' | 'online';
 
 /** Where the fight is: the leagues' rooms and the venues nobody should have booked. */
 interface QFVenue {
@@ -60,6 +63,26 @@ const VENUES: QFVenue[] = [
 ];
 const roomOf = (v: QFVenue): Room => (v.venue && venueRoom(v.venue)) || leagueRoom(v.style);
 type Plan = 'balanced' | 'pressure' | 'counter' | 'wrestle';
+/** Online: the fight the host starts, sent to the guest so both build the same one. */
+interface OnlineSpec {
+  a: string;
+  b: string;
+  rounds: 3 | 5;
+  venue: number;
+  seed: number;
+  judges: string[];
+  referee: string;
+  sponsors: string[];
+  at: number;
+}
+/** The other player's corner, as they last said. */
+interface Them {
+  /** on the Quick Fight screen with 2P online picked */
+  on: boolean;
+  pick: string | null;
+  ready: boolean;
+}
+const NOBODY: Them = { on: false, pick: null, ready: false };
 
 let world: GameState | null = null;
 /** A throwaway world with the full roster (built once per session). */
@@ -78,10 +101,36 @@ export class QuickFightScene extends Scene {
   private rounds: 3 | 5 = 3;
   private venue = 0;
   private cpu: Plan = 'balanced';
+  /** online: the relay link (null outside the Discord Activity), the other corner, and our READY */
+  private link = duel();
+  private them: Them = { ...NOBODY };
+  private ready = false;
+  private sent = '';
+  private unLink: (() => void) | null = null;
+
+  enter(): void {
+    // someone else is already here: straight to 2P online
+    if (this.link?.peer) this.mode = 'online';
+    if (this.link) this.unLink = this.link.on((m) => this.onNet(m));
+    super.enter();
+  }
+
+  exit(): void {
+    this.unLink?.();
+    this.unLink = null;
+    this.ready = false;
+    this.mode = 'cpu';
+    this.share();
+  }
+
+  /** Online: your corner (the host is red, the guest blue). */
+  private get me(): 0 | 1 {
+    return this.link?.role === 'guest' ? 1 : 0;
+  }
 
   private list(): Fighter[] {
     const s = roster();
-    if (this.div === 'story') {
+    if (this.div === 'story' && this.mode !== 'online') {
       // the Road To Champion bosses you've beaten (and Han)
       const out = unlockedStoryFighters();
       for (const f of out) s.fighters[f.id] = f;
@@ -109,14 +158,18 @@ export class QuickFightScene extends Scene {
     r.addChild(text('QUICK FIGHT', 0, 6, { width: FW, align: 'center', color: PAL.gold, scale: 2 }));
     r.addChild(text('Any two fighters. No careers on the line. Probably some brain damage.', 0, 24, { width: FW, align: 'center', small: true, color: PAL.ash }));
     const fighters = this.list();
+    const online = this.mode === 'online';
     this.pick = [Math.min(this.pick[0], fighters.length - 1), Math.min(this.pick[1], fighters.length - 1)];
-    if (this.pick[0] === this.pick[1]) this.pick[1] = (this.pick[0] + 1) % fighters.length;
-    // the two corners
+    if (this.pick[0] === this.pick[1] && !online) this.pick[1] = (this.pick[0] + 1) % fighters.length;
+    // the two corners (online: yours to pick, theirs as they pick it on their screen)
     for (const side of [0, 1] as const) {
       const x = side === 0 ? 8 : FW - 172;
-      const f = fighters[this.pick[side]];
+      const theirs = online && side !== this.me;
+      const f = theirs ? this.theirFighter() : fighters[this.pick[side]];
       r.addChild(box(164, 150, PAL.night, side === 0 ? 0x9e2a2a : 0x284a86, { bevel: true })).position.set(x, 36);
-      r.addChild(text(side === 0 ? (this.mode === 'versus' ? 'RED CORNER  •  P1' : 'RED CORNER  •  YOU') : this.mode === 'versus' ? 'BLUE CORNER  •  P2' : 'BLUE CORNER  •  CPU', x + 6, 40, { small: true, color: side === 0 ? 0xd86a6a : 0x6a8ad8 }));
+      const who = online ? (theirs ? (this.them.ready ? 'THEM  •  READY' : 'THEM') : 'YOU') : this.mode === 'versus' ? (side === 0 ? 'P1' : 'P2') : side === 0 ? 'YOU' : 'CPU';
+      r.addChild(text(`${side === 0 ? 'RED' : 'BLUE'} CORNER  •  ${who}`, x + 6, 40, { small: true, color: side === 0 ? 0xd86a6a : 0x6a8ad8 }));
+      if (theirs && !f) r.addChild(text(this.link?.peer ? 'Picking...' : 'Nobody else in this Activity yet.', x + 8, 92, { width: 148, align: 'center', small: true, color: PAL.ash, maxLines: 3 }));
       if (!f) continue;
       const por = fighterPortrait(f, 64);
       por.position.set(x + 50, 50);
@@ -124,6 +177,7 @@ export class QuickFightScene extends Scene {
       r.addChild(text(`${f.first} ${f.last}`.toUpperCase(), x + 4, 118, { width: 156, align: 'center', color: PAL.bone, maxLines: 1 }));
       r.addChild(text(f.nick ? `"${f.nick}"` : ' ', x + 4, 129, { width: 156, align: 'center', small: true, color: PAL.gold, maxLines: 1 }));
       r.addChild(text(`${record(f.record)}  •  OVR ${Math.round(overall(f.skills))}  •  ${f.country}`, x + 4, 139, { width: 156, align: 'center', small: true, color: PAL.ash, maxLines: 1 }));
+      if (theirs) continue;
       r.addChild(selector(x + 6, 152, 152, fighters.map((x2, i) => ({ value: i, label: `${x2.first[0]}. ${x2.last}` })), this.pick[side], (v) => { this.pick[side] = v; this.refresh(); }));
       r.addChild(button('RANDOM', x + 6, 168, 74, 13, () => { this.pick[side] = Math.floor(Math.random() * fighters.length); this.refresh(); }, { small: true, fill: PAL.shadow }));
       r.addChild(button('VS ANYONE', x + 84, 168, 74, 13, () => this.anyone(side), { small: true, fill: PAL.shadow }));
@@ -133,21 +187,165 @@ export class QuickFightScene extends Scene {
     const row = (label: string, y: number) => r.addChild(text(label, mx, y + 3, { small: true, color: PAL.ash }));
     row('DIVISION', 40);
     const divOpts = DIVISION_ORDER.map((d) => ({ value: d, label: divisionName(d) }));
-    if (unlockedStoryFighters().length >= 2) divOpts.unshift({ value: 'story', label: 'Story fighters' });
+    // story fighters are yours alone (the other player may not have them): not online
+    if (unlockedStoryFighters().length >= 2 && !online) divOpts.unshift({ value: 'story', label: 'Story fighters' });
     r.addChild(selector(mx + 40, 40, 80, divOpts, this.div, (v) => { this.div = v; this.pick = [0, 1]; this.refresh(); }));
     if (unlockedStoryFighters().length < 2) r.addChild(text('Beat Road To Champion chapters to unlock its fighters here.', mx, 172, { small: true, width: 120, color: PAL.grey, maxLines: 2 }));
     row('PLAYERS', 58);
-    r.addChild(selector(mx + 40, 58, 80, [{ value: 'cpu' as Mode, label: '1P vs CPU' }, { value: 'versus' as Mode, label: '2P versus' }], this.mode, (v) => { this.mode = v; this.refresh(); }));
+    const modes = [{ value: 'cpu' as Mode, label: '1P vs CPU' }, { value: 'versus' as Mode, label: '2P versus' }];
+    if (this.link) modes.push({ value: 'online' as Mode, label: '2P online' });
+    r.addChild(selector(mx + 40, 58, 80, modes, this.mode, (v) => {
+      this.mode = v;
+      this.ready = false;
+      if (v === 'online' && this.div === 'story') {
+        this.div = 'light';
+        this.pick = [0, 1];
+      }
+      this.refresh();
+    }));
     row('ROUNDS', 76);
-    r.addChild(selector(mx + 40, 76, 80, [{ value: 3 as const, label: '3 rounds' }, { value: 5 as const, label: '5 rounds' }], this.rounds, (v) => (this.rounds = v)));
+    // online: the host picks the rounds and the room
+    if (online && this.me === 1) r.addChild(text(`${this.rounds} (their call)`, mx + 42, 79, { small: true, color: PAL.bone }));
+    else r.addChild(selector(mx + 40, 76, 80, [{ value: 3 as const, label: '3 rounds' }, { value: 5 as const, label: '5 rounds' }], this.rounds, (v) => { this.rounds = v; this.share(); }));
     if (this.mode === 'cpu') {
       row('CPU PLAN', 94);
       r.addChild(selector(mx + 40, 94, 80, [{ value: 'balanced' as Plan, label: 'Balanced' }, { value: 'pressure' as Plan, label: 'Pressure' }, { value: 'counter' as Plan, label: 'Counter' }, { value: 'wrestle' as Plan, label: 'Wrestle' }], this.cpu, (v) => (this.cpu = v)));
     }
-    r.addChild(text(this.controlsNote(), mx, 114, { small: true, width: 120, color: PAL.ash, maxLines: 8 }));
+    r.addChild(text(online ? this.onlineNote() : this.controlsNote(), mx, online ? 96 : 114, { small: true, width: 120, color: online ? PAL.bone : PAL.ash, maxLines: online ? 10 : 8 }));
     this.venuePanel();
     r.addChild(button('← BACK', 8, H - 20, 60, 14, () => void import('./title').then((m) => this.g.goto(new m.TitleScene(this.g))), { small: true }));
-    r.addChild(button('FIGHT!', FW / 2 - 50, H - 24, 100, 18, () => this.fight(), { fill: PAL.blood }));
+    if (online && this.me === 1) {
+      const can = !!this.link?.peer && this.them.on;
+      r.addChild(button(this.ready ? 'READY!' : 'READY', FW / 2 - 50, H - 24, 100, 18, () => { this.ready = !this.ready; this.refresh(); }, { fill: this.ready ? PAL.moss : PAL.blood, disabled: !can }));
+    } else r.addChild(button('FIGHT!', FW / 2 - 50, H - 24, 100, 18, () => this.fight(), { fill: PAL.blood, disabled: online && !this.canStart() }));
+    this.share();
+  }
+
+  // ------------------------------------------------------------ online
+
+  private theirFighter(): Fighter | null {
+    return (this.them.pick && roster().fighters[this.them.pick]) || null;
+  }
+
+  /** Host: both corners picked and the guest is ready. */
+  private canStart(): boolean {
+    return this.link?.status === 'open' && this.link.peer && this.them.on && this.them.ready && !!this.theirFighter() && !!this.list()[this.pick[0]];
+  }
+
+  private onlineNote(): string {
+    const l = this.link;
+    if (!l || l.status === 'connecting') return 'Connecting to the 2-player server...';
+    if (l.status === 'full') return 'Two people are already fighting in this Activity. 1P vs CPU still works.';
+    if (l.status === 'offline') return "Can't reach the 2-player server right now. 1P vs CPU still works.";
+    if (!l.peer) return 'Waiting for a second player. Anyone who joins this Activity and opens CAGE BOSS can fight you here.';
+    if (!this.them.on) return 'They are in CAGE BOSS: they need QUICK FIGHT, then PLAYERS: 2P online.';
+    if (this.me === 0) return this.them.ready ? 'They are ready. FIGHT! when you are.' : "Pick your fighter. FIGHT! lights up when they're READY. You pick the rounds and the room.";
+    return this.ready ? 'Ready. They start the fight.' : 'Pick your fighter, then READY. They pick the rounds and the room.';
+  }
+
+  /** Tell the other player what's on your screen (only when it changed). */
+  private share(): void {
+    const l = this.link;
+    if (!l) return;
+    const on = this.mode === 'online';
+    const f = on ? this.list()[this.pick[this.me]] : null;
+    const m = { t: 'lobby', on, pick: f?.id ?? null, ready: on && this.me === 1 && this.ready, rounds: this.rounds, venue: this.venue };
+    const key = JSON.stringify(m);
+    if (key === this.sent || !l.peer) return;
+    this.sent = key;
+    l.send(m);
+  }
+
+  private onNet(m: DuelMsg): void {
+    if (m.t === 'lobby') {
+      // they just got to this screen: they need your corner too
+      if (m.on && !this.them.on) this.sent = '';
+      this.them = { on: !!m.on, pick: typeof m.pick === 'string' ? m.pick : null, ready: !!m.ready };
+      if (this.me === 1 && m.on) {
+        if (m.rounds === 3 || m.rounds === 5) this.rounds = m.rounds;
+        if (typeof m.venue === 'number' && VENUES[m.venue]) this.venue = m.venue;
+      }
+    } else if (m.t === 'peer') {
+      this.them = { ...NOBODY };
+      this.sent = '';
+      if (m.here && this.mode !== 'online') this.g.toast('Someone joined the Activity: PLAYERS, 2P online to fight them', PAL.gold, { small: true });
+    } else if (m.t === 'hello' || m.t === 'role' || m.t === 'status') {
+      this.ready = false;
+      this.sent = '';
+    } else if (m.t === 'start') {
+      if (this.me === 1 && this.mode === 'online' && !this.g.inLiveFight) this.startOnline(m.spec as OnlineSpec, 'guest');
+      return;
+    } else return;
+    if (!this.g.inLiveFight) this.refresh();
+  }
+
+  /** Host: FIGHT! Send the fight to the guest, then both start it. */
+  private hostOnline(): void {
+    if (!this.canStart()) return;
+    const A = this.list()[this.pick[0]];
+    const B = this.theirFighter()!;
+    if (A.id === B.id) return alertBox(this.g, 'Same fighter', 'You both picked the same fighter. One of you pick somebody else.');
+    const rng = new Rng(Date.now() & 0xffffff);
+    const { ev } = this.card(A, B, 'qf_pick');
+    const off = officialsFor(roster(), ev, rng);
+    const spec: OnlineSpec = {
+      a: A.id, b: B.id, rounds: this.rounds, venue: this.venue, seed: rng.int(1, 1e9), at: Date.now(),
+      judges: off.judges.map((j) => j.name), referee: off.referee.name,
+      sponsors: rng.sample(content().sponsors, 5).map((x) => x.name.replace(/ \(.*\)$/, '')),
+    };
+    this.link!.send({ t: 'start', spec });
+    this.startOnline(spec, 'host');
+  }
+
+  /** Both: the same fight on both screens, from the host's spec. */
+  private startOnline(raw: OnlineSpec, role: Role): void {
+    const s = roster();
+    const str = (x: unknown) => String(x ?? '').slice(0, 60);
+    const spec: OnlineSpec = {
+      a: str(raw?.a), b: str(raw?.b), rounds: raw?.rounds === 5 ? 5 : 3, venue: Number(raw?.venue) | 0, seed: Number(raw?.seed) | 0, at: Number(raw?.at) || Date.now(),
+      judges: (Array.isArray(raw?.judges) ? raw.judges : []).slice(0, 3).map(str), referee: str(raw?.referee), sponsors: (Array.isArray(raw?.sponsors) ? raw.sponsors : []).slice(0, 6).map(str),
+    };
+    const A = s.fighters[spec.a];
+    const B = s.fighters[spec.b];
+    if (!A || !B || !VENUES[spec.venue]) return alertBox(this.g, 'Online fight', "Your two games don't match. One of you needs to reload CAGE BOSS to get the latest version.");
+    this.rounds = spec.rounds;
+    this.venue = spec.venue;
+    // after this fight, both READY again for the next
+    this.ready = false;
+    this.them.ready = false;
+    const v = VENUES[spec.venue];
+    const { ev, bout } = this.card(A, B, 'qf_online_' + spec.at);
+    sfx('bell');
+    const prev = this.g.state;
+    this.g.state = s;
+    openLiveFight(this.g, {
+      bout, A, B, skills: [A.skills, B.skills], player: role === 'host' ? 0 : 1, plan: 'balanced', oppPlan: 'balanced', cutTier: 2, seed: spec.seed,
+      event: ev.name, judges: spec.judges, referee: spec.referee,
+      sponsors: spec.sponsors.map((name) => ({ name, color: sponsorColor(name) })), canvas: { style: v.style, logo: v.logo, room: roomOf(v) },
+      bare: !!v.bare, state: s, ev, online: { link: this.link!, role },
+      done: (res) => this.done(res, prev),
+    });
+  }
+
+  /** Tonight's event and its one bout. */
+  private card(A: Fighter, B: Fighter, id: string): { ev: FightEvent; bout: Bout } {
+    const s = roster();
+    const v = VENUES[this.venue];
+    const ev: FightEvent = { id, name: v.event, number: null, week: s.week, venue: v.venue ?? 'ape_x', region: 'na', card: [], status: 'scheduled', ppv: false, notes: ['started'] };
+    const bout: Bout = makeBout(s, ev, A, B, 0, null);
+    bout.rounds = this.rounds;
+    ev.card.push(bout);
+    return { ev, bout };
+  }
+
+  private done(res: FightResult, prev: GameState | null): void {
+    this.g.state = prev;
+    // the lobby again (and online, the other player hears you're not READY yet)
+    this.refresh();
+    const s = roster();
+    const w = res.winner ? s.fighters[res.winner] : null;
+    const why = res.method === 'NC' ? `No contest (${res.detail}).` : w ? `${w.first} ${w.last} wins by ${res.method} (${res.detail}), round ${res.round} at ${res.time}.` : `A draw (${res.detail}).`;
+    alertBox(this.g, 'RESULT', why, () => this.refresh());
   }
 
   /** Under the corners: where tonight's fight is, with a look at the room. */
@@ -169,7 +367,8 @@ export class QuickFightScene extends Scene {
     r.addChild(pv);
     r.addChild(box(202, 26, 0x000000, PAL.slate, { alpha: 0 })).position.set(12, y + 4);
     r.addChild(text('VENUE', 220, y + 6, { small: true, color: PAL.ash }));
-    r.addChild(selector(250, y + 4, FW - 264, VENUES.map((x, i) => ({ value: i, label: x.label })), this.venue, (i) => { this.venue = i; this.refresh(); }));
+    if (this.mode === 'online' && this.me === 1) r.addChild(text(`${v.label.toUpperCase()} (their call)`, 252, y + 7, { small: true, color: PAL.bone, width: FW - 266, maxLines: 1 }));
+    else r.addChild(selector(250, y + 4, FW - 264, VENUES.map((x, i) => ({ value: i, label: x.label })), this.venue, (i) => { this.venue = i; this.refresh(); }));
     const name = info?.name ?? 'An Unmarked Warehouse';
     const blurb = info?.blurb ?? 'No permits, no gloves, no address on the flyer. Bring cash.';
     r.addChild(text(name.toUpperCase(), 220, y + 21, { small: true, color: PAL.gold, width: FW - 234, maxLines: 1 }));
@@ -207,6 +406,7 @@ export class QuickFightScene extends Scene {
   }
 
   private fight(): void {
+    if (this.mode === 'online') return this.hostOnline();
     const s = roster();
     const l = this.list();
     const A = l[this.pick[0]];
@@ -214,10 +414,7 @@ export class QuickFightScene extends Scene {
     if (!A || !B || A === B) return alertBox(this.g, 'Pick two fighters', 'Pick two different fighters.');
     sfx('bell');
     const v = VENUES[this.venue];
-    const ev: FightEvent = { id: 'qf_' + Date.now(), name: v.event, number: null, week: s.week, venue: v.venue ?? 'ape_x', region: 'na', card: [], status: 'scheduled', ppv: false, notes: ['started'] };
-    const bout: Bout = makeBout(s, ev, A, B, 0, null);
-    bout.rounds = this.rounds;
-    ev.card.push(bout);
+    const { ev, bout } = this.card(A, B, 'qf_' + Date.now());
     const rng = new Rng(Date.now() & 0xffffff);
     const sp = rng.sample(content().sponsors, 5).map((x) => x.name.replace(/ \(.*\)$/, ''));
     const off = officialsFor(s, ev, rng);
@@ -228,11 +425,7 @@ export class QuickFightScene extends Scene {
       event: ev.name, judges: off.judges.map((j) => j.name), referee: off.referee.name,
       sponsors: sp.map((name) => ({ name, color: sponsorColor(name) })), canvas: { style: v.style, logo: v.logo, room: roomOf(v) },
       bare: !!v.bare, state: s, ev, versus: this.mode === 'versus' ? this.assign() : undefined,
-      done: (res) => {
-        this.g.state = prev;
-        const w = res.winner ? s.fighters[res.winner] : null;
-        alertBox(this.g, 'RESULT', w ? `${w.first} ${w.last} wins by ${res.method} (${res.detail}), round ${res.round} at ${res.time}.` : `${res.method === 'NC' ? 'No contest' : 'A draw'} (${res.detail}).`, () => this.refresh());
-      },
+      done: (res) => this.done(res, prev),
     });
   }
 }

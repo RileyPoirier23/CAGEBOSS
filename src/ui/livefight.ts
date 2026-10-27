@@ -38,7 +38,8 @@ import { setPinchZoom } from './touch';
 import { setPadUiMode } from './controller';
 import { fighterPortrait } from './sprites';
 import { sfx } from '../audio/sfx';
-import { LiveFight, LiveAI, GPOS_NAME, STRIKE_REACH, subFor, groundGoal, type LiveEvent, type LiveRules, type Side } from '../sim/live';
+import { LiveFight, LiveAI, GPOS_NAME, STRIKE_REACH, subFor, groundGoal, type LiveEvent, type LiveRules, type LiveSnapshot, type Side } from '../sim/live';
+import type { Duel, DuelMsg } from '../net/duel';
 import type { Look2 } from './rig';
 import { openHelp } from './help';
 import { liveTutorial } from './tutorial';
@@ -68,6 +69,11 @@ export interface LiveFightOpts {
   ev?: FightEvent;
   /** local 2-player versus: each player's controller (-1 = none) and share of the keyboard */
   versus?: { p1: { pad?: number; kb: KeyboardShare }; p2: { pad?: number; kb: KeyboardShare } };
+  /**
+   * online 2-player (the Discord Activity, src/net/duel.ts): the host runs the fight with the guest's
+   * hands for the other corner; the guest sends its hands and draws the host's snapshots
+   */
+  online?: { link: Duel; role: 'host' | 'guest' };
   /** special rules for this fight (the story's boss fights), and a referee who looks like himself */
   rules?: LiveRules;
   refLook?: Look2;
@@ -126,6 +132,9 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   (window as unknown as { __live?: LiveFight }).__live = L; // debug / automated testing hook
   const P = o.player;
   const O = (1 - P) as Side;
+  const net = o.online ?? null;
+  const host = net?.role === 'host';
+  const guest = net?.role === 'guest';
   const fi = new FightInput();
   const fi2 = o.versus ? new FightInput() : null;
   let primed2 = false;
@@ -283,7 +292,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   const bleetQ: { at: number; sit: string; actor: 0 | 1 }[] = [];
   let bleetClock = 0;
   if (S && EV) {
-    if (g.settings.intros !== false) intro = butlerIntro(S, EV, o.bout, pseed);
+    // online: no walkouts (both screens start the fight together)
+    if (g.settings.intros !== false && !net) intro = butlerIntro(S, EV, o.bout, pseed);
     booth.push(...boothOpen(S, EV, o.bout, pseed).filter((l) => l.speaker));
     if (intro.length) {
       stage = 'tape';
@@ -411,8 +421,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
   const wrap = g.modal(root, { dim: 0 });
   g.inLiveFight = true;
   setPinchZoom(false);
-  // first hands-on fight: the coach's three cards (the fight waits for them)
-  setTimeout(() => liveTutorial(g), 50);
+  // first hands-on fight: the coach's three cards (the fight waits for them; online it can't)
+  if (!net) setTimeout(() => liveTutorial(g), 50);
   setPadUiMode('game');
   const popKeys = g.pushKeyHandler((e) => {
     if (e.type !== 'keydown') return true;
@@ -425,7 +435,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       return true;
     }
     if (e.key === 'Escape') {
-      if (!paused && !resultShown) pause();
+      if (net) leaveMenu();
+      else if (!paused && !resultShown) pause();
       else if (paused && pauseWrap && g.modals[g.modals.length - 1] === pauseWrap) g.closeModal(pauseWrap);
       return true;
     }
@@ -1023,26 +1034,152 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     const rep: CornerReport = { round: L.round, side: P, coach: me.hp < 40 ? "You're hurt. Hands up, move your head, and stop trading." : L.F[O].gas < 40 ? "He's tired. Go to the body, then go upstairs." : 'Good round. Keep that jab in his face.', cutman: '', hp: Math.round(me.hp), cut: me.cut, injury: null, quit: false, scoreGuess: scoreGuess() };
     openCorner(g, f, rep, o.cutTier, L.round, (aid, plan) => {
       auto.plan = plan;
-      L.nextRound([P === 0 ? aid : 0.5, P === 1 ? aid : 0.5]);
-      if ((L.phase as string) === 'over') {
-        // the doctor stopped it in the corner
-        for (const e of L.events) handle(e);
-        flushCallout();
-        L.events.length = 0;
-        sayLine(L.log[L.log.length - 1]?.text ?? '');
-        setPadUiMode('game');
-        return;
-      }
+      startNextRound([P === 0 ? aid : 0.5, P === 1 ? aid : 0.5]);
+    });
+  };
+  /** The corners are done (aid: how much each one's work helps): the next round, or the doctor stops it. */
+  const startNextRound = (aid: [number, number]) => {
+    const logLen = L.log.length;
+    L.nextRound(aid);
+    if ((L.phase as string) === 'over') {
+      // the doctor stopped it in the corner
+      for (const e of L.events) handle(e);
+      outbox(logLen);
+      flushCallout();
+      L.events.length = 0;
+      sayLine(L.log[L.log.length - 1]?.text ?? '');
+      setPadUiMode('game');
+      flushNet(true);
+      return;
+    }
+    arena.manual = [L.F[0].x, L.F[1].x];
+    arena.manualRound();
+    setPadUiMode('game');
+    fi.reset();
+    fi2?.reset();
+    pad?.clearLatch();
+    primed2 = false;
+    primed = false;
+    freeze = 1.4;
+    arena.showCallout(`ROUND ${L.round}`);
+    // the new round's line goes with it (its events go out with the next tick's)
+    if (host && L.log.length > logLen) outLog.push(...L.log.slice(logLen));
+    flushNet(true);
+  };
+  /** Online: no cutman game (it would hold the fight up for the other player), just a rest and the bell. */
+  const onlineBreak = () =>
+    setTimeout(() => {
+      if (!closed && !resultShown && L.phase === 'break') startNextRound([0.55, 0.55]);
+    }, 2600);
+
+  // ------------------------------------------------------------ online (src/net/duel.ts)
+
+  /** host: the guest's hands, waiting for the next tick */
+  const remote = { intents: [] as FightIntent[], move: 0 };
+  const takeRemote = () => ({ intents: remote.intents.splice(0), move: remote.move });
+  /** host: what happened since the last snapshot went out */
+  const outEv: LiveEvent[] = [];
+  const outLog: TickerLine[] = [];
+  let sentAt = -9;
+  const outbox = (logLen: number) => {
+    if (!host) return;
+    outEv.push(...L.events);
+    if (L.log.length > logLen) outLog.push(...L.log.slice(logLen));
+  };
+  /** host: the fight to the guest, 30 times a second (and at once when a round or the fight ends) */
+  const flushNet = (force = false) => {
+    if (!host || (!force && realT - sentAt < 1 / 30)) return;
+    sentAt = realT;
+    net!.link.send({ t: 'snap', s: L.snapshot(), e: outEv.splice(0), l: outLog.splice(0) });
+  };
+  /** guest: snapshots waiting for the next frame */
+  const inbox: DuelMsg[] = [];
+  let handsAt = -9;
+  let handsMove = 0;
+  /** guest: your hands to the host (every press at once, the stick when it moves, and a beat every 0.1 s) */
+  const sendHands = (mine: FightIntent[], move: number) => {
+    if (!mine.length && move === handsMove && realT - handsAt < 0.1) return;
+    handsAt = realT;
+    handsMove = move;
+    net!.link.send({ t: 'in', i: mine, m: move });
+  };
+  /** guest: take on the host's fight, and play what happened in it */
+  const drainSnaps = () => {
+    if (!inbox.length) return;
+    const wasPhase = L.phase;
+    const wasRound = L.round;
+    const logLen = L.log.length;
+    for (const m of inbox.splice(0)) {
+      L.restore(m.s as LiveSnapshot);
+      if (Array.isArray(m.e)) L.events.push(...(m.e as LiveEvent[]));
+      if (Array.isArray(m.l)) L.log.push(...(m.l as TickerLine[]));
+    }
+    for (const e of L.events) handle(e);
+    flushCallout();
+    L.events.length = 0;
+    if (L.log.length > logLen) {
+      for (const ln of L.log.slice(logLen)) react(ln);
+      sayLine(L.log[L.log.length - 1].text);
+    }
+    if (L.phase === 'break' && wasPhase === 'fight') arena.restInCorners();
+    if (L.round !== wasRound && L.phase === 'fight') {
       arena.manual = [L.F[0].x, L.F[1].x];
       arena.manualRound();
-      setPadUiMode('game');
       fi.reset();
-      fi2?.reset();
       pad?.clearLatch();
-      primed2 = false;
       primed = false;
       freeze = 1.4;
       arena.showCallout(`ROUND ${L.round}`);
+    }
+  };
+  /** The other player left (or the relay went down): no contest. */
+  const stopOnline = (why: string) => {
+    if (closed || resultShown) return;
+    if (menuWrap) g.closeModal(menuWrap);
+    if (L.phase !== 'over') {
+      L.result = { winner: -1, method: 'NC', detail: why, round: L.round, time: L.clockText() };
+      L.phase = 'over';
+    }
+    say(null);
+    showResult();
+  };
+  const unNet =
+    net?.link.on((m) => {
+      if (closed) return;
+      if (m.t === 'snap' && guest) inbox.push(m);
+      else if (m.t === 'in' && host) {
+        const its = Array.isArray(m.i) ? (m.i as unknown[]).filter((x): x is FightIntent => !!x && typeof (x as FightIntent).type === 'string').slice(0, 16) : [];
+        remote.intents.push(...its);
+        remote.move = clamp(Number(m.m) || 0, -1, 1);
+      } else if (m.t === 'leave') stopOnline('opponent left');
+      else if ((m.t === 'peer' && !m.here) || (m.t === 'status' && net.link.status !== 'open')) stopOnline('connection lost');
+    }) ?? null;
+  /** online: Esc / MENU. The fight doesn't stop for it (the other player is still swinging). */
+  let menuWrap: Container | null = null;
+  const leaveMenu = () => {
+    if (menuWrap) {
+      g.closeModal(menuWrap);
+      return;
+    }
+    if (resultShown) return;
+    const fr = new Container();
+    const bw = 200;
+    const bh = 72;
+    const bx = (W - bw) / 2;
+    const by = (H - bh) / 2;
+    fr.addChild(box(bw, bh, PAL.night, PAL.gold, { bevel: true })).position.set(bx, by);
+    fr.addChild(text('ONLINE FIGHT', bx, by + 6, { width: bw, align: 'center', color: PAL.gold }));
+    fr.addChild(text("The fight doesn't stop for this menu.", bx, by + 17, { width: bw, align: 'center', small: true, color: PAL.ash }));
+    fr.addChild(button('KEEP FIGHTING', bx + 10, by + 30, bw - 20, 14, () => menuWrap && g.closeModal(menuWrap), { small: true, fill: PAL.moss }));
+    fr.addChild(button('LEAVE THE FIGHT', bx + 10, by + 48, bw - 20, 14, () => {
+      net?.link.send({ t: 'leave' });
+      stopOnline('left the fight');
+    }, { small: true, fill: PAL.blood }));
+    menuWrap = g.modal(fr, { dim: 0.3 });
+    setPadUiMode('cursor');
+    menuWrap.once('destroyed', () => {
+      menuWrap = null;
+      if (!resultShown) setPadUiMode('game');
     });
   };
 
@@ -1070,7 +1207,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     const bx = (FW - bw) / 2;
     const by = 40;
     fr.addChild(box(bw, bh, PAL.night, won ? PAL.gold : PAL.slate, { bevel: true })).position.set(bx, by);
-    fr.addChild(text(won ? 'YOU WIN' : lost ? 'YOU LOSE' : 'DRAW', bx, by + 8, { width: bw, align: 'center', color: won ? PAL.gold : lost ? PAL.blood : PAL.bone, scale: 2 }));
+    fr.addChild(text(won ? 'YOU WIN' : lost ? 'YOU LOSE' : r.method === 'NC' ? 'NO CONTEST' : 'DRAW', bx, by + 8, { width: bw, align: 'center', color: won ? PAL.gold : lost ? PAL.blood : PAL.bone, scale: 2 }));
     fr.addChild(text(`${r.method} (${r.detail}), round ${r.round} at ${r.time}`, bx, by + 30, { width: bw, align: 'center', small: true, color: PAL.bone }));
     if (r.method === 'DEC' || r.method === 'DRAW') fr.addChild(text(r.scores.map((s, i) => `${r.judges[i]} ${s[0]}-${s[1]}`).join('   '), bx + 8, by + 42, { width: bw - 16, align: 'center', small: true, color: PAL.ash, maxLines: 2 }));
     fr.addChild(text(`Strikes ${r.stats.strikes[0]}-${r.stats.strikes[1]}   Takedowns ${r.stats.takedowns[0]}-${r.stats.takedowns[1]}   Knockdowns ${r.stats.knockdowns[0]}-${r.stats.knockdowns[1]}`, bx + 8, by + bh - 34, { width: bw - 16, align: 'center', small: true, color: PAL.ash }));
@@ -1200,10 +1337,12 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
       skipBtn?.destroy({ children: true });
       skipBtn = null;
     }
-    if (!paused && !resultShown && (input.buttonPressed('Menu') || input.buttonPressed('Start' as never)) && g.modals[g.modals.length - 1] === wrap) pause();
+    if (guest) drainSnaps();
+    if (!paused && !resultShown && (input.buttonPressed('Menu') || input.buttonPressed('Start' as never)) && (g.modals[g.modals.length - 1] === wrap || (net && menuWrap))) (net ? leaveMenu : pause)();
     if (!paused && input.buttonPressed('View') && g.modals[g.modals.length - 1] === wrap) cycleCam();
-    // a modal on top (corner, pause, controls): the fight waits
-    const onTop = g.modals[g.modals.length - 1] === wrap;
+    // a modal on top (corner, pause, controls): the fight waits. Online it can't: the leave menu sits over a live fight
+    const topModal = g.modals[g.modals.length - 1];
+    const onTop = topModal === wrap || (!!net && !!menuWrap && topModal === menuWrap);
     lineT -= dt;
     boothT -= dt;
     if (feed && !feed.destroyed && S && EV) {
@@ -1274,7 +1413,9 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
             buzz('blocked');
           }
         }
-        let them = ai.update(L, simDt);
+        // online: the guest only sends its hands (the host's snapshots move the fight); the host fights them
+        if (guest) sendHands(mine, move);
+        let them = host ? takeRemote() : guest ? { intents: [] as FightIntent[], move: 0 } : ai.update(L, simDt);
         if (fi2 && o.versus) {
           // player two
           const f2: 1 | -1 = facing === 1 ? -1 : 1;
@@ -1295,7 +1436,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         // a clinch, shot or taunt from the wrong range does nothing: say so (only if he was free to try)
         const free = !autopilot && !L.F[P].act && L.F[P].stun <= 0.15 && L.pos === 'stand' && L.F[0].down <= 0 && L.F[1].down <= 0;
         const dist0 = L.dist;
-        L.update(simDt, intents, moves);
+        if (!guest) L.update(simDt, intents, moves);
         if (free && mine.length) {
           let tried = '';
           for (const it of mine) if (it.type === 'clinch' || it.type === 'shoot' || it.type === 'taunt') tried = it.type;
@@ -1310,6 +1451,7 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
           }
         }
         for (const e of L.events) handle(e);
+        outbox(logLen);
         ai.noteEvents(L); // he learns what's landing on him
         auto.noteEvents(L); // and your autopilot learns too
         // he's worked out one of your habits: he says so (the counter is coming)
@@ -1325,8 +1467,10 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
         }
         if ((L.phase as string) === 'break') {
           arena.restInCorners();
-          setTimeout(corner, 900);
+          if (net) onlineBreak();
+          else setTimeout(corner, 900);
         }
+        flushNet(L.phase !== 'fight');
       } else if (L.phase === 'over' && !resultShown) {
         if (stage !== 'ceremony') {
           if (L.result?.method === 'DEC' || L.result?.method === 'DRAW') arena.over(L.result.winner);
@@ -1424,6 +1568,8 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     }
     arena.update(dt);
     drawHud();
+    // host: the guest's hands that came in while the fight wasn't running (a freeze, a break) don't pile up
+    if (host) remote.intents.length = 0;
   };
   g.app.ticker.add(tick);
   wrap.once('destroyed', () => {
@@ -1432,6 +1578,9 @@ export function openLiveFight(g: Game, o: LiveFightOpts): void {
     g.app.ticker.remove(tick);
     popKeys();
     setPadUiMode('cursor');
+    unNet?.();
+    // walking away from an unfinished online fight tells the other player
+    if (net && L.phase !== 'over') net.link.send({ t: 'leave' });
   });
   if (stage === 'fight') {
     arena.showCallout('ROUND 1');
