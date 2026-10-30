@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 5173
+    },
+    {
+      "name": "sequel",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:sequel", "--", "--port", "5174", "--strictPort"],
+      "port": 5174
+    },
+    {
+      "name": "clash",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:clash", "--", "--port", "5175", "--strictPort"],
+      "port": 5175
+    }
+  ]
+}

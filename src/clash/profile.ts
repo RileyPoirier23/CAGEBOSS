@@ -6,6 +6,7 @@
 
 import type {
   CharId,
+  CustomFinisher,
   GearItem,
   GearLook,
   GearStats,
@@ -13,6 +14,7 @@ import type {
   Rarity,
   Slot,
 } from './types';
+import type { ReplayFile } from './rollback';
 import { CHAR_IDS, RARITIES, SLOTS } from './types';
 import { charDef } from './characters';
 
@@ -35,7 +37,22 @@ export interface ClashOptions {
   volume: number;
   music: number;
   modern: boolean;
+  /** Ticks of input buffering: 1 default, 0 low latency. */
+  latency: 0 | 1;
+  /** Blood and cracks stay on the stage for the whole set. */
+  persistentScars: boolean;
+  perfOverlay: boolean;
+  training: { hitboxes: boolean; frameData: boolean; dodgeViz: boolean; ghost: boolean };
+  net: { delay: number; ping: number; jitter: number };
 }
+
+export type Action = 'up' | 'down' | 'left' | 'right' | 'jump' | 'light' | 'heavy' | 'dodge' | 'throw' | 'super' | 'drive';
+export type KeyMap = Record<Action, string>;
+
+export const DEFAULT_KEYS: [KeyMap, KeyMap] = [
+  { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', jump: 'Space', light: 'KeyJ', heavy: 'KeyK', dodge: 'KeyL', throw: 'KeyE', super: 'KeyI', drive: 'KeyQ' },
+  { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', jump: 'Numpad0', light: 'Numpad1', heavy: 'Numpad2', dodge: 'Numpad3', throw: 'Numpad4', super: 'Numpad5', drive: 'Numpad6' },
+];
 
 export const DEFAULT_OPTIONS: ClashOptions = {
   resolutionScale: 1,
@@ -51,6 +68,11 @@ export const DEFAULT_OPTIONS: ClashOptions = {
   volume: 0.7,
   music: 0.35,
   modern: false,
+  latency: 1,
+  persistentScars: false,
+  perfOverlay: false,
+  training: { hitboxes: false, frameData: false, dodgeViz: false, ghost: false },
+  net: { delay: 2, ping: 80, jitter: 20 },
 };
 
 export interface RivalMemory {
@@ -113,6 +135,18 @@ export interface ClashProfile {
   packsOpened: number;
   createdAt: number;
   lastPlayed: number;
+  /* The long-game fields ported from Inkbreak. */
+  pity: { legendary: number; mythic: number };
+  region: string;
+  ageOk: boolean;
+  weekly: string;
+  replays: ReplayFile[];
+  /** Chapters cleared in Story. */
+  story: number;
+  rift: { day: string; wins: number };
+  ranked: { mmr: number; w: number; l: number };
+  custom: Partial<Record<CharId, CustomFinisher>>;
+  keys: [KeyMap, KeyMap];
 }
 
 export interface SaveLike {
@@ -525,6 +559,10 @@ export function recordMatch(
   const coins = mode === 'training' ? 0 : matchCoins(m, side, won);
   const lv = addXp(p, char, xp);
   p.coins += coins;
+  if (mode === 'ranked') {
+    p.ranked.mmr += won ? 18 : -14;
+    if (won) p.ranked.w++; else p.ranked.l++;
+  }
   if (mode !== 'training') {
     const rec = p.records[mode === 'local' ? 'local' : mode];
     rec.matches++;
@@ -638,6 +676,16 @@ export function defaultProfile(now = Date.now()): ClashProfile {
     packsOpened: 0,
     createdAt: now,
     lastPlayed: now,
+    pity: { legendary: 0, mythic: 0 },
+    region: 'global',
+    ageOk: false,
+    weekly: '',
+    replays: [],
+    story: 0,
+    rift: { day: '', wins: 0 },
+    ranked: { mmr: 1000, w: 0, l: 0 },
+    custom: {},
+    keys: [{ ...DEFAULT_KEYS[0] }, { ...DEFAULT_KEYS[1] }],
   };
 }
 
@@ -658,8 +706,19 @@ export function migrateProfile(raw: unknown): ClashProfile {
     finishers: { ...base.finishers, ...(p.finishers ?? {}) },
     arcade: { ...base.arcade, ...(p.arcade ?? {}) },
     inventory: Array.isArray(p.inventory) ? p.inventory.filter(isGearLike) : [],
+    pity: { ...base.pity, ...(p.pity ?? {}) },
+    rift: { ...base.rift, ...(p.rift ?? {}) },
+    ranked: { ...base.ranked, ...(p.ranked ?? {}) },
+    custom: { ...base.custom, ...(p.custom ?? {}) },
+    replays: Array.isArray(p.replays) ? p.replays.slice(0, 5) : [],
+    keys: [
+      { ...base.keys[0], ...(p.keys?.[0] ?? {}) },
+      { ...base.keys[1], ...(p.keys?.[1] ?? {}) },
+    ],
     version: PROFILE_VERSION,
   };
+  merged.options.training = { ...base.options.training, ...(p.options?.training ?? {}) };
+  merged.options.net = { ...base.options.net, ...(p.options?.net ?? {}) };
   return merged;
 }
 

@@ -189,10 +189,17 @@ export function titleHtml(p: ClashProfile): string {
       <div class="title-menu">
         ${menu('FIGHT', 'fight', true, '↵')}
         ${menu('ARCADE', 'arcade')}
-        ${menu('SPECTATE', 'spectate')}
+        ${menu('STORY', 'story-screen')}
+        ${menu('RIFT LADDER', 'rift-screen')}
         ${menu('TRAINING', 'training')}
+        ${menu('NETPLAY SIM', 'netplay')}
+        ${menu('SPECTATE', 'spectate')}
+        ${menu('REPLAYS', 'replays')}
         ${menu('ROSTER', 'roster')}
         ${menu('THE VAULT', 'vault')}
+        ${menu('PROGRESSION', 'progress')}
+        ${menu('FINISHER BUILDER', 'builder')}
+        ${menu('HITBOX EDITOR', 'editor')}
         ${menu('OPTIONS', 'options')}
       </div>
       <div class="title-foot">
@@ -217,6 +224,8 @@ export interface SelectArgs {
   arcade: boolean;
   stageId: string;
   cpuLevel: number;
+  /** Extra markup under the rules (the netplay sim's wire settings). */
+  extra?: string;
 }
 
 function fighterCard(id: CharId, args: SelectArgs): string {
@@ -250,13 +259,14 @@ export function selectHtml(args: SelectArgs): string {
   const player = charDef(p.selected);
   const rival = charDef(args.cpu);
   const stage = STAGES.find((s) => s.id === args.stageId) ?? STAGES[0];
-  const heading = args.arcade ? 'ARCADE <em>RUN</em>' : args.mode === 'training' ? 'TRAINING <em>ROOM</em>' : 'CHOOSE <em>YOUR</em> VERSE';
-  const begin = args.arcade ? 'BEGIN RUN' : args.mode === 'training' ? 'ENTER THE LAB' : 'CLASH';
+  const heading = args.arcade ? 'ARCADE <em>RUN</em>' : args.mode === 'training' ? 'TRAINING <em>ROOM</em>' : args.mode === 'net' ? 'NETPLAY <em>SIM</em>' : 'CHOOSE <em>YOUR</em> VERSE';
+  const begin = args.arcade ? 'BEGIN RUN' : args.mode === 'training' ? 'ENTER THE LAB' : args.mode === 'net' ? 'CONNECT' : 'CLASH';
   const modes: { id: string; label: string }[] = [
     { id: 'casual', label: 'CASUAL' },
     { id: 'ranked', label: 'RANKED' },
     { id: 'training', label: 'TRAINING' },
     { id: 'local', label: 'LOCAL 2P' },
+    { id: 'net', label: 'NETPLAY SIM' },
   ];
   return `
     <div class="screen-head">
@@ -333,6 +343,7 @@ export function selectHtml(args: SelectArgs): string {
           <div class="tab-row">
             ${modes.map((m) => `<button class="tab ${args.mode === m.id && !args.arcade ? 'active' : ''}" data-action="mode" data-mode="${m.id}">${m.label}</button>`).join('')}
           </div>
+          ${args.extra ?? ''}
           <div class="select-actions">
             <button class="btn primary" data-action="begin">${begin}</button>
             <button class="btn" data-action="back">BACK</button>
@@ -495,6 +506,7 @@ export function gearRow(item: GearItem, equipped: boolean, cost: number, maxed: 
     <div class="ii-actions">
       <button data-action="equip" data-uid="${esc(item.uid)}">${equipped ? 'EQUIPPED' : 'EQUIP'}</button>
       <button data-action="upgrade" data-uid="${esc(item.uid)}" ${maxed ? 'disabled' : ''}>${maxed ? 'MAX' : `UP ${cost}`}</button>
+      <button data-action="salvage" data-uid="${esc(item.uid)}">SALVAGE</button>
     </div>
   </div>`;
 }
@@ -517,6 +529,10 @@ export interface VaultArgs {
   profile: ClashProfile;
   tab: 'store' | 'inventory';
   char: CharId;
+  /** The store's fine print: region, age gate, pity, printed odds, catalogue. */
+  finePrint?: string;
+  /** Packs are hidden where the region forbids paid random items or the age gate is unanswered. */
+  packsOpen?: boolean;
 }
 
 function packCard(pack: PackDef, coins: number): string {
@@ -574,8 +590,9 @@ export function vaultHtml(args: VaultArgs): string {
             <button class="tab ${tab === 'inventory' ? 'active' : ''}" data-action="vaulttab" data-tab="inventory">INVENTORY</button>
           </div>
           ${tab === 'store'
-            ? `<div class="store-grid">${PACKS.map((pk) => packCard(pk, p.coins)).join('')}</div>
-               <div class="section-label">DIRECT PURCHASE // NO GAMBLE</div>
+            ? `${args.packsOpen === false ? '' : `<div class="store-grid">${PACKS.map((pk) => packCard(pk, p.coins)).join('')}</div>`}
+               ${args.finePrint ?? ''}
+               <div class="section-label">FEATURED // NO GAMBLE</div>
                <div class="direct-grid">${DIRECT_OFFERS.map((o) => directCard(o, p.coins, owned.has(o.uid))).join('')}</div>`
             : `<div class="inv-list">${p.inventory.length === 0
                 ? '<div class="vault-note">The vault is empty. Win a match or open a pack. The house recommends both.</div>'
@@ -636,6 +653,8 @@ export function packResultHtml(result: PackOpenResult, packName: string): string
 export interface OptionsArgs {
   options: ClashOptions;
   fromPause: boolean;
+  /** Key binding markup (screens.keysHtml). */
+  keys?: string;
 }
 
 function optBtn(field: string, value: string, label: string, active: boolean): string {
@@ -675,7 +694,9 @@ export function optionsHtml(args: OptionsArgs): string {
         ${optRow('SHAKE', slider('shake', o.shake, 0, 1.5, 0.1))}
         ${optRow('VSYNC', `${optBtn('vsync', '1', 'ON', o.vsync)}${optBtn('vsync', '0', 'OFF', !o.vsync)}`)}
         ${optRow('FRAME CAP', `${optBtn('fpsCap', '0', 'UNCAPPED', o.fpsCap === 0)}${optBtn('fpsCap', '60', '60', o.fpsCap === 60)}${optBtn('fpsCap', '120', '120', o.fpsCap === 120)}${optBtn('fpsCap', '144', '144', o.fpsCap === 144)}${optBtn('fpsCap', '240', '240', o.fpsCap === 240)}`)}
-        <div class="vault-note">VSync is off by default and the frame cap is uncapped. The simulation stays at 60 Hz either way; the renderer interpolates.</div>
+        ${optRow('STAGE SCARS', `${optBtn('persistentScars', '0', 'PER MATCH', !o.persistentScars)}${optBtn('persistentScars', '1', 'PERSISTENT', o.persistentScars)}`)}
+        ${optRow('PERF OVERLAY', `${optBtn('perfOverlay', '0', 'OFF', !o.perfOverlay)}${optBtn('perfOverlay', '1', 'ON (F3)', o.perfOverlay)}`)}
+        <div class="vault-note">VSync off runs the render loop as fast as the page allows; on uses requestAnimationFrame. The simulation stays at 60 Hz either way; the renderer interpolates.</div>
       </div>
       <div class="options-panel panel">
         <h3>AUDIO &amp; INPUT</h3>
@@ -683,28 +704,9 @@ export function optionsHtml(args: OptionsArgs): string {
         ${optRow('MASTER VOLUME', slider('volume', o.volume, 0, 1, 0.05))}
         ${optRow('MUSIC', slider('music', o.music, 0, 1, 0.05))}
         ${optRow('LAYOUT', `${optBtn('modern', '0', 'CLASSIC', !o.modern)}${optBtn('modern', '1', 'MODERN', o.modern)}`)}
-        <div class="section-label">KEYS // P1</div>
-        <div class="keys">
-          <span class="k">A / D</span><span>MOVE</span>
-          <span class="k">W / SPACE</span><span>JUMP</span>
-          <span class="k">S</span><span>DROP / FAST FALL</span>
-          <span class="k">J</span><span>LIGHT</span>
-          <span class="k">K</span><span>HEAVY / SIGNATURE</span>
-          <span class="k">L</span><span>DODGE / CHASE</span>
-          <span class="k">E</span><span>THROW / PICK UP</span>
-          <span class="k">I</span><span>SUPER (2 PIPS)</span>
-          <span class="k">Q</span><span>DRIVE / EX / BURST</span>
-          <span class="k">J + K</span><span>DRIVE IMPACT</span>
-          <span class="k">K + L</span><span>PARRY</span>
-          <span class="k">ESC</span><span>PAUSE</span>
-        </div>
-        <div class="section-label">KEYS // P2 (LOCAL)</div>
-        <div class="keys">
-          <span class="k">ARROWS</span><span>MOVE / JUMP</span>
-          <span class="k">NUMPAD 1 / 2 / 3</span><span>LIGHT / HEAVY / DODGE</span>
-          <span class="k">NUMPAD 0 / 5 / 6</span><span>THROW / SUPER / DRIVE</span>
-        </div>
-        <div class="vault-note">Modern layout adds Shift (dodge), U (throw), O (super) and P (drive) on top of the classic keys. Nothing is taken away.</div>
+        ${optRow('INPUT LATENCY', `${optBtn('latency', '1', 'DEFAULT (1 TICK)', o.latency === 1)}${optBtn('latency', '0', 'LOW (0)', o.latency === 0)}`)}
+        <div class="vault-note">Modern layout auto-strings lights while the button is held, starts every signature a quarter charged, and costs 10% damage. Light + Heavy is Drive Impact, Dodge + Heavy is Parry, Drive in hitstun is the Breaker.</div>
+        ${args.keys ?? ''}
       </div>
       <div class="options-actions">
         <button class="btn" data-action="reset-options">RESET DEFAULTS</button>
@@ -722,6 +724,8 @@ export interface PauseArgs {
   training: boolean;
   arcade: boolean;
   spectator: boolean;
+  /** The training room panel (screens.trainingPanelHtml). */
+  lab?: string;
 }
 
 export function pauseHtml(args: PauseArgs): string {
@@ -729,6 +733,7 @@ export function pauseHtml(args: PauseArgs): string {
     <div class="result-kicker">MATCH PAUSED // THE INK WAITS</div>
     <div class="result-win">HOLD <em>THAT</em></div>
     <div class="result-sub">${args.spectator ? 'SPECTATOR FEED' : args.training ? 'TRAINING LAB' : args.arcade ? 'ARCADE RUN' : 'NO BLOCKING. NO MERCY.'}</div>
+    ${args.lab ?? ''}
     <div class="result-actions">
       <button class="btn primary" data-action="resume">RESUME</button>
       <button class="btn" data-action="restart">${args.training ? 'RESET LAB' : 'RESTART'}</button>
@@ -756,6 +761,8 @@ export interface ResultArgs {
   reward: MatchReward | null;
   arcade: { wins: number; index: number; total: number; cleared: boolean } | null;
   arcadeNext: boolean;
+  /** Ranked MMR, story or rift progress, the finisher that landed. */
+  extraLine?: string;
 }
 
 export interface MatchStateStats {
@@ -802,6 +809,7 @@ export function resultsHtml(args: ResultArgs): string {
     <div class="result-kicker">${kicker}</div>
     <div class="result-win">${headline}</div>
     <div class="result-sub">${esc(def.name.toUpperCase())} ${args.stocks[0]} — ${args.stocks[1]} ${esc(charDef(args.rival).name.toUpperCase())}${arcadeLine ? ` · ${arcadeLine}` : ''}</div>
+    ${args.extraLine ? `<div class="result-sub">${esc(args.extraLine)}</div>` : ''}
     <div class="result-stats">
       ${statBox('DAMAGE DEALT', Math.round(args.stats.damage[0]))}
       ${statBox('HITS LANDED', args.stats.hits[0])}

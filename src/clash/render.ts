@@ -7,7 +7,7 @@
    cinematics, the KO comic panel, the Universe Clash stage blend and the
    training overlays were ported from Inkbreak. */
 
-import type { CharId, Fighter, MatchEvent, MatchState, StageDef } from './types';
+import type { CharId, Fighter, MatchEvent, MatchState, PoseName, StageDef } from './types';
 import { charDef, moveOf } from './characters';
 import { stageById } from './stages';
 import { CHARGE_MAX, hitboxOf, hurtboxOf } from './sim';
@@ -15,6 +15,7 @@ import {
   ArtOpts,
   ScarMark,
   drawBurst,
+  drawCharacter,
   drawFighter,
   drawInkSplash,
   drawItem,
@@ -505,7 +506,9 @@ export class ClashRenderer {
     for (const d of this.drawn) {
       const f = d.f;
       if (f.state === 'super') {
+        ctx.save();
         drawSuperAura(ctx, { ...f, x: d.x, y: d.y }, m.tick, charDef(f.char).art.accent);
+        ctx.restore();
       }
       const ghost = this.ghostFor(f);
       if (ghost) {
@@ -523,11 +526,14 @@ export class ClashRenderer {
           ctx.restore();
         }
       }
+      // Every rig draw is fenced: a transform that leaks out of one fighter would move the next.
+      ctx.save();
       drawFighter(
         ctx,
         { ...f, x: d.x, y: d.y },
         { ...artOpts, tick: m.tick, held: items.find((i) => i.heldBy === f.side)?.kind ?? null },
       );
+      ctx.restore();
       this.drawFighterTags(ctx, f, d.x, d.y, m);
     }
     for (const p of m.projectiles) drawProjectile(ctx, p, m.tick, artOpts);
@@ -1148,12 +1154,16 @@ export class ClashRenderer {
     const tick = m.tick;
 
     const winnerAt = (x: number, y: number, pose: Partial<Fighter>): void => {
+      ctx.save();
       drawFighter(ctx, { ...A, x, y, flash: 0, state: 'attack', move: 'nSig', moveFrame: 10, ...pose }, { ...artOpts, tick, held: null });
+      ctx.restore();
     };
-    const loserAt = (x: number, y: number, pose: Partial<Fighter>, tx?: (c: CanvasRenderingContext2D) => void): void => {
+    // The loser is posed by name: 'idle' while still standing, 'hurt' once limp. The KO pose
+    // rolls the rig below its feet, which is wrong for a body that is being lifted or crushed.
+    const loserAt = (x: number, y: number, poseName: PoseName, tx?: (c: CanvasRenderingContext2D) => void): void => {
       ctx.save();
       if (tx) tx(ctx);
-      drawFighter(ctx, { ...Bf, x, y, flash: 0, state: 'ko', stateTicks: 12, vx: 0, vy: 0, ...pose }, { ...artOpts, tick, held: null });
+      drawCharacter(ctx, cb, x, y, Bf.facing, poseName, { ...artOpts, tick, phase: 0.6, alpha: 1, held: null });
       ctx.restore();
     };
     const spill = (n: number, spread: number): void => {
@@ -1193,12 +1203,12 @@ export class ClashRenderer {
       ctx.beginPath();
       ctx.rect(-2000, -2000, 6000, by + 2002);
       ctx.clip();
-      loserAt(bx, by + 150 * K(60, 120), {});
+      loserAt(bx, by + 150 * K(60, 120), 'hurt');
       ctx.restore();
       if (t === 60) { this.scars.push({ x: bx, y: FLOOR_Y, seed: t * 31, kind: 'crack', theme: m.stageId }); spill(40, 80); kick(20); }
     } else if (kind === 'bloodname') {
       winnerAt(bx - 90 * face, by, { state: 'attack', move: 'sLight', moveFrame: 6 });
-      loserAt(bx, by, {}, (c) => upright(c, bx, by, Math.PI / 2 - 0.2));
+      loserAt(bx, by, 'hurt', (c) => upright(c, bx, by, Math.PI / 2 - 0.2));
       const name = cb.name.toUpperCase();
       const n = Math.floor(K(30, 200) * name.length);
       ctx.font = 'italic 900 70px Georgia, serif';
@@ -1209,7 +1219,7 @@ export class ClashRenderer {
     } else if (kind === 'spriteburst') {
       if (t < 50) {
         winnerAt(bx - 50 * face, by, { state: 'attack', move: 'nSig', moveFrame: 12 });
-        loserAt(bx, by - 80 * K(0, 50), {});
+        loserAt(bx, by - 80 * K(0, 50), 'hurt');
       } else {
         const k = K(50, 200);
         const colors = [cb.art.primary, cb.art.skin, cb.art.accent, cb.art.secondary];
@@ -1234,13 +1244,13 @@ export class ClashRenderer {
       winnerAt(bx - 120 * face, by, { state: 'attack', move: 'dSig', moveFrame: 20 });
       ctx.save();
       ctx.globalAlpha = 1 - K(120, 200);
-      loserAt(bx, by + 80 * k, {}, (c) => upright(c, bx, by + 80 * k, 0, 1 - 0.6 * k, 1));
+      loserAt(bx, by + 80 * k, 'hurt', (c) => upright(c, bx, by + 80 * k, 0, 1 - 0.6 * k, 1));
       ctx.restore();
     } else if (kind === 'paperflat') {
       const k = K(30, 70);
       winnerAt(bx - 60 * face, by, { state: 'attack', move: 'dSig', moveFrame: Math.round(8 + 12 * k) });
       const sway = Math.sin(t * 0.15) * 30 * K(70, 100);
-      loserAt(bx + sway, by + 200 * K(90, 240), {}, (c) => upright(c, bx + sway, by + 200 * K(90, 240), K(70, 240) * 0.2, 1 + 0.3 * k, Math.max(0.06, 1 - k)));
+      loserAt(bx + sway, by + 200 * K(90, 240), 'hurt', (c) => upright(c, bx + sway, by + 200 * K(90, 240), K(70, 240) * 0.2, 1 + 0.3 * k, Math.max(0.06, 1 - k)));
       if (t === 70) spill(20, 60);
     } else if (kind === 'headshot') {
       winnerAt(bx - 260 * face, by, { state: 'attack', move: 'sSig', moveFrame: 14 });
@@ -1253,14 +1263,14 @@ export class ClashRenderer {
         ctx.stroke();
       }
       const k = K(44, 120);
-      if (t < 44) loserAt(bx, by, { state: 'idle' });
-      else loserAt(bx, by, {}, (c) => upright(c, bx, by, -face * 1.4 * k));
+      if (t < 44) loserAt(bx, by, 'idle');
+      else loserAt(bx, by, 'hurt', (c) => upright(c, bx, by, -face * 1.4 * k));
       if (t === 44) { spill(50, 40); kick(14); }
     } else if (kind === 'cocoon') {
       const k = K(20, 120);
       winnerAt(bx - 90 * face, by, { state: 'attack', move: 'throw', moveFrame: 4 });
       const fall = 500 * K(140, 240) * K(140, 240);
-      loserAt(bx, by + fall, {});
+      loserAt(bx, by + fall, 'hurt');
       ctx.fillStyle = cb.art.accent;
       ctx.strokeStyle = '#12100f';
       ctx.lineWidth = 3;
@@ -1278,7 +1288,7 @@ export class ClashRenderer {
       const k = K(20, 200);
       ctx.save();
       ctx.globalAlpha = 1 - K(160, 240);
-      loserAt(bx, by, {});
+      loserAt(bx, by, 'hurt');
       if (k > 0.2) {
         ctx.globalCompositeOperation = 'source-atop';
         ctx.fillStyle = `rgba(0,255,204,${Math.min(0.8, k)})`;
@@ -1297,16 +1307,16 @@ export class ClashRenderer {
       const k = K(10, 90);
       const up = -700 * k;
       winnerAt(bx - 10 * face, by + up, { state: 'attack', move: 'recovery', moveFrame: 8, grounded: false });
-      loserAt(bx, by + up - 90, {}, (c) => upright(c, bx, by + up - 90, 3));
+      loserAt(bx, by + up - 90, 'hurt', (c) => upright(c, bx, by + up - 90, 3));
       if (t > 120) {
         const k2 = K(120, 160);
-        loserAt(bx, by + 20 * k2 - 600 * (1 - k2), {}, (c) => upright(c, bx, by + 20 * k2 - 600 * (1 - k2), Math.PI / 2, 1, 1 - 0.5 * k2));
+        loserAt(bx, by + 20 * k2 - 600 * (1 - k2), 'hurt', (c) => upright(c, bx, by + 20 * k2 - 600 * (1 - k2), Math.PI / 2, 1, 1 - 0.5 * k2));
         if (t === 160) { spill(40, 100); kick(18); }
       }
     } else if (kind === 'inkdrown') {
       const k = K(20, 180);
       winnerAt(bx - 120 * face, by, { state: 'attack', move: 'nSig', moveFrame: 16 });
-      loserAt(bx, by, {});
+      loserAt(bx, by, 'hurt');
       ctx.fillStyle = ca.art.ink;
       ctx.beginPath();
       ctx.ellipse(bx, by, 60 + 200 * k, 10 + 20 * k, 0, 0, Math.PI * 2);
@@ -1315,8 +1325,8 @@ export class ClashRenderer {
     } else if (kind === 'crush') {
       const k = K(30, 70);
       winnerAt(bx - 110 * face, by, { state: 'attack', move: 'super', moveFrame: 20 });
-      if (k < 1) loserAt(bx, by, { state: 'idle' });
-      else loserAt(bx, by, {}, (c) => upright(c, bx, by, 0, 1.4, 0.08));
+      if (k < 1) loserAt(bx, by, 'idle');
+      else loserAt(bx, by, 'hurt', (c) => upright(c, bx, by, 0, 1.4, 0.08));
       const oy = by - 500 * (1 - k) - 90;
       ctx.fillStyle = ca.art.accent;
       ctx.strokeStyle = '#12100f';
@@ -1331,13 +1341,13 @@ export class ClashRenderer {
       ctx.beginPath();
       ctx.rect(-3000, -3000, 3000 + bx, 6000);
       ctx.clip();
-      loserAt(bx - 60 * k, by + 20 * k, {}, (c) => upright(c, bx - 60 * k, by + 20 * k, -0.6 * k));
+      loserAt(bx - 60 * k, by + 20 * k, 'hurt', (c) => upright(c, bx - 60 * k, by + 20 * k, -0.6 * k));
       ctx.restore();
       ctx.save();
       ctx.beginPath();
       ctx.rect(bx, -3000, 3000, 6000);
       ctx.clip();
-      loserAt(bx + 60 * k, by + 20 * k, {}, (c) => upright(c, bx + 60 * k, by + 20 * k, 0.6 * k));
+      loserAt(bx + 60 * k, by + 20 * k, 'hurt', (c) => upright(c, bx + 60 * k, by + 20 * k, 0.6 * k));
       ctx.restore();
       if (t === 40) spill(60, 60);
       if (t > 40 && t % 6 === 0 && t < 120) spill(4, 30);
@@ -1363,7 +1373,7 @@ export class ClashRenderer {
         winnerAt(bx - 50 * face, by, { state: 'attack', move: parts.beat === 'slam' ? 'dSig' : parts.beat === 'stomp' ? 'pound' : 'nLight', moveFrame: 4 + ((t - 60) % 20) });
         rot = parts.beat === 'slam' ? 1.5 : 0;
       }
-      loserAt(lx, ly, t < 60 ? { state: 'idle' } : {}, (c) => upright(c, lx, ly, rot));
+      loserAt(lx, ly, t < 60 ? 'idle' : 'hurt', (c) => upright(c, lx, ly, rot));
       if (t >= 180) {
         const kp = K(180, fin.duration);
         ctx.restore();
@@ -1373,7 +1383,7 @@ export class ClashRenderer {
           ctx.translate(bx, by - 60);
           ctx.scale(1 + kp, 1 + kp);
           ctx.translate(-bx, -by + 60);
-          loserAt(lx, ly, {}, (c) => upright(c, lx, ly, rot));
+          loserAt(lx, ly, 'hurt', (c) => upright(c, lx, ly, rot));
         } else if (parts.punchline === 'panel') {
           ctx.strokeStyle = '#12100f';
           ctx.lineWidth = 10;

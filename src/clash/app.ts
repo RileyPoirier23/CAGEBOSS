@@ -1,24 +1,32 @@
 /* UNIVERSE CLASH - the app shell.
    Owns screens, input, save data and the real-time loop. The fight itself lives
-   in ./clash/sim.ts and knows nothing about the DOM. */
+   in ./clash/sim.ts and knows nothing about the DOM.
 
-import { charDef } from './characters';
+   Modes beyond the original (netplay sim, replays, story, rift, the lab's
+   dummy / ghost / trials), the pack reel, key bindings, gamepads, the
+   uncapped render loop and the store's fine print were ported from Inkbreak. */
+
+import { CHAR_BY_ID, charDef, moveOf } from './characters';
 import { STAGES, stageById } from './stages';
 import { ClashSession } from './session';
-import { ClashRenderer } from './render';
+import { aiInput } from './ai';
+import { ClashRenderer, type RenderExtras } from './render';
 import { ClashAudio } from './audio';
 import { drawPortrait, type ArtOpts } from './art';
-import type { CharId, InputFrame, MatchConfig, MatchEvent, PoseName, Slot } from './types';
+import { NetSim, packInput, type ReplayFile } from './rollback';
+import type { Action, KeyMap } from './profile';
+import type { CharId, CustomFinisher, Fighter, InputFrame, MatchConfig, MatchEvent, MatchState, MoveDef, MoveKey, PoseName, Rarity, Slot } from './types';
 import { CHAR_IDS, emptyInput } from './types';
 import {
+  DEFAULT_KEYS,
   DEFAULT_OPTIONS,
   addScars,
   awardArcade,
   buyDirect,
   defaultProfile,
   equipGear,
+  levelProgress,
   loadProfile,
-  openPack,
   recordMatch,
   saveProfile,
   setFinisher,
@@ -30,10 +38,17 @@ import {
   type PackOpenResult,
 } from './profile';
 import {
+  buyCatalog,
+  claimWeekly,
+  finishersUnlocked,
+  openPackWithPity,
+  regionById,
+  salvage,
+} from './economy';
+import {
   fmtClock,
   hudHtml,
   optionsHtml,
-  packResultHtml,
   pauseHtml,
   resultsHtml,
   rosterHtml,
@@ -42,13 +57,32 @@ import {
   titleHtml,
   vaultHtml,
 } from './ui';
+import {
+  REEL_LAND,
+  REEL_TILE_W,
+  builderHtml,
+  editorHtml,
+  inputDisplayHtml,
+  keysHtml,
+  netSettingsHtml,
+  packReelHtml,
+  progressHtml,
+  replaysHtml,
+  riftHtml,
+  riftRungs,
+  storeFinePrintHtml,
+  storyHtml,
+  trainingPanelHtml,
+} from './screens';
 
 const TICK = 1 / 60;
 const RESULT_DELAY_MS = 1700;
 const SUPER_SHOW_MS = 1150;
+const GHOST_TICKS = 600;
 
-type ScreenName = 'title' | 'select' | 'fight' | 'results' | 'roster' | 'vault' | 'options';
-type FightMode = MatchConfig['mode'];
+type ScreenName = 'title' | 'select' | 'fight' | 'results' | 'roster' | 'vault' | 'options' | 'replays' | 'story' | 'rift' | 'builder' | 'editor' | 'progress';
+type FightMode = MatchConfig['mode'] | 'net';
+type Dummy = 'stand' | 'jump' | 'dodge' | 'cpu';
 
 interface ArcadeRun {
   queue: CharId[];
@@ -65,6 +99,7 @@ interface ResultData {
   reward: MatchReward | null;
   arcadeNext: boolean;
   arcadeDone: boolean;
+  extraLine: string;
 }
 
 interface HudSideEls {
@@ -74,6 +109,11 @@ interface HudSideEls {
   chip: HTMLElement;
   stocks: HTMLElement;
   drive: HTMLElement;
+}
+
+interface Trial {
+  seq: string[];
+  pos: number;
 }
 
 function must<T extends HTMLElement>(id: string): T {
@@ -88,6 +128,19 @@ function randomSeed(): number {
 
 function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;
+}
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** A seeded generator for the reel's decoys, so a pull looks the same on replay. */
+function lcg(seed: number): () => number {
+  let s = seed >>> 0 || 1;
+  return () => {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    return s / 0x100000000;
+  };
 }
 
 export class ClashApp {
@@ -105,8 +158,14 @@ export class ClashApp {
 
   private screen: ScreenName = 'title';
   private session: ClashSession | null = null;
+  private net: NetSim | null = null;
+  private netP2: 'cpu' | 'keys' = 'cpu';
+  private replay: { file: ReplayFile; cursor: { i: number } } | null = null;
   private fightCfg: MatchConfig | null = null;
   private spectator = false;
+  private storyChapter = -1;
+  private riftRung = -1;
+  private riftDay = '';
 
   private attract: ClashSession | null = null;
   private attractKey = '';
@@ -130,6 +189,18 @@ export class ClashApp {
   private vaultTab: 'store' | 'inventory' = 'store';
   private vaultChar: CharId = 'kestrel';
   private rosterChar: CharId = 'kestrel';
+  private storeChar: CharId | 'all' = 'all';
+  private storeRarity: Rarity | 'all' = 'all';
+  private builderChar: CharId = 'kestrel';
+  private editorChar: CharId = 'kestrel';
+  private editorKey: MoveKey = 'nLight';
+  private binding: { side: 0 | 1; action: Action } | null = null;
+
+  /* the lab */
+  private dummy: Dummy = 'stand';
+  private ghostRing: Fighter[] = [];
+  private trial: Trial | null = null;
+  private trialIndex = -1;
 
   private superUntil = 0;
   private moveUntil = 0;
@@ -137,6 +208,8 @@ export class ClashApp {
 
   private readonly keys = new Set<string>();
   private readonly hits = new Set<string>();
+  private readonly padLast: [number, number] = [0, 0];
+  private padPauseLast = false;
 
   private hudEls: [HudSideEls, HudSideEls] | null = null;
   private hudCombo: [HTMLElement, HTMLElement] | null = null;
@@ -145,20 +218,24 @@ export class ClashApp {
   private toastMoveEl: HTMLElement | null = null;
   private superEl: HTMLElement | null = null;
   private countEl: HTMLElement | null = null;
+  private inputDisplayEl: HTMLElement | null = null;
+  private corruptEl: HTMLElement | null = null;
   private lastStocks: [number, number] = [3, 3];
   private lastStockMax = 3;
 
   private saveTimer: number | null = null;
   private toastTimer: number | null = null;
   private modalEl: HTMLElement | null = null;
+  private reelTimers: number[] = [];
 
   private raf = 0;
+  private channel: MessageChannel | null = null;
+  private loopMode: 'raf' | 'channel' = 'raf';
   private lastDraw = 0;
   private now = 0;
   private fps = 60;
   private fpsFrames = 0;
   private fpsAt = 0;
-  private showPerf = false;
 
   constructor() {
     this.root = must('clash-root');
@@ -174,6 +251,8 @@ export class ClashApp {
     this.selectCpu = CHAR_IDS.find((id) => id !== this.profile.selected) ?? 'mireille';
     this.rosterChar = this.profile.selected;
     this.vaultChar = this.profile.selected;
+    this.builderChar = this.profile.selected;
+    this.editorChar = this.profile.selected;
 
     this.renderer = new ClashRenderer(this.canvas);
     this.applyOptions();
@@ -181,7 +260,7 @@ export class ClashApp {
     this.showTitle();
 
     this.fpsAt = performance.now();
-    this.raf = requestAnimationFrame(this.frame);
+    this.startLoop();
     window.setTimeout(() => {
       this.bootEl.classList.add('gone');
       window.setTimeout(() => this.bootEl.classList.add('hidden'), 340);
@@ -212,14 +291,17 @@ export class ClashApp {
       shake: o.shake,
       lite: o.resolutionScale < 0.8,
       resolutionScale: o.resolutionScale,
+      persistentScars: o.persistentScars,
     });
     this.renderer.resize();
     this.audio.setOptions({ muted: o.muted, volume: o.volume, music: o.music });
+    this.updatePerf();
+    this.startLoop();
   }
 
   private setOption(field: string, value: string): void {
     const o = this.profile.options as unknown as Record<string, number | boolean>;
-    if (field === 'muted' || field === 'vsync' || field === 'modern') {
+    if (field === 'muted' || field === 'vsync' || field === 'modern' || field === 'persistentScars' || field === 'perfOverlay') {
       o[field] = value === '1' || value === 'true';
     } else {
       o[field] = Number(value);
@@ -260,6 +342,7 @@ export class ClashApp {
 
   private hideHud(): void {
     this.hudEl.classList.add('hidden');
+    this.hudEl.classList.remove('corrupt');
     this.hudEl.innerHTML = '';
     this.hudEls = null;
     this.hudCombo = null;
@@ -268,14 +351,27 @@ export class ClashApp {
     this.toastMoveEl = null;
     this.superEl = null;
     this.countEl = null;
+    this.inputDisplayEl = null;
+    this.corruptEl = null;
+  }
+
+  private leaveFight(): void {
+    this.session = null;
+    this.net = null;
+    this.replay = null;
+    this.fightCfg = null;
+    this.spectator = false;
+    this.storyChapter = -1;
+    this.riftRung = -1;
+    this.trial = null;
+    this.trialIndex = -1;
+    this.ghostRing = [];
   }
 
   private showTitle(): void {
     this.screen = 'title';
     this.paused = false;
-    this.session = null;
-    this.fightCfg = null;
-    this.spectator = false;
+    this.leaveFight();
     this.arcade = null;
     this.arcadePending = false;
     this.resultsAt = 0;
@@ -312,6 +408,7 @@ export class ClashApp {
       arcade: this.arcadePending,
       stageId,
       cpuLevel: this.profile.cpuLevel,
+      extra: this.fightMode === 'net' ? netSettingsHtml(this.profile.options.net, this.netP2) : '',
     });
     this.paintPortraits(this.screenEl);
   }
@@ -334,10 +431,13 @@ export class ClashApp {
     this.hideHud();
     this.screenEl.className = 'screen vault-screen';
     this.ensureAttract('menu:vault');
+    const region = regionById(this.profile.region);
     this.screenEl.innerHTML = vaultHtml({
       profile: this.profile,
       tab: this.vaultTab,
       char: this.vaultChar,
+      finePrint: storeFinePrintHtml({ profile: this.profile, filterChar: this.storeChar, filterRarity: this.storeRarity }),
+      packsOpen: region.packs && this.profile.ageOk,
     });
   }
 
@@ -348,8 +448,48 @@ export class ClashApp {
     this.hideHud();
     this.screenEl.className = 'screen options-screen';
     this.ensureAttract('menu:options');
-    this.screenEl.innerHTML = optionsHtml({ options: this.profile.options, fromPause: from === 'pause' });
+    this.screenEl.innerHTML = optionsHtml({
+      options: this.profile.options,
+      fromPause: from === 'pause',
+      keys: keysHtml(this.profile.keys, this.binding),
+    });
     this.saveSoon();
+  }
+
+  private showSimple(name: ScreenName, html: string, cls: string): void {
+    this.screen = name;
+    this.paused = false;
+    this.closeModal();
+    this.hideHud();
+    this.screenEl.className = `screen ${cls}`;
+    this.ensureAttract(`menu:${name}`);
+    this.screenEl.innerHTML = html;
+    this.paintPortraits(this.screenEl);
+  }
+
+  private showReplays(): void {
+    this.showSimple('replays', replaysHtml(this.profile), 'roster-screen');
+  }
+
+  private showStory(): void {
+    this.showSimple('story', storyHtml(this.profile), 'roster-screen');
+  }
+
+  private showRift(): void {
+    this.riftDay = today();
+    this.showSimple('rift', riftHtml(this.profile, this.riftDay), 'roster-screen');
+  }
+
+  private showBuilder(): void {
+    this.showSimple('builder', builderHtml(this.profile, this.builderChar), 'options-screen');
+  }
+
+  private showEditor(): void {
+    this.showSimple('editor', editorHtml(this.editorChar, this.editorKey), 'options-screen');
+  }
+
+  private showProgress(): void {
+    this.showSimple('progress', progressHtml(this.profile), 'roster-screen');
   }
 
   private paintPortraits(scope: HTMLElement): void {
@@ -423,8 +563,33 @@ export class ClashApp {
 
   /* ------------------------------------------------------------------ loop -- */
 
+  /** VSync on: requestAnimationFrame. Off: a MessageChannel loop that runs as fast as the page allows. */
+  private startLoop(): void {
+    const want: 'raf' | 'channel' = this.profile.options.vsync ? 'raf' : 'channel';
+    if (want === this.loopMode && (this.raf || this.channel)) return;
+    if (this.raf) cancelAnimationFrame(this.raf);
+    this.raf = 0;
+    if (this.channel) {
+      this.channel.port1.onmessage = null;
+      this.channel = null;
+    }
+    this.loopMode = want;
+    if (want === 'raf') {
+      this.raf = requestAnimationFrame(this.frame);
+    } else {
+      const ch = new MessageChannel();
+      ch.port1.onmessage = () => {
+        if (this.channel !== ch) return;
+        this.frame(performance.now());
+      };
+      this.channel = ch;
+      ch.port2.postMessage(0);
+    }
+  }
+
   private frame = (now: number): void => {
-    this.raf = requestAnimationFrame(this.frame);
+    if (this.loopMode === 'raf') this.raf = requestAnimationFrame(this.frame);
+    else if (this.channel) this.channel.port2.postMessage(0);
     this.now = now;
     const cap = this.profile.options.fpsCap;
     if (cap > 0 && now - this.lastDraw < 1000 / cap - 1.2) return;
@@ -441,7 +606,7 @@ export class ClashApp {
 
     if (this.screen === 'fight' && this.session) {
       if (!this.paused) this.stepFight(dt);
-      this.renderer.render(this.session.match, this.alpha, now);
+      this.renderer.render(this.session.match, this.alpha, now, this.extras());
       this.updateHud();
       if (!this.paused) this.watchEnd(now);
     } else {
@@ -449,6 +614,21 @@ export class ClashApp {
       if (this.attract) this.renderer.render(this.attract.match, this.menuAlpha, now);
     }
   };
+
+  private extras(): RenderExtras {
+    const cfg = this.fightCfg;
+    const tr = this.profile.options.training;
+    const names: [string, string] = [
+      this.spectator ? 'CPU' : 'P1',
+      this.spectator || (cfg && cfg.mode !== 'local' && this.fightMode !== 'net') ? 'CPU' : 'P2',
+    ];
+    return {
+      training: cfg?.training ? { hitboxes: tr.hitboxes, frameData: tr.frameData, dodgeViz: tr.dodgeViz } : undefined,
+      ghost: cfg?.training && tr.ghost && this.ghostRing.length >= GHOST_TICKS ? this.ghostRing[0] : null,
+      names,
+      spectator: this.spectator ? 'canvas feed // votes change presentation, never frame data' : null,
+    };
+  }
 
   private stepAttract(dt: number): void {
     if (!this.attract) {
@@ -479,24 +659,31 @@ export class ClashApp {
   }
 
   private updatePerf(): void {
-    if (!this.showPerf) {
+    if (!this.profile.options.perfOverlay) {
       this.perfEl.classList.add('hidden');
       return;
     }
-    const m = this.session?.match ?? this.attract?.match;
+    const ses = this.session ?? this.attract;
+    const m = ses?.match;
     const tick = m?.tick ?? 0;
     const phase = m?.phase ?? 'menu';
+    const net = this.net;
     this.perfEl.classList.remove('hidden');
     this.perfEl.textContent = `${this.fps} FPS  |  TICK ${tick}  |  ${phase.toUpperCase()}\n` +
-      `SIM 60 HZ  |  ALPHA ${this.alpha.toFixed(2)}  |  ${this.screen.toUpperCase()}\n` +
-      `ROLLBACK READY  |  CAP ${this.profile.options.fpsCap || 'OFF'}`;
+      `SIM 60 HZ  |  ALPHA ${this.alpha.toFixed(2)}  |  ${this.screen.toUpperCase()}  |  ${this.loopMode === 'raf' ? 'VSYNC' : 'UNCAPPED'} CAP ${this.profile.options.fpsCap || 'OFF'}\n` +
+      `ROLLBACKS ${ses?.rollbacks ?? 0}  |  RESIM ${ses?.resimFrames ?? 0}  |  CONFIRMED ${ses?.confirmed ?? 0}  |  DELAY ${ses?.delay ?? 0}\n` +
+      (net
+        ? `NET PING ${this.profile.options.net.ping}MS JITTER ${this.profile.options.net.jitter}MS  |  PEER2 RB ${net.peers[1].rollbacks}  |  ${net.desync ? `DESYNC @${net.desyncTick}` : 'SYNC OK'}`
+        : 'LOCAL');
   }
 
   /* ----------------------------------------------------------------- input -- */
 
   private bind(): void {
     this.screenEl.addEventListener('click', this.onClick);
+    this.root.addEventListener('click', this.onModalClick);
     this.screenEl.addEventListener('input', this.onInput);
+    this.screenEl.addEventListener('change', this.onInput);
     window.addEventListener('keydown', this.onKeyDown, { passive: false });
     window.addEventListener('keyup', this.onKeyUp);
     window.addEventListener('blur', this.onBlur);
@@ -516,13 +703,41 @@ export class ClashApp {
     this.handleAction(action, target.dataset);
   };
 
+  private onModalClick = (ev: MouseEvent): void => {
+    if (!this.modalEl || !this.modalEl.contains(ev.target as Node)) return;
+    const target = (ev.target as HTMLElement).closest<HTMLElement>('[data-action]');
+    if (!target?.dataset.action) return;
+    ev.preventDefault();
+    this.handleAction(target.dataset.action, target.dataset);
+  };
+
   private onInput = (ev: Event): void => {
     const input = ev.target as HTMLInputElement;
-    const field = input.dataset?.optRange;
-    if (!field) return;
-    this.setOption(field, input.value);
-    const out = this.screenEl.querySelector<HTMLElement>(`[data-opt-out="${field}"]`);
-    if (out) out.textContent = `${Math.round(Number(input.value) * 100)}%`;
+    const range = input.dataset?.optRange;
+    if (range) {
+      this.setOption(range, input.value);
+      const out = this.screenEl.querySelector<HTMLElement>(`[data-opt-out="${range}"]`);
+      if (out) out.textContent = `${Math.round(Number(input.value) * 100)}%`;
+      return;
+    }
+    const net = input.dataset?.net;
+    if (net === 'delay' || net === 'ping' || net === 'jitter') {
+      const v = Number(input.value);
+      if (Number.isFinite(v)) this.profile.options.net[net] = Math.max(0, v);
+      this.saveSoon();
+      return;
+    }
+    const edit = input.dataset?.edit;
+    if (edit && ev.type === 'change') {
+      this.editMove(edit, Number(input.value));
+      return;
+    }
+    if (input.dataset?.builderName !== undefined && ev.type === 'change') {
+      const cur = this.currentCustom();
+      cur.name = input.value.trim() || 'Custom Finisher';
+      this.profile.custom[this.builderChar] = cur;
+      this.saveSoon();
+    }
   };
 
   private onKeyUp = (ev: KeyboardEvent): void => {
@@ -536,10 +751,21 @@ export class ClashApp {
 
   private onKeyDown = (ev: KeyboardEvent): void => {
     const code = ev.code;
+    if (this.binding) {
+      ev.preventDefault();
+      if (code !== 'Escape') {
+        this.profile.keys[this.binding.side][this.binding.action] = code;
+        this.saveSoon();
+      }
+      this.binding = null;
+      this.showOptions(this.optionsFrom);
+      return;
+    }
     if (code === 'F3') {
       ev.preventDefault();
-      this.showPerf = !this.showPerf;
+      this.profile.options.perfOverlay = !this.profile.options.perfOverlay;
       this.updatePerf();
+      this.saveSoon();
       return;
     }
     if (code === 'Escape') {
@@ -564,12 +790,19 @@ export class ClashApp {
       return;
     }
     if (this.screen !== 'fight' || this.paused) return;
-    if (GAME_CODES.has(code)) {
+    if (this.gameCodes().has(code)) {
       ev.preventDefault();
       if (!this.keys.has(code)) this.hits.add(code);
       this.keys.add(code);
     }
   };
+
+  private gameCodes(): Set<string> {
+    const set = new Set<string>();
+    for (const map of this.profile.keys) for (const k of Object.values(map)) set.add(k);
+    if (this.profile.options.modern) for (const k of ['ShiftLeft', 'ShiftRight', 'KeyU', 'KeyO', 'KeyP']) set.add(k);
+    return set;
+  }
 
   private focusIsField(): boolean {
     const tag = (document.activeElement?.tagName ?? '').toLowerCase();
@@ -612,6 +845,11 @@ export class ClashApp {
         this.profile.mode = 'training';
         this.showSelect();
         break;
+      case 'netplay':
+        this.fightMode = 'net';
+        this.arcadePending = false;
+        this.showSelect();
+        break;
       case 'spectate':
         this.startSpectate();
         break;
@@ -621,6 +859,24 @@ export class ClashApp {
         break;
       case 'vault':
         this.showVault();
+        break;
+      case 'replays':
+        this.showReplays();
+        break;
+      case 'story-screen':
+        this.showStory();
+        break;
+      case 'rift-screen':
+        this.showRift();
+        break;
+      case 'builder':
+        this.showBuilder();
+        break;
+      case 'editor':
+        this.showEditor();
+        break;
+      case 'progress':
+        this.showProgress();
         break;
       case 'options':
         this.showOptions(this.screen === 'fight' ? 'pause' : 'title');
@@ -660,6 +916,10 @@ export class ClashApp {
           this.saveSoon();
           this.showSelect();
         }
+        break;
+      case 'net-p2':
+        this.netP2 = this.netP2 === 'cpu' ? 'keys' : 'cpu';
+        this.showSelect();
         break;
       case 'random':
         this.randomizeSelect();
@@ -715,6 +975,34 @@ export class ClashApp {
       case 'buy-direct':
         this.doBuyDirect(data.uid ?? '');
         break;
+      case 'buy-catalog':
+        this.doBuyCatalog(data.id ?? '');
+        break;
+      case 'salvage':
+        this.doSalvage(data.uid ?? '');
+        break;
+      case 'region':
+        this.profile.region = data.region ?? 'global';
+        this.profile.ageOk = false;
+        this.saveSoon();
+        this.showVault();
+        break;
+      case 'age-ok':
+        this.profile.ageOk = true;
+        this.saveSoon();
+        this.showVault();
+        break;
+      case 'weekly':
+        this.doWeekly();
+        break;
+      case 'store-char':
+        this.storeChar = (data.char as CharId | 'all') ?? 'all';
+        this.showVault();
+        break;
+      case 'store-rarity':
+        this.storeRarity = (data.rarity as Rarity | 'all') ?? 'all';
+        this.showVault();
+        break;
       case 'equip':
         this.doEquip(data.uid ?? '');
         break;
@@ -729,8 +1017,13 @@ export class ClashApp {
         this.audio.play('select');
         this.showOptions(this.optionsFrom);
         break;
+      case 'bind':
+        this.binding = { side: data.side === '1' ? 1 : 0, action: (data.key as Action) ?? 'light' };
+        this.showOptions(this.optionsFrom);
+        break;
       case 'reset-options':
-        this.profile.options = { ...DEFAULT_OPTIONS };
+        this.profile.options = { ...DEFAULT_OPTIONS, training: { ...DEFAULT_OPTIONS.training }, net: { ...DEFAULT_OPTIONS.net } };
+        this.profile.keys = [{ ...DEFAULT_KEYS[0] }, { ...DEFAULT_KEYS[1] }];
         this.applyOptions();
         this.saveSoon();
         this.showOptions(this.optionsFrom);
@@ -740,6 +1033,92 @@ export class ClashApp {
         break;
       case 'close-modal':
         this.closeModal();
+        break;
+      case 'reel-skip':
+        this.finishReel(true);
+        break;
+      /* the lab */
+      case 'dummy':
+        this.dummy = (data.dummy as Dummy) ?? 'stand';
+        if (this.session) this.session.cpuEnabled = this.dummy === 'cpu';
+        this.showPause();
+        break;
+      case 'train-toggle': {
+        const key = data.key as keyof ClashProfile['options']['training'];
+        if (key in this.profile.options.training) {
+          this.profile.options.training[key] = !this.profile.options.training[key];
+          this.saveSoon();
+        }
+        this.showPause();
+        break;
+      }
+      case 'trial': {
+        const i = Number(data.trial ?? -1);
+        const seq = this.fightCfg ? charDef(this.fightCfg.playerChar).trials[i] : undefined;
+        if (seq) {
+          this.trial = { seq: seq.filter((k) => k !== 'jump' && k !== 'gc'), pos: 0 };
+          this.trialIndex = i;
+          this.toast(`TRIAL ${i + 1} ARMED: ${seq.join(' > ').toUpperCase()}`);
+          this.resumeFight();
+        }
+        break;
+      }
+      /* replays, story, rift */
+      case 'replay':
+        this.startReplay(Number(data.index ?? -1));
+        break;
+      case 'story':
+        this.startStory(Number(data.chapter ?? 0));
+        break;
+      case 'rift':
+        this.startRift(Number(data.rung ?? 0));
+        break;
+      /* builder */
+      case 'builder-char':
+        this.builderChar = (data.char as CharId) ?? this.builderChar;
+        this.showBuilder();
+        break;
+      case 'builder-part': {
+        const cur = this.currentCustom();
+        const part = data.part as keyof CustomFinisher['parts'];
+        if (part && data.value) cur.parts[part] = data.value;
+        this.profile.custom[this.builderChar] = cur;
+        this.saveSoon();
+        this.showBuilder();
+        break;
+      }
+      case 'builder-save':
+        this.profile.custom[this.builderChar] = this.currentCustom();
+        this.saveNow();
+        this.toast(`SAVED ${this.currentCustom().name.toUpperCase()} FOR ${charDef(this.builderChar).name.toUpperCase()}`);
+        break;
+      case 'builder-clear':
+        delete this.profile.custom[this.builderChar];
+        this.saveSoon();
+        this.showBuilder();
+        break;
+      /* editor */
+      case 'editor-char':
+        this.editorChar = (data.char as CharId) ?? this.editorChar;
+        this.showEditor();
+        break;
+      case 'editor-move':
+        this.editorKey = (data.key as MoveKey) ?? 'nLight';
+        this.showEditor();
+        break;
+      case 'editor-test':
+        this.profile.selected = this.editorChar;
+        this.profile.options.training.hitboxes = true;
+        this.profile.options.training.frameData = true;
+        this.fightMode = 'training';
+        this.saveSoon();
+        this.startFight(this.buildConfig('training', this.editorChar, this.selectCpu === this.editorChar ? 'kestrel' : this.selectCpu));
+        break;
+      case 'editor-export':
+        this.showEditor();
+        break;
+      case 'editor-import':
+        this.importChar();
         break;
       default:
         break;
@@ -769,7 +1148,7 @@ export class ClashApp {
   private setMode(mode: FightMode): void {
     this.arcadePending = false;
     this.fightMode = mode;
-    this.profile.mode = mode;
+    if (mode !== 'net') this.profile.mode = mode;
     if (mode === 'ranked') this.profile.gearBuffs = false;
     this.saveSoon();
     this.showSelect();
@@ -809,12 +1188,16 @@ export class ClashApp {
       this.startArcade();
       return;
     }
+    if (this.fightMode === 'net') {
+      this.startNet();
+      return;
+    }
     const mode = this.fightMode;
     const cfg = this.buildConfig(mode, this.profile.selected, this.selectCpu);
     this.startFight(cfg);
   }
 
-  private buildConfig(mode: FightMode, player: CharId, cpu: CharId): MatchConfig {
+  private buildConfig(mode: MatchConfig['mode'], player: CharId, cpu: CharId): MatchConfig {
     return {
       stageId: this.profile.selectedStage,
       mode,
@@ -831,13 +1214,24 @@ export class ClashApp {
         mode === 'local' ? {} : (this.profile.loadouts[cpu] ?? {}),
       ],
       training: mode === 'training',
+      unlocked: [
+        finishersUnlocked(levelProgress(this.profile.xp[player]).level),
+        finishersUnlocked(levelProgress(this.profile.xp[cpu]).level),
+      ],
+      custom: [this.profile.custom[player] ?? null, mode === 'local' ? (this.profile.custom[cpu] ?? null) : null],
     };
   }
 
   /* ----------------------------------------------------------------- vault -- */
 
   private doBuyPack(packId: string): void {
-    const pack = openPack(this.profile, packId, Math.random);
+    const region = regionById(this.profile.region);
+    if (!region.packs || !this.profile.ageOk) {
+      this.audio.play('deny');
+      this.toast('PACKS ARE NOT ON SALE HERE. THE CATALOGUE IS.');
+      return;
+    }
+    const pack = openPackWithPity(this.profile, packId, Math.random);
     if (!pack) {
       this.audio.play('deny');
       this.toast('NOT ENOUGH COINS. THE HOUSE IS SORRY.');
@@ -846,18 +1240,69 @@ export class ClashApp {
     this.audio.play('pack');
     this.saveSoon();
     this.showVault();
-    this.showPackResult(pack, packId);
+    this.showPackReel(pack, packId);
   }
 
-  private showPackResult(result: PackOpenResult, packId: string): void {
+  /** The case-opening reel: every card's strip spins past the pool and lands on the pulled piece. */
+  private showPackReel(result: PackOpenResult, packId: string): void {
     this.closeModal();
     const overlay = document.createElement('div');
     overlay.className = 'screen results-screen';
-    overlay.innerHTML = packResultHtml(result, packId.toUpperCase());
+    overlay.innerHTML = packReelHtml(result, packId.toUpperCase(), lcg(this.profile.packsOpened * 7919 + result.items.length));
     overlay.dataset.modal = '1';
     this.root.appendChild(overlay);
     this.modalEl = overlay;
-    this.paintPortraits(overlay);
+    const reels = Array.from(overlay.querySelectorAll<HTMLElement>('.reel'));
+    requestAnimationFrame(() => {
+      reels.forEach((reel, i) => {
+        const win = reel.querySelector<HTMLElement>('.reel-window');
+        const track = reel.querySelector<HTMLElement>('.reel-track');
+        if (!win || !track) return;
+        const width = win.clientWidth;
+        const land = 6 + REEL_LAND * REEL_TILE_W + 60;
+        const jitter = (lcg(i + 1)() - 0.5) * 70;
+        track.style.transform = `translateX(${Math.round(width / 2 - land + jitter)}px)`;
+        reel.classList.add('spin');
+        this.reelTimers.push(window.setTimeout(() => {
+          reel.classList.add('settled');
+          const won = reel.querySelector<HTMLElement>('.reel-item.won');
+          const rarity = result.items[i]?.rarity ?? 'common';
+          this.audio.play(rarity === 'mythic' || rarity === 'legendary' ? 'level' : rarity === 'epic' ? 'coin' : 'select');
+          if (won) track.style.transform = `translateX(${Math.round(width / 2 - land)}px)`;
+          if (i === reels.length - 1) this.finishReel(false);
+        }, 3300 + i * 320));
+      });
+    });
+  }
+
+  private finishReel(skip: boolean): void {
+    const overlay = this.modalEl;
+    if (!overlay) return;
+    for (const t of this.reelTimers) window.clearTimeout(t);
+    this.reelTimers = [];
+    if (skip) {
+      overlay.querySelectorAll<HTMLElement>('.reel').forEach((reel) => {
+        const win = reel.querySelector<HTMLElement>('.reel-window');
+        const track = reel.querySelector<HTMLElement>('.reel-track');
+        if (!win || !track) return;
+        reel.classList.remove('spin');
+        reel.classList.add('settled');
+        track.style.transform = `translateX(${Math.round(win.clientWidth / 2 - (6 + REEL_LAND * REEL_TILE_W + 60))}px)`;
+      });
+    }
+    const summary = overlay.querySelector<HTMLElement>('[data-reel-summary]');
+    const list = overlay.querySelector<HTMLElement>('[data-reel-list]');
+    const take = overlay.querySelector<HTMLButtonElement>('[data-reel-take]');
+    const skipBtn = overlay.querySelector<HTMLElement>('[data-reel-skip]');
+    const best = overlay.querySelectorAll('.reel-item.won.rarity-border-mythic').length
+      ? 'MYTHIC'
+      : overlay.querySelectorAll('.reel-item.won.rarity-border-legendary').length
+        ? 'LEGENDARY'
+        : overlay.querySelectorAll('.reel-item.won.rarity-border-epic').length ? 'EPIC' : 'RARE OR BELOW';
+    if (summary) summary.textContent = `BEST PULL // ${best}`;
+    if (list) list.classList.remove('hidden');
+    if (take) take.disabled = false;
+    if (skipBtn) skipBtn.classList.add('hidden');
   }
 
   private doBuyDirect(uid: string): void {
@@ -871,6 +1316,45 @@ export class ClashApp {
     this.saveSoon();
     this.showVault();
     this.toast(`${res.item?.name ?? 'ITEM'} ADDED TO THE VAULT.`);
+  }
+
+  private doBuyCatalog(id: string): void {
+    const res = buyCatalog(this.profile, id);
+    if (!res.ok) {
+      this.audio.play('deny');
+      this.toast(res.reason ?? 'NOT AVAILABLE.');
+      return;
+    }
+    this.audio.play('coin');
+    this.saveSoon();
+    this.showVault();
+    this.toast(`${res.item?.name ?? 'ITEM'} BOUGHT OUTRIGHT. NO DICE.`);
+  }
+
+  private doSalvage(uid: string): void {
+    const v = salvage(this.profile, uid);
+    if (!v) {
+      this.audio.play('deny');
+      return;
+    }
+    this.audio.play('coin');
+    this.saveSoon();
+    if (this.modalEl) this.closeModal();
+    this.showVault();
+    this.toast(`SALVAGED FOR ${v} COINS.`);
+  }
+
+  private doWeekly(): void {
+    const items = claimWeekly(this.profile, Math.random);
+    if (!items) {
+      this.audio.play('deny');
+      this.toast('ALREADY CLAIMED THIS WEEK. THE HOUSE IS NOT A CHARITY.');
+      return;
+    }
+    this.audio.play('pack');
+    this.saveSoon();
+    this.showVault();
+    this.showPackReel({ items, coins: 0, rarity: items.reduce((b, it) => (['common', 'rare', 'epic', 'legendary', 'mythic'].indexOf(it.rarity) > ['common', 'rare', 'epic', 'legendary', 'mythic'].indexOf(b) ? it.rarity : b), 'common' as Rarity) }, 'WEEKLY');
   }
 
   private doEquip(uid: string): void {
@@ -905,7 +1389,7 @@ export class ClashApp {
   }
 
   private wipe(): void {
-    if (!window.confirm('Wipe the profile? Levels, gear, scars and rival memory all go. This cannot be undone.')) return;
+    if (!window.confirm('Wipe the profile? Levels, gear, scars, tapes and rival memory all go. This cannot be undone.')) return;
     wipeProfile();
     this.profile = defaultProfile();
     this.fightMode = 'casual';
@@ -915,19 +1399,120 @@ export class ClashApp {
     this.toast('PROFILE WIPED. A CLEAN PAGE.');
   }
 
+  /* --------------------------------------------------------------- builder -- */
+
+  private currentCustom(): CustomFinisher {
+    const cur = this.profile.custom[this.builderChar];
+    if (cur) return { name: cur.name, parts: { ...cur.parts } };
+    return { name: 'Custom Finisher', parts: { opener: 'lift', beat: 'punches', punchline: 'panel' } };
+  }
+
+  /* ---------------------------------------------------------------- editor -- */
+
+  /** Live edit of the character data; the sim reads moves every tick. */
+  private editMove(field: string, value: number): void {
+    if (!Number.isFinite(value)) return;
+    const m = moveOf(this.editorChar, this.editorKey) as MoveDef & Record<string, unknown>;
+    if (field.startsWith('hitbox.')) {
+      const k = field.slice(7) as keyof MoveDef['hitbox'];
+      m.hitbox[k] = value;
+    } else if (field === 'startup' || field === 'active' || field === 'recovery') {
+      m[field] = Math.max(0, Math.round(value));
+    } else if (field === 'damage' || field === 'angle' || field === 'baseKb' || field === 'growthKb') {
+      m[field] = value;
+    }
+    const ta = this.screenEl.querySelector<HTMLTextAreaElement>('[data-editor-json]');
+    if (ta) ta.value = JSON.stringify(charDef(this.editorChar), null, 1);
+  }
+
+  private importChar(): void {
+    const ta = this.screenEl.querySelector<HTMLTextAreaElement>('[data-editor-json]');
+    if (!ta) return;
+    try {
+      const o = JSON.parse(ta.value) as Partial<ReturnType<typeof charDef>>;
+      if (!o.id || !o.moves || !o.art) throw new Error('missing id, moves or art');
+      const target = CHAR_BY_ID[this.editorChar];
+      Object.assign(target, o, { id: this.editorChar });
+      this.toast(`IMPORTED ${String(o.name ?? this.editorChar).toUpperCase()} FOR THIS SESSION`);
+      this.showEditor();
+    } catch (err) {
+      this.toast(`INVALID JSON: ${(err as Error).message}`);
+    }
+  }
+
   /* ---------------------------------------------------------------- fight -- */
 
   private startFight(cfg: MatchConfig): void {
+    this.net = null;
+    this.replay = null;
     this.spectator = false;
     this.fightCfg = cfg;
     this.session = new ClashSession(cfg, {
       localSide: 0,
-      cpu: cfg.mode !== 'local',
+      cpu: cfg.mode !== 'local' && !(cfg.training && this.dummy !== 'cpu'),
       cpuLevel: cfg.cpuLevel,
       seed: cfg.seed,
       read: this.profile.rivals[cfg.cpuChar]?.dodge ?? 0.2,
+      delay: this.profile.options.latency,
     });
     this.beginFightScreen();
+  }
+
+  private startNet(): void {
+    const cfg = this.buildConfig('casual', this.profile.selected, this.selectCpu);
+    cfg.modern2 = this.netP2 === 'keys' ? this.profile.options.modern : false;
+    this.fightCfg = cfg;
+    this.replay = null;
+    this.spectator = false;
+    const net = this.profile.options.net;
+    this.net = new NetSim(() => new ClashSession(cfg, { localSide: 0, cpu: false }).match, { delay: net.delay, ping: net.ping, jitter: net.jitter });
+    // Peer 0 is the local view; the session only drives the CPU brain for peer 2's side.
+    this.session = new ClashSession(cfg, { localSide: 1, cpu: this.netP2 === 'cpu', cpuLevel: cfg.cpuLevel, seed: cfg.seed, delay: net.delay });
+    this.session.core = this.net.peers[0];
+    this.beginFightScreen();
+  }
+
+  private startReplay(index: number): void {
+    const file = this.profile.replays[index];
+    if (!file) return;
+    this.net = null;
+    this.spectator = true;
+    this.fightCfg = file.cfg;
+    this.replay = { file, cursor: { i: 0 } };
+    this.session = new ClashSession(file.cfg, { localSide: 0, cpu: false, delay: 0 });
+    this.beginFightScreen();
+    this.toast('TAPE ROLLING. ESC PAUSES, ANY MENU STOPS IT.');
+  }
+
+  private startStory(chapter: number): void {
+    const i = clamp(chapter, 0, 7);
+    if (i > this.profile.story) return;
+    const me = CHAR_IDS[i];
+    const foe = CHAR_IDS[(i + 1) % 8];
+    const cfg = this.buildConfig('casual', me, foe);
+    cfg.stageId = STAGES[(i + 1) % STAGES.length].id;
+    cfg.cpuLevel = 2 + Math.floor(i / 3);
+    cfg.stocks = 3;
+    this.storyChapter = i;
+    this.startFight(cfg);
+    this.storyChapter = i;
+  }
+
+  private startRift(rung: number): void {
+    const day = today();
+    const wins = this.profile.rift.day === day ? this.profile.rift.wins : 0;
+    if (rung !== wins || rung > 2) return;
+    const r = riftRungs(day, this.profile.selected)[rung];
+    const cfg = this.buildConfig('casual', this.profile.selected, r.foe);
+    cfg.stageId = r.stageId;
+    cfg.stocks = r.stocks;
+    cfg.cpuLevel = r.cpuLevel;
+    cfg.mods = r.mods;
+    cfg.seed = 1000 + rung;
+    this.riftDay = day;
+    this.riftRung = rung;
+    this.startFight(cfg);
+    this.riftRung = rung;
   }
 
   private startSpectate(): void {
@@ -949,6 +1534,8 @@ export class ClashApp {
       gear: [{}, {}],
       training: false,
     };
+    this.net = null;
+    this.replay = null;
     this.spectator = true;
     this.fightCfg = cfg;
     this.session = new ClashSession(cfg, { spectator: true, seed: cfg.seed, cpuLevel: 4 });
@@ -968,11 +1555,15 @@ export class ClashApp {
     this.lastCount = '';
     this.superUntil = 0;
     this.moveUntil = 0;
+    this.ghostRing = [];
+    this.trial = null;
+    this.trialIndex = -1;
     this.lastDraw = performance.now();
     this.closeModal();
     this.hideHud();
+    const keepScars = this.profile.options.persistentScars && this.renderer.getScars().length > 0;
     this.renderer.reset();
-    this.renderer.setScars(this.profile.scars[stage.id] ?? []);
+    if (!keepScars) this.renderer.setScars(this.profile.scars[stage.id] ?? []);
     this.startScarCount = this.renderer.getScars().length;
     this.buildHud();
     this.screenEl.className = 'screen fight-ui';
@@ -995,10 +1586,10 @@ export class ClashApp {
       timerMinutes: cfg.mode === 'training' ? 0 : Math.round(cfg.timerTicks / 3600),
       modern: cfg.modern,
       spectator: this.spectator,
-      local: cfg.mode === 'local',
+      local: cfg.mode === 'local' || this.net !== null,
       p1: cfg.playerChar,
       p2: cfg.cpuChar,
-    });
+    }) + (this.replay ? `<div class="input-display">${inputDisplayHtml()}</div>` : '') + '<div class="hud-corrupt-line hidden" data-corrupt></div>';
     const q = (sel: string): HTMLElement => {
       const el = this.hudEl.querySelector<HTMLElement>(sel);
       if (!el) throw new Error(`Missing HUD element ${sel}`);
@@ -1028,6 +1619,8 @@ export class ClashApp {
     this.toastMoveEl = q('[data-movetoast]');
     this.superEl = q('[data-superflash]');
     this.countEl = q('[data-countin]');
+    this.inputDisplayEl = this.hudEl.querySelector<HTMLElement>('.input-display');
+    this.corruptEl = this.hudEl.querySelector<HTMLElement>('[data-corrupt]');
     this.lastStockMax = cfg.mode === 'training' ? 1 : cfg.stocks;
     this.lastStocks = [cfg.stocks, cfg.stocks];
   }
@@ -1035,24 +1628,116 @@ export class ClashApp {
   private stepFight(dt: number): void {
     if (!this.session || !this.fightCfg) return;
     if (this.session.over) return;
+    if (this.replay && this.session.tick >= this.replay.file.ticks) return;
     this.accum = Math.min(0.16, this.accum + dt);
     let ticks = 0;
     while (this.accum >= TICK && ticks < 5) {
       const match = this.session.match;
-      if (this.fightCfg.mode === 'local') this.session.setP2(this.buildInput(1));
-      const input = this.buildInput(0);
-      const events = this.session.step(input);
+      const before = this.session.tick;
+      let events: MatchEvent[];
+      if (this.net) {
+        events = this.stepNet();
+      } else if (this.replay) {
+        events = this.session.stepReplay(this.replay.file.inputs, this.replay.cursor);
+      } else {
+        if (this.fightCfg.mode === 'local') this.session.setP2(this.buildInput(1));
+        else if (this.fightCfg.training && this.dummy !== 'cpu') this.session.setP2(this.dummyInput(match));
+        events = this.session.step(this.buildInput(0));
+      }
       for (const e of events) {
-        this.renderer.addEvent(e, match);
+        this.renderer.addEvent(e, this.session.match);
         this.onEvent(e);
       }
-      this.renderer.tickImpacts();
+      if (this.session.tick > before) this.renderer.tickImpacts();
+      this.afterTick(this.session.match, events);
       this.hits.clear();
       this.accum -= TICK;
       ticks++;
-      if (match.phase === 'over') break;
+      if (this.session.match.phase === 'over') break;
     }
     this.alpha = Math.min(1, this.accum / TICK);
+  }
+
+  /** One tick of the netplay sim: both peers stamp their own side and the wire carries it across. */
+  private stepNet(): MatchEvent[] {
+    const net = this.net!;
+    const now = performance.now();
+    const p1 = this.buildInput(0);
+    // Peer 2's CPU reads peer 2's own view of the match, so its inputs really do arrive late at peer 1.
+    const p2 = this.netP2 === 'keys' ? this.buildInput(1) : aiInput(this.session!.brains[1], net.peers[1].state);
+    net.localInput(0, p1, now);
+    net.localInput(1, p2, now);
+    net.deliver(now);
+    const before = net.peers[0].tick;
+    net.advance();
+    const ev = net.peers[0].tick > before ? net.peers[0].eventsAt(net.peers[0].tick) : [];
+    this.session!.events.push(...ev);
+    return ev;
+  }
+
+  /** The training dummy's input when it is not the CPU brain. */
+  private dummyInput(m: MatchState): InputFrame {
+    const i = emptyInput();
+    if (this.dummy === 'jump') {
+      if (m.tick % 60 < 2) { i.jump = true; i.jumpPressed = m.tick % 60 === 0; }
+    } else if (this.dummy === 'dodge') {
+      const me = m.fighters[0];
+      if (me.state === 'attack' && me.moveFrame < 3) { i.dodge = true; i.dodgePressed = true; }
+    }
+    return i;
+  }
+
+  /** Ghost ring, combo trials, the replay input display. */
+  private afterTick(m: MatchState, events: MatchEvent[]): void {
+    if (this.fightCfg?.training) {
+      this.ghostRing.push(structuredClone(m.fighters[0]));
+      if (this.ghostRing.length > GHOST_TICKS) this.ghostRing.shift();
+      if (this.trial) this.checkTrial(m, events);
+    }
+    if (this.inputDisplayEl) this.updateInputDisplay(m);
+  }
+
+  private checkTrial(m: MatchState, events: MatchEvent[]): void {
+    const tr = this.trial;
+    if (!tr) return;
+    for (const e of events) {
+      if (e.type !== 'hit' || e.side !== 0 || !e.move) continue;
+      const hitKey = m.fighters[0].move ?? '';
+      const want = tr.seq[tr.pos];
+      if (hitKey === want) {
+        tr.pos++;
+        if (tr.pos >= tr.seq.length) {
+          this.toast(`TRIAL ${this.trialIndex + 1} COMPLETE: ${tr.seq.join(' > ').toUpperCase()}`);
+          this.audio.play('level');
+          this.trial = null;
+          return;
+        }
+      } else if (hitKey === tr.seq[0]) {
+        tr.pos = 1;
+      } else {
+        tr.pos = 0;
+      }
+    }
+    if (tr.pos > 0 && m.combo[0].hits === 0 && m.fighters[1].state !== 'hitstun') tr.pos = 0;
+  }
+
+  private updateInputDisplay(m: MatchState): void {
+    if (!this.inputDisplayEl || !this.session) return;
+    const t = m.tick + 1;
+    for (const side of [0, 1] as const) {
+      const row = this.inputDisplayEl.querySelector<HTMLElement>(`[data-inputs="${side}"]`);
+      if (!row) continue;
+      const packed = this.replay ? this.replayInputAt(side, t) : 0;
+      row.querySelectorAll('span').forEach((s, i) => s.classList.toggle('on', (packed & (1 << i)) !== 0));
+    }
+  }
+
+  private replayInputAt(side: 0 | 1, tick: number): number {
+    const log = this.replay?.file.inputs ?? [];
+    for (let i = Math.min(log.length - 1, this.replay?.cursor.i ?? 0); i >= 0; i--) {
+      if (log[i][0] <= tick && log[i][1] === side) return log[i][2];
+    }
+    return 0;
   }
 
   private onEvent(e: MatchEvent): void {
@@ -1095,6 +1780,7 @@ export class ClashApp {
       }
       case 'finisher': {
         this.audio.play('super');
+        this.audio.play('hit3');
         const side = e.side ?? 0;
         const f = this.session?.match.fighters[side];
         this.showSuper(e.text ?? 'FINISHER', f ? charDef(f.char).name : 'UNIVERSE CLASH');
@@ -1144,8 +1830,15 @@ export class ClashApp {
   private updateHud(): void {
     if (!this.session || !this.hudEls || !this.hudCombo) return;
     const m = this.session.match;
+    // Null's super: the HP bars change places and the HUD shakes until it clears.
+    const corrupt = m.uiCorrupt > 0;
+    this.hudEl.classList.toggle('corrupt', corrupt);
+    if (this.corruptEl) {
+      this.corruptEl.classList.toggle('hidden', !corrupt);
+      if (corrupt) this.corruptEl.textContent = `UI CORRUPTED // HP BARS SWAPPED ${(m.uiCorrupt / 60).toFixed(1)}S`;
+    }
     for (const side of [0, 1] as const) {
-      const f = m.fighters[side];
+      const f = m.fighters[corrupt ? (side === 0 ? 1 : 0) : side];
       const els = this.hudEls[side];
       const ratio = clamp(f.hp / Math.max(1, f.hpMax), 0, 1);
       els.hp.style.transform = `scaleX(${ratio})`;
@@ -1162,13 +1855,14 @@ export class ClashApp {
         pip.classList.toggle('lit', i < pips && f.superFree);
       });
       els.drive.classList.toggle('burnout', f.burnout > 0);
+      const own = m.fighters[side];
       els.tag.textContent = this.spectator
-        ? `CPU // ${charDef(f.char).universeShort}`
+        ? `${this.replay ? 'TAPE' : 'CPU'} // ${charDef(own.char).universeShort}`
         : side === 0
-          ? `P1 // ${charDef(f.char).universeShort}`
-          : m.mode === 'local'
-            ? `P2 // ${charDef(f.char).universeShort}`
-            : `CPU LV${this.fightCfg?.cpuLevel ?? this.profile.cpuLevel} // ${charDef(f.char).universeShort}`;
+          ? `P1 // ${charDef(own.char).universeShort}${own.modern ? ' // MODERN' : ''}`
+          : m.mode === 'local' || (this.net && this.netP2 === 'keys')
+            ? `P2 // ${charDef(own.char).universeShort}`
+            : `CPU LV${this.fightCfg?.cpuLevel ?? this.profile.cpuLevel} // ${charDef(own.char).universeShort}`;
       this.lastStocks[side] = f.stocks;
     }
 
@@ -1228,7 +1922,8 @@ export class ClashApp {
 
   private watchEnd(now: number): void {
     if (!this.session || this.screen !== 'fight') return;
-    if (this.session.match.phase !== 'over') return;
+    const tapeDone = this.replay !== null && this.session.tick >= this.replay.file.ticks;
+    if (this.session.match.phase !== 'over' && !tapeDone) return;
     if (!this.resultsAt) this.resultsAt = now + RESULT_DELAY_MS;
     if (this.resultsAt && now >= this.resultsAt) {
       this.resultsAt = 0;
@@ -1242,10 +1937,14 @@ export class ClashApp {
     this.hits.clear();
     this.screen = 'fight';
     this.screenEl.className = 'screen results-screen';
+    const cfg = this.fightCfg;
     this.screenEl.innerHTML = pauseHtml({
-      training: !!this.fightCfg?.training,
+      training: !!cfg?.training,
       arcade: !!this.arcade,
       spectator: this.spectator,
+      lab: cfg?.training
+        ? trainingPanelHtml({ char: cfg.playerChar, dummy: this.dummy, options: this.profile.options.training, armed: this.trialIndex })
+        : undefined,
     });
   }
 
@@ -1267,14 +1966,23 @@ export class ClashApp {
       this.renderer.reset();
       this.renderer.setScars(this.profile.scars[this.fightCfg.stageId] ?? []);
       this.startScarCount = this.renderer.getScars().length;
+      this.ghostRing = [];
       this.resumeFight();
       this.toast('LAB RESET. THE DUMMY FORGIVES.');
+      return;
+    }
+    if (this.net) {
+      this.startNet();
       return;
     }
     this.startFight({ ...this.fightCfg, seed: randomSeed() });
   }
 
   private rematch(): void {
+    if (this.replay) {
+      this.showReplays();
+      return;
+    }
     if (this.spectator) {
       this.startSpectate();
       return;
@@ -1285,6 +1993,18 @@ export class ClashApp {
     }
     if (!this.fightCfg) {
       this.showTitle();
+      return;
+    }
+    if (this.net) {
+      this.startNet();
+      return;
+    }
+    if (this.storyChapter >= 0) {
+      this.startStory(this.storyChapter);
+      return;
+    }
+    if (this.riftRung >= 0) {
+      this.showRift();
       return;
     }
     this.startFight({ ...this.fightCfg, seed: randomSeed() });
@@ -1348,6 +2068,8 @@ export class ClashApp {
   }
 
   private closeModal(): void {
+    for (const t of this.reelTimers) window.clearTimeout(t);
+    this.reelTimers = [];
     if (this.modalEl) {
       this.modalEl.remove();
       this.modalEl = null;
@@ -1372,10 +2094,10 @@ export class ClashApp {
       profile: this.profile,
       char: cfg.playerChar,
       rival: cfg.cpuChar,
-      mode: cfg.mode,
+      mode: this.net ? 'netplay sim' : this.replay ? 'replay' : cfg.mode,
       stageName: stageById(cfg.stageId).name,
       winningSide: m.winner,
-      local: cfg.mode === 'local',
+      local: cfg.mode === 'local' || (this.net !== null && this.netP2 === 'keys'),
       spectator: this.spectator,
       training: !!cfg.training,
       stocks: [m.fighters[0].stocks, m.fighters[1].stocks],
@@ -1390,6 +2112,7 @@ export class ClashApp {
           }
         : null,
       arcadeNext: data.arcadeNext,
+      extraLine: data.extraLine,
     });
     this.saveSoon();
   }
@@ -1402,6 +2125,8 @@ export class ClashApp {
     const draw = winner === -1;
     let arcadeNext = false;
     let arcadeDone = false;
+    const lines: string[] = [];
+    if (m.finisher) lines.push(`FINISHER // ${m.finisher.name.toUpperCase()}`);
 
     if (this.arcade?.active) {
       if (won) {
@@ -1423,22 +2148,38 @@ export class ClashApp {
     }
 
     let reward: MatchReward | null = null;
-    if (!this.spectator) {
-      reward = recordMatch(
-        this.profile,
-        m,
-        0,
-        cfg.playerChar,
-        cfg.cpuChar,
-        cfg.mode,
-        won,
-      );
+    const counts = !this.spectator && !this.replay;
+    if (counts) {
+      const mode = this.net ? 'casual' : cfg.mode;
+      reward = recordMatch(this.profile, m, 0, cfg.playerChar, cfg.cpuChar, mode, won);
       const fresh = this.renderer.getScars().slice(this.startScarCount);
       if (fresh.length) addScars(this.profile, cfg.stageId, fresh);
       if (reward.levelUps > 0) this.audio.play('level');
+      if (cfg.mode === 'ranked') lines.push(`RANKED // MMR ${this.profile.ranked.mmr} (${this.profile.ranked.w}W ${this.profile.ranked.l}L)`);
+      if (this.storyChapter >= 0 && won) {
+        this.profile.story = Math.max(this.profile.story, this.storyChapter + 1);
+        lines.push(`CHAPTER ${this.storyChapter + 1} CLEARED // ${this.profile.story >= 8 ? 'THE TEAR IS CLOSED' : `CHAPTER ${this.profile.story + 1} UNLOCKED`}`);
+      }
+      if (this.riftRung >= 0) {
+        if (this.profile.rift.day !== this.riftDay) this.profile.rift = { day: this.riftDay, wins: 0 };
+        if (won) {
+          this.profile.rift.wins = Math.max(this.profile.rift.wins, this.riftRung + 1);
+          this.profile.coins += 120;
+          lines.push(`RIFT RUNG ${this.riftRung + 1} CLEARED // +120 COINS${this.profile.rift.wins >= 3 ? ' // LADDER DONE FOR TODAY' : ''}`);
+        } else {
+          lines.push(`RIFT RUNG ${this.riftRung + 1} // THE LADDER HOLDS`);
+        }
+      }
+      if (!cfg.training && !this.net) {
+        const rep = this.session!.exportReplay();
+        rep.when = new Date().toISOString();
+        this.profile.replays.unshift(rep);
+        this.profile.replays = this.profile.replays.slice(0, 5);
+      }
     }
+    if (this.net) lines.push(`NETPLAY SIM // ${this.net.peers[0].rollbacks + this.net.peers[1].rollbacks} ROLLBACKS // ${this.net.desync ? `DESYNC AT TICK ${this.net.desyncTick}` : 'CHECKSUMS AGREED'}`);
     this.saveNow();
-    return { won, draw, reward, arcadeNext, arcadeDone };
+    return { won, draw, reward, arcadeNext, arcadeDone, extraLine: lines.join(' // ') };
   }
 
   /* ------------------------------------------------------------------ input -- */
@@ -1446,57 +2187,86 @@ export class ClashApp {
   private buildInput(side: 0 | 1): InputFrame {
     const input = emptyInput();
     if (this.spectator) return input;
+    const map: KeyMap = this.profile.keys[side];
+    const held = (a: Action): boolean => this.keys.has(map[a]);
+    const tapped = (a: Action): boolean => this.hits.has(map[a]);
+    const modern = side === 0 && this.profile.options.modern;
     const k = (...codes: string[]): boolean => codes.some((c) => this.keys.has(c));
     const p = (...codes: string[]): boolean => codes.some((c) => this.hits.has(c));
-    if (side === 0) {
-      const local = this.fightCfg?.mode === 'local';
-      const modern = this.profile.options.modern;
-      input.left = k('KeyA') || (!local && k('ArrowLeft'));
-      input.right = k('KeyD') || (!local && k('ArrowRight'));
-      input.up = k('KeyW', 'Space') || (!local && k('ArrowUp'));
-      input.down = k('KeyS') || (!local && k('ArrowDown'));
-      input.jump = input.up;
-      input.jumpPressed = p('KeyW', 'Space') || (!local && p('ArrowUp'));
-      input.light = k('KeyJ');
-      input.lightPressed = p('KeyJ');
-      input.heavy = k('KeyK');
-      input.heavyPressed = p('KeyK');
-      input.dodge = k('KeyL') || (modern && k('ShiftLeft', 'ShiftRight'));
-      input.dodgePressed = p('KeyL') || (modern && p('ShiftLeft', 'ShiftRight'));
-      input.throw = k('KeyE') || (modern && k('KeyU'));
-      input.throwPressed = p('KeyE') || (modern && p('KeyU'));
-      input.super = k('KeyI') || (modern && k('KeyO'));
-      input.superPressed = p('KeyI') || (modern && p('KeyO'));
-      input.drive = k('KeyQ') || (modern && k('KeyP'));
-      input.drivePressed = p('KeyQ') || (modern && p('KeyP'));
-    } else {
-      input.left = k('ArrowLeft');
-      input.right = k('ArrowRight');
-      input.up = k('ArrowUp');
-      input.down = k('ArrowDown');
-      input.jump = input.up;
-      input.jumpPressed = p('ArrowUp');
-      input.light = k('Numpad1', 'Comma');
-      input.lightPressed = p('Numpad1', 'Comma');
-      input.heavy = k('Numpad2', 'Period');
-      input.heavyPressed = p('Numpad2', 'Period');
-      input.dodge = k('Numpad3', 'Slash');
-      input.dodgePressed = p('Numpad3', 'Slash');
-      input.throw = k('Numpad0');
-      input.throwPressed = p('Numpad0');
-      input.super = k('Numpad5', 'NumpadAdd');
-      input.superPressed = p('Numpad5', 'NumpadAdd');
-      input.drive = k('Numpad6', 'NumpadSubtract');
-      input.drivePressed = p('Numpad6', 'NumpadSubtract');
-    }
+    input.left = held('left');
+    input.right = held('right');
+    input.up = held('up') || held('jump');
+    input.down = held('down');
+    input.jump = held('jump') || held('up');
+    input.jumpPressed = tapped('jump') || tapped('up');
+    input.light = held('light');
+    input.lightPressed = tapped('light');
+    input.heavy = held('heavy');
+    input.heavyPressed = tapped('heavy');
+    input.dodge = held('dodge') || (modern && k('ShiftLeft', 'ShiftRight'));
+    input.dodgePressed = tapped('dodge') || (modern && p('ShiftLeft', 'ShiftRight'));
+    input.throw = held('throw') || (modern && k('KeyU'));
+    input.throwPressed = tapped('throw') || (modern && p('KeyU'));
+    input.super = held('super') || (modern && k('KeyO'));
+    input.superPressed = tapped('super') || (modern && p('KeyO'));
+    input.drive = held('drive') || (modern && k('KeyP'));
+    input.drivePressed = tapped('drive') || (modern && p('KeyP'));
+    this.mergePad(side, input);
     return input;
   }
-}
 
-const GAME_CODES = new Set([
-  'KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyJ', 'KeyK', 'KeyL', 'KeyE', 'KeyI', 'KeyQ',
-  'Space', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
-  'Numpad0', 'Numpad1', 'Numpad2', 'Numpad3', 'Numpad5', 'Numpad6',
-  'NumpadDecimal', 'NumpadAdd', 'NumpadSubtract',
-  'ShiftLeft', 'ShiftRight', 'KeyU', 'KeyO', 'KeyP', 'Comma', 'Period', 'Slash',
-]);
+  /** Gamepads: stick or d-pad, A jump, X light, Y heavy, B/RB dodge, LB throw, triggers super, Start pauses. */
+  private mergePad(side: 0 | 1, input: InputFrame): void {
+    const pads = typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : [];
+    const pad = pads && pads[side];
+    if (!pad) return;
+    const b = (i: number): boolean => !!pad.buttons[i]?.pressed;
+    const ax = pad.axes[0] ?? 0;
+    const ay = pad.axes[1] ?? 0;
+    const cur = packInput({
+      ...emptyInput(),
+      left: ax < -0.5 || b(14),
+      right: ax > 0.5 || b(15),
+      up: ay < -0.5 || b(12),
+      down: ay > 0.5 || b(13),
+      jump: b(0),
+      light: b(2),
+      heavy: b(3),
+      dodge: b(1) || b(5),
+      throw: b(4),
+      super: b(6) || b(7),
+      drive: b(10),
+    });
+    const last = this.padLast[side];
+    const fresh = cur & ~last;
+    this.padLast[side] = cur;
+    const bit = (i: number): boolean => (cur & (1 << i)) !== 0;
+    const edge = (i: number): boolean => (fresh & (1 << i)) !== 0;
+    input.left = input.left || bit(0);
+    input.right = input.right || bit(1);
+    input.up = input.up || bit(2) || bit(7);
+    input.down = input.down || bit(3);
+    input.light = input.light || bit(4);
+    input.heavy = input.heavy || bit(5);
+    input.dodge = input.dodge || bit(6);
+    input.jump = input.jump || bit(7) || bit(2);
+    input.throw = input.throw || bit(8);
+    input.super = input.super || bit(9);
+    input.drive = input.drive || bit(10);
+    input.lightPressed = input.lightPressed || edge(4);
+    input.heavyPressed = input.heavyPressed || edge(5);
+    input.dodgePressed = input.dodgePressed || edge(6);
+    input.jumpPressed = input.jumpPressed || edge(7) || edge(2);
+    input.throwPressed = input.throwPressed || edge(8);
+    input.superPressed = input.superPressed || edge(9);
+    input.drivePressed = input.drivePressed || edge(10);
+    if (side === 0) {
+      const start = b(9);
+      if (start && !this.padPauseLast && this.screen === 'fight') {
+        if (this.paused) this.resumeFight();
+        else this.showPause();
+      }
+      this.padPauseLast = start;
+    }
+  }
+}

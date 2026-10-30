@@ -319,11 +319,11 @@ html, body {
 }
 
 .title-menu {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 9px;
-  width: min(300px, 34vw);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: 7px 9px;
+  width: min(560px, 52vw);
 }
 
 .title-menu .btn { width: 100%; justify-content: space-between; }
@@ -1365,3 +1365,90 @@ html, body {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ==========================================================================
+   Inkbreak merge: the pack reel, the store's fine print, the lab, tapes,
+   story, rift, builder, editor, key bindings, replay input display.
+   ========================================================================== */
+
+.reel-card { max-width: 980px; width: min(96vw, 980px); max-height: 94vh; overflow: auto; }
+.reels { display: flex; flex-direction: column; gap: 10px; margin: 10px 0; }
+.reel-window { position: relative; overflow: hidden; height: 92px; border: var(--panel); background: var(--paper-2); box-shadow: inset 0 0 0 3px var(--paper); }
+.reel-track { display: flex; gap: 8px; padding: 6px; will-change: transform; transform: translateX(0); }
+.reel.spin .reel-track { transition: transform 3.2s cubic-bezier(0.12, 0.9, 0.18, 1); transition-delay: var(--delay, 0s); }
+.reel.settled .reel-track { transition: none; }
+.reel-item { flex: 0 0 120px; height: 80px; border: 3px solid var(--ink); background: var(--paper); display: flex; flex-direction: column; gap: 3px; padding: 6px; overflow: hidden; }
+.reel-item i { display: block; height: 14px; }
+.reel-item b { font: 400 13px/1 var(--stencil); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reel-item span { font: 600 8px/1.2 var(--body); color: var(--ink-soft); text-transform: uppercase; }
+.reel.settled .reel-item.won { animation: won-flash 0.5s ease-out 2; box-shadow: 0 0 0 4px var(--sun); }
+@keyframes won-flash { 50% { background: var(--sun); transform: scale(1.06); } }
+.reel-needle { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; margin-left: -2px; background: var(--blood); box-shadow: 0 0 0 2px var(--paper); }
+.reel-needle::before, .reel-needle::after { content: ''; position: absolute; left: -8px; border: 10px solid transparent; }
+.reel-needle::before { top: -2px; border-top-color: var(--ink); }
+.reel-needle::after { bottom: -2px; border-bottom-color: var(--ink); }
+.reel-summary { min-height: 1.4em; }
+.reel-list { max-height: 30vh; overflow: auto; }
+
+.age-gate { padding: 14px; margin: 10px 0; background: var(--sun); }
+.age-gate h3 { margin: 0 0 6px; font: 400 26px/0.9 var(--stencil); }
+.age-gate p { margin: 0 0 8px; font: 600 12px/1.4 var(--body); }
+.pity-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
+.odds-table { width: 100%; border-collapse: collapse; font: 700 10px var(--mono); margin: 6px 0 10px; }
+.odds-table th, .odds-table td { border: 2px solid var(--ink); padding: 4px 6px; text-align: left; }
+.odds-table th { background: var(--ink); color: var(--paper); }
+.vault-note.ok { color: #1f6f3a; }
+.vault-note.bad { color: var(--blood); }
+
+.track-grid, .chapter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; width: 100%; }
+.track-card { padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.track-head { display: flex; gap: 8px; align-items: center; }
+.track-head canvas { width: 48px; height: 48px; border: 3px solid var(--ink); background: var(--paper-2); }
+.track-head b { display: block; font: 400 18px/1 var(--stencil); text-transform: uppercase; }
+.track-head span { font: 700 10px var(--mono); }
+.track-list { list-style: none; margin: 0; padding: 0; font: 600 10px/1.5 var(--body); text-transform: uppercase; color: var(--ink-soft); }
+.track-list li.done { color: var(--ink); text-decoration: line-through; }
+
+.training-panel { text-align: left; margin: 8px 0; }
+.training-panel .opt-row { grid-template-columns: 110px 1fr; }
+.trials { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
+.trials .opt-btn { text-align: left; }
+
+.chapter { display: grid; grid-template-columns: 36px 120px 1fr; gap: 10px; padding: 10px; align-items: start; }
+.chapter.locked { opacity: 0.55; filter: grayscale(1); }
+.chapter-num { font: 400 34px/1 var(--stencil); color: var(--blood); }
+.chapter canvas { width: 120px; height: 140px; border: 3px solid var(--ink); background: var(--paper-2); }
+.chapter-copy b { display: block; font: 400 20px/1 var(--stencil); text-transform: uppercase; }
+.chapter-copy p { margin: 4px 0 6px; font: 500 11px/1.4 var(--body); }
+.chapter-copy span { display: block; font: 700 9px var(--mono); margin-bottom: 6px; }
+.lock { font: 700 10px var(--mono); color: var(--ink-soft); }
+
+.rung-list { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.rung { display: grid; grid-template-columns: 60px 1fr auto; gap: 12px; align-items: center; padding: 12px; }
+.rung.locked { opacity: 0.55; }
+.rung.done { background: var(--paper-3); }
+.rung-num { font: 400 44px/1 var(--stencil); color: var(--blood); text-align: center; }
+.rung-copy b { display: block; font: 400 24px/1 var(--stencil); text-transform: uppercase; }
+.rung-copy span { font: 700 10px var(--mono); }
+
+.text-field, .num-field { font: 700 12px var(--mono); border: 3px solid var(--ink); background: var(--paper); padding: 4px 6px; width: 100%; max-width: 280px; }
+.num-field { width: 90px; }
+.json-field { width: 100%; font: 600 10px/1.35 var(--mono); border: 3px solid var(--ink); background: var(--paper); padding: 6px; resize: vertical; }
+.opt-btn small { font-size: 8px; opacity: 0.7; }
+
+.keys-bind .k { cursor: pointer; }
+.keys-bind .k.live { background: var(--blood); color: var(--paper); animation: blink 0.6s infinite; }
+
+.input-display { position: absolute; left: 50%; bottom: 36px; transform: translateX(-50%); display: flex; gap: 14px; pointer-events: none; z-index: 5; }
+.input-row { display: flex; gap: 3px; align-items: center; background: rgba(18, 16, 15, 0.8); padding: 4px 6px; border: 2px solid var(--paper); }
+.input-row b { font: 400 14px/1 var(--stencil); color: var(--sun); margin-right: 4px; }
+.input-row span { font: 700 10px var(--mono); color: var(--paper-3); min-width: 18px; text-align: center; border: 1px solid var(--paper-3); opacity: 0.45; }
+.input-row span.on { background: var(--sun); color: var(--ink); opacity: 1; }
+
+.hud.corrupt .hud-top { animation: corrupt-jitter 0.08s infinite; }
+.hud.corrupt .hud-side { flex-direction: row-reverse; }
+@keyframes corrupt-jitter { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+.hud-corrupt-line { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); font: 700 11px var(--mono); color: var(--cyan); background: var(--ink); padding: 2px 8px; }
+
+/* The perf overlay sits top-centre so it never covers the lab panels. */
+.perf { top: 70px; bottom: auto; left: 50%; transform: translateX(-50%); }

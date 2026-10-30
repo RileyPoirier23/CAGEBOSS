@@ -1103,7 +1103,6 @@ export function drawCharacter(
   }
   ctx.globalAlpha = 1;
   ctx.restore();
-  ctx.restore();
 }
 
 export interface FighterArtOpts extends ArtOpts {
