@@ -1452,3 +1452,44 @@ html, body {
 
 /* The perf overlay sits top-centre so it never covers the lab panels. */
 .perf { top: 70px; bottom: auto; left: 50%; transform: translateX(-50%); }
+
+/* ---------------------------------------------------------------- online -- */
+.code-field {
+  width: 100%;
+  min-height: 72px;
+  max-height: 120px;
+  resize: vertical;
+  font: 700 10px var(--mono);
+  letter-spacing: 0.02em;
+  color: var(--paper);
+  background: var(--ink);
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.35);
+  padding: 8px 10px;
+  margin: 6px 0 10px;
+  word-break: break-all;
+}
+.code-field[readonly] { background: #1f1a18; color: var(--sun); }
+.code-field:focus { outline: 3px solid var(--sun); outline-offset: -3px; }
+.online-status {
+  margin: 10px 0 14px;
+  padding: 8px 12px;
+  font: 700 11px var(--mono);
+  letter-spacing: 0.12em;
+  color: var(--paper);
+  background: var(--ink);
+  border-left: 8px solid var(--blood);
+}
+.online-status.on { border-left-color: var(--cyan); }
+.online-status b { color: var(--sun); margin-right: 8px; }
+.online-log {
+  margin: 10px 0;
+  padding: 8px 12px;
+  font: 700 10px var(--mono);
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  background: rgba(0,0,0,0.08);
+  border: 2px dashed var(--ink);
+}
+.online-log div + div { margin-top: 3px; }
+.num-field.text { width: 120px; text-transform: uppercase; }

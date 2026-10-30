@@ -192,6 +192,7 @@ export function titleHtml(p: ClashProfile): string {
         ${menu('STORY', 'story-screen')}
         ${menu('RIFT LADDER', 'rift-screen')}
         ${menu('TRAINING', 'training')}
+        ${menu('ONLINE', 'online')}
         ${menu('NETPLAY SIM', 'netplay')}
         ${menu('SPECTATE', 'spectate')}
         ${menu('REPLAYS', 'replays')}

@@ -489,6 +489,45 @@ export function poseFor(name: PoseName, p: number, tick: number): Pose {
       q.crouch = 0.2;
       q.lean = 0.3;
       return q;
+    // Finisher beats: the winner's frames are posed, not borrowed from moves.
+    case 'lift':
+      // Both arms locked overhead, legs braced wide, chest open.
+      q.frontArm = { shoulder: 3.0, elbow: 0.05 };
+      q.backArm = { shoulder: 2.95, elbow: -0.05 };
+      q.frontLeg = { shoulder: 0.5, elbow: 0.2 };
+      q.backLeg = { shoulder: -0.5, elbow: 0.2 };
+      q.crouch = 0.14;
+      q.lean = -0.12;
+      q.stretch = 0.08;
+      return q;
+    case 'heave':
+      // Dragging something heavy: low, leaning in, arms out front.
+      q.frontArm = { shoulder: 1.5, elbow: 0.2 };
+      q.backArm = { shoulder: 1.35, elbow: 0.3 };
+      q.frontLeg = { shoulder: 0.7, elbow: 0.5 };
+      q.backLeg = { shoulder: -0.6, elbow: 0.1 };
+      q.crouch = 0.35;
+      q.lean = 0.42;
+      return q;
+    case 'victory':
+      // One fist to the sky, the other on the hip, chin up.
+      q.frontArm = { shoulder: 2.95, elbow: 0.1 };
+      q.backArm = { shoulder: 0.95, elbow: -2.2 };
+      q.frontLeg = { shoulder: 0.28, elbow: 0.05 };
+      q.backLeg = { shoulder: -0.3, elbow: 0.1 };
+      q.lean = -0.08;
+      q.headTilt = -0.18;
+      q.stretch = 0.05;
+      return q;
+    case 'limp':
+      // Dead weight: everything hangs, head lolls.
+      q.frontArm = { shoulder: 0.15, elbow: 0.1 };
+      q.backArm = { shoulder: -0.1, elbow: 0.05 };
+      q.frontLeg = { shoulder: 0.1, elbow: 0.15 };
+      q.backLeg = { shoulder: -0.05, elbow: 0.1 };
+      q.headTilt = 0.9;
+      q.lean = 0.1;
+      return q;
     default:
       return q;
   }
@@ -1401,7 +1440,38 @@ function paintRooftop(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.fillRect(940 + i * 60, 40, 26, 230);
   }
   ctx.restore();
-  // Far skyline.
+  // Clouds: flat cut-outs with one shade band.
+  for (let i = 0; i < 6; i++) {
+    const cx = STAGE_X + 120 + i * 430 + rand(41, i) * 160;
+    const cy = 90 + rand(42, i) * 170;
+    const cw = 140 + rand(43, i) * 120;
+    ctx.fillStyle = '#fbf6ea';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, cw * 0.5, 30, 0, 0, TAU);
+    ctx.ellipse(cx - cw * 0.22, cy - 16, cw * 0.28, 28, 0, 0, TAU);
+    ctx.ellipse(cx + cw * 0.2, cy - 12, cw * 0.3, 26, 0, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = p.ink;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = p.sky2;
+    ctx.globalAlpha = 0.6;
+    ctx.fillRect(cx - cw * 0.5, cy + 14, cw, 14);
+    ctx.globalAlpha = 1;
+  }
+  // Haze layer: a pale, outline-free skyline a long way off.
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = p.sky2;
+  for (let i = 0; i < 26; i++) {
+    const bw = 60 + rand(51, i) * 90;
+    const bh = 90 + rand(52, i) * 260;
+    const bx = STAGE_X + i * 96 - 30;
+    ctx.fillRect(bx, 560 - bh, bw, bh + 300);
+    if (rand(53, i) > 0.6) ctx.fillRect(bx + bw * 0.45, 560 - bh - 50, 6, 50);
+  }
+  ctx.restore();
+  // Mid skyline: proper ink, lit windows, rooftop clutter.
   for (let i = 0; i < 17; i++) {
     const bw = 110 + rand(31, i) * 110;
     const bh = 150 + rand(32, i) * 330;
@@ -1410,15 +1480,34 @@ function paintRooftop(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.fillStyle = i % 3 === 0 ? p.far : p.near;
     ctx.fillRect(bx, by, bw, bh + 200);
     ctx.strokeStyle = p.ink;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 4;
     ctx.strokeRect(bx, by, bw, bh + 200);
+    // One hard shade down the camera-left face.
     ctx.fillStyle = p.ink;
-    ctx.globalAlpha = 0.35;
-    if (i % 2 === 0) {
-      for (let wy = by + 24; wy < 620; wy += 34) {
-        for (let wx = bx + 18; wx < bx + bw - 18; wx += 30) {
-          if (rand(i * 97 + wy, wx) > 0.42) ctx.fillRect(wx, wy, 12, 18);
-        }
+    ctx.globalAlpha = 0.16;
+    ctx.fillRect(bx, by, Math.min(28, bw * 0.22), bh + 200);
+    ctx.globalAlpha = 1;
+    // Rooftop clutter: a stair box, an antenna, a vent.
+    const r = rand(33, i);
+    if (r < 0.4) {
+      ctx.fillStyle = p.near;
+      ctx.fillRect(bx + bw * 0.55, by - 34, 44, 34);
+      ctx.strokeRect(bx + bw * 0.55, by - 34, 44, 34);
+    } else if (r < 0.7) {
+      ctx.beginPath();
+      ctx.moveTo(bx + bw * 0.3, by);
+      ctx.lineTo(bx + bw * 0.3, by - 90);
+      ctx.moveTo(bx + bw * 0.3 - 14, by - 70);
+      ctx.lineTo(bx + bw * 0.3 + 14, by - 70);
+      ctx.stroke();
+    }
+    // Windows: a warm lit grid with a few dark ones, not an ink grid.
+    for (let wy = by + 24; wy < 620; wy += 34) {
+      for (let wx = bx + 18; wx < bx + bw - 18; wx += 30) {
+        const lit = rand(i * 97 + wy, wx);
+        ctx.globalAlpha = lit > 0.55 ? 0.9 : 0.28;
+        ctx.fillStyle = lit > 0.55 ? p.light : p.ink;
+        ctx.fillRect(wx, wy, 12, 18);
       }
     }
     ctx.globalAlpha = 1;

@@ -29,12 +29,59 @@ const FINISHER_KINDS: Record<string, FinisherDef['kind']> = {
   null_1: 'wireframe', null_2: 'shadowvanish', null_3: 'split',
 };
 
-const DRILLS: string[][] = [
-  ['nLight', 'nLight', 'sLight'], ['sLight', 'sLight'], ['dLight', 'nLight'],
-  ['nLight', 'nLight', 'nSig'], ['sLight', 'sLight', 'sSig'], ['dLight', 'nLight', 'sSig'],
-  ['sAir', 'sAir'], ['nLight', 'nLight', 'jump', 'sAir'],
-  ['sLight', 'sLight', 'jump', 'sAir', 'gc', 'nSig'], ['nLight', 'nLight', 'sLight', 'super'],
-];
+/* Combo trials: ten per fighter, built from that fighter's own kit and route.
+   They climb from a two-hit string to the signature route and end on the super.
+   'jump' and 'gc' are stage directions for the lab, not moves it checks. */
+const TRIALS: Record<CharId, string[][]> = {
+  kestrel: [
+    ['nLight', 'nLight'], ['sLight', 'sLight'], ['dLight', 'nLight'],
+    ['nLight', 'nLight', 'nSig'], ['sLight', 'sLight', 'sSig'], ['sAir', 'sAir'],
+    ['sLight', 'sLight', 'jump', 'sAir'], ['dLight', 'jump', 'dAir'],
+    ['sLight', 'sLight', 'jump', 'sAir', 'gc', 'nSig'], ['nLight', 'nLight', 'sLight', 'super'],
+  ],
+  mireille: [
+    ['nLight', 'nLight'], ['dLight', 'nLight'], ['sLight', 'sLight'],
+    ['dLight', 'nLight', 'sSig'], ['nLight', 'nLight', 'nSig'], ['dSig', 'nLight'],
+    ['sAir', 'nAir'], ['dLight', 'nLight', 'jump', 'sAir'],
+    ['dLight', 'nLight', 'sSig', 'jump', 'sAir'], ['dLight', 'nLight', 'sSig', 'super'],
+  ],
+  brickhouse: [
+    ['nLight', 'nLight'], ['sLight', 'nSig'], ['dLight', 'dSig'],
+    ['nLight', 'nSig'], ['sSig', 'nLight'], ['nLight', 'nSig', 'dSig'],
+    ['sAir', 'dSig'], ['dLight', 'nLight', 'sSig'],
+    ['sLight', 'nSig', 'jump', 'dAir'], ['nLight', 'nSig', 'super'],
+  ],
+  halo: [
+    ['nLight', 'nLight'], ['sSig', 'sLight'], ['dLight', 'nLight'],
+    ['sSig', 'sLight', 'nAir'], ['nSig', 'sLight'], ['dSig', 'nLight'],
+    ['nAir', 'sAir'], ['sSig', 'sLight', 'jump', 'nAir', 'dSig'],
+    ['nSig', 'nSig', 'sLight'], ['sSig', 'sLight', 'dSig', 'super'],
+  ],
+  pip: [
+    ['nLight', 'nLight'], ['nSig', 'sLight'], ['sLight', 'sLight'],
+    ['nSig', 'sLight', 'jump', 'sAir'], ['dSig', 'nLight'], ['sSig', 'sLight'],
+    ['sAir', 'sAir', 'dAir'], ['nSig', 'sLight', 'jump', 'sAir', 'nSig'],
+    ['dLight', 'sSig', 'sLight'], ['nSig', 'sLight', 'sAir', 'super'],
+  ],
+  oyelaran: [
+    ['nLight', 'nLight'], ['sLight', 'dLight'], ['dSig', 'nLight'],
+    ['sLight', 'dLight', 'sSig'], ['nSig', 'sLight'], ['sLight', 'dLight', 'sSig', 'jump', 'nAir'],
+    ['dAir', 'nLight'], ['dLight', 'nSig'],
+    ['dSig', 'sLight', 'dLight', 'sSig'], ['sLight', 'dLight', 'sSig', 'super'],
+  ],
+  queen: [
+    ['nAir', 'nAir'], ['sAir', 'sAir'], ['nLight', 'sLight'],
+    ['sAir', 'sAir', 'dSig'], ['nSig', 'sLight'], ['dAir', 'sLight'],
+    ['sAir', 'sAir', 'dSig', 'sLight'], ['sSig', 'nAir'],
+    ['nSig', 'sAir', 'sAir'], ['sAir', 'sAir', 'dSig', 'super'],
+  ],
+  null: [
+    ['nLight', 'nLight'], ['nSig', 'sLight'], ['sLight', 'dLight'],
+    ['nSig', 'sLight', 'dLight'], ['sSig', 'nLight'], ['dSig', 'sLight'],
+    ['nSig', 'sLight', 'dLight', 'sSig'], ['sAir', 'dAir'],
+    ['nSig', 'sLight', 'dLight', 'sSig', 'dSig'], ['nSig', 'sLight', 'sSig', 'super'],
+  ],
+};
 
 const EXTRAS: Record<CharId, Pick<CharDef, 'breakStyle' | 'route' | 'story'>> = {
   kestrel: {
@@ -1182,7 +1229,7 @@ export const CHARACTERS: CharDef[] = [
   oyelaran,
   queen,
   nullFighter,
-].map((c) => ({ ...c, ...EXTRAS[c.id], trials: DRILLS.map((d) => d.slice()) }));
+].map((c) => ({ ...c, ...EXTRAS[c.id], trials: TRIALS[c.id].map((d) => d.slice()) }));
 
 /** A character as a standalone JSON data file (what a new fighter ships as). */
 export function exportChar(id: CharId): string {

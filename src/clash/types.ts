@@ -124,6 +124,10 @@ export interface StageDef {
 
 export type PoseName =
   | 'idle'
+  | 'lift'
+  | 'limp'
+  | 'victory'
+  | 'heave'
   | 'guard'
   | 'run'
   | 'jump'

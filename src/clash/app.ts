@@ -13,7 +13,9 @@ import { aiInput } from './ai';
 import { ClashRenderer, type RenderExtras } from './render';
 import { ClashAudio } from './audio';
 import { drawPortrait, type ArtOpts } from './art';
-import { NetSim, packInput, type ReplayFile } from './rollback';
+import { NetSim, Rollback, packInput, type ReplayFile } from './rollback';
+import { NET_PROTOCOL, OnlineMatch, PeerLink, type NetMessage } from './netplay';
+import { onlineHtml, type OnlineView } from './screens';
 import type { Action, KeyMap } from './profile';
 import type { CharId, CustomFinisher, Fighter, InputFrame, MatchConfig, MatchEvent, MatchState, MoveDef, MoveKey, PoseName, Rarity, Slot } from './types';
 import { CHAR_IDS, emptyInput } from './types';
@@ -80,8 +82,21 @@ const RESULT_DELAY_MS = 1700;
 const SUPER_SHOW_MS = 1150;
 const GHOST_TICKS = 600;
 
-type ScreenName = 'title' | 'select' | 'fight' | 'results' | 'roster' | 'vault' | 'options' | 'replays' | 'story' | 'rift' | 'builder' | 'editor' | 'progress';
-type FightMode = MatchConfig['mode'] | 'net';
+type ScreenName = 'title' | 'select' | 'fight' | 'results' | 'roster' | 'vault' | 'options' | 'replays' | 'story' | 'rift' | 'builder' | 'editor' | 'progress' | 'online';
+type FightMode = MatchConfig['mode'] | 'net' | 'online';
+
+/** The real-netplay handshake: one link, the codes in flight, who is on the other end. */
+interface OnlineState {
+  link: PeerLink;
+  role: 'host' | 'guest';
+  invite: string;
+  reply: string;
+  peerName: string;
+  peerChar: CharId | null;
+  peerModern: boolean;
+  log: string[];
+  pendingCfg: MatchConfig | null;
+}
 type Dummy = 'stand' | 'jump' | 'dodge' | 'cpu';
 
 interface ArcadeRun {
@@ -160,6 +175,9 @@ export class ClashApp {
   private session: ClashSession | null = null;
   private net: NetSim | null = null;
   private netP2: 'cpu' | 'keys' = 'cpu';
+  private online: OnlineState | null = null;
+  private onlineMatch: OnlineMatch | null = null;
+  private onlineName = 'CHALLENGER';
   private replay: { file: ReplayFile; cursor: { i: number } } | null = null;
   private fightCfg: MatchConfig | null = null;
   private spectator = false;
@@ -358,6 +376,7 @@ export class ClashApp {
   private leaveFight(): void {
     this.session = null;
     this.net = null;
+    this.onlineMatch = null;
     this.replay = null;
     this.fightCfg = null;
     this.spectator = false;
@@ -620,7 +639,7 @@ export class ClashApp {
     const tr = this.profile.options.training;
     const names: [string, string] = [
       this.spectator ? 'CPU' : 'P1',
-      this.spectator || (cfg && cfg.mode !== 'local' && this.fightMode !== 'net') ? 'CPU' : 'P2',
+      this.spectator || (cfg && cfg.mode !== 'local' && this.fightMode !== 'net' && this.fightMode !== 'online') ? 'CPU' : 'P2',
     ];
     return {
       training: cfg?.training ? { hitboxes: tr.hitboxes, frameData: tr.frameData, dodgeViz: tr.dodgeViz } : undefined,
@@ -674,7 +693,9 @@ export class ClashApp {
       `ROLLBACKS ${ses?.rollbacks ?? 0}  |  RESIM ${ses?.resimFrames ?? 0}  |  CONFIRMED ${ses?.confirmed ?? 0}  |  DELAY ${ses?.delay ?? 0}\n` +
       (net
         ? `NET PING ${this.profile.options.net.ping}MS JITTER ${this.profile.options.net.jitter}MS  |  PEER2 RB ${net.peers[1].rollbacks}  |  ${net.desync ? `DESYNC @${net.desyncTick}` : 'SYNC OK'}`
-        : 'LOCAL');
+        : this.onlineMatch
+          ? `ONLINE P${this.onlineMatch.local + 1}  |  PING ${this.onlineMatch.link.rtt}MS  |  THEIRS ${this.onlineMatch.remoteConfirmed}  |  STALLS ${this.onlineMatch.stalled}  |  ${this.onlineMatch.desync ? `DESYNC @${this.onlineMatch.desyncTick}` : 'SYNC OK'}`
+          : 'LOCAL');
   }
 
   /* ----------------------------------------------------------------- input -- */
@@ -718,6 +739,12 @@ export class ClashApp {
       this.setOption(range, input.value);
       const out = this.screenEl.querySelector<HTMLElement>(`[data-opt-out="${range}"]`);
       if (out) out.textContent = `${Math.round(Number(input.value) * 100)}%`;
+      return;
+    }
+    const online = input.dataset?.online;
+    if (online) {
+      if (online === 'name') this.onlineName = input.value.trim().toUpperCase().slice(0, 14) || 'CHALLENGER';
+      else if (this.online && (online === 'invite' || online === 'reply')) this.online[online] = input.value;
       return;
     }
     const net = input.dataset?.net;
@@ -850,6 +877,30 @@ export class ClashApp {
         this.arcadePending = false;
         this.showSelect();
         break;
+      case 'online':
+        this.showOnline();
+        break;
+      case 'online-host':
+        void this.hostOnline();
+        break;
+      case 'online-join':
+        this.joinOnline();
+        break;
+      case 'online-answer':
+        void this.answerOnline();
+        break;
+      case 'online-accept':
+        void this.acceptOnline();
+        break;
+      case 'online-copy':
+        this.copyOnline(data.field ?? 'invite');
+        break;
+      case 'online-start':
+        this.startOnlineHost();
+        break;
+      case 'online-leave':
+        this.leaveOnline();
+        break;
       case 'spectate':
         this.startSpectate();
         break;
@@ -940,7 +991,8 @@ export class ClashApp {
         this.endTraining();
         break;
       case 'rematch':
-        this.rematch();
+        if (this.fightMode === 'online') this.showOnline();
+        else this.rematch();
         break;
       case 'select':
         this.showSelect();
@@ -1148,7 +1200,7 @@ export class ClashApp {
   private setMode(mode: FightMode): void {
     this.arcadePending = false;
     this.fightMode = mode;
-    if (mode !== 'net') this.profile.mode = mode;
+    if (mode !== 'net' && mode !== 'online') this.profile.mode = mode;
     if (mode === 'ranked') this.profile.gearBuffs = false;
     this.saveSoon();
     this.showSelect();
@@ -1190,6 +1242,10 @@ export class ClashApp {
     }
     if (this.fightMode === 'net') {
       this.startNet();
+      return;
+    }
+    if (this.fightMode === 'online') {
+      this.showOnline();
       return;
     }
     const mode = this.fightMode;
@@ -1444,6 +1500,7 @@ export class ClashApp {
 
   private startFight(cfg: MatchConfig): void {
     this.net = null;
+    this.onlineMatch = null;
     this.replay = null;
     this.spectator = false;
     this.fightCfg = cfg;
@@ -1456,6 +1513,247 @@ export class ClashApp {
       delay: this.profile.options.latency,
     });
     this.beginFightScreen();
+  }
+
+  /* ------------------------------------------------------------- online -- */
+
+  private onlineView(): OnlineView {
+    const o = this.online;
+    return {
+      role: o?.role ?? null,
+      status: o?.link.status ?? 'idle',
+      detail: o?.link.detail ?? (PeerLink.supported() ? 'Host a match or join one.' : ''),
+      invite: o?.invite ?? '',
+      reply: o?.reply ?? '',
+      open: o?.link.open ?? false,
+      rtt: o?.link.rtt ?? 0,
+      peerName: o?.peerName ?? '',
+      peerChar: o?.peerChar ?? null,
+      name: this.onlineName,
+      char: this.profile.selected,
+      supported: PeerLink.supported(),
+      log: o?.log ?? [],
+    };
+  }
+
+  private showOnline(): void {
+    this.onlineMatch = null;
+    this.showSimple('online', onlineHtml(this.onlineView()), 'options-screen');
+  }
+
+  /** Re-render the online screen without losing what is typed in the paste box. */
+  private refreshOnline(): void {
+    if (this.screen !== 'online') return;
+    const live = this.screenEl.querySelector<HTMLTextAreaElement>('textarea[data-online]:not([readonly])');
+    const keep = live ? { field: live.dataset.online ?? '', value: live.value } : null;
+    this.showOnline();
+    if (keep && keep.value) {
+      const again = this.screenEl.querySelector<HTMLTextAreaElement>(`textarea[data-online="${keep.field}"]`);
+      if (again) again.value = keep.value;
+    }
+  }
+
+  private openLink(role: 'host' | 'guest'): PeerLink {
+    const link: PeerLink = new PeerLink(role, {
+      status: (s, detail) => {
+        if (!this.online || this.online.link !== link) return;
+        this.online.log.push(`${s.toUpperCase()} ${detail}`.trim());
+        if (s === 'open') {
+          link.send({ t: 'hello', name: this.onlineName, char: this.profile.selected, modern: this.profile.options.modern, v: NET_PROTOCOL });
+          this.audio.play('select');
+        }
+        if ((s === 'closed' || s === 'failed') && this.onlineMatch) this.onlinePeerLeft(detail);
+        else this.refreshOnline();
+      },
+      message: (msg) => this.onLinkMessage(msg),
+    });
+    return link;
+  }
+
+  private freshOnline(role: 'host' | 'guest'): OnlineState {
+    this.leaveOnline(false);
+    return { link: this.openLink(role), role, invite: '', reply: '', peerName: '', peerChar: null, peerModern: false, log: [], pendingCfg: null };
+  }
+
+  private async hostOnline(): Promise<void> {
+    if (!PeerLink.supported()) return;
+    const o = this.freshOnline('host');
+    this.online = o;
+    this.showOnline();
+    try {
+      const code = await o.link.host();
+      if (this.online === o) {
+        o.invite = code;
+        this.refreshOnline();
+      }
+    } catch (e) {
+      this.onlineError(e);
+    }
+  }
+
+  private joinOnline(): void {
+    if (!PeerLink.supported()) return;
+    this.online = this.freshOnline('guest');
+    this.showOnline();
+  }
+
+  private pasted(field: 'invite' | 'reply'): string {
+    const ta = this.screenEl.querySelector<HTMLTextAreaElement>(`textarea[data-online="${field}"]`);
+    return (ta?.value ?? this.online?.[field] ?? '').trim();
+  }
+
+  private async answerOnline(): Promise<void> {
+    const o = this.online;
+    if (!o || o.role !== 'guest') return;
+    const invite = this.pasted('invite');
+    if (!invite) {
+      this.toast('PASTE THE INVITE FIRST');
+      return;
+    }
+    o.invite = invite;
+    try {
+      const reply = await o.link.join(invite);
+      if (this.online === o) {
+        o.reply = reply;
+        this.refreshOnline();
+      }
+    } catch (e) {
+      this.onlineError(e);
+    }
+  }
+
+  private async acceptOnline(): Promise<void> {
+    const o = this.online;
+    if (!o || o.role !== 'host') return;
+    const reply = this.pasted('reply');
+    if (!reply) {
+      this.toast('PASTE THE REPLY FIRST');
+      return;
+    }
+    o.reply = reply;
+    try {
+      await o.link.accept(reply);
+      this.refreshOnline();
+    } catch (e) {
+      this.onlineError(e);
+    }
+  }
+
+  private onlineError(e: unknown): void {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (this.online) this.online.log.push(`ERROR ${msg}`);
+    this.toast(msg.toUpperCase().slice(0, 48));
+    this.refreshOnline();
+  }
+
+  private copyOnline(field: string): void {
+    const o = this.online;
+    if (!o) return;
+    const text = field === 'reply' ? o.reply : o.invite;
+    if (!text) {
+      this.toast('NOTHING TO COPY YET');
+      return;
+    }
+    const clip = navigator.clipboard;
+    if (!clip) {
+      this.toast('SELECT THE CODE AND COPY IT');
+      return;
+    }
+    clip.writeText(text).then(() => this.toast('COPIED'), () => this.toast('SELECT THE CODE AND COPY IT'));
+  }
+
+  private onLinkMessage(msg: NetMessage): void {
+    const o = this.online;
+    if (!o) return;
+    if (msg.t === 'hello') {
+      o.peerName = (msg.name || 'PEER').toUpperCase().slice(0, 14);
+      o.peerChar = msg.char;
+      o.peerModern = !!msg.modern;
+      o.log.push(`${o.peerName} IS HERE AS ${charDef(msg.char).name.toUpperCase()}`);
+      if (msg.v !== NET_PROTOCOL) o.log.push('VERSION MISMATCH: ONE OF YOU NEEDS THE NEWER BUILD');
+      this.refreshOnline();
+    } else if (msg.t === 'cfg') {
+      if (o.role !== 'guest') return;
+      o.pendingCfg = msg.cfg;
+      if (msg.name) o.peerName = msg.name;
+      o.link.send({ t: 'go' });
+      this.startOnline(msg.cfg, 1);
+    } else if (msg.t === 'go') {
+      if (o.role === 'host' && o.pendingCfg) this.startOnline(o.pendingCfg, 0);
+    } else if (msg.t === 'bye') {
+      o.log.push(`${o.peerName || 'PEER'} LEFT`);
+      if (this.onlineMatch) this.onlinePeerLeft('They left.');
+      else this.refreshOnline();
+    } else if (this.onlineMatch) {
+      this.onlineMatch.onMessage(msg);
+    }
+  }
+
+  private startOnlineHost(): void {
+    const o = this.online;
+    if (!o || o.role !== 'host' || !o.link.open) {
+      this.toast('NOT CONNECTED YET');
+      return;
+    }
+    if (!o.peerChar) {
+      this.toast('WAITING FOR THE GUEST TO CHECK IN');
+      return;
+    }
+    const cfg = this.buildConfig('casual', this.profile.selected, o.peerChar);
+    cfg.gearBuffs = false;
+    cfg.modern2 = o.peerModern;
+    cfg.seed = (Date.now() ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0;
+    o.pendingCfg = cfg;
+    o.link.send({ t: 'cfg', cfg, name: this.onlineName });
+    o.log.push('RULES SENT. WAITING FOR THE GUEST TO LOAD.');
+    this.refreshOnline();
+  }
+
+  /** Both sides land here: the host on the guest's GO, the guest on the host's rules. */
+  private startOnline(cfg: MatchConfig, localSide: 0 | 1): void {
+    const o = this.online;
+    if (!o) return;
+    this.fightMode = 'online';
+    this.fightCfg = cfg;
+    this.replay = null;
+    this.spectator = false;
+    this.net = null;
+    this.onlineMatch = null;
+    this.arcadePending = false;
+    const delay = Math.max(1, Math.min(6, this.profile.options.net.delay));
+    this.session = new ClashSession(cfg, { localSide, cpu: false, delay });
+    this.session.core = new Rollback(this.session.match, { delay, maxRollback: 24 });
+    this.onlineMatch = new OnlineMatch(o.link, this.session.core, localSide);
+    this.beginFightScreen();
+    this.toast(`ONLINE // YOU ARE P${localSide + 1} // PING ${o.link.rtt} MS`);
+  }
+
+  /** One tick of a real online match. Null when we are waiting on the other side. */
+  private stepOnline(): MatchEvent[] | null {
+    const om = this.onlineMatch!;
+    const ev = om.tick(this.buildInput(0));
+    if (ev) this.session!.events.push(...ev);
+    return ev;
+  }
+
+  private onlinePeerLeft(detail: string): void {
+    this.onlineMatch = null;
+    this.toast(`LINK LOST: ${detail.toUpperCase().slice(0, 40)}`, 3200);
+    if (this.screen === 'fight' || this.screen === 'results') {
+      this.session = null;
+      this.fightCfg = null;
+      this.showOnline();
+    } else {
+      this.refreshOnline();
+    }
+  }
+
+  private leaveOnline(show = true): void {
+    const o = this.online;
+    this.onlineMatch = null;
+    this.online = null;
+    if (o) o.link.close();
+    if (show) this.showOnline();
   }
 
   private startNet(): void {
@@ -1476,6 +1774,7 @@ export class ClashApp {
     const file = this.profile.replays[index];
     if (!file) return;
     this.net = null;
+    this.onlineMatch = null;
     this.spectator = true;
     this.fightCfg = file.cfg;
     this.replay = { file, cursor: { i: 0 } };
@@ -1535,6 +1834,7 @@ export class ClashApp {
       training: false,
     };
     this.net = null;
+    this.onlineMatch = null;
     this.replay = null;
     this.spectator = true;
     this.fightCfg = cfg;
@@ -1637,6 +1937,14 @@ export class ClashApp {
       let events: MatchEvent[];
       if (this.net) {
         events = this.stepNet();
+      } else if (this.onlineMatch) {
+        const ev = this.stepOnline();
+        if (ev === null) {
+          // Waiting on the other side: do not bank the time, or we would burst when it arrives.
+          this.accum = 0;
+          break;
+        }
+        events = ev;
       } else if (this.replay) {
         events = this.session.stepReplay(this.replay.file.inputs, this.replay.cursor);
       } else {

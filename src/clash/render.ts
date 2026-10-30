@@ -1201,9 +1201,19 @@ export class ClashRenderer {
     const face = A.facing;
     const tick = m.tick;
 
-    const winnerAt = (x: number, y: number, pose: Partial<Fighter>): void => {
+    // The winner is drawn from a live-fighter pose (a move frame) or, for the
+    // beats that have no move, a named finisher pose. The last second of every
+    // finisher is the victory frame.
+    const winnerAt = (x: number, y: number, pose: Partial<Fighter>, poseName?: PoseName): void => {
       ctx.save();
-      drawFighter(ctx, { ...A, x, y, flash: 0, state: 'attack', move: 'nSig', moveFrame: 10, ...pose }, { ...artOpts, tick, held: null });
+      const closing = t > fin.duration - 50;
+      if (closing || poseName) {
+        const name: PoseName = closing ? 'victory' : poseName!;
+        const bob = closing ? Math.sin(t * 0.25) * 2 : 0;
+        drawCharacter(ctx, charDef(A.char), x, y + bob, A.facing, name, { ...artOpts, tick, phase: 0, alpha: 1, held: null });
+      } else {
+        drawFighter(ctx, { ...A, x, y, flash: 0, state: 'attack', move: 'nSig', moveFrame: 10, ...pose }, { ...artOpts, tick, held: null });
+      }
       ctx.restore();
     };
     // The loser is posed by name: 'idle' while still standing, 'hurt' once limp. The KO pose
@@ -1246,13 +1256,20 @@ export class ClashRenderer {
     const kind = fin.kind;
     if (kind === 'floorpunch') {
       const k = K(20, 80);
-      winnerAt(bx - 60 * face, by, { moveFrame: Math.round(4 + 10 * k) });
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(-2000, -2000, 6000, by + 2002);
-      ctx.clip();
-      loserAt(bx, by + 150 * K(60, 120), 'hurt');
-      ctx.restore();
+      // Hoist first: the loser goes up over the winner's head, then down through the floor.
+      const hoist = K(0, 30);
+      if (t < 50) {
+        winnerAt(bx - 40 * face, by, {}, t < 8 ? 'heave' : 'lift');
+        loserAt(bx - 10 * face, by - 150 * hoist, 'limp', (c) => upright(c, bx - 10 * face, by - 150 * hoist, (Math.PI / 2) * hoist * face));
+      } else {
+        winnerAt(bx - 60 * face, by, { moveFrame: Math.round(4 + 10 * k) });
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(-2000, -2000, 6000, by + 2002);
+        ctx.clip();
+        loserAt(bx, by + 150 * K(60, 120), 'limp', (c) => upright(c, bx, by + 150 * K(60, 120), Math.PI / 2 * face));
+        ctx.restore();
+      }
       if (t === 60) { this.scars.push({ x: bx, y: FLOOR_Y, seed: t * 31, kind: 'crack', theme: m.stageId }); spill(40, 80); kick(20); }
     } else if (kind === 'bloodname') {
       winnerAt(bx - 90 * face, by, { state: 'attack', move: 'sLight', moveFrame: 6 });

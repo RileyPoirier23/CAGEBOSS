@@ -458,3 +458,77 @@ export function keysHtml(keys: [KeyMap, KeyMap], binding: { side: 0 | 1; action:
 export function levelLine(p: ClashProfile, id: CharId): string {
   return `LV ${levelOf(p, id)}`;
 }
+
+/* --------------------------------------------------------------------------
+   Online (real netplay over WebRTC, hand-carried codes)
+   -------------------------------------------------------------------------- */
+
+export interface OnlineView {
+  role: 'host' | 'guest' | null;
+  status: string;
+  detail: string;
+  invite: string;
+  reply: string;
+  open: boolean;
+  rtt: number;
+  peerName: string;
+  peerChar: CharId | null;
+  name: string;
+  char: CharId;
+  supported: boolean;
+  log: string[];
+}
+
+export function onlineHtml(v: OnlineView): string {
+  const me = charDef(v.char);
+  const peer = v.peerChar ? charDef(v.peerChar) : null;
+  const ta = (field: string, value: string, ro: boolean, ph: string) =>
+    `<textarea class="code-field" data-online="${field}" ${ro ? 'readonly' : ''} placeholder="${esc(ph)}" spellcheck="false">${esc(value)}</textarea>`;
+  const head = `<div class="screen-head"><h1>ONLINE</h1><div class="sub">PEER TO PEER // ROLLBACK // NO SERVER</div></div>`;
+  if (!v.supported) {
+    return `${head}<div class="vault-note">This browser has no WebRTC. Netplay needs Chrome, Edge, Firefox or Safari.</div>
+      <div class="loadout-row"><button class="btn" data-action="title">BACK</button></div>`;
+  }
+  const status = `<div class="online-status ${v.open ? 'on' : ''}">
+      <b>${esc(v.status.toUpperCase())}</b> ${esc(v.detail)}${v.open ? ` · PING ${v.rtt} MS` : ''}
+    </div>`;
+  const who = `<div class="loadout-row">
+      <div class="mini-field"><label>YOU</label><div class="value">${esc(v.name)} · ${esc(me.name)}</div></div>
+      <div class="mini-field"><label>THEM</label><div class="value">${peer ? `${esc(v.peerName)} · ${esc(peer.name)}` : '—'}</div></div>
+      <div class="mini-field"><label>YOUR NAME</label><div class="value"><input class="num-field text" type="text" maxlength="14" value="${esc(v.name)}" data-online="name"></div></div>
+    </div>
+    <div class="vault-note">Your fighter is whoever you last picked on the FIGHT screen (${esc(me.name)}). The host picks the stage and the rules.</div>`;
+  let body = '';
+  if (!v.role) {
+    body = `<div class="loadout-row">
+        <button class="btn primary" data-action="online-host">HOST A MATCH</button>
+        <button class="btn" data-action="online-join">JOIN A MATCH</button>
+      </div>
+      <div class="vault-note">Host makes an invite code and sends it any way you like. Guest pastes it, sends back the reply code. That is the whole handshake; the fight runs browser to browser.</div>`;
+  } else if (v.role === 'host') {
+    body = `<div class="section-label">1 // SEND THIS INVITE</div>
+      ${ta('invite', v.invite, true, 'Making the invite…')}
+      <div class="loadout-row"><button class="btn" data-action="online-copy" data-field="invite">COPY INVITE</button></div>
+      <div class="section-label">2 // PASTE THEIR REPLY</div>
+      ${ta('reply', v.reply, false, 'Paste the reply code here')}
+      <div class="loadout-row">
+        <button class="btn primary" data-action="online-accept">CONNECT</button>
+        ${v.open ? `<button class="btn primary" data-action="online-start">START THE FIGHT</button>` : ''}
+        <button class="btn" data-action="online-leave">LEAVE</button>
+      </div>`;
+  } else {
+    body = `<div class="section-label">1 // PASTE THE INVITE</div>
+      ${ta('invite', v.invite, false, 'Paste the host\'s invite code here')}
+      <div class="loadout-row"><button class="btn primary" data-action="online-answer">MAKE REPLY</button></div>
+      <div class="section-label">2 // SEND THIS REPLY</div>
+      ${ta('reply', v.reply, true, 'Your reply code appears here')}
+      <div class="loadout-row">
+        <button class="btn" data-action="online-copy" data-field="reply">COPY REPLY</button>
+        <button class="btn" data-action="online-leave">LEAVE</button>
+      </div>
+      ${v.open ? `<div class="vault-note">Connected. The host starts the fight.</div>` : ''}`;
+  }
+  const log = v.log.length ? `<div class="online-log">${v.log.slice(-6).map((l) => `<div>${esc(l)}</div>`).join('')}</div>` : '';
+  return `${head}${status}${who}${body}${log}
+    <div class="loadout-row"><button class="btn" data-action="title">BACK TO TITLE</button></div>`;
+}
