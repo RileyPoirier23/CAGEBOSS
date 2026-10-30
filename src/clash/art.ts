@@ -129,6 +129,77 @@ function limb(
   ctx.stroke();
 }
 
+/** A limb with one hard shadow tone laid along the side away from the key light. */
+function limbShaded(
+  ctx: CanvasRenderingContext2D,
+  x0: number, y0: number, x1: number, y1: number,
+  r: number, fill: string, shade: string, lw: number, ink: string,
+): void {
+  limb(ctx, x0, y0, x1, y1, r, fill, lw, ink);
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const len = Math.hypot(dx, dy) || 1;
+  let px = -dy / len;
+  let py = dx / len;
+  if (px > 0) {
+    px = -px;
+    py = -py;
+  }
+  const off = r * 0.5;
+  const a = ctx.globalAlpha;
+  ctx.globalAlpha = a * 0.6;
+  ctx.beginPath();
+  ctx.moveTo(x0 + px * off, y0 + py * off);
+  ctx.lineTo(x1 + px * off, y1 + py * off);
+  ctx.lineWidth = r * 0.85;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = shade;
+  ctx.stroke();
+  ctx.globalAlpha = a;
+}
+
+/** A closed fist: a rounded block with a knuckle line. */
+function fist(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, fill: string, lw: number, ink: string): void {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.beginPath();
+  ctx.roundRect(-r, -r * 0.85, r * 2, r * 1.7, r * 0.5);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  if (lw > 0) {
+    ctx.lineWidth = lw;
+    ctx.strokeStyle = ink;
+    ctx.stroke();
+    ctx.lineWidth = Math.max(1, lw * 0.6);
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.45, -r * 0.2);
+    ctx.lineTo(r * 0.55, -r * 0.2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** A boot with the toe forward (+x in body space) and a cuff above the ankle. */
+function boot(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, fill: string, cuff: string, lw: number, ink: string): void {
+  ctx.beginPath();
+  ctx.moveTo(x - r * 0.95, y - r * 0.95);
+  ctx.lineTo(x + r * 0.5, y - r * 0.95);
+  ctx.quadraticCurveTo(x + r * 2.0, y - r * 0.85, x + r * 2.0, y + r * 0.05);
+  ctx.lineTo(x + r * 1.8, y + r * 0.35);
+  ctx.lineTo(x - r * 1.05, y + r * 0.35);
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+  if (lw > 0) {
+    ctx.lineWidth = lw;
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = ink;
+    ctx.stroke();
+  }
+  ctx.fillStyle = cuff;
+  ctx.fillRect(x - r * 0.95, y - r * 1.35, r * 1.5, r * 0.55);
+}
+
 function xt(x: number, len: number, a: number): number {
   return x + Math.sin(a) * len;
 }
@@ -898,20 +969,22 @@ export function drawCharacter(
   const art = def.art;
   const tick = opts.tick;
   const pose = poseFor(poseName, opts.phase, tick);
+  // Comic proportions: about six heads tall, shoulders two and a half heads
+  // wide, limbs thick enough to hold a flat colour and one shade tone.
   const H = 144 * art.scale;
   const bulk = art.bulk;
-  const ink = inkWidth(opts, 0.86);
-  const hipH = H * 0.42;
+  const ink = inkWidth(opts, 1.15);
+  const hipH = H * 0.43;
   const thigh = H * 0.235;
-  const shin = H * 0.205;
-  const torsoH = H * 0.3 * (1 + pose.stretch);
-  const shoulderW = H * 0.19 * bulk;
-  const hipW = H * 0.145 * bulk;
-  const upperArm = H * 0.17;
-  const foreArm = H * 0.155;
-  const headR = H * 0.092 * art.head;
-  const limbR = H * 0.036 * bulk;
-  const armR = H * 0.032 * bulk;
+  const shin = H * 0.2;
+  const torsoH = H * 0.31 * (1 + pose.stretch);
+  const shoulderW = H * 0.27 * bulk;
+  const hipW = H * 0.16 * bulk;
+  const upperArm = H * 0.165;
+  const foreArm = H * 0.15;
+  const headR = H * 0.098 * art.head;
+  const limbR = H * 0.056 * bulk;
+  const armR = H * 0.047 * bulk;
   const lean = pose.lean;
   const bodyRot = pose.roll;
 
@@ -929,6 +1002,12 @@ export function drawCharacter(
 
   ctx.save();
   ctx.globalAlpha = opts.alpha ?? 1;
+  // Hit flash: the whole figure goes to paper for a few ticks. A filter keeps it
+  // on the figure alone; a composite fill would bleach the backdrop behind it.
+  if ((opts.flash ?? 0) > 0) {
+    const k = Math.min(1, (opts.flash ?? 0) / 8);
+    ctx.filter = `brightness(${(1 + k * 1.4).toFixed(2)}) saturate(${(1 - k * 0.8).toFixed(2)})`;
+  }
   ctx.translate(x, y);
   ctx.scale(facing, 1);
   if (bodyRot) {
@@ -993,14 +1072,14 @@ export function drawCharacter(
 
   // Back leg.
   const trouser = art.primaryShade;
-  limb(ctx, -hipW * 0.32, hipY + oy, backLeg.knee.x, backLeg.knee.y, limbR * 0.9, trouser, ink, art.ink);
-  limb(ctx, backLeg.knee.x, backLeg.knee.y, backLeg.ankle.x, backLeg.ankle.y, limbR * 0.78, trouser, ink, art.ink);
-  ellipse(ctx, backLeg.ankle.x + 3, backLeg.ankle.y + 1, limbR * 1.05, limbR * 0.62, art.secondaryShade, ink * 0.8, art.ink);
+  limb(ctx, -hipW * 0.32, hipY + oy, backLeg.knee.x, backLeg.knee.y, limbR * 0.95, trouser, ink, art.ink);
+  limb(ctx, backLeg.knee.x, backLeg.knee.y, backLeg.ankle.x, backLeg.ankle.y, limbR * 0.84, trouser, ink, art.ink);
+  boot(ctx, backLeg.ankle.x, backLeg.ankle.y, limbR * 0.95, art.secondaryShade, art.primaryShade, ink * 0.9, art.ink);
 
-  // Back arm.
-  limb(ctx, backShoulder.x, backShoulder.y, backArm.elbow.x, backArm.elbow.y, armR * 0.9, art.skinShade, ink, art.ink);
-  limb(ctx, backArm.elbow.x, backArm.elbow.y, backArm.hand.x, backArm.hand.y, armR * 0.76, art.skinShade, ink, art.ink);
-  circle(ctx, backArm.hand.x, backArm.hand.y, armR * 0.92, art.secondaryShade, ink * 0.8, art.ink);
+  // Back arm: the whole limb sits in the shade tone.
+  limb(ctx, backShoulder.x, backShoulder.y, backArm.elbow.x, backArm.elbow.y, armR * 0.95, art.skinShade, ink, art.ink);
+  limb(ctx, backArm.elbow.x, backArm.elbow.y, backArm.hand.x, backArm.hand.y, armR * 0.84, art.skinShade, ink, art.ink);
+  fist(ctx, backArm.hand.x, backArm.hand.y, armR * 1.2, art.secondaryShade, ink * 0.9, art.ink);
 
   // Torso: waist to shoulders, one flat colour, one hard shade.
   ctx.beginPath();
@@ -1049,18 +1128,26 @@ export function drawCharacter(
     ctx.globalAlpha = 1;
   }
 
-  // Front leg.
-  limb(ctx, hipW * 0.32, hipY + oy, frontLeg.knee.x, frontLeg.knee.y, limbR, art.primary, ink, art.ink);
-  limb(ctx, frontLeg.knee.x, frontLeg.knee.y, frontLeg.ankle.x, frontLeg.ankle.y, limbR * 0.86, art.primary, ink, art.ink);
-  ellipse(ctx, frontLeg.ankle.x + 4, frontLeg.ankle.y + 1, limbR * 1.2, limbR * 0.66, art.secondary, ink, art.ink);
-  // Boot cuff.
+  // Shoulder caps: the mass that makes the silhouette read as a hero.
+  circle(ctx, backShoulder.x, backShoulder.y, armR * 1.25, art.primaryShade, ink, art.ink);
+  circle(ctx, frontShoulder.x, frontShoulder.y, armR * 1.3, art.primary, ink, art.ink);
+  ctx.save();
+  ctx.globalAlpha = (opts.alpha ?? 1) * 0.5;
   ctx.fillStyle = art.primaryShade;
-  ctx.fillRect(frontLeg.ankle.x - limbR * 0.8, frontLeg.ankle.y - limbR * 1.1, limbR * 1.6, limbR * 0.7);
+  ctx.beginPath();
+  ctx.arc(frontShoulder.x, frontShoulder.y, armR * 1.3, Math.PI * 0.55, Math.PI * 1.45);
+  ctx.fill();
+  ctx.restore();
+
+  // Front leg: flat colour with one hard shade along its back edge.
+  limbShaded(ctx, hipW * 0.32, hipY + oy, frontLeg.knee.x, frontLeg.knee.y, limbR, art.primary, art.primaryShade, ink, art.ink);
+  limbShaded(ctx, frontLeg.knee.x, frontLeg.knee.y, frontLeg.ankle.x, frontLeg.ankle.y, limbR * 0.88, art.primary, art.primaryShade, ink, art.ink);
+  boot(ctx, frontLeg.ankle.x, frontLeg.ankle.y, limbR, art.secondary, art.primaryShade, ink, art.ink);
 
   // Front arm.
-  limb(ctx, frontShoulder.x, frontShoulder.y, frontArm.elbow.x, frontArm.elbow.y, armR, art.skin, ink, art.ink);
-  limb(ctx, frontArm.elbow.x, frontArm.elbow.y, frontArm.hand.x, frontArm.hand.y, armR * 0.84, art.skin, ink, art.ink);
-  circle(ctx, frontArm.hand.x, frontArm.hand.y, armR * 1.02, art.secondary, ink, art.ink);
+  limbShaded(ctx, frontShoulder.x, frontShoulder.y, frontArm.elbow.x, frontArm.elbow.y, armR, art.skin, art.skinShade, ink, art.ink);
+  limbShaded(ctx, frontArm.elbow.x, frontArm.elbow.y, frontArm.hand.x, frontArm.hand.y, armR * 0.86, art.skin, art.skinShade, ink, art.ink);
+  fist(ctx, frontArm.hand.x, frontArm.hand.y, armR * 1.3, art.secondary, ink, art.ink);
   if (art.extraArms) {
     // Two smaller chitin arms folded beneath the ribs.
     for (const side of [-1, 1]) {
@@ -1093,14 +1180,6 @@ export function drawCharacter(
     ctx.restore();
   }
 
-  // Flash: an all-over paper cut-out on hit.
-  if ((opts.flash ?? 0) > 0) {
-    ctx.globalAlpha = Math.min(0.65, (opts.flash ?? 0) / 10);
-    ctx.globalCompositeOperation = 'source-atop';
-    ctx.fillStyle = '#fff7e6';
-    ctx.fillRect(-H * 0.6, -H * 1.1, H * 1.2, H * 1.2);
-    ctx.globalCompositeOperation = 'source-over';
-  }
   ctx.globalAlpha = 1;
   ctx.restore();
 }
@@ -1227,10 +1306,10 @@ export function drawPortrait(
 
 /* ---------------------------------------------------------------- stage --- */
 
-const STAGE_W = 2400;
-const STAGE_H = 1600;
-const STAGE_X = -400;
-const STAGE_Y = -500;
+export const STAGE_W = 2400;
+export const STAGE_H = 1600;
+export const STAGE_X = -400;
+export const STAGE_Y = -500;
 
 interface Palette {
   sky: string;

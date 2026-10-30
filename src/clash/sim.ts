@@ -36,8 +36,15 @@ const RUN_SPEED = 5.8;
 const AIR_SPEED = 5.2;
 const GROUND_ACCEL = 1.15;
 const AIR_ACCEL = 0.55;
-const JUMP_SPEED = 14.6;
-const AIR_JUMP_SPEED = 13.2;
+const JUMP_SPEED = 16.0;
+const AIR_JUMP_SPEED = 14.4;
+/** Knockback bleeds off fast in the air so a hit at low damage sends you a
+    third of the stage, not the whole way to the blast zone. Brawlhalla rule:
+    kills come from damage, not from the first signature that lands. */
+const AIR_DRAG = 0.99;
+const TUMBLE_DRAG = 0.972;
+/** Half a meter at the bell. A super costs two pips, so the first one has to be earned. */
+const DRIVE_START = 3;
 const FAST_FALL = 12;
 const DODGE_COOLDOWN = 105;
 const BURNOUT_TICKS = 300;
@@ -158,7 +165,7 @@ function makeFighter(
     hpMax,
     hp: hpMax,
     stocks: DEFAULT_STOCKS,
-    drive: DRIVE_MAX,
+    drive: DRIVE_START,
     burnout: 0,
     superFree: false,
     comebackUsed: false,
@@ -450,7 +457,7 @@ function physics(m: MatchState, f: Fighter): void {
       f.vx *= 0.86;
     }
   } else {
-    f.vx *= 0.995;
+    f.vx *= f.state === 'hitstun' ? TUMBLE_DRAG : AIR_DRAG;
   }
 
   if (!m.training) {
@@ -1412,7 +1419,7 @@ function updateNeutral(m: MatchState, f: Fighter, other: Fighter, input: InputFr
     } else if (f.grounded) {
       f.vx *= 0.8;
     } else {
-      f.vx *= 0.995;
+      f.vx *= AIR_DRAG;
     }
 
     if (!f.grounded && input.down && f.vy > 0) f.vy = Math.max(f.vy, FAST_FALL);

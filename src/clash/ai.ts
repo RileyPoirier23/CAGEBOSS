@@ -241,7 +241,11 @@ export function aiInput(brain: AiBrain, m: MatchState): InputFrame {
   brain.decisionAt = m.tick + reaction + Math.floor(rnd(brain, m, 4) * 8);
 
   // Super / comeback.
+  // A super at the bell is a waste of two pips and reads as cheap. The CPU
+  // holds it until the opponent is bruised or it is the comeback.
+  const ripe = f.superFree || (m.tick > 540 && o.hpMax - o.hp >= o.hpMax * 0.35);
   if (
+    ripe &&
     (f.superFree || (f.drive >= 2 && f.burnout <= 0)) &&
     adx < 230 && Math.abs(dy) < 150 &&
     rnd(brain, m, 5) < (f.superFree ? 0.9 : 0.18 + level * 0.04)

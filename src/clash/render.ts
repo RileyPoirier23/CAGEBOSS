@@ -27,6 +27,9 @@ import {
   drawSuperAura,
   drawTrap,
   rand,
+  stageBackdrop,
+  STAGE_X,
+  STAGE_Y,
 } from './art';
 
 export interface RenderOpts {
@@ -607,42 +610,53 @@ export class ClashRenderer {
     const b = charDef(m.fighters[1].char).universe;
     const foreign = a !== b ? (a !== stage.universe ? m.fighters[0].char : b !== stage.universe ? m.fighters[1].char : null) : null;
     const treat: Treatment = foreign ? treatmentOf(foreign) : 'none';
+    // Parallax: the backdrop drifts a little slower than the platforms so the
+    // skyline sits behind the fight instead of on it.
+    ctx.save();
+    ctx.translate((this.cam.x - 800) * 0.16, (this.cam.y - 470) * 0.1);
     if (treat === 'none') {
       drawStageBack(ctx, stage);
+      ctx.restore();
       return;
     }
-    // The blended backdrop is cached per stage / treatment / size. Glitch re-slices itself every few frames.
-    const key = `${stage.id}|${treat}|${this.canvas.width}x${this.canvas.height}|${treat === 'glitch' ? Math.floor(this.time * 6) : 0}`;
+    // The blended backdrop is cached in stage space per stage / treatment, so
+    // the camera pans and zooms across it like the plain one. Glitch re-slices
+    // itself every few frames.
+    const key = `${stage.id}|${treat}|${treat === 'glitch' ? Math.floor(this.time * 6) : 0}`;
     if (this.blendKey !== key) {
       this.blendKey = key;
-      this.blend.width = this.canvas.width;
-      this.blend.height = this.canvas.height;
+      const base = stageBackdrop(stage);
+      this.blend.width = base.width;
+      this.blend.height = base.height;
       const g = this.blend.getContext('2d');
-      if (!g) return;
-      g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-      g.fillStyle = '#12100f';
-      g.fillRect(0, 0, this.w, this.h);
-      g.save();
-      g.translate(this.worldSX, this.worldSY);
-      g.scale(this.worldK, this.worldK);
-      g.translate(-this.cam.x, -this.cam.y);
-      drawStageBack(g, stage);
-      g.restore();
-      this.applyTreatment(g, this.blend, treat, this.w, this.h);
+      if (!g) {
+        ctx.restore();
+        return;
+      }
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.drawImage(base, 0, 0);
+      this.applyTreatment(g, this.blend, treat, base.width, base.height);
     }
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.drawImage(this.blend, 0, 0);
+    ctx.drawImage(this.blend, STAGE_X, STAGE_Y);
     ctx.restore();
   }
 
   private applyTreatment(g: CanvasRenderingContext2D, c: HTMLCanvasElement, treat: Treatment, W: number, H: number): void {
+    // Works in the canvas's own pixel space (stage space for the backdrop).
     g.save();
-    g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    const wash = (op: GlobalCompositeOperation, color: string, alpha = 1) => {
+      g.globalCompositeOperation = op;
+      g.globalAlpha = alpha;
+      g.fillStyle = color;
+      g.fillRect(0, 0, W, H);
+      g.globalAlpha = 1;
+      g.globalCompositeOperation = 'source-over';
+    };
     if (treat === 'pixel') {
       const t2 = document.createElement('canvas');
-      t2.width = Math.ceil(W / 7);
-      t2.height = Math.ceil(H / 7);
+      t2.width = Math.ceil(W / 8);
+      t2.height = Math.ceil(H / 8);
       const tc = t2.getContext('2d');
       if (tc) {
         tc.drawImage(c, 0, 0, t2.width, t2.height);
@@ -650,45 +664,78 @@ export class ClashRenderer {
         g.drawImage(t2, 0, 0, W, H);
         g.imageSmoothingEnabled = true;
       }
-    } else if (treat === 'oldink') {
-      g.fillStyle = 'rgba(120,80,30,0.35)';
-      g.fillRect(0, 0, W, H);
-    } else if (treat === 'noir') {
-      g.fillStyle = 'rgba(0,0,0,0.55)';
-      g.fillRect(0, 0, W, H);
-      g.fillStyle = '#000';
-      for (let i = 0; i < 6; i++) {
-        g.beginPath();
-        g.moveTo((i * W) / 5, 0);
-        g.lineTo((i * W) / 5 + 120, 0);
-        g.lineTo((i * W) / 5 + 40, H);
-        g.lineTo((i * W) / 5 - 40, H);
-        g.fill();
+      // Crush to a short palette: posterise the luminance with a scanline wash.
+      for (let y = 0; y < H; y += 4) {
+        g.fillStyle = 'rgba(0,0,0,0.16)';
+        g.fillRect(0, y, W, 1);
       }
-    } else if (treat === 'toon') {
-      g.fillStyle = 'rgba(255,209,102,0.25)';
-      g.fillRect(0, 0, W, H);
-    } else if (treat === 'grit') {
-      g.globalAlpha = 0.35;
+    } else if (treat === 'oldink') {
+      // Washed sepia: pull the colour out, tint the greys, then lay paper over it.
+      wash('saturation', '#7a6a50');
+      wash('color', '#a8803f', 0.55);
+      wash('multiply', '#e7d4ad', 0.9);
+      g.globalAlpha = 0.16;
       g.globalCompositeOperation = 'multiply';
-      g.drawImage(this.noise, 0, 0, 128, 128, 0, 0, W, H);
+      for (let y = 0; y < H; y += 128) for (let x = 0; x < W; x += 128) g.drawImage(this.noise, x, y);
       g.globalAlpha = 1;
       g.globalCompositeOperation = 'source-over';
-      g.fillStyle = 'rgba(60,60,50,0.3)';
-      g.fillRect(0, 0, W, H);
+      // Brush edge: a ragged ink border that reads as a scroll.
+      g.fillStyle = 'rgba(40,24,8,0.5)';
+      for (let i = 0; i < 40; i++) {
+        const t = i / 40;
+        g.fillRect(0, t * H, 14 + rand(i, 3) * 26, H / 40 + 1);
+        g.fillRect(W - 14 - rand(i, 4) * 26, t * H, 40, H / 40 + 1);
+      }
+    } else if (treat === 'noir') {
+      // Mignola: no colour, two values, black shapes cut across the set.
+      wash('saturation', '#888');
+      wash('multiply', '#5a5a66', 0.6);
+      g.fillStyle = '#07060a';
+      for (let i = 0; i < 7; i++) {
+        const x0 = (i * W) / 6 + rand(i, 11) * 90;
+        g.beginPath();
+        g.moveTo(x0, 0);
+        g.lineTo(x0 + 140 + rand(i, 12) * 80, 0);
+        g.lineTo(x0 + 30 + rand(i, 13) * 60, H);
+        g.lineTo(x0 - 60, H);
+        g.fill();
+      }
+      wash('overlay', '#2b1e3a', 0.35);
+    } else if (treat === 'toon') {
+      // Saturday morning: everything louder, a warm key light, outlines softened.
+      wash('saturation', '#ff0040', 0.55);
+      wash('overlay', '#ffd166', 0.3);
+      wash('screen', '#ffb3c6', 0.08);
+    } else if (treat === 'grit') {
+      g.globalAlpha = 0.4;
+      g.globalCompositeOperation = 'multiply';
+      for (let y = 0; y < H; y += 128) for (let x = 0; x < W; x += 128) g.drawImage(this.noise, x, y);
+      g.globalAlpha = 1;
+      g.globalCompositeOperation = 'source-over';
+      wash('saturation', '#6b705c', 0.7);
+      wash('multiply', '#8b8f78', 0.45);
     } else if (treat === 'hive') {
-      for (let i = 0; i < 6; i++) {
-        g.fillStyle = `hsla(${i * 60} 80% 50% / 0.18)`;
-        g.fillRect(0, (i * H) / 6, W, H / 6 + 1);
+      // Oily iridescence: hue bands that slide across the set.
+      for (let i = 0; i < 9; i++) {
+        g.globalCompositeOperation = 'overlay';
+        g.fillStyle = `hsla(${(i * 40 + 200) % 360} 90% 55% / 0.35)`;
+        g.beginPath();
+        g.moveTo(0, (i * H) / 8 - 80);
+        g.lineTo(W, (i * H) / 8 + 60);
+        g.lineTo(W, ((i + 1) * H) / 8 + 60);
+        g.lineTo(0, ((i + 1) * H) / 8 - 80);
+        g.fill();
       }
+      g.globalCompositeOperation = 'source-over';
+      wash('multiply', '#3b2a4a', 0.4);
     } else if (treat === 'glitch') {
-      for (let i = 0; i < 12; i++) {
+      for (let i = 0; i < 14; i++) {
         const y = rand(i, Math.floor(this.time * 6)) * H;
-        const hh = 6 + rand(i + 50, Math.floor(this.time * 6)) * 30;
-        g.drawImage(c, 0, y * this.dpr, c.width, hh * this.dpr, (rand(i + 90, 1) - 0.5) * 60, y, W, hh);
+        const hh = 6 + rand(i + 50, Math.floor(this.time * 6)) * 40;
+        g.drawImage(c, 0, y, c.width, hh, (rand(i + 90, 1) - 0.5) * 90, y, W, hh);
       }
-      g.fillStyle = 'rgba(0,255,204,0.08)';
-      g.fillRect(0, 0, W, H);
+      wash('screen', '#00ffcc', 0.08);
+      wash('difference', '#ff00aa', 0.06);
     }
     g.restore();
   }
@@ -789,11 +836,11 @@ export class ClashRenderer {
     let midY = (y0 + y1) / 2 - 60;
     const spreadX = Math.abs(x0 - x1);
     const spreadY = Math.abs(y0 - y1);
-    let wantZoom = 1.08;
+    let wantZoom = 1.3;
 
     if (m.phase === 'intro') {
       const p = 1 - Math.max(0, m.introTicks) / 120;
-      wantZoom = 1.34 - p * 0.32;
+      wantZoom = 1.5 - p * 0.2;
       midX = 800;
       midY = 470;
     } else if (m.phase === 'finisher' && m.finisher) {
@@ -801,7 +848,7 @@ export class ClashRenderer {
       midY = m.finisher.y - 90;
       wantZoom = 1.45;
     } else if (m.phase === 'ko') {
-      wantZoom = 1.16;
+      wantZoom = 1.34;
     }
     if (m.dramatic > 0 && (m.dramaticSide === 0 || m.dramaticSide === 1)) {
       const f = m.fighters[m.dramaticSide];
@@ -810,8 +857,9 @@ export class ClashRenderer {
       wantZoom = 1.3;
     }
     if (m.phase !== 'finisher') {
-      if (spreadX > 700) wantZoom = Math.min(wantZoom, Math.max(0.7, 1.1 - (spreadX - 700) / 1500));
-      if (spreadY > 300) wantZoom = Math.min(wantZoom, Math.max(0.78, 1.05 - (spreadY - 300) / 1600));
+      // Pull back only as far as it takes to keep both fighters on screen.
+      if (spreadX > 520) wantZoom = Math.min(wantZoom, Math.max(0.82, 1.3 - (spreadX - 520) / 1400));
+      if (spreadY > 240) wantZoom = Math.min(wantZoom, Math.max(0.86, 1.3 - (spreadY - 240) / 1200));
       if (midY < 300) midY += 40;
       const halfW = 800 / wantZoom;
       const minX = 300 + halfW * 0.55;
