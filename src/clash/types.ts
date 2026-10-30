@@ -254,12 +254,53 @@ export interface FinisherCondition {
   label: string;
 }
 
+/* How the finisher cinematic plays out. The sim only stores the kind; the
+   renderer owns the staging. 'custom' plays the Finisher Builder parts. */
+export type FinisherKind =
+  | 'floorpunch'
+  | 'bloodname'
+  | 'spriteburst'
+  | 'shadowvanish'
+  | 'paperflat'
+  | 'headshot'
+  | 'cocoon'
+  | 'wireframe'
+  | 'skyslam'
+  | 'inkdrown'
+  | 'crush'
+  | 'split'
+  | 'custom';
+
 export interface FinisherDef {
   id: string;
   name: string;
   moveKey: MoveKey;
   condition: FinisherCondition;
   panel: string;
+  kind: FinisherKind;
+}
+
+/* Finisher Builder: an opener, a beat and a punchline, each a fixed tick count. */
+export interface CustomFinisher {
+  name: string;
+  parts: { opener: string; beat: string; punchline: string };
+}
+
+export const FINISHER_PART_TICKS: Record<string, number> = {
+  lift: 60, drag: 60, hold: 60,
+  punches: 120, slam: 120, stomp: 120, long: 200,
+  panel: 60, zoom: 60, wipe: 60,
+};
+
+export function customFinisherTicks(c: CustomFinisher): number {
+  return (FINISHER_PART_TICKS[c.parts.opener] ?? 60) + (FINISHER_PART_TICKS[c.parts.beat] ?? 120) + (FINISHER_PART_TICKS[c.parts.punchline] ?? 60);
+}
+
+/* The Break impact frame: a one-panel comic in the attacker's universe style. */
+export interface BreakStyle {
+  bg: string;
+  ink: string;
+  caption: string;
 }
 
 export interface CharArt {
@@ -303,6 +344,13 @@ export interface CharDef {
   superName: string;
   superDesc: string;
   gearLine: string;
+  breakStyle: BreakStyle;
+  /** Combo trials for the training room: sequences of move keys ('jump' and 'gc' are free). */
+  trials: string[][];
+  /** The one-line route the roster screen prints. */
+  route: string;
+  /** Story chapter opener. */
+  story: string;
 }
 
 export type FighterState =
@@ -377,6 +425,10 @@ export interface Fighter {
   flash: number;
   taunt: number;
   finalStand: boolean;
+  /** SF6-style Modern layout: auto-string, auto-charge, -10% damage. */
+  modern: boolean;
+  /** What the last hit this fighter took looked like; finishers read it. */
+  last: { key: MoveKey | null; charge: boolean; ranged: boolean; trap: boolean; parry: boolean; air: boolean; burnout: boolean; confused: boolean } | null;
 }
 
 export interface Projectile {
@@ -507,6 +559,14 @@ export interface FinisherState {
   loserChar: CharId;
   condition: string;
   ticks: number;
+  kind: FinisherKind;
+  parts: CustomFinisher['parts'] | null;
+  /** Total length in ticks; the loser can skip once `ticks` passes 30. */
+  duration: number;
+  skipped: boolean;
+  /** Where the loser was when it started, world space. */
+  x: number;
+  y: number;
 }
 
 export interface MatchStats {
@@ -536,6 +596,14 @@ export interface MatchConfig {
   modern: boolean;
   gear: [GearLook, GearLook];
   training: boolean;
+  /** Modern layout for the second fighter (local 2P). */
+  modern2?: boolean;
+  /** How many of each fighter's three finishers are unlocked (1..3). */
+  unlocked?: [number, number];
+  /** Finisher Builder result per side; fires when a signature lands the final KO and no built-in matched. */
+  custom?: [CustomFinisher | null, CustomFinisher | null];
+  /** Rift Ladder modifiers. damage is a percentage (130 = x1.3). */
+  mods?: { damage?: number };
 }
 
 export interface MatchState {
@@ -567,6 +635,11 @@ export interface MatchState {
   training: boolean;
   gearBuffs: boolean;
   seed: number;
+  /** Null's super corrupts the HUD for this many ticks. */
+  uiCorrupt: number;
+  unlocked: [number, number];
+  custom: [CustomFinisher | null, CustomFinisher | null];
+  mods: { damage?: number };
 }
 
 export interface FrameEvent {

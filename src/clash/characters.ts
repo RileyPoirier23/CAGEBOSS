@@ -14,6 +14,71 @@ import type {
 
 type Opt = Partial<MoveDef>;
 
+/* The eight literals below carry the fight data; the presentation extras
+   (Break panel style, trials, route, story) are merged on at the bottom. */
+type CharBase = Omit<CharDef, 'breakStyle' | 'trials' | 'route' | 'story'>;
+
+const FINISHER_KINDS: Record<string, FinisherDef['kind']> = {
+  kestrel_1: 'floorpunch', kestrel_2: 'crush', kestrel_3: 'skyslam',
+  mireille_1: 'bloodname', mireille_2: 'split', mireille_3: 'inkdrown',
+  brick_1: 'spriteburst', brick_2: 'crush', brick_3: 'skyslam',
+  halo_1: 'shadowvanish', halo_2: 'inkdrown', halo_3: 'crush',
+  pip_1: 'paperflat', pip_2: 'crush', pip_3: 'skyslam',
+  oyelaran_1: 'headshot', oyelaran_2: 'split', oyelaran_3: 'crush',
+  queen_1: 'cocoon', queen_2: 'inkdrown', queen_3: 'skyslam',
+  null_1: 'wireframe', null_2: 'shadowvanish', null_3: 'split',
+};
+
+const DRILLS: string[][] = [
+  ['nLight', 'nLight', 'sLight'], ['sLight', 'sLight'], ['dLight', 'nLight'],
+  ['nLight', 'nLight', 'nSig'], ['sLight', 'sLight', 'sSig'], ['dLight', 'nLight', 'sSig'],
+  ['sAir', 'sAir'], ['nLight', 'nLight', 'jump', 'sAir'],
+  ['sLight', 'sLight', 'jump', 'sAir', 'gc', 'nSig'], ['nLight', 'nLight', 'sLight', 'super'],
+];
+
+const EXTRAS: Record<CharId, Pick<CharDef, 'breakStyle' | 'route' | 'story'>> = {
+  kestrel: {
+    breakStyle: { bg: '#f7c948', ink: '#12100f', caption: 'KRAK-DOOM' },
+    route: 'sLight > sLight > jump > sAir > gravity-cancel nSig',
+    story: 'Prime Capital. Kestrel Vane has never lost a fight at home. Today the sky tears open and seven strangers fall through, each drawn wrong. She goes up to meet them.',
+  },
+  mireille: {
+    breakStyle: { bg: '#e5d3b3', ink: '#2b1d0e', caption: '墨' },
+    route: 'dLight > nLight > dash > sSig',
+    story: 'Old Ink. Mireille\'s scroll was torn across nine pages and seven of them fell into other worlds. She follows the brush strokes.',
+  },
+  brickhouse: {
+    breakStyle: { bg: '#0a0a1a', ink: '#ffe24a', caption: 'K.O. 1UP' },
+    route: 'Any light > nSig (command grab) > dSig on wake-up',
+    story: 'Chrome Arcade. Unit 7 was the final boss of a cabinet nobody finished. The cabinet is unplugged. He walks out anyway, one frame at a time.',
+  },
+  halo: {
+    breakStyle: { bg: '#000000', ink: '#e8dcc0', caption: 'AMEN' },
+    route: 'nSig (sigil) > sLight into the sigil > nAir > dSig',
+    story: 'Chapel Noir. The crypt below Sister Halo\'s church opened onto a world with too many colours. She brought the bells.',
+  },
+  pip: {
+    breakStyle: { bg: '#ffd166', ink: '#1a1a1a', caption: 'BONK!' },
+    route: 'Deploy Crank > sLight > sAir > dSig while Crank covers',
+    story: 'Saturday Morning. The studio locked the doors in 1946 but the reel kept playing. Pip woke up with a robot and a grudge.',
+  },
+  oyelaran: {
+    breakStyle: { bg: '#2b2f26', ink: '#b7a86a', caption: 'CONTACT' },
+    route: 'sLight > dLight > sSig (breach) > nAir',
+    story: 'Blacksite. The sergeant was told the anomaly was contained. The anomaly was a doorway, and it was open on both sides.',
+  },
+  queen: {
+    breakStyle: { bg: '#07110e', ink: '#9effd6', caption: 'SKRRRK' },
+    route: 'sAir > sAir > dSig (egg) > sLight when it hatches',
+    story: 'Deep Hive. The Queen\'s brood needs new worlds. Seven doors opened in the same hour. She did not need to be asked twice.',
+  },
+  null: {
+    breakStyle: { bg: '#000000', ink: '#29f0ff', caption: '0xDEAD' },
+    route: 'nSig (confuse) > sLight > dLight > sSig > dSig',
+    story: 'Glitch. Null was never drawn. Null is what happens between the frames when the renderer skips. Null would like a body.',
+  },
+};
+
 const light = (key: MoveKey, name: string, pose: PoseName, o: Opt = {}): MoveDef => ({
   key,
   name,
@@ -114,6 +179,7 @@ const finisher = (
   moveKey,
   condition: { kind, label },
   panel,
+  kind: FINISHER_KINDS[id] ?? 'crush',
 });
 
 const universalImpact = (who: string): MoveDef => ({
@@ -149,7 +215,7 @@ const universalThrow = (name: string): MoveDef => ({
   desc: 'Grab and throw',
 });
 
-const kestrel: CharDef = {
+const kestrel: CharBase = {
   id: 'kestrel',
   name: 'Kestrel Vane',
   title: 'The Last Public Defender',
@@ -271,7 +337,7 @@ const kestrel: CharDef = {
   ],
 };
 
-const mireille: CharDef = {
+const mireille: CharBase = {
   id: 'mireille',
   name: 'Ten-Fold Mireille',
   title: 'The Ninth Stroke',
@@ -388,7 +454,7 @@ const mireille: CharDef = {
   ],
 };
 
-const brickhouse: CharDef = {
+const brickhouse: CharBase = {
   id: 'brickhouse',
   name: 'Unit 7 "Brickhouse"',
   title: 'Insert Coin to Continue',
@@ -500,7 +566,7 @@ const brickhouse: CharDef = {
   ],
 };
 
-const halo: CharDef = {
+const halo: CharBase = {
   id: 'halo',
   name: 'Sister Halo',
   title: 'The Bell That Answers',
@@ -611,7 +677,7 @@ const halo: CharDef = {
   ],
 };
 
-const pip: CharDef = {
+const pip: CharBase = {
   id: 'pip',
   name: 'Pip & Crank',
   title: 'Two Problems, One Body',
@@ -729,7 +795,7 @@ const pip: CharDef = {
   ],
 };
 
-const oyelaran: CharDef = {
+const oyelaran: CharBase = {
   id: 'oyelaran',
   name: 'Sergeant Oyelaran',
   title: 'The Man They Didn\'t Send',
@@ -874,7 +940,7 @@ const oyelaran: CharDef = {
   ],
 };
 
-const queen: CharDef = {
+const queen: CharBase = {
   id: 'queen',
   name: 'The Larval Queen',
   title: 'Mother of the Next Draft',
@@ -996,7 +1062,7 @@ const queen: CharDef = {
   ],
 };
 
-const nullFighter: CharDef = {
+const nullFighter: CharBase = {
   id: 'null',
   name: 'Null',
   title: 'Missing Asset',
@@ -1116,7 +1182,12 @@ export const CHARACTERS: CharDef[] = [
   oyelaran,
   queen,
   nullFighter,
-];
+].map((c) => ({ ...c, ...EXTRAS[c.id], trials: DRILLS.map((d) => d.slice()) }));
+
+/** A character as a standalone JSON data file (what a new fighter ships as). */
+export function exportChar(id: CharId): string {
+  return JSON.stringify(charDef(id), null, 1);
+}
 
 export const CHAR_BY_ID: Record<CharId, CharDef> = Object.fromEntries(
   CHARACTERS.map((c) => [c.id, c]),

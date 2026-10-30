@@ -24,7 +24,7 @@ import type {
   Trap,
   WorldItem,
 } from './types';
-import { SLOTS, emptyInput } from './types';
+import { SLOTS, customFinisherTicks, emptyInput } from './types';
 
 export const TICK_RATE = 60;
 export const DEFAULT_STOCKS = 3;
@@ -46,6 +46,43 @@ const DRIVE_MAX = 6;
 
 const TAU = Math.PI * 2;
 const rad = (deg: number) => (deg * Math.PI) / 180;
+
+/* Deterministic trig. Math.sin/cos are not guaranteed to round the same way
+   on every engine; a polynomial built from +,-,*,/ is (IEEE 754). Reduced to
+   [-pi/2, pi/2], the Taylor tail is under 1e-7, plenty for knockback angles. */
+function fsin(x: number): number {
+  x = x % TAU;
+  if (x < 0) x += TAU;
+  if (x > Math.PI) x -= TAU;
+  if (x > Math.PI / 2) x = Math.PI - x;
+  else if (x < -Math.PI / 2) x = -Math.PI - x;
+  const x2 = x * x;
+  return x * (1 - (x2 / 6) * (1 - (x2 / 20) * (1 - (x2 / 42) * (1 - (x2 / 72) * (1 - x2 / 110)))));
+}
+function fcos(x: number): number {
+  return fsin(x + Math.PI / 2);
+}
+function hyp(a: number, b: number): number {
+  return Math.sqrt(a * a + b * b);
+}
+
+/** A cheap hash of everything that matters for sync. Two peers that agree here agree on the match. */
+export function checksumMatch(m: MatchState): number {
+  let h = 2166136261 | 0;
+  const mix = (n: number): void => {
+    h ^= (n * 256) | 0;
+    h = Math.imul(h, 16777619);
+  };
+  mix(m.tick); mix(m.rng); mix(m.hitstop); mix(m.timer); mix(m.phase.length);
+  for (const f of m.fighters) {
+    mix(f.x); mix(f.y); mix(f.vx); mix(f.vy); mix(f.hp); mix(f.stocks); mix(f.drive);
+    mix(f.moveFrame); mix(f.stateTicks); mix(f.state.length); mix(f.facing); mix(f.invuln); mix(f.hitstun);
+  }
+  for (const p of m.projectiles) { mix(p.x); mix(p.y); mix(p.life); }
+  for (const t of m.traps) { mix(t.x); mix(t.life); }
+  for (const p of m.platforms) mix(p.off ?? 0);
+  return h >>> 0;
+}
 
 export function emptyEvent(type: MatchEvent['type']): MatchEvent {
   return { type, tick: 0 };
@@ -159,6 +196,8 @@ function makeFighter(
     flash: 0,
     taunt: 0,
     finalStand: false,
+    modern: false,
+    last: null,
   };
 }
 
@@ -208,6 +247,8 @@ export function createMatch(config: MatchConfig): MatchState {
   const stocks = config.training ? 99 : config.stocks;
   f0.stocks = stocks;
   f1.stocks = stocks;
+  f0.modern = !!config.modern;
+  f1.modern = !!config.modern2;
 
   const platforms: Platform[] = stage.platforms.map((p) => ({ ...p }));
   const main = platforms[0];
@@ -255,6 +296,10 @@ export function createMatch(config: MatchConfig): MatchState {
     training: !!config.training,
     gearBuffs,
     seed: config.seed || 0x51ed270b,
+    uiCorrupt: 0,
+    unlocked: config.unlocked ? [config.unlocked[0], config.unlocked[1]] : [3, 3],
+    custom: config.custom ? [config.custom[0], config.custom[1]] : [null, null],
+    mods: { ...(config.mods ?? {}) },
   };
 
   spawnItem(state, itemKindFor(stage.theme), 800, main.y);
@@ -466,8 +511,9 @@ function startMove(m: MatchState, f: Fighter, key: MoveKey, ex: boolean, charge:
   f.moveHit = false;
   f.moveHits = 0;
   f.hitCooldown = 0;
-  f.charge = 0;
   f.charging = !!(md.chargeable && charge);
+  // Modern layout auto-charges: every signature starts a quarter charged.
+  f.charge = f.charging && f.modern ? 12 : 0;
   f.ex = ex;
   f.stateTicks = 0;
   f.attackDir = key === 'sLight' || key === 'sSig' || key === 'sAir' ? f.facing : 0;
@@ -655,8 +701,8 @@ function runMoveEffect(m: MatchState, f: Fighter, md: MoveDef, immediate: boolea
         const a = (i / 8) * TAU + (rng(m) - 0.5) * 0.4;
         spawnProjectile(
           m, f, f.char, f.side, 'swarm',
-          f.x + Math.cos(a) * 60, f.y - 80 + Math.sin(a) * 40,
-          Math.cos(a) * (2.2 + rng(m) * 1.8), Math.sin(a) * 2 - 1,
+          f.x + fcos(a) * 60, f.y - 80 + fsin(a) * 40,
+          fcos(a) * (2.2 + rng(m) * 1.8), fsin(a) * 2 - 1,
           0.02, 100, 14, 5, 55, 2.4, 0.35, 'super', 0,
         );
       }
@@ -812,8 +858,26 @@ function applyHit(
     }
   }
 
+  // Signature armour: a light bounces off for half damage, a heavy breaks it (Crack).
+  let armorBroke = false;
+  if (def.state === 'attack' && def.move && def.move !== 'impact') {
+    const dm = moveOf(def.char, def.move);
+    if (dm.armor && def.moveFrame < dm.startup + dm.active) {
+      if (opts.kind === 'light' || opts.kind === 'air' || opts.kind === 'projectile') {
+        def.hp = Math.max(0, def.hp - Math.max(1, Math.round(opts.damage / 2)));
+        m.hitstop = Math.max(m.hitstop, 6);
+        emit(m, { type: 'shield', side: def.side, x, y, text: 'ARMOUR', seed: (m.rng + x) | 0 });
+        if (def.hp <= 0) koFighter(m, def, atk, opts.name);
+        return false;
+      }
+      armorBroke = true;
+    }
+  }
+
   let damage = opts.damage;
   if (opts.ex) damage *= 1.32;
+  if (atk.modern) damage *= 0.9;
+  if (m.mods.damage) damage *= m.mods.damage / 100;
   const charge = opts.charge ?? 0;
   if (charge > 0) damage *= 1 + (charge / CHARGE_MAX) * 0.55;
   if (m.gearBuffs) damage *= atk.buff.damage;
@@ -823,7 +887,20 @@ function applyHit(
   damage = Math.max(1, Math.round(damage));
 
   const lethal = def.hp - damage <= 0;
-  const tier = Math.max(opts.tier ?? 0, tierFor(m, atk, def, moveOf(atk.char, opts.key || 'nLight'), opts)) as ImpactTier;
+  const tier = Math.max(opts.tier ?? 0, armorBroke ? 1 : 0, tierFor(m, atk, def, moveOf(atk.char, opts.key || 'nLight'), opts)) as ImpactTier;
+
+  // What this hit looked like, for the finisher conditions and the rival memory.
+  def.last = {
+    key: opts.key,
+    charge: (opts.charge ?? 0) >= CHARGE_MAX,
+    ranged: opts.kind === 'projectile',
+    trap: opts.kind === 'trap',
+    parry: atk.perfectParry > 0,
+    air: !def.grounded,
+    burnout: def.burnout > 0,
+    confused: def.confuse > 0,
+  };
+  if (atk.char === 'null' && opts.kind === 'super') m.uiCorrupt = 300;
 
   def.hp = Math.max(0, def.hp - damage);
   m.stats.damage[atk.side] += damage;
@@ -863,10 +940,10 @@ function applyHit(
   def.hitstun = Math.round(hitstun);
   def.state = 'hitstun';
   def.stateTicks = 0;
-  def.vx = Math.cos(rad(opts.angle)) * kb * 0.92 * atk.facing;
+  def.vx = fcos(rad(opts.angle)) * kb * 0.92 * atk.facing;
   if (kb >= 5.3 || opts.angle < -20 || !def.grounded) {
     def.grounded = false;
-    def.vy = -Math.sin(rad(opts.angle)) * kb * 0.92;
+    def.vy = -fsin(rad(opts.angle)) * kb * 0.92;
     if (def.vy > 0 && opts.angle < 0) def.vy = Math.min(def.vy, 15);
   } else {
     def.vx *= 0.68;
@@ -954,10 +1031,23 @@ function conditionMet(fin: FinisherDef, m: MatchState, atk: Fighter, def: Fighte
 
 function findFinisher(m: MatchState, atk: Fighter, def: Fighter, opts: HitOpts): FinisherDef | null {
   if (!opts.key) return null;
-  const list = charDef(atk.char).finishers;
+  const unlocked = Math.max(1, Math.min(3, m.unlocked[atk.side]));
+  const list = charDef(atk.char).finishers.slice(0, unlocked);
   for (const fin of list) {
     if (fin.moveKey !== opts.key) continue;
     if (conditionMet(fin, m, atk, def, opts)) return fin;
+  }
+  // The Finisher Builder's custom panel fires on any signature kill.
+  const custom = m.custom[atk.side];
+  if (custom && (opts.key === 'nSig' || opts.key === 'sSig' || opts.key === 'dSig')) {
+    return {
+      id: 'custom',
+      name: custom.name,
+      moveKey: opts.key,
+      condition: { kind: 'lastStock', label: 'Signature kill' },
+      panel: `${custom.parts.opener} / ${custom.parts.beat} / ${custom.parts.punchline}`,
+      kind: 'custom',
+    };
   }
   return null;
 }
@@ -970,9 +1060,15 @@ function startFinisher(m: MatchState, atk: Fighter, def: Fighter, opts: HitOpts,
   def.vy = -3;
   m.winner = atk.side;
   m.phase = 'finisher';
-  m.phaseTicks = 260;
+  const custom = fin.kind === 'custom' ? m.custom[atk.side] : null;
+  const duration = custom ? customFinisherTicks(custom) + 20 : 240;
+  m.phaseTicks = duration;
   m.hitstop = 0;
   m.stats.finisher = true;
+  atk.state = 'idle';
+  atk.move = null;
+  atk.charging = false;
+  atk.vx = 0;
   m.finisher = {
     winner: atk.side,
     loser: def.side,
@@ -983,6 +1079,12 @@ function startFinisher(m: MatchState, atk: Fighter, def: Fighter, opts: HitOpts,
     loserChar: def.char,
     condition: fin.condition.label,
     ticks: 0,
+    kind: fin.kind,
+    parts: custom ? { ...custom.parts } : null,
+    duration,
+    skipped: false,
+    x: def.x,
+    y: def.y,
   };
   emit(m, {
     type: 'finisher',
@@ -1126,7 +1228,7 @@ function tryDodge(m: MatchState, f: Fighter, input: InputFrame): boolean {
     f.vx = 0;
     if (!f.grounded) f.vy = 0;
   } else {
-    const len = Math.hypot(x, y) || 1;
+    const len = hyp(x, y) || 1;
     const speed = chase ? 13.5 : f.grounded ? 11.5 : 10.2;
     f.vx = (x / len) * speed;
     f.vy = (y / len) * speed * (f.grounded ? 0 : 1.2);
@@ -1337,8 +1439,9 @@ function updateAttack(m: MatchState, f: Fighter, other: Fighter, input: InputFra
 
   // Light strings: a light that has connected can be cancelled into another
   // light. The gap before recovery ends is the dodge-read window.
-  if (md.kind === 'light' && f.moveHit && input.lightPressed) {
-    const key = chooseLight(input, f);
+  if (md.kind === 'light' && f.moveHit && (input.lightPressed || (f.modern && input.light))) {
+    // Modern layout auto-strings: holding light keeps the same direction going.
+    const key = f.modern && !input.lightPressed ? f.move : chooseLight(input, f);
     startMove(m, f, key, false, false);
     return;
   }
@@ -1403,8 +1506,8 @@ function updateAttack(m: MatchState, f: Fighter, other: Fighter, input: InputFra
     const count = spec.count ?? 1;
     for (let i = 0; i < count; i++) {
       const spread = (i - (count - 1) / 2) * (spec.spread ?? 0);
-      const vx = f.facing * spec.speed * Math.cos(spread);
-      const vy = (spec.vy ?? 0) + Math.sin(spread) * spec.speed;
+      const vx = f.facing * spec.speed * fcos(spread);
+      const vy = (spec.vy ?? 0) + fsin(spread) * spec.speed;
       const proj = spawnProjectile(
         m,
         f,
@@ -1658,7 +1761,7 @@ function explode(
   const def = m.fighters[owner === 0 ? 1 : 0];
   const dx = def.x - x;
   const dy = (def.y - 70) - y;
-  const d = Math.hypot(dx, dy);
+  const d = hyp(dx, dy);
   emit(m, {
     type: 'impact',
     side: owner,
@@ -1745,7 +1848,7 @@ function updateTraps(m: MatchState): void {
     if (t.life <= 0) continue;
     const dx = def.x - t.x;
     const dy = (def.y - 70) - t.y;
-    const near = Math.hypot(dx, dy) < t.radius + 30;
+    const near = hyp(dx, dy) < t.radius + 30;
     if (t.kind === 'sigil' && near) {
       explode(m, t.owner, t.char, t.x, t.y, t.radius, t.damage, 76, t.baseKb, t.growthKb, 'nSig', 'HOLY SIGIL');
       t.life = 0;
@@ -1820,7 +1923,7 @@ function updateItems(m: MatchState): void {
       emit(m, { type: 'land', side: 0, x: item.x, y: item.y, text: 'ITEM', seed: (m.rng + item.x) | 0 });
       continue;
     }
-    const speed = Math.hypot(item.vx, item.vy);
+    const speed = hyp(item.vx, item.vy);
     if (speed > 4) {
       for (const f of m.fighters) {
         if (f.state === 'ko') continue;
@@ -1942,13 +2045,24 @@ export function stepMatch(m: MatchState, input0: InputFrame, input1: InputFrame)
 
   if (m.phase === 'finisher') {
     m.phaseTicks--;
-    if (m.finisher) m.finisher.ticks++;
+    const fin = m.finisher;
+    if (fin) {
+      fin.ticks++;
+      // The loser can skip the cinematic after half a second. Their choice, not the winner's.
+      const li = fin.loser === 0 ? input0 : input1;
+      const pressed = li.lightPressed || li.heavyPressed || li.jumpPressed || li.dodgePressed || li.throwPressed || li.superPressed;
+      if (fin.ticks > 30 && pressed && !fin.skipped) {
+        fin.skipped = true;
+        m.phaseTicks = Math.min(m.phaseTicks, 1);
+      }
+    }
     if (m.phaseTicks <= 0) {
       m.phase = 'over';
-      if (m.finisher) m.winner = m.finisher.winner;
+      if (fin) m.winner = fin.winner;
     }
     return m;
   }
+  if (m.uiCorrupt > 0) m.uiCorrupt--;
 
   if (m.dramatic > 0) {
     m.dramatic--;
