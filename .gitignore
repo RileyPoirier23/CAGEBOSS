@@ -5,3 +5,4 @@ dist-web
 .DS_Store
 sim-report*.json
 release
+dist-clash
