@@ -1,11 +1,12 @@
 /* UNIVERSE CLASH - the session.
-   A fixed 60 Hz loop with a snapshot ring. Local play uses the same path a
-   rollback netcode match would: inputs are stamped by tick, every simulated
-   tick is captured, and a late input can restore a snapshot and replay.
-   Nothing here touches the DOM. */
+   A fixed 60 Hz match on top of the rollback core. Local play, the CPU, the
+   attract mode and replays all go through the same path: inputs are stamped
+   by tick, every simulated tick is snapshotted, and a late input can restore
+   a snapshot and replay. Nothing here touches the DOM. */
 
 import { AiBrain, aiInput, createAi, resetAi } from './ai';
-import { cloneMatch, createMatch, drainEvents, stepMatch, TICK_RATE } from './sim';
+import { Rollback, packInput, type ReplayFile } from './rollback';
+import { createMatch, TICK_RATE } from './sim';
 import type { CharId, InputFrame, MatchConfig, MatchEvent, MatchState } from './types';
 import { emptyInput } from './types';
 
@@ -17,6 +18,8 @@ export interface SessionOptions {
   seed?: number;
   /** favour the CPU's dodge/parry reads (rival memory). 0..1 */
   read?: number;
+  /** Ticks of input buffering. 0 = low latency, 1 = default. */
+  delay?: number;
 }
 
 export interface SessionSnapshot {
@@ -31,13 +34,16 @@ export interface AdvanceResult {
   events: MatchEvent[];
 }
 
+const HISTORY = 150;
+
 export class ClashSession {
-  match: MatchState;
+  core: Rollback;
   brains: [AiBrain, AiBrain];
   localSide: 0 | 1;
   cpuEnabled: boolean;
   spectator: boolean;
   read: number;
+  delay: number;
   /** The opening rules, kept so a restart does not inherit the end-of-match clock. */
   config: MatchConfig;
   events: MatchEvent[] = [];
@@ -46,11 +52,12 @@ export class ClashSession {
   private p2: InputFrame | null = null;
 
   constructor(config: MatchConfig, opts: SessionOptions = {}) {
-    this.match = createMatch(config);
     this.config = {
       ...config,
       gear: [config.gear[0], config.gear[1]],
     };
+    this.delay = Math.max(0, Math.min(8, opts.delay ?? 0));
+    this.core = new Rollback(createMatch(config), { delay: this.delay, maxRollback: HISTORY });
     this.localSide = opts.localSide ?? 0;
     this.cpuEnabled = opts.cpu ?? true;
     this.spectator = opts.spectator ?? false;
@@ -66,12 +73,28 @@ export class ClashSession {
     this.capture();
   }
 
+  get match(): MatchState {
+    return this.core.state;
+  }
+
   get tick(): number {
-    return this.match.tick;
+    return this.core.state.tick;
   }
 
   get over(): boolean {
-    return this.match.phase === 'over';
+    return this.core.state.phase === 'over';
+  }
+
+  get rollbacks(): number {
+    return this.core.rollbacks;
+  }
+
+  get resimFrames(): number {
+    return this.core.resimFrames;
+  }
+
+  get confirmed(): number {
+    return this.core.confirmed;
   }
 
   setP2(input: InputFrame | null): void {
@@ -80,31 +103,49 @@ export class ClashSession {
 
   /** Inputs for this tick. The CPU side reads the match, never the clock. */
   inputs(localInput: InputFrame): [InputFrame, InputFrame] {
+    const m = this.core.state;
     let i0: InputFrame;
     let i1: InputFrame;
     if (this.spectator) {
-      i0 = aiInput(this.brains[0], this.match);
-      i1 = aiInput(this.brains[1], this.match);
+      i0 = aiInput(this.brains[0], m);
+      i1 = aiInput(this.brains[1], m);
     } else if (this.localSide === 1) {
-      i0 = this.cpuEnabled ? aiInput(this.brains[0], this.match) : emptyInput();
+      i0 = this.cpuEnabled ? aiInput(this.brains[0], m) : emptyInput();
       i1 = localInput;
     } else {
       i0 = localInput;
-      i1 = this.cpuEnabled ? aiInput(this.brains[1], this.match) : (this.p2 ?? emptyInput());
+      i1 = this.cpuEnabled ? aiInput(this.brains[1], m) : (this.p2 ?? emptyInput());
     }
     return [i0, i1];
   }
 
-  /** Simulate one tick. Returns the events produced by it. */
-  step(localInput: InputFrame): MatchEvent[] {
-    if (this.match.phase === 'over') return [];
-    const [i0, i1] = this.inputs(localInput);
+  private stepCore(): MatchEvent[] {
+    const ev = this.core.step();
     this.capture();
-    stepMatch(this.match, i0, i1);
-    const ev = drainEvents(this.match);
     this.events.push(...ev);
     if (this.events.length > 400) this.events.splice(0, this.events.length - 400);
     return ev;
+  }
+
+  /** Simulate one tick. Returns the events produced by it. */
+  step(localInput: InputFrame): MatchEvent[] {
+    if (this.over) return [];
+    const [i0, i1] = this.inputs(localInput);
+    const t = this.core.stampTick;
+    this.core.addInput(0, t, packInput(i0));
+    this.core.addInput(1, t, packInput(i1));
+    return this.stepCore();
+  }
+
+  /** Simulate one tick of a replay: feed every logged input due by now, then step. */
+  stepReplay(log: ReplayFile['inputs'], cursor: { i: number }): MatchEvent[] {
+    if (this.over) return [];
+    const t = this.core.stampTick;
+    while (cursor.i < log.length && log[cursor.i][0] <= t) {
+      const [tick, player, packed] = log[cursor.i++];
+      this.core.addInput(player as 0 | 1, tick, packed);
+    }
+    return this.stepCore();
   }
 
   /** Real-time advance with interpolation alpha. */
@@ -117,7 +158,7 @@ export class ClashSession {
       events.push(...this.step(localInput));
       this.accumulator -= step;
       ticks++;
-      if (this.match.phase === 'over') break;
+      if (this.over) break;
     }
     return { alpha: this.accumulator / step, ticks, events };
   }
@@ -127,17 +168,20 @@ export class ClashSession {
     this.accumulator = 0;
   }
 
+  /** The state one tick back, for render interpolation. */
+  get prevState(): MatchState {
+    return this.core.prevState;
+  }
+
   capture(): SessionSnapshot {
+    const tick = this.core.state.tick;
     const snap: SessionSnapshot = {
-      tick: this.match.tick,
-      match: cloneMatch(this.match),
-      brains: [
-        { ...this.brains[0], lastHeavy: this.brains[0].lastHeavy },
-        { ...this.brains[1], lastHeavy: this.brains[1].lastHeavy },
-      ],
+      tick,
+      match: this.core.snaps.get(tick) ?? this.core.state,
+      brains: [{ ...this.brains[0] }, { ...this.brains[1] }],
     };
-    this.history.set(this.match.tick, snap);
-    while (this.history.size > 150) {
+    this.history.set(tick, snap);
+    while (this.history.size > HISTORY) {
       const first = this.history.keys().next();
       if (first.done) break;
       this.history.delete(first.value);
@@ -145,39 +189,31 @@ export class ClashSession {
     return snap;
   }
 
-  restore(snap: SessionSnapshot): void {
-    this.match = cloneMatch(snap.match);
-    this.brains = [
-      { ...snap.brains[0] },
-      { ...snap.brains[1] },
-    ];
-    this.accumulator = 0;
-  }
-
   snapshotAt(tick: number): SessionSnapshot | null {
     return this.history.get(tick) ?? null;
   }
 
-  /** Roll back to the newest snapshot at or before `tick`, then replay. */
-  rollback(tick: number, inputs: Map<number, [InputFrame, InputFrame]>): void {
+  /** Stand on the snapshot at `tick` and forget everything after it. */
+  rollback(tick: number, _inputs?: Map<number, [InputFrame, InputFrame]>): void {
+    void _inputs;
     let best: SessionSnapshot | null = null;
     for (const [t, s] of this.history) {
       if (t <= tick && (!best || t > best.tick)) best = s;
     }
     if (!best) return;
-    this.restore(best);
-    while (this.match.tick < tick && this.match.phase !== 'over') {
-      const pair = inputs.get(this.match.tick);
-      if (!pair) break;
-      this.capture();
-      stepMatch(this.match, pair[0], pair[1]);
-      drainEvents(this.match);
-    }
+    if (!this.core.rewindTo(best.tick)) return;
+    this.brains = [{ ...best.brains[0] }, { ...best.brains[1] }];
+    for (const t of Array.from(this.history.keys())) if (t > best.tick) this.history.delete(t);
+    this.accumulator = 0;
   }
 
   /** A local prediction check: rollback and replay a list of stamped inputs. */
   replay(fromTick: number, inputs: Map<number, [InputFrame, InputFrame]>): void {
     this.rollback(fromTick, inputs);
+  }
+
+  exportReplay(): ReplayFile {
+    return this.core.exportReplay(this.config);
   }
 
   restart(cpuLevel?: number): void {
@@ -186,7 +222,7 @@ export class ClashSession {
       cpuLevel: cpuLevel ?? this.brains[0].level,
       gear: [this.config.gear[0], this.config.gear[1]],
     };
-    this.match = createMatch(cfg);
+    this.core = new Rollback(createMatch(cfg), { delay: this.delay, maxRollback: HISTORY });
     resetAi(this.brains[0], cfg.cpuLevel, cfg.seed + 17, this.read);
     resetAi(this.brains[1], cfg.cpuLevel, cfg.seed + 29, this.read);
     this.history.clear();
@@ -231,7 +267,7 @@ export class ClashSession {
       gear: [m.fighters[0].gear, m.fighters[1].gear],
     };
     this.config = cfg;
-    this.match = createMatch(cfg);
+    this.core = new Rollback(createMatch(cfg), { delay: this.delay, maxRollback: HISTORY });
     this.history.clear();
     this.capture();
   }
