@@ -2169,3 +2169,4 @@ export function matchDuration(m: MatchState): number {
 }
 
 export const ALL_CHARS = CHARACTERS;
+export { hurtbox as hurtboxOf, hitboxOf, CHARGE_MAX };
