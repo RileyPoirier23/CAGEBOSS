@@ -124,6 +124,37 @@ interface Ring {
   width: number;
 }
 
+/** A hand-lettered sound effect on a starburst, world space. */
+interface Yell {
+  x: number;
+  y: number;
+  text: string;
+  color: string;
+  seed: number;
+  life: number;
+  max: number;
+  rot: number;
+  size: number;
+}
+
+/** Radial speed lines converging on a point, screen space. */
+interface SpeedLine {
+  x: number;
+  y: number;
+  life: number;
+  max: number;
+  seed: number;
+  color: string;
+  count: number;
+}
+
+const YELLS: string[][] = [
+  ['POW', 'WHAP', 'THUD', 'BIFF', 'SMAK'],
+  ['WHAM', 'KRAK', 'CRUNCH', 'THWACK', 'BAM'],
+  ['SMASH', 'KRUNCH', 'WHUMP', 'KABOOM', 'SLAM'],
+  ['KRAKOOM', 'BOOM', 'SKRASH'],
+];
+
 interface Impact {
   tier: number;
   ticks: number;
@@ -179,6 +210,9 @@ export class ClashRenderer {
   private particles: Particle[] = [];
   private floats: FloatText[] = [];
   private rings: Ring[] = [];
+  private yells: Yell[] = [];
+  private lines: SpeedLine[] = [];
+  private zoomKick = 0;
   private impacts: Impact[] = [];
   private scars: ScarMark[] = [];
   private opts: RenderOpts = { ...DEFAULT_RENDER };
@@ -283,6 +317,24 @@ export class ClashRenderer {
         const scale = 1 + Math.min(1.3, (e.value ?? 6) / 18);
         this.burst(x, y, e.seed ?? 1, color, tier, scale, e.char ?? null);
         this.pushImpact(tier, x, y, e.seed ?? 1, e.text ?? '', color, e.side ?? 0, e.other ?? 1, false);
+        // The sound effect, lettered. Light taps whisper, heavies shout.
+        const seed = e.seed ?? 1;
+        const pool = YELLS[Math.min(3, Math.max(0, tier))];
+        const heavy = (e.value ?? 6) >= 9 || tier >= 1;
+        if (heavy || rand(seed, 3) > 0.55) {
+          this.yells.push({
+            x: x + (e.side === 0 ? 1 : -1) * 30, y: y - 40 - rand(seed, 4) * 30,
+            text: pool[Math.floor(rand(seed, 5) * pool.length)],
+            color: tier >= 2 ? '#ffc52e' : tier === 1 ? '#f4ecd8' : color,
+            seed, life: 22 + tier * 6, max: 22 + tier * 6,
+            rot: (rand(seed, 6) - 0.5) * 0.5,
+            size: (26 + Math.min(30, (e.value ?? 6) * 1.6) + tier * 10) * (this.opts.lite ? 0.8 : 1),
+          });
+        }
+        if (tier >= 2) {
+          this.lines.push({ x, y, life: 10 + tier * 3, max: 10 + tier * 3, seed, color: tier >= 3 ? '#0f0d0c' : '#f4ecd8', count: 40 + tier * 20 });
+          this.zoomKick = Math.max(this.zoomKick, tier >= 3 ? 0.1 : 0.06);
+        }
         if (e.value) {
           this.floats.push({
             x, y: y - 12, vy: -1.1, life: 42, maxLife: 42,
@@ -348,7 +400,9 @@ export class ClashRenderer {
       const f = e.side !== undefined ? m.fighters[e.side] : m.fighters[0];
       this.flash = Math.max(this.flash, 0.55);
       this.cam.shake = Math.max(this.cam.shake, 12 * this.opts.shake);
+      this.zoomKick = Math.max(this.zoomKick, 0.12);
       if (f) {
+        this.lines.push({ x: f.x, y: f.y - 70, life: 30, max: 30, seed: e.seed ?? 1, color: '#f4ecd8', count: 90 });
         this.rings.push({ x: f.x, y: f.y - 70, radius: 30, life: 40, maxLife: 40, color: '#f7c948', width: 8 });
         for (let i = 0; i < 22; i++) {
           const a = rand(e.seed ?? 1, i) * Math.PI * 2;
@@ -465,7 +519,7 @@ export class ClashRenderer {
 
     const stage = stageById(m.stageId);
     this.updateCamera(m, alpha, dt);
-    const k = Math.min(w / 1600, h / 900) * this.cam.zoom;
+    const k = Math.min(w / 1600, h / 900) * (this.cam.zoom + this.zoomKick);
     const shakeX = this.cam.shakeX * this.opts.shake;
     const shakeY = this.cam.shakeY * this.opts.shake;
     this.worldK = k;
@@ -532,6 +586,18 @@ export class ClashRenderer {
           ctx.restore();
         }
       }
+      // Motion smear: a fast body leaves two fading copies behind it.
+      const speed = Math.hypot(f.vx, f.vy);
+      if (speed > 9 && !this.opts.lite && f.state !== 'ko') {
+        const ux = f.vx / speed;
+        const uy = f.vy / speed;
+        for (let i = 2; i >= 1; i--) {
+          ctx.save();
+          ctx.globalAlpha = i === 1 ? 0.16 : 0.08;
+          drawFighter(ctx, { ...f, x: d.x - ux * speed * i * 1.4, y: d.y - uy * speed * i * 1.4, flash: 0 }, { ...artOpts, outline: 0, shadow: 0, tick: m.tick, held: null });
+          ctx.restore();
+        }
+      }
       // Every rig draw is fenced: a transform that leaks out of one fighter would move the next.
       ctx.save();
       drawFighter(
@@ -544,10 +610,12 @@ export class ClashRenderer {
     }
     for (const p of m.projectiles) drawProjectile(ctx, p, m.tick, artOpts);
     this.drawParticles(ctx, dt, m);
+    this.drawYells(ctx, dt);
     drawStageFront(ctx, stage, m.tick, artOpts);
     if (extras.training) this.drawTraining(ctx, m, extras.training);
     ctx.restore();
 
+    this.drawSpeedLines(ctx, w, h, dt);
     // Floating text is screen space so it stays legible under camera zoom.
     this.drawFloats(ctx, k, shakeX, shakeY);
     if (this.desat > 0) {
@@ -881,6 +949,7 @@ export class ClashRenderer {
     cam.zoom += (cam.tzoom - cam.zoom) * (1 - Math.pow(0.008, dt));
 
     cam.shake = Math.max(0, cam.shake - dt * 60);
+    this.zoomKick = Math.max(0, this.zoomKick - dt * 0.45);
     const s = cam.shake;
     cam.shakeX = s > 0.2 ? Math.sin(this.time * 83.1) * s + Math.sin(this.time * 47.7) * s * 0.4 : 0;
     cam.shakeY = s > 0.2 ? Math.cos(this.time * 71.3) * s * 0.8 : 0;
@@ -905,8 +974,11 @@ export class ClashRenderer {
       }
       // Blood that reaches the floor becomes a Stage Scar.
       if (p.kind === 'blood' && p.vy > 0 && p.y >= main.y - 2 && p.y <= main.y + 18 && p.x > main.x && p.x < main.x + main.w) {
-        this.scars.push({ x: p.x, y: main.y, seed: (p.x * 13 + p.y * 7) | 0, kind: 'blood', theme: m.stageId });
-        if (this.scars.length > 60) this.scars.splice(0, this.scars.length - 60);
+        // Only the fat drops leave a mark; the spray soaks in.
+        if (p.size > 4) {
+          this.scars.push({ x: p.x, y: main.y, seed: (p.x * 13 + p.y * 7) | 0, kind: 'blood', theme: m.stageId });
+          if (this.scars.length > 40) this.scars.splice(0, this.scars.length - 40);
+        }
         this.particles.splice(i, 1);
         continue;
       }
@@ -961,6 +1033,95 @@ export class ClashRenderer {
       ctx.restore();
     }
     if (this.particles.length > 700) this.particles.splice(0, this.particles.length - 700);
+  }
+
+  /** Lettered sound effects: a starburst, ink-stroked Bangers, a pop-in and a fade. */
+  private drawYells(ctx: CanvasRenderingContext2D, dt: number): void {
+    const step = dt * 60;
+    for (let i = this.yells.length - 1; i >= 0; i--) {
+      const y = this.yells[i];
+      y.life -= step;
+      if (y.life <= 0) {
+        this.yells.splice(i, 1);
+        continue;
+      }
+      const age = y.max - y.life;
+      const pop = age < 4 ? 1.5 - (age / 4) * 0.5 : 1;
+      const fade = Math.min(1, y.life / 8);
+      ctx.save();
+      ctx.translate(y.x, y.y - age * 0.6);
+      ctx.rotate(y.rot);
+      ctx.scale(pop, pop);
+      ctx.globalAlpha = fade;
+      const w = y.text.length * y.size * 0.42 + y.size * 0.8;
+      // Starburst behind the word.
+      ctx.fillStyle = y.color;
+      ctx.strokeStyle = '#0f0d0c';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      const spikes = 11;
+      for (let s = 0; s < spikes * 2; s++) {
+        const a = (s / (spikes * 2)) * Math.PI * 2 + rand(y.seed, s) * 0.18;
+        const r = s % 2 === 0 ? 1 : 0.68;
+        const rx = w * 0.62 * r * (0.85 + rand(y.seed + 1, s) * 0.3);
+        const ry = y.size * 0.85 * r * (0.85 + rand(y.seed + 2, s) * 0.3);
+        const px = Math.cos(a) * rx;
+        const py = Math.sin(a) * ry;
+        if (s === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.font = `400 ${y.size}px ${FONT_DISPLAY}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = Math.max(3, y.size * 0.14);
+      ctx.strokeStyle = '#0f0d0c';
+      ctx.strokeText(y.text, 0, 2);
+      ctx.fillStyle = '#0f0d0c';
+      ctx.fillText(y.text, 3, 5);
+      ctx.fillStyle = y.color === '#0f0d0c' ? '#f4ecd8' : '#f4ecd8';
+      ctx.fillText(y.text, 0, 2);
+      ctx.restore();
+    }
+  }
+
+  /** Speed lines: thin wedges from past the screen edge converging on the hit. */
+  private drawSpeedLines(ctx: CanvasRenderingContext2D, w: number, h: number, dt: number): void {
+    if (this.lines.length === 0) return;
+    const step = dt * 60;
+    const k = this.worldK;
+    for (let i = this.lines.length - 1; i >= 0; i--) {
+      const l = this.lines[i];
+      l.life -= step;
+      if (l.life <= 0) {
+        this.lines.splice(i, 1);
+        continue;
+      }
+      const cx = this.worldSX + (l.x - this.cam.x) * k;
+      const cy = this.worldSY + (l.y - this.cam.y) * k;
+      const t = l.life / l.max;
+      const far = Math.hypot(w, h);
+      const near = 150 * k + (1 - t) * 120 * k;
+      ctx.save();
+      ctx.globalAlpha = Math.min(0.85, t * 1.4);
+      ctx.fillStyle = l.color;
+      ctx.beginPath();
+      for (let s = 0; s < l.count; s++) {
+        const a = rand(l.seed, s) * Math.PI * 2;
+        const wobble = (rand(l.seed + 1, s) - 0.5) * 0.012;
+        const r1 = near * (0.8 + rand(l.seed + 2, s) * 0.6);
+        const half = 0.004 + rand(l.seed + 3, s) * 0.01;
+        ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+        ctx.lineTo(cx + Math.cos(a - half + wobble) * far, cy + Math.sin(a - half + wobble) * far);
+        ctx.lineTo(cx + Math.cos(a + half + wobble) * far, cy + Math.sin(a + half + wobble) * far);
+        ctx.closePath();
+      }
+      ctx.fill();
+      ctx.restore();
+    }
   }
 
   private drawFloats(ctx: CanvasRenderingContext2D, k: number, sx: number, sy: number): void {
@@ -1149,40 +1310,67 @@ export class ClashRenderer {
     const x = this.worldSX + (f.x - this.cam.x) * k;
     const y = this.worldSY + (f.y - 60 - this.cam.y) * k;
     const age = 36 - kp.ticks;
+    const s = h / 720;
     ctx.save();
     ctx.globalAlpha = Math.min(1, age / 4);
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillStyle = 'rgba(15,13,12,0.4)';
     ctx.fillRect(0, 0, w, h);
-    const pw = w * 0.5;
-    const ph = h * 0.42;
+    // A torn comic panel, tilted, with speed lines inside and the word slammed across it.
+    const pw = w * 0.52;
+    const ph = h * 0.4;
     const px = Math.max(20, Math.min(w - pw - 20, x - pw / 2));
     const py = Math.max(20, Math.min(h - ph - 20, y - ph / 2));
-    ctx.fillStyle = '#efe6d2';
-    ctx.strokeStyle = '#12100f';
-    ctx.lineWidth = 8;
+    const pop = age < 4 ? 1.25 - (age / 4) * 0.25 : 1;
+    ctx.translate(px + pw / 2, py + ph / 2);
+    ctx.rotate(-0.05);
+    ctx.scale(pop, pop);
+    ctx.translate(-(px + pw / 2), -(py + ph / 2));
+    ctx.fillStyle = '#0f0d0c';
+    ctx.fillRect(px + 10 * s, py + 10 * s, pw, ph);
+    ctx.fillStyle = '#f4ecd8';
+    ctx.strokeStyle = '#0f0d0c';
+    ctx.lineWidth = 7 * s;
     ctx.fillRect(px, py, pw, ph);
     ctx.strokeRect(px, py, pw, ph);
-    ctx.fillStyle = '#12100f';
-    for (let yy = py + 10; yy < py + ph; yy += 12) {
-      for (let xx = px + 10; xx < px + pw; xx += 12) {
-        ctx.beginPath();
-        ctx.arc(xx, yy, 1.6, 0, Math.PI * 2);
-        ctx.fill();
-      }
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(px, py, pw, ph);
+    ctx.clip();
+    ctx.fillStyle = '#0f0d0c';
+    ctx.globalAlpha = 0.12;
+    for (let i = 0; i < 48; i++) {
+      const a = (i / 48) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(px + pw * 0.3, py + ph * 0.55);
+      ctx.lineTo(px + pw * 0.3 + Math.cos(a - 0.01) * pw * 1.5, py + ph * 0.55 + Math.sin(a - 0.01) * pw * 1.5);
+      ctx.lineTo(px + pw * 0.3 + Math.cos(a + 0.01) * pw * 1.5, py + ph * 0.55 + Math.sin(a + 0.01) * pw * 1.5);
+      ctx.fill();
     }
-    const s = h / 720;
-    ctx.fillStyle = '#f7c948';
-    ctx.fillRect(px + 14, py + 14, pw * 0.55, 36 * s);
-    ctx.strokeStyle = '#12100f';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(px + 14, py + 14, pw * 0.55, 36 * s);
-    ctx.fillStyle = '#12100f';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#e1212b';
+    ctx.fillRect(px + pw * 0.62, py, pw * 0.5, ph);
+    ctx.restore();
+    // Caption box.
+    ctx.fillStyle = '#ffc52e';
+    ctx.fillRect(px + 14 * s, py + 14 * s, pw * 0.5, 34 * s);
+    ctx.strokeStyle = '#0f0d0c';
+    ctx.lineWidth = 3 * s;
+    ctx.strokeRect(px + 14 * s, py + 14 * s, pw * 0.5, 34 * s);
+    ctx.fillStyle = '#0f0d0c';
     ctx.textAlign = 'left';
-    ctx.font = `900 ${Math.round(h * 0.11)}px ${FONT_DISPLAY}`;
-    ctx.fillText(kp.text, px + 24, py + ph * 0.7);
-    ctx.font = `bold ${Math.round(h * 0.028)}px ${FONT_HEAD}`;
+    ctx.font = `700 ${Math.round(h * 0.024)}px ${FONT_BODY}`;
     const who = names ? names[kp.side] : `P${kp.side + 1}`;
-    ctx.fillText(`${who} // ${kp.sub}`, px + 22, py + 14 + 26 * s);
+    ctx.fillText(`${who.toUpperCase()} // ${kp.sub}`, px + 24 * s, py + 14 * s + 24 * s);
+    // The word.
+    ctx.font = `400 ${Math.round(h * 0.15)}px ${FONT_DISPLAY}`;
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 10 * s;
+    ctx.strokeStyle = '#0f0d0c';
+    ctx.strokeText(kp.text, px + 24 * s, py + ph * 0.78);
+    ctx.fillStyle = '#0f0d0c';
+    ctx.fillText(kp.text, px + 30 * s, py + ph * 0.78 + 6 * s);
+    ctx.fillStyle = '#f4ecd8';
+    ctx.fillText(kp.text, px + 24 * s, py + ph * 0.78);
     ctx.restore();
   }
 
@@ -1585,7 +1773,7 @@ export class ClashRenderer {
   }
 
   screenPos(x: number, y: number): { x: number; y: number; k: number } {
-    const k = Math.min(this.w / 1600, this.h / 900) * this.cam.zoom;
+    const k = this.worldK;
     return {
       x: this.w / 2 + (x - this.cam.x) * k + this.cam.shakeX * this.opts.shake,
       y: this.h / 2 + (y - this.cam.y) * k + this.cam.shakeY * this.opts.shake,
@@ -1602,6 +1790,9 @@ export class ClashRenderer {
     this.particles = [];
     this.floats = [];
     this.rings = [];
+    this.yells = [];
+    this.lines = [];
+    this.zoomKick = 0;
     this.impacts = [];
     this.flash = 0;
     this.desat = 0;

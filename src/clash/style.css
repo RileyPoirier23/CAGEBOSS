@@ -1501,6 +1501,8 @@ html, body {
 .inv-item .ii-actions button:disabled, .direct-item button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .vault-side { display: flex; flex-direction: column; gap: 8px; }
+.vault-side .stat-bars, .vault-side .odds { background: var(--paper); border: 3px solid var(--ink); padding: 8px 10px; box-shadow: var(--hard-xs); }
+.vault-side .section-label, .vault-layout > div:first-child > .section-label { color: var(--sun); text-shadow: 1px 1px 0 var(--ink); }
 .wallet {
   display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
   background: var(--ink); color: var(--paper);

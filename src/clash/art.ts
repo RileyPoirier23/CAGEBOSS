@@ -1600,60 +1600,158 @@ function paintRooftop(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.globalAlpha = 1;
 }
 
-/* Old Ink: wet brush, red sun, one bridge. */
+/* Old Ink: wet brush, red sun, one bridge over a long drop. */
 function paintScroll(ctx: CanvasRenderingContext2D, p: Palette): void {
   skyBand(ctx, p);
-  circle(ctx, 1240, 190, 120, p.accent, 5, p.ink);
-  // Mountain layers, each a brush-shaped polygon.
-  for (let layer = 0; layer < 3; layer++) {
-    const y = 500 + layer * 70;
-    const col = layer === 0 ? p.far : layer === 1 ? p.near : p.ink;
-    ctx.globalAlpha = layer === 2 ? 0.5 : 0.75;
+  // Paper grain: long dry-brush strokes across the sky.
+  ctx.save();
+  ctx.globalAlpha = 0.07;
+  ctx.strokeStyle = p.ink;
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 70; i++) {
+    const y = STAGE_Y + rand(301, i) * STAGE_H;
     ctx.beginPath();
-    ctx.moveTo(STAGE_X, y + 100);
+    ctx.moveTo(STAGE_X + rand(302, i) * 400, y);
+    ctx.lineTo(STAGE_X + 600 + rand(303, i) * 1800, y + (rand(304, i) - 0.5) * 20);
+    ctx.stroke();
+  }
+  ctx.restore();
+  // Red sun with a brushed ring.
+  circle(ctx, 1240, 170, 130, p.accent, 0);
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.strokeStyle = p.ink;
+  ctx.lineWidth = 9;
+  ctx.beginPath();
+  ctx.arc(1240, 170, 150, 0.4, 5.6);
+  ctx.stroke();
+  ctx.restore();
+  // Flying cranes, three brush ticks each.
+  ctx.strokeStyle = p.ink;
+  ctx.lineWidth = 3;
+  for (const [x, y, s] of [[520, 120, 1], [600, 90, 0.8], [1700, 240, 1.1], [1790, 210, 0.7]]) {
+    ctx.beginPath();
+    ctx.moveTo(x - 26 * s, y + 8 * s);
+    ctx.quadraticCurveTo(x - 10 * s, y - 10 * s, x, y);
+    ctx.quadraticCurveTo(x + 10 * s, y - 10 * s, x + 26 * s, y + 8 * s);
+    ctx.stroke();
+  }
+  // Mountain layers, each a brush-shaped polygon, pagodas on the far ones.
+  for (let layer = 0; layer < 3; layer++) {
+    const y = 470 + layer * 80;
+    const col = layer === 0 ? p.far : layer === 1 ? p.near : p.support;
+    ctx.globalAlpha = layer === 0 ? 0.55 : layer === 1 ? 0.8 : 0.95;
+    ctx.beginPath();
+    ctx.moveTo(STAGE_X, y + 120);
     for (let i = 0; i <= 10; i++) {
       const x = STAGE_X + (i / 10) * STAGE_W;
-      const peak = y - 170 - rand(layer * 13 + 2, i) * 220;
+      const peak = y - 150 - rand(layer * 13 + 2, i) * 240;
       ctx.lineTo(x, peak);
-      ctx.quadraticCurveTo(x + 100, y - 40, x + 160, y + 30);
+      ctx.quadraticCurveTo(x + 90, y - 30, x + 170, y + 40);
     }
-    ctx.lineTo(STAGE_X + STAGE_W, y + 260);
-    ctx.lineTo(STAGE_X, y + 260);
+    ctx.lineTo(STAGE_X + STAGE_W, y + 300);
+    ctx.lineTo(STAGE_X, y + 300);
     ctx.closePath();
     ctx.fillStyle = col;
     ctx.fill();
+    if (layer < 2) {
+      // Pagoda silhouette on a ridge.
+      const px = layer === 0 ? 420 : 1660;
+      const py = layer === 0 ? 330 : 380;
+      ctx.fillStyle = col;
+      for (let t = 0; t < 4; t++) {
+        const w = 120 - t * 22;
+        const yy = py - t * 44;
+        poly(ctx, [[px - w / 2 - 14, yy], [px + w / 2 + 14, yy], [px + w / 2 - 6, yy - 18], [px - w / 2 + 6, yy - 18]], col);
+        ctx.fillRect(px - w / 2 + 8, yy - 40, w - 16, 24);
+      }
+      ctx.fillRect(px - 3, py - 200, 6, 30);
+    }
   }
   ctx.globalAlpha = 1;
-  // Mist bands.
-  for (let i = 0; i < 5; i++) {
+  // Pines on the near ridge: tall brush triangles.
+  for (let i = 0; i < 9; i++) {
+    const x = STAGE_X + 60 + i * 290 + rand(311, i) * 90;
+    const h = 120 + rand(312, i) * 110;
+    const base = 600 + rand(313, i) * 30;
+    ctx.fillStyle = p.support;
+    for (let t = 0; t < 3; t++) {
+      const w = (70 - t * 16) * (h / 180);
+      const yy = base - t * h * 0.28;
+      poly(ctx, [[x - w, yy], [x + w, yy], [x, yy - h * 0.45]], p.support);
+    }
+    ctx.fillRect(x - 5, base - 10, 10, 30);
+  }
+  // Mist bands over the valley.
+  for (let i = 0; i < 6; i++) {
     ctx.fillStyle = p.light;
-    ctx.globalAlpha = 0.36;
+    ctx.globalAlpha = 0.4;
     ctx.beginPath();
-    ctx.ellipse(300 + i * 430, 520 + (i % 2) * 60, 350, 34, -0.05, 0, TAU);
+    ctx.ellipse(STAGE_X + 300 + i * 440, 560 + (i % 2) * 70, 380, 36, -0.04, 0, TAU);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
-  // Bridge posts and rails behind the main platform.
-  for (const x of [180, 2100]) {
-    ctx.fillStyle = p.near;
-    ctx.fillRect(x, 250, 90, 460);
-    ctx.strokeStyle = p.ink;
-    ctx.lineWidth = 5;
-    ctx.strokeRect(x, 250, 90, 460);
-    ctx.fillStyle = p.ink;
-    for (let i = 0; i < 5; i++) ctx.fillRect(x + 12, 290 + i * 76, 66, 10);
-  }
-  // Lanterns.
-  for (const [x, y] of [[420, 260], [1180, 220], [1840, 300]]) {
+  // Torii gate on the left bank, lanterns along the span.
+  ctx.fillStyle = p.accent;
+  ctx.fillRect(60, 240, 26, 420);
+  ctx.fillRect(240, 240, 26, 420);
+  ctx.fillRect(20, 230, 290, 26);
+  ctx.fillRect(40, 300, 250, 18);
+  ctx.strokeStyle = p.ink;
+  ctx.lineWidth = 5;
+  ctx.strokeRect(60, 240, 26, 420);
+  ctx.strokeRect(240, 240, 26, 420);
+  ctx.strokeRect(20, 230, 290, 26);
+  ctx.strokeRect(40, 300, 250, 18);
+  for (const [x, y] of [[520, 250], [1180, 200], [1860, 280]]) {
     ctx.strokeStyle = p.ink;
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(x, 100);
+    ctx.moveTo(x, STAGE_Y);
     ctx.lineTo(x, y);
     ctx.stroke();
-    circle(ctx, x, y + 18, 26, p.accent, 4, p.ink);
+    ctx.fillStyle = p.accent;
+    ctx.beginPath();
+    ctx.roundRect(x - 30, y, 60, 76, 14);
+    ctx.fill();
+    ctx.strokeStyle = p.ink;
+    ctx.lineWidth = 4;
+    ctx.stroke();
     ctx.fillStyle = p.light;
-    ctx.fillRect(x - 8, y + 4, 16, 28);
+    ctx.fillRect(x - 9, y + 16, 18, 42);
+    ctx.fillStyle = p.ink;
+    ctx.fillRect(x - 34, y - 8, 68, 10);
+    ctx.fillRect(x - 24, y + 76, 48, 8);
+  }
+  // Seal stamp and a column of brush marks in the corner.
+  ctx.save();
+  ctx.translate(1840, 440);
+  ctx.rotate(0.06);
+  ctx.fillStyle = p.accent;
+  ctx.fillRect(0, 0, 84, 84);
+  ctx.fillStyle = p.light;
+  for (let i = 0; i < 4; i++) ctx.fillRect(12 + (i % 2) * 36, 12 + Math.floor(i / 2) * 36, 24, 24);
+  ctx.restore();
+  ctx.strokeStyle = p.ink;
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 5; i++) {
+    const y = 120 + i * 58;
+    ctx.beginPath();
+    ctx.moveTo(1880, y);
+    ctx.lineTo(1910 + rand(321, i) * 20, y + 10);
+    ctx.moveTo(1872, y + 24);
+    ctx.lineTo(1920, y + 20 + rand(322, i) * 12);
+    ctx.stroke();
+  }
+  ctx.lineCap = 'butt';
+  // Falling petals.
+  for (let i = 0; i < 40; i++) {
+    ctx.fillStyle = i % 3 === 0 ? p.accent : '#e7a9a4';
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.ellipse(STAGE_X + rand(331, i) * STAGE_W, 60 + rand(332, i) * 620, 7, 4, rand(333, i) * 3, 0, TAU);
+    ctx.fill();
   }
   // Ink splashes at the edges.
   for (let i = 0; i < 9; i++) {
@@ -1667,6 +1765,25 @@ function paintScroll(ctx: CanvasRenderingContext2D, p: Palette): void {
 function paintCabinet(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.fillStyle = p.sky;
   ctx.fillRect(STAGE_X, STAGE_Y, STAGE_W, STAGE_H);
+  // Star sprites.
+  ctx.fillStyle = p.light;
+  for (let i = 0; i < 60; i++) {
+    const x = STAGE_X + rand(401, i) * STAGE_W;
+    const y = STAGE_Y + rand(402, i) * 700;
+    const s = 2 + Math.floor(rand(403, i) * 3) * 2;
+    ctx.fillRect(x, y, s, s);
+    if (s > 4) {
+      ctx.fillRect(x - s, y + s / 2 - 1, s * 3, 2);
+      ctx.fillRect(x + s / 2 - 1, y - s, 2, s * 3);
+    }
+  }
+  // Pixel clouds.
+  for (let i = 0; i < 5; i++) {
+    const x = STAGE_X + 200 + i * 480;
+    const y = 160 + (i % 2) * 90;
+    ctx.fillStyle = p.far;
+    for (const [dx, dy, w, h] of [[0, 0, 160, 40], [30, -24, 90, 24], [60, 24, 70, 20]]) ctx.fillRect(x + dx, y + dy, w, h);
+  }
   // Pixel grid horizon.
   ctx.strokeStyle = p.accent;
   ctx.globalAlpha = 0.35;
@@ -1684,7 +1801,7 @@ function paintCabinet(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.stroke();
   }
   ctx.globalAlpha = 1;
-  // Pixel skyline.
+  // Pixel skyline with neon signs bolted on.
   for (let i = 0; i < 18; i++) {
     const bw = 80 + Math.floor(rand(11, i) * 90);
     const bh = 120 + Math.floor(rand(12, i) * 300);
@@ -1703,6 +1820,17 @@ function paintCabinet(ctx: CanvasRenderingContext2D, p: Palette): void {
       }
     }
     ctx.globalAlpha = 1;
+    if (i % 4 === 2) {
+      const sx = bx + 6;
+      const sy = by + 40;
+      ctx.fillStyle = p.ink;
+      ctx.fillRect(sx, sy, bw - 12, 44);
+      ctx.fillStyle = i % 8 === 2 ? p.light : p.accent;
+      ctx.fillRect(sx + 6, sy + 6, bw - 24, 32);
+      ctx.fillStyle = p.ink;
+      ctx.font = '900 22px monospace';
+      ctx.fillText(i % 8 === 2 ? 'BAR' : 'HI-SCORE', sx + 10, sy + 30);
+    }
   }
   // Giant cabinet marquee.
   ctx.fillStyle = p.near;
@@ -1712,15 +1840,22 @@ function paintCabinet(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.strokeRect(150, -60, 2100, 330);
   ctx.fillStyle = p.light;
   ctx.fillRect(190, -30, 2020, 270);
+  // Marquee bulbs.
+  for (let x = 210; x < 2200; x += 40) {
+    circle(ctx, x, -12, 9, x % 80 === 10 ? p.accent : '#fff3b0', 3, p.ink);
+    circle(ctx, x, 222, 9, x % 80 === 10 ? '#fff3b0' : p.accent, 3, p.ink);
+  }
   ctx.fillStyle = p.ink;
   ctx.font = '900 180px "Bangers", Impact, sans-serif';
   ctx.textAlign = 'center';
+  ctx.fillText('INSERT COIN', 1206, 156);
+  ctx.fillStyle = p.sky;
   ctx.fillText('INSERT COIN', 1200, 150);
   ctx.fillStyle = p.accent;
   ctx.font = '900 46px monospace';
-  ctx.fillText('1 PLAYER       2 PLAYERS', 1200, 218);
+  ctx.fillText('1 PLAYER       2 PLAYERS', 1200, 214);
   ctx.textAlign = 'left';
-  // Bezel sides.
+  // Bezel sides with lightning bolts and the control deck.
   ctx.fillStyle = p.ink;
   ctx.fillRect(STAGE_X, 270, 540, 800);
   ctx.fillRect(1460, 270, 540, 800);
@@ -1728,13 +1863,30 @@ function paintCabinet(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.lineWidth = 5;
   for (let i = 0; i < 6; i++) {
     ctx.beginPath();
-    ctx.moveTo(80, 340 + i * 110);
-    ctx.lineTo(520, 340 + i * 110);
-    ctx.moveTo(1580, 340 + i * 110);
-    ctx.lineTo(2020, 340 + i * 110);
+    ctx.moveTo(STAGE_X + 30, 340 + i * 110);
+    ctx.lineTo(110, 340 + i * 110);
+    ctx.moveTo(1490, 340 + i * 110);
+    ctx.lineTo(1970, 340 + i * 110);
     ctx.stroke();
   }
-  // Scanlines.
+  for (const x of [-120, 1560]) {
+    poly(ctx, [[x + 60, 300], [x + 20, 420], [x + 60, 410], [x + 10, 540], [x + 110, 400], [x + 70, 410], [x + 110, 300]], p.light, 4, p.accent);
+  }
+  // Joystick and buttons on the right bezel, 2P side.
+  ctx.fillStyle = p.near;
+  ctx.fillRect(1500, 560, 460, 130);
+  ctx.strokeStyle = p.accent;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(1500, 560, 460, 130);
+  ctx.strokeStyle = p.ink;
+  ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.moveTo(1580, 650);
+  ctx.lineTo(1600, 560);
+  ctx.stroke();
+  circle(ctx, 1602, 548, 26, p.accent, 5, p.ink);
+  for (let i = 0; i < 6; i++) circle(ctx, 1700 + (i % 3) * 70, 600 + Math.floor(i / 3) * 56, 20, i % 2 ? p.light : p.accent, 4, p.ink);
+  // CRT glow and scanlines.
   ctx.globalAlpha = 0.12;
   ctx.fillStyle = '#000';
   for (let y = STAGE_Y; y < STAGE_Y + STAGE_H; y += 6) ctx.fillRect(STAGE_X, y, STAGE_W, 2);
@@ -1762,7 +1914,7 @@ function paintCrypt(ctx: CanvasRenderingContext2D, p: Palette): void {
     }
   }
   ctx.globalAlpha = 1;
-  // Three gothic arches.
+  // Three gothic arches; the middle one is a rose window.
   for (let i = 0; i < 3; i++) {
     const cx = 340 + i * 660;
     const top = 20;
@@ -1778,25 +1930,97 @@ function paintCrypt(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.strokeStyle = p.ink;
     ctx.lineWidth = 7;
     ctx.stroke();
-    // Stained glass in the middle arch.
     if (i === 1) {
-      for (let s = 0; s < 8; s++) {
-        const gx = cx - 150 + (s % 4) * 80;
-        const gy = 120 + Math.floor(s / 4) * 170;
-        ctx.fillStyle = s % 3 === 0 ? p.accent : s % 3 === 1 ? p.light : '#335f6e';
-        ctx.globalAlpha = 0.72;
+      // Rose window: red glass, lead spokes, a glow cone to the floor.
+      ctx.save();
+      ctx.globalAlpha = 0.2;
+      ctx.fillStyle = p.accent;
+      ctx.beginPath();
+      ctx.moveTo(cx - 140, 230);
+      ctx.lineTo(cx + 140, 230);
+      ctx.lineTo(cx + 420, 760);
+      ctx.lineTo(cx - 420, 760);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      circle(ctx, cx, 230, 150, p.accent, 8, p.ink);
+      ctx.strokeStyle = p.ink;
+      ctx.lineWidth = 6;
+      for (let s = 0; s < 12; s++) {
+        const a = (s / 12) * TAU;
         ctx.beginPath();
-        ctx.moveTo(gx, gy);
-        ctx.lineTo(gx + 68, gy);
-        ctx.lineTo(gx + 68, gy + 150);
-        ctx.lineTo(gx, gy + 150);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(cx, 230);
+        ctx.lineTo(cx + Math.cos(a) * 150, 230 + Math.sin(a) * 150);
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.arc(cx, 230, 92, 0, TAU);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, 230, 40, 0, TAU);
+      ctx.stroke();
+      ctx.fillStyle = p.light;
+      ctx.globalAlpha = 0.5;
+      for (let s = 0; s < 12; s += 2) {
+        const a = (s / 12) * TAU + TAU / 24;
+        circle(ctx, cx + Math.cos(a) * 120, 230 + Math.sin(a) * 120, 16, p.light);
+      }
+      ctx.globalAlpha = 1;
+      // Lower panes.
+      for (let s = 0; s < 4; s++) {
+        const gx = cx - 150 + s * 80;
+        ctx.fillStyle = s % 2 === 0 ? p.accent : '#335f6e';
+        ctx.globalAlpha = 0.72;
+        ctx.fillRect(gx, 420, 68, 200);
         ctx.strokeStyle = p.ink;
         ctx.lineWidth = 3;
-        ctx.stroke();
+        ctx.strokeRect(gx, 420, 68, 200);
         ctx.globalAlpha = 1;
       }
+    } else {
+      // Gargoyle perched on the arch.
+      const gx = cx + (i === 0 ? 160 : -160);
+      poly(ctx, [[gx - 30, 110], [gx + 30, 110], [gx + 22, 70], [gx + 40, 40], [gx + 10, 56], [gx - 10, 56], [gx - 40, 40], [gx - 22, 70]], p.ink);
+    }
+  }
+  // Chandelier over the middle of the floor.
+  ctx.strokeStyle = p.ink;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(800, STAGE_Y);
+  ctx.lineTo(800, 90);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(800, 120, 130, 26, 0, 0, TAU);
+  ctx.strokeStyle = p.ink;
+  ctx.lineWidth = 8;
+  ctx.stroke();
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * TAU;
+    const x = 800 + Math.cos(a) * 130;
+    const y = 120 + Math.sin(a) * 26;
+    ctx.fillStyle = p.light;
+    ctx.fillRect(x - 4, y - 30, 8, 30);
+    circle(ctx, x, y - 36, 5, '#ffcf66', 2, p.ink);
+    ctx.globalAlpha = 0.12;
+    circle(ctx, x, y - 36, 30, '#ffcf66');
+    ctx.globalAlpha = 1;
+  }
+  // Cobwebs in the top corners.
+  ctx.strokeStyle = p.far;
+  ctx.lineWidth = 2;
+  for (const [cx, cy, dir] of [[STAGE_X + 540, 270, 1], [1460, 270, -1]]) {
+    for (let s = 0; s <= 6; s++) {
+      const a = (s / 6) * (Math.PI / 2);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx - dir * Math.cos(a) * 160, cy - Math.sin(a) * 160);
+      ctx.stroke();
+    }
+    for (let r = 40; r < 160; r += 40) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, dir === 1 ? Math.PI : Math.PI * 1.5, dir === 1 ? Math.PI * 1.5 : Math.PI * 2);
+      ctx.stroke();
     }
   }
   // Candles.
@@ -1823,7 +2047,7 @@ function paintCrypt(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.fillStyle = p.near;
   }
   // Hanging censers.
-  for (const [x, len] of [[430, 280], [1200, 220], [1740, 310]]) {
+  for (const [x, len] of [[430, 280], [1740, 310]]) {
     ctx.strokeStyle = p.ink;
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -1835,6 +2059,14 @@ function paintCrypt(ctx: CanvasRenderingContext2D, p: Palette): void {
     circle(ctx, x, len + 18, 52, p.light);
     ctx.globalAlpha = 1;
   }
+  // Floor fog.
+  for (let i = 0; i < 7; i++) {
+    ctx.fillStyle = p.far;
+    ctx.globalAlpha = 0.22;
+    ctx.beginPath();
+    ctx.ellipse(STAGE_X + 200 + i * 380, 640 + (i % 2) * 24, 300, 30, 0, 0, TAU);
+    ctx.fill();
+  }
   ctx.globalAlpha = 0.2;
   ctx.fillStyle = p.ink;
   ctx.fillRect(STAGE_X, 620, STAGE_W, 300);
@@ -1844,11 +2076,11 @@ function paintCrypt(ctx: CanvasRenderingContext2D, p: Palette): void {
 /* Soundstage 6: everything is painted, including the sky. */
 function paintSoundstage(ctx: CanvasRenderingContext2D, p: Palette): void {
   skyBand(ctx, p);
-  // Painted backdrop cloth.
+  // Painted backdrop cloth with a visible top rail and sag.
   ctx.fillStyle = '#cbbfa9';
   ctx.fillRect(STAGE_X, -200, STAGE_W, 800);
   ctx.strokeStyle = p.ink;
-  ctx.globalAlpha = 0.25;
+  ctx.globalAlpha = 0.2;
   ctx.lineWidth = 3;
   for (let x = STAGE_X; x < STAGE_X + STAGE_W; x += 90) {
     ctx.beginPath();
@@ -1857,18 +2089,64 @@ function paintSoundstage(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.stroke();
   }
   ctx.globalAlpha = 1;
-  // Painted moon and skyline flat.
+  // Painted clouds: obviously brushed, with a hard shade.
+  for (let i = 0; i < 5; i++) {
+    const x = STAGE_X + 180 + i * 470;
+    const y = 60 + (i % 2) * 80;
+    ctx.fillStyle = '#f1e9d6';
+    ctx.beginPath();
+    ctx.ellipse(x, y, 120, 36, 0, 0, TAU);
+    ctx.ellipse(x - 50, y - 18, 60, 30, 0, 0, TAU);
+    ctx.ellipse(x + 50, y - 14, 70, 32, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = '#b9a88c';
+    ctx.globalAlpha = 0.5;
+    ctx.fillRect(x - 120, y + 18, 240, 14);
+    ctx.globalAlpha = 1;
+  }
+  // Painted moon and cardboard skyline flats on visible stands.
   circle(ctx, 1230, 240, 150, p.light, 5, p.ink);
   ctx.fillStyle = '#a39074';
   for (let i = 0; i < 8; i++) {
     const bx = 250 + i * 270;
     const bh = 100 + (i % 3) * 90;
+    ctx.fillStyle = i % 2 ? '#a39074' : '#8e7b63';
     ctx.fillRect(bx, 620 - bh, 190, bh);
     ctx.strokeStyle = p.ink;
     ctx.lineWidth = 3;
     ctx.strokeRect(bx, 620 - bh, 190, bh);
+    // The flat's brace, behind it.
+    ctx.beginPath();
+    ctx.moveTo(bx + 190, 620 - bh + 20);
+    ctx.lineTo(bx + 250, 620);
+    ctx.stroke();
+    ctx.fillStyle = p.light;
+    ctx.globalAlpha = 0.5;
+    for (let wy = 640 - bh; wy < 600; wy += 28) for (let wx = bx + 20; wx < bx + 170; wx += 34) ctx.fillRect(wx, wy, 14, 16);
+    ctx.globalAlpha = 1;
   }
-  // Studio lights on stands.
+  // Scaffold catwalk across the top with crew silhouettes.
+  ctx.fillStyle = p.ink;
+  ctx.fillRect(STAGE_X, -40, STAGE_W, 18);
+  ctx.strokeStyle = p.ink;
+  ctx.lineWidth = 5;
+  for (let x = STAGE_X + 40; x < STAGE_X + STAGE_W; x += 200) {
+    ctx.beginPath();
+    ctx.moveTo(x, -22);
+    ctx.lineTo(x, -110);
+    ctx.moveTo(x, -22);
+    ctx.lineTo(x + 100, -110);
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.moveTo(STAGE_X, -110);
+  ctx.lineTo(STAGE_X + STAGE_W, -110);
+  ctx.stroke();
+  for (const x of [300, 1500]) {
+    poly(ctx, [[x - 14, -40], [x + 14, -40], [x + 10, -90], [x + 26, -120], [x - 26, -120], [x - 10, -90]], p.ink);
+    circle(ctx, x, -134, 14, p.ink);
+  }
+  // Studio lights on stands with barn doors.
   for (let i = 0; i < 4; i++) {
     const x = 180 + i * 560;
     ctx.strokeStyle = p.ink;
@@ -1876,14 +2154,20 @@ function paintSoundstage(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.beginPath();
     ctx.moveTo(x, 640);
     ctx.lineTo(x, 150);
+    ctx.moveTo(x - 40, 640);
+    ctx.lineTo(x, 560);
+    ctx.lineTo(x + 40, 640);
     ctx.stroke();
-    ctx.fillStyle = p.ink;
     ctx.save();
     ctx.translate(x, 140);
     ctx.rotate(i % 2 ? 0.4 : -0.3);
+    ctx.fillStyle = p.ink;
     ctx.fillRect(-44, -30, 88, 60);
     ctx.fillStyle = p.light;
     ctx.fillRect(-32, -20, 64, 40);
+    ctx.fillStyle = p.ink;
+    ctx.fillRect(-54, -34, 10, 68);
+    ctx.fillRect(44, -34, 10, 68);
     ctx.restore();
     ctx.globalAlpha = 0.12;
     ctx.fillStyle = p.light;
@@ -1895,7 +2179,20 @@ function paintSoundstage(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.fill();
     ctx.globalAlpha = 1;
   }
-  // Cameras and cables.
+  // Boom mic swinging in from the top.
+  ctx.strokeStyle = p.ink;
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(1400, STAGE_Y);
+  ctx.lineTo(1030, 300);
+  ctx.stroke();
+  ctx.fillStyle = p.ink;
+  ctx.beginPath();
+  ctx.roundRect(980, 290, 70, 34, 16);
+  ctx.fill();
+  ctx.fillStyle = p.sky2;
+  for (let i = 0; i < 6; i++) ctx.fillRect(988 + i * 10, 296, 4, 22);
+  // Cameras, cables, the dolly track.
   for (const [x, flip] of [[300, 1], [1780, -1]]) {
     ctx.fillStyle = p.near;
     ctx.fillRect(x - 30, 570, 60, 90);
@@ -1914,8 +2211,10 @@ function paintSoundstage(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.moveTo(x, 640);
     ctx.bezierCurveTo(x + 100 * flip, 700, x + 60 * flip, 780, x + 260 * flip, 740);
     ctx.stroke();
+    circle(ctx, x - 20, 664, 12, p.ink);
+    circle(ctx, x + 20, 664, 12, p.ink);
   }
-  // Director's chair.
+  // Clapperboard leaning on the director's chair.
   ctx.fillStyle = p.accent;
   ctx.fillRect(1540, 600, 90, 40);
   ctx.strokeStyle = p.ink;
@@ -1931,10 +2230,22 @@ function paintSoundstage(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.fillStyle = p.ink;
   ctx.font = '900 28px "Bangers", Impact, sans-serif';
   ctx.fillText('DIR', 1556, 550);
-  // Floor line / tape marks.
-  ctx.globalAlpha = 0.2;
+  ctx.save();
+  ctx.translate(1660, 590);
+  ctx.rotate(-0.2);
+  ctx.fillStyle = p.ink;
+  ctx.fillRect(0, 0, 110, 74);
+  ctx.fillStyle = p.light;
+  ctx.fillRect(6, 18, 98, 50);
+  for (let i = 0; i < 5; i++) poly(ctx, [[i * 24, 0], [i * 24 + 12, 0], [i * 24 + 24, 14], [i * 24 + 12, 14]], p.light);
+  ctx.fillStyle = p.ink;
+  ctx.font = '900 16px monospace';
+  ctx.fillText('SC 6  TK 12', 10, 50);
+  ctx.restore();
+  // Floor tape marks.
+  ctx.globalAlpha = 0.25;
   ctx.strokeStyle = p.ink;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 3;
   for (let x = STAGE_X; x < STAGE_X + STAGE_W; x += 160) {
     ctx.beginPath();
     ctx.moveTo(x, 700);
@@ -1959,6 +2270,16 @@ function paintHangar(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.strokeRect(x, -500, 70, 1200);
     ctx.globalAlpha = 1;
   }
+  // Bay number stencilled on the wall.
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.fillStyle = p.light;
+  ctx.font = '900 300px "Bangers", Impact, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('09', 800, 400);
+  ctx.font = '900 40px monospace';
+  ctx.fillText('BAY NINE // NO INSIGNIA', 800, 450);
+  ctx.restore();
   // Ceiling truss.
   ctx.strokeStyle = p.ink;
   ctx.lineWidth = 8;
@@ -1972,8 +2293,22 @@ function paintHangar(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.beginPath();
   ctx.moveTo(STAGE_X, -110);
   ctx.lineTo(STAGE_X + STAGE_W, -110);
+  ctx.moveTo(STAGE_X, -10);
+  ctx.lineTo(STAGE_X + STAGE_W, -10);
   ctx.stroke();
-  // Floodlights.
+  // Chain hoist hanging from the truss.
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(1180, -10);
+  ctx.lineTo(1180, 220);
+  ctx.stroke();
+  for (let y = 0; y < 220; y += 16) {
+    ctx.beginPath();
+    ctx.ellipse(1180, y, 5, 9, 0, 0, TAU);
+    ctx.stroke();
+  }
+  poly(ctx, [[1160, 220], [1200, 220], [1210, 260], [1180, 290], [1150, 260]], p.ink);
+  // Floodlights with cones.
   for (const [x, y] of [[360, 140], [1200, 90], [1880, 170]]) {
     ctx.strokeStyle = p.ink;
     ctx.lineWidth = 5;
@@ -1996,35 +2331,57 @@ function paintHangar(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.fill();
     ctx.globalAlpha = 1;
   }
-  // Plane silhouette.
+  // Rotating warning beacon on the wall.
+  ctx.fillStyle = p.ink;
+  ctx.fillRect(1900, 300, 40, 24);
+  circle(ctx, 1920, 290, 16, p.accent, 3, p.ink);
+  ctx.globalAlpha = 0.15;
+  circle(ctx, 1920, 290, 60, p.accent);
+  ctx.globalAlpha = 1;
+  // Gantry across the back wall.
+  ctx.fillStyle = p.near;
+  ctx.fillRect(STAGE_X, 250, STAGE_W, 22);
+  ctx.strokeStyle = p.ink;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(STAGE_X, 250, STAGE_W, 22);
+  for (let x = STAGE_X; x < STAGE_X + STAGE_W; x += 60) {
+    ctx.beginPath();
+    ctx.moveTo(x, 250);
+    ctx.lineTo(x, 200);
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.moveTo(STAGE_X, 200);
+  ctx.lineTo(STAGE_X + STAGE_W, 200);
+  ctx.stroke();
+  // Jet: nose, canopy, intake, wing root. Flat tone, one shade, ink.
   ctx.fillStyle = p.near;
   ctx.beginPath();
-  ctx.moveTo(780, 450);
-  ctx.lineTo(1500, 400);
-  ctx.lineTo(1680, 440);
-  ctx.lineTo(1500, 500);
-  ctx.lineTo(820, 520);
+  ctx.moveTo(700, 470);
+  ctx.quadraticCurveTo(1200, 380, 1700, 420);
+  ctx.lineTo(1720, 470);
+  ctx.quadraticCurveTo(1300, 540, 740, 540);
   ctx.closePath();
   ctx.fill();
   ctx.strokeStyle = p.ink;
   ctx.lineWidth = 5;
   ctx.stroke();
+  ctx.fillStyle = p.ink;
+  ctx.globalAlpha = 0.2;
   ctx.beginPath();
-  ctx.moveTo(1080, 430);
-  ctx.lineTo(1180, 300);
-  ctx.lineTo(1300, 310);
-  ctx.lineTo(1240, 440);
+  ctx.moveTo(740, 540);
+  ctx.quadraticCurveTo(1300, 540, 1720, 470);
+  ctx.lineTo(1720, 500);
+  ctx.quadraticCurveTo(1300, 560, 760, 560);
   ctx.closePath();
   ctx.fill();
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(1050, 500);
-  ctx.lineTo(980, 580);
-  ctx.lineTo(1120, 560);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-  // Crates.
+  ctx.globalAlpha = 1;
+  poly(ctx, [[1040, 430], [1130, 350], [1290, 350], [1330, 420]], p.sky2, 5, p.ink);
+  poly(ctx, [[1060, 428], [1140, 362], [1200, 362], [1200, 428]], p.light, 3, p.ink);
+  poly(ctx, [[900, 520], [820, 620], [1100, 600], [1150, 520]], p.near, 5, p.ink);
+  circle(ctx, 1620, 445, 26, p.ink);
+  circle(ctx, 1620, 445, 16, p.sky2, 3, p.ink);
+  // Oil drums and crates.
   for (let i = 0; i < 5; i++) {
     const x = 240 + i * 460;
     const y = 600 - (i % 2) * 40;
@@ -2043,8 +2400,16 @@ function paintHangar(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.globalAlpha = 0.7;
     ctx.fillRect(x + 8, y + 8, 46, 12);
     ctx.globalAlpha = 1;
+    if (i % 2 === 0) {
+      ctx.fillStyle = p.sky2;
+      ctx.fillRect(x + 140, 620, 54, 80);
+      ctx.strokeRect(x + 140, 620, 54, 80);
+      ctx.fillStyle = p.ink;
+      ctx.fillRect(x + 140, 640, 54, 5);
+      ctx.fillRect(x + 140, 672, 54, 5);
+    }
   }
-  // Hazard stripes at the base.
+  // Hazard stripes at the base, then floor haze.
   ctx.save();
   ctx.beginPath();
   ctx.rect(STAGE_X, 700, STAGE_W, 60);
@@ -2053,6 +2418,13 @@ function paintHangar(ctx: CanvasRenderingContext2D, p: Palette): void {
     poly(ctx, [[x, 760], [x + 24, 700], [x + 60, 700], [x + 36, 760]], p.accent);
   }
   ctx.restore();
+  for (let i = 0; i < 6; i++) {
+    ctx.fillStyle = p.light;
+    ctx.globalAlpha = 0.08;
+    ctx.beginPath();
+    ctx.ellipse(STAGE_X + 300 + i * 420, 660, 320, 34, 0, 0, TAU);
+    ctx.fill();
+  }
   ctx.globalAlpha = 0.35;
   ctx.fillStyle = p.ink;
   ctx.fillRect(STAGE_X, 700, STAGE_W, 400);
