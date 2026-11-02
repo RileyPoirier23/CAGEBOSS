@@ -151,6 +151,19 @@ describe('universe clash fight simulation', () => {
     expect(m.events.some((e) => e.type === 'ringout')).toBe(true);
   });
 
+  it('does not charge another stock while the KO freeze is still running', () => {
+    const m = ready();
+    m.fighters[1].x = 2000;
+    m.fighters[1].grounded = false;
+    stepMatch(m, emptyInput(), emptyInput());
+    expect(m.fighters[1].stocks).toBe(2);
+    // The body keeps drifting past the blast zone during the freeze. The
+    // ring-out guard must ignore every tick after the first KO.
+    idle(m, 60);
+    expect(m.fighters[1].stocks).toBe(2);
+    expect(m.phase).toBe('ko');
+  });
+
   it('rolls back by restoring a snapshot and replaying the same tick', () => {
     const m = ready();
     const snapshot = cloneMatch(m);
