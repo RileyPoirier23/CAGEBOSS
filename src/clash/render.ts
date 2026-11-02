@@ -165,6 +165,9 @@ interface DrawnFighter {
 }
 
 const FLOOR_Y = 650;
+const FONT_DISPLAY = '"Bangers", Impact, "Arial Black", sans-serif';
+const FONT_HEAD = '"Anton", Impact, "Arial Black", sans-serif';
+const FONT_BODY = '"Barlow Condensed", "Bahnschrift", "Segoe UI", sans-serif';
 
 export class ClashRenderer {
   readonly canvas: HTMLCanvasElement;
@@ -560,7 +563,7 @@ export class ClashRenderer {
     if (extras.training?.frameData) this.drawFrameData(ctx, m, w, h);
     if (extras.spectator) {
       ctx.save();
-      ctx.font = `bold ${Math.round(h * 0.02)}px Impact, "Arial Black", sans-serif`;
+      ctx.font = `bold ${Math.round(h * 0.02)}px ${FONT_DISPLAY}`;
       ctx.fillStyle = '#f7c948';
       ctx.textAlign = 'center';
       ctx.fillText('SPECTATOR CANVAS // ' + extras.spectator.toUpperCase(), w / 2, h - 16);
@@ -976,7 +979,7 @@ export class ClashRenderer {
       const a = Math.min(1, f.life / 12);
       ctx.save();
       ctx.globalAlpha = a;
-      ctx.font = `900 ${Math.max(10, f.size * k * 0.72)}px Impact, "Arial Black", sans-serif`;
+      ctx.font = `900 ${Math.max(10, f.size * k * 0.72)}px ${FONT_DISPLAY}`;
       ctx.textAlign = 'center';
       ctx.lineWidth = 4;
       ctx.strokeStyle = f.stroke;
@@ -1085,7 +1088,7 @@ export class ClashRenderer {
         ctx.translate(-this.cam.x, -this.cam.y);
         for (const d of this.drawn) drawFighter(ctx, { ...d.f, x: d.x, y: d.y, flash: 0 }, { ...artOpts, tick: m.tick, held: null });
         ctx.restore();
-        ctx.font = `900 ${Math.round(h * 0.16)}px Impact, "Arial Black", sans-serif`;
+        ctx.font = `900 ${Math.round(h * 0.16)}px ${FONT_DISPLAY}`;
         ctx.fillStyle = style.ink;
         ctx.strokeStyle = style.bg;
         ctx.lineWidth = 8;
@@ -1098,7 +1101,7 @@ export class ClashRenderer {
         ctx.lineWidth = 4;
         ctx.strokeRect(w * 0.1, h * 0.78, w * 0.5, h * 0.09);
         ctx.fillStyle = style.ink;
-        ctx.font = `bold ${Math.round(h * 0.045)}px Georgia, serif`;
+        ctx.font = `bold ${Math.round(h * 0.045)}px ${FONT_HEAD}`;
         ctx.textAlign = 'left';
         ctx.fillText(imp.text.toUpperCase(), w * 0.12, h * 0.845);
         ctx.restore();
@@ -1175,9 +1178,9 @@ export class ClashRenderer {
     ctx.strokeRect(px + 14, py + 14, pw * 0.55, 36 * s);
     ctx.fillStyle = '#12100f';
     ctx.textAlign = 'left';
-    ctx.font = `900 ${Math.round(h * 0.11)}px Impact, "Arial Black", sans-serif`;
+    ctx.font = `900 ${Math.round(h * 0.11)}px ${FONT_DISPLAY}`;
     ctx.fillText(kp.text, px + 24, py + ph * 0.7);
-    ctx.font = `bold ${Math.round(h * 0.028)}px Georgia, serif`;
+    ctx.font = `bold ${Math.round(h * 0.028)}px ${FONT_HEAD}`;
     const who = names ? names[kp.side] : `P${kp.side + 1}`;
     ctx.fillText(`${who} // ${kp.sub}`, px + 22, py + 14 + 26 * s);
     ctx.restore();
@@ -1276,7 +1279,7 @@ export class ClashRenderer {
       loserAt(bx, by, 'hurt', (c) => upright(c, bx, by, Math.PI / 2 - 0.2));
       const name = cb.name.toUpperCase();
       const n = Math.floor(K(30, 200) * name.length);
-      ctx.font = 'italic 900 70px Georgia, serif';
+      ctx.font = `italic 400 76px ${FONT_DISPLAY}`;
       ctx.fillStyle = blood;
       ctx.textAlign = 'center';
       ctx.fillText(name.slice(0, n), bx, by - 140);
@@ -1456,7 +1459,7 @@ export class ClashRenderer {
           ctx.fillStyle = '#f7c948';
           ctx.fillRect(w * 0.12, h * 0.14, w * 0.4, h * 0.08);
           ctx.fillStyle = '#12100f';
-          ctx.font = `bold ${Math.round(h * 0.045)}px Georgia, serif`;
+          ctx.font = `bold ${Math.round(h * 0.045)}px ${FONT_HEAD}`;
           ctx.textAlign = 'left';
           ctx.fillText(fin.name.toUpperCase(), w * 0.14, h * 0.2);
         } else {
@@ -1477,10 +1480,10 @@ export class ClashRenderer {
     ctx.fillRect(0, 0, w, h * 0.09);
     ctx.fillRect(0, h * 0.91, w, h * 0.09);
     ctx.fillStyle = '#efe6d2';
-    ctx.font = `900 ${Math.round(h * 0.04)}px Impact, "Arial Black", sans-serif`;
+    ctx.font = `900 ${Math.round(h * 0.04)}px ${FONT_DISPLAY}`;
     ctx.textAlign = 'center';
     ctx.fillText(fin.name.toUpperCase(), w / 2, h * 0.955);
-    ctx.font = `${Math.round(h * 0.02)}px "Bahnschrift", "Segoe UI", sans-serif`;
+    ctx.font = `${Math.round(h * 0.02)}px ${FONT_BODY}`;
     ctx.fillStyle = '#cbb995';
     ctx.fillText(`${ca.name.toUpperCase()} // ${fin.condition.toUpperCase()}`, w / 2, h * 0.045);
     if (t > 30 && t < fin.duration - 10 && !fin.skipped) ctx.fillText('LOSER: ANY BUTTON TO SKIP', w / 2, h * 0.985);

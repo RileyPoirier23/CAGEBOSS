@@ -1291,14 +1291,17 @@ export function drawPortrait(
   tick: number,
   opts: ArtOpts,
   pose: PoseName = 'idle',
+  crop: 'full' | 'bust' = 'full',
+  facing: 1 | -1 = 1,
 ): void {
   const def = charDef(id);
-  const sun = ctx.createRadialGradient(w * 0.5, h * 0.44, 4, w * 0.5, h * 0.44, w * 0.5);
-  sun.addColorStop(0, def.art.secondary);
-  sun.addColorStop(0.72, def.art.secondaryShade);
-  sun.addColorStop(1, def.art.primaryShade);
-  ctx.fillStyle = sun;
+  // Two flat tones and a hard edge instead of a gradient: it prints.
+  ctx.fillStyle = def.art.secondaryShade;
   ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = def.art.secondary;
+  ctx.beginPath();
+  ctx.arc(w * 0.5, h * 0.44, Math.max(w, h) * 0.42, 0, TAU);
+  ctx.fill();
   // Halftone dots.
   ctx.save();
   ctx.globalAlpha = 0.2;
@@ -1326,11 +1329,18 @@ export function drawPortrait(
     ctx.stroke();
   }
   ctx.restore();
-  const fit = Math.min((h * 0.92) / 150, (w * 0.94) / 110);
   ctx.save();
-  ctx.translate(w / 2, h * 0.97);
-  ctx.scale(fit, fit);
-  drawCharacter(ctx, def, 0, 0, 1, pose, {
+  if (crop === 'bust') {
+    // Head and shoulders fill the frame; the figure's head sits near y = -135 at scale 1.
+    const fit = (h / 150) * 1.95;
+    ctx.translate(w / 2 - facing * w * 0.04, h * 0.5 + 132 * fit * def.art.scale);
+    ctx.scale(fit, fit);
+  } else {
+    const fit = Math.min((h * 0.92) / 150, (w * 0.94) / 110);
+    ctx.translate(w / 2, h * 0.97);
+    ctx.scale(fit, fit);
+  }
+  drawCharacter(ctx, def, 0, 0, facing, pose, {
     ...opts,
     tick,
     phase: 0,
@@ -1569,10 +1579,10 @@ function paintRooftop(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.fillStyle = p.light;
   ctx.fillRect(1272, 372, 376, 206);
   ctx.fillStyle = p.ink;
-  ctx.font = '900 76px Impact, sans-serif';
+  ctx.font = '900 76px "Bangers", Impact, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('PARADE', 1460, 470);
-  ctx.font = '900 34px Impact, sans-serif';
+  ctx.font = '900 34px "Bangers", Impact, sans-serif';
   ctx.fillText('DO NOT STOP', 1460, 520);
   ctx.textAlign = 'left';
   ctx.strokeStyle = p.ink;
@@ -1703,7 +1713,7 @@ function paintCabinet(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.fillStyle = p.light;
   ctx.fillRect(190, -30, 2020, 270);
   ctx.fillStyle = p.ink;
-  ctx.font = '900 180px Impact, sans-serif';
+  ctx.font = '900 180px "Bangers", Impact, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('INSERT COIN', 1200, 150);
   ctx.fillStyle = p.accent;
@@ -1919,7 +1929,7 @@ function paintSoundstage(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.lineTo(1612, 640);
   ctx.stroke();
   ctx.fillStyle = p.ink;
-  ctx.font = '900 28px Impact, sans-serif';
+  ctx.font = '900 28px "Bangers", Impact, sans-serif';
   ctx.fillText('DIR', 1556, 550);
   // Floor line / tape marks.
   ctx.globalAlpha = 0.2;
@@ -2516,7 +2526,7 @@ export function drawTrap(ctx: CanvasRenderingContext2D, t: Trap, tick: number, o
     ctx.stroke();
     ctx.globalAlpha = 1;
     ctx.fillStyle = '#d8242c';
-    ctx.font = '900 20px Impact, sans-serif';
+    ctx.font = '900 20px "Bangers", Impact, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('!', 0, -12);
     ctx.textAlign = 'left';

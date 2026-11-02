@@ -484,10 +484,17 @@ export function onlineHtml(v: OnlineView): string {
   const peer = v.peerChar ? charDef(v.peerChar) : null;
   const ta = (field: string, value: string, ro: boolean, ph: string) =>
     `<textarea class="code-field" data-online="${field}" ${ro ? 'readonly' : ''} placeholder="${esc(ph)}" spellcheck="false">${esc(value)}</textarea>`;
-  const head = `<div class="screen-head"><h1>ONLINE</h1><div class="sub">PEER TO PEER // ROLLBACK // NO SERVER</div></div>`;
+  const head = `<div class="screen-head">
+      <div class="heading">
+        <div class="kicker">PEER TO PEER // ROLLBACK // NO SERVER</div>
+        <h1>GO <em>ONLINE</em></h1>
+        <div class="sub">HAND THE CODE OVER ANY WAY YOU LIKE. THE FIGHT RUNS BROWSER TO BROWSER.</div>
+      </div>
+      <div class="head-actions"><button class="btn small" data-action="title">BACK</button></div>
+    </div>`;
   if (!v.supported) {
-    return `${head}<div class="vault-note">This browser has no WebRTC. Netplay needs Chrome, Edge, Firefox or Safari.</div>
-      <div class="loadout-row"><button class="btn" data-action="title">BACK</button></div>`;
+    return `${head}<div class="screen-body"><div class="panel online-card"><div class="vault-note">This browser has no WebRTC. Netplay needs Chrome, Edge, Firefox or Safari.</div>
+      <div class="loadout-row"><button class="btn" data-action="title">BACK</button></div></div></div>`;
   }
   const status = `<div class="online-status ${v.open ? 'on' : ''}">
       <b>${esc(v.status.toUpperCase())}</b> ${esc(v.detail)}${v.open ? ` · PING ${v.rtt} MS` : ''}
@@ -529,6 +536,5 @@ export function onlineHtml(v: OnlineView): string {
       ${v.open ? `<div class="vault-note">Connected. The host starts the fight.</div>` : ''}`;
   }
   const log = v.log.length ? `<div class="online-log">${v.log.slice(-6).map((l) => `<div>${esc(l)}</div>`).join('')}</div>` : '';
-  return `${head}${status}${who}${body}${log}
-    <div class="loadout-row"><button class="btn" data-action="title">BACK TO TITLE</button></div>`;
+  return `${head}<div class="screen-body"><div class="panel online-card">${status}${who}${body}${log}</div></div>`;
 }

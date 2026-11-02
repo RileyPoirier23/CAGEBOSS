@@ -402,6 +402,7 @@ export class ClashApp {
     this.screenEl.className = 'screen title-screen';
     this.ensureAttract(`title:${randomSeed()}`);
     this.screenEl.innerHTML = titleHtml(this.profile);
+    this.paintPortraits(this.screenEl);
     this.saveSoon();
   }
 
@@ -533,6 +534,8 @@ export class ClashApp {
           0,
           this.artOpts(),
           (canvas.dataset.portraitPose as PoseName | undefined) ?? 'idle',
+          canvas.dataset.portraitCrop === 'bust' ? 'bust' : 'full',
+          canvas.dataset.portraitFace === '-1' ? -1 : 1,
         );
       });
     });
@@ -1538,7 +1541,7 @@ export class ClashApp {
 
   private showOnline(): void {
     this.onlineMatch = null;
-    this.showSimple('online', onlineHtml(this.onlineView()), 'options-screen');
+    this.showSimple('online', onlineHtml(this.onlineView()), 'online-screen');
   }
 
   /** Re-render the online screen without losing what is typed in the paste box. */
@@ -1921,6 +1924,7 @@ export class ClashApp {
     this.countEl = q('[data-countin]');
     this.inputDisplayEl = this.hudEl.querySelector<HTMLElement>('.input-display');
     this.corruptEl = this.hudEl.querySelector<HTMLElement>('[data-corrupt]');
+    this.paintPortraits(this.hudEl);
     this.lastStockMax = cfg.mode === 'training' ? 1 : cfg.stocks;
     this.lastStocks = [cfg.stocks, cfg.stocks];
   }

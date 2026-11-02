@@ -122,17 +122,21 @@ function hudSide(side: 0 | 1, args: HudArgs): string {
   const who = side === 0 ? (args.local ? 'P1' : 'P1') : args.spectator ? 'CPU' : args.local ? 'P2' : `CPU LV${args.profile.cpuLevel}`;
   return `
     <div class="hud-side ${side === 1 ? 'right' : ''}">
-      <div class="hud-name-row">
-        <div class="hud-name" data-name="${side}">${esc(def.name)}</div>
-        <span class="hud-tag" data-tag="${side}">${esc(who)} // ${esc(def.universeShort)}</span>
-      </div>
-      <div class="health-frame">
-        <div class="health-chip" data-chip="${side}"></div>
-        <div class="health-fill" data-hp="${side}"></div>
-      </div>
-      <div class="hud-meta">
-        <div class="stocks" data-stocks="${side}">${args.mode === 'training' ? '<i class="stock final"></i>' : stocksHtml(args.stocks, args.stocks)}</div>
-        ${driveHtml(side)}
+      <div class="hud-portrait"><canvas data-portrait="${id}" data-portrait-crop="bust" data-portrait-face="${side === 1 ? -1 : 1}" width="96" height="96"></canvas></div>
+      <div class="hud-bars">
+        <div class="hud-name-row">
+          <div class="hud-name" data-name="${side}">${esc(def.name)}</div>
+          <span class="hud-tag" data-tag="${side}">${esc(who)} // ${esc(def.universeShort)}</span>
+        </div>
+        <div class="health-frame">
+          <div class="health-chip" data-chip="${side}"></div>
+          <div class="health-fill" data-hp="${side}"></div>
+          <div class="health-gloss"></div>
+        </div>
+        <div class="hud-meta">
+          <div class="stocks" data-stocks="${side}">${args.mode === 'training' ? '<i class="stock final"></i>' : stocksHtml(args.stocks, args.stocks)}</div>
+          ${driveHtml(side)}
+        </div>
       </div>
     </div>`;
 }
@@ -179,37 +183,51 @@ export function titleHtml(p: ClashProfile): string {
       <div class="issue"><b>ISSUE #01</b><span>EIGHT UNIVERSES</span></div>
       <div class="issue"><b>60 HZ</b><span>ROLLBACK READY</span></div>
     </div>
-    <div class="title-lockup">
-      <span class="title-kicker">THE INK IS STILL WET</span>
-      <span class="logo-universe">UNIVERSE</span>
-      <span class="logo-clash">CL<span>ASH</span></span>
-      <div class="title-tag">NO BLOCKING. NO MERCY. <em>NO CONTINUE.</em></div>
+    <div class="title-main">
+      <div class="title-left">
+        <div class="title-lockup">
+          <span class="title-kicker">THE INK IS STILL WET</span>
+          <span class="logo-universe">UNIVERSE</span>
+          <span class="logo-clash">CL<span>ASH</span></span>
+          <div class="title-tag">NO BLOCKING. NO MERCY. <em>NO CONTINUE.</em></div>
+        </div>
+        <div class="title-menu">
+          ${menu('FIGHT', 'fight', true, '↵')}
+          ${menu('ARCADE', 'arcade')}
+          ${menu('STORY', 'story-screen')}
+          ${menu('RIFT LADDER', 'rift-screen')}
+          ${menu('TRAINING', 'training')}
+          ${menu('ONLINE', 'online')}
+          ${menu('NETPLAY SIM', 'netplay')}
+          ${menu('SPECTATE', 'spectate')}
+          ${menu('REPLAYS', 'replays')}
+          ${menu('ROSTER', 'roster')}
+          ${menu('THE VAULT', 'vault')}
+          ${menu('PROGRESSION', 'progress')}
+          ${menu('FINISHER BUILDER', 'builder')}
+          ${menu('HITBOX EDITOR', 'editor')}
+          ${menu('OPTIONS', 'options')}
+        </div>
+      </div>
+      <div class="title-cover" data-action="roster" role="button" tabindex="0" title="Open the roster">
+        <div class="speedlines"></div>
+        <canvas data-portrait="${p.selected}" data-portrait-pose="taunt" width="480" height="640"></canvas>
+        <div class="cover-top">
+          <span class="tag ink">${esc(def.universeName)}</span>
+          <span class="tag">LV ${lvl}</span>
+        </div>
+        <div class="cover-burst">${esc(def.archetype.split(' ')[0])}</div>
+        <div class="cover-name">
+          <b>${esc(def.name)}</b>
+          <span>${esc(def.title)}</span>
+        </div>
+      </div>
     </div>
-    <div class="title-bottom">
-      <div class="title-menu">
-        ${menu('FIGHT', 'fight', true, '↵')}
-        ${menu('ARCADE', 'arcade')}
-        ${menu('STORY', 'story-screen')}
-        ${menu('RIFT LADDER', 'rift-screen')}
-        ${menu('TRAINING', 'training')}
-        ${menu('ONLINE', 'online')}
-        ${menu('NETPLAY SIM', 'netplay')}
-        ${menu('SPECTATE', 'spectate')}
-        ${menu('REPLAYS', 'replays')}
-        ${menu('ROSTER', 'roster')}
-        ${menu('THE VAULT', 'vault')}
-        ${menu('PROGRESSION', 'progress')}
-        ${menu('FINISHER BUILDER', 'builder')}
-        ${menu('HITBOX EDITOR', 'editor')}
-        ${menu('OPTIONS', 'options')}
-      </div>
-      <div class="title-foot">
-        <div class="stamp">NO BLOCKING // NO TIMEOUTS</div>
-        <div>PROFILE // CHALLENGER ${lvl}</div>
-        <div>${esc(def.name.toUpperCase())} · ${esc(def.universeName.toUpperCase())}</div>
-        <div>${p.coins} COINS · ${totalGear(p)} GEAR</div>
-        <div>ENTER TO CLASH · F3 FOR FRAME DATA</div>
-      </div>
+    <div class="title-foot">
+      <div class="stamp">NO BLOCKING // NO TIMEOUTS</div>
+      <div>PROFILE // CHALLENGER ${lvl}</div>
+      <div>${p.coins} COINS · ${totalGear(p)} GEAR</div>
+      <div>ENTER TO CLASH · F3 FRAME DATA</div>
     </div>`;
 }
 
@@ -234,8 +252,9 @@ function fighterCard(id: CharId, args: SelectArgs): string {
   const pick1 = args.profile.selected === id;
   const pick2 = args.cpu === id;
   const locked = false;
+  const cls = `fighter-card${locked ? ' locked' : ''}${pick1 ? ' picked-1' : ''}${pick2 ? ' picked-2' : ''}`;
   return `
-    <div class="fighter-card${locked ? ' locked' : ''}" role="button" tabindex="0" data-action="pick" data-char="${id}">
+    <div class="${cls}" role="button" tabindex="0" data-action="pick" data-char="${id}" style="--uc:${def.art.accent}">
       <canvas data-portrait="${id}" width="180" height="210"></canvas>
       <span class="fc-tag">${esc(def.universeShort)}</span>
       ${pick1 ? '<span class="p1-mark">P1</span>' : ''}
@@ -244,6 +263,7 @@ function fighterCard(id: CharId, args: SelectArgs): string {
         <div class="fc-name">${esc(def.name)}</div>
         <div class="fc-universe">${esc(def.universeName)} // ${esc(def.archetype)}</div>
       </div>
+      <div class="fc-band"></div>
     </div>`;
 }
 
@@ -272,7 +292,7 @@ export function selectHtml(args: SelectArgs): string {
   return `
     <div class="screen-head">
       <div class="heading">
-        <div class="kicker">RISK IT ALL // PICK YOUR UNIVERSE</div>
+        <div class="kicker">${args.arcade ? 'ARCADE // EIGHT DOORS' : args.mode === 'training' ? 'THE LAB // NO CLOCK' : 'RISK IT ALL // PICK YOUR UNIVERSE'}</div>
         <h1>${heading}</h1>
         <div class="sub">${args.arcade ? 'EIGHT OPPONENTS. TWO STOCKS. NO RETRIES.' : args.mode === 'ranked' ? 'GEAR BUFFS DISABLED. PRIDE ENABLED.' : 'EVERY STAGE. EVERY FINISHER. EVERY GRUDGE.'}</div>
       </div>
@@ -298,6 +318,7 @@ export function selectHtml(args: SelectArgs): string {
             <div class="picked-art">
               <div class="sunburst"></div>
               <canvas data-portrait="${p.selected}" data-portrait-pose="taunt" width="420" height="360"></canvas>
+              <span class="tag picked-lv">LV ${levelOf(p, player.id)}</span>
             </div>
             <div class="picked-copy">
               <div class="name">${esc(player.name)}</div>
