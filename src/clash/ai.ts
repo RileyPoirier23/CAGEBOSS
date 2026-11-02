@@ -5,12 +5,13 @@
 
 import { charDef } from './characters';
 import { stageById } from './stages';
+import { nearestFoe } from './sim';
 import type { Fighter, InputFrame, MatchState, MoveKey } from './types';
 import { emptyInput } from './types';
 import { hash } from './art';
 
 export interface AiBrain {
-  side: 0 | 1;
+  side: number;
   level: number;
   seed: number;
   /** 0..1: how well the CPU reads its opponent (rival memory). */
@@ -31,7 +32,7 @@ export interface AiBrain {
   aggression: number;
 }
 
-export function createAi(side: 0 | 1, level: number, seed: number, read = 0): AiBrain {
+export function createAi(side: number, level: number, seed: number, read = 0): AiBrain {
   return {
     side,
     level: Math.max(1, Math.min(5, Math.round(level))),
@@ -100,8 +101,9 @@ function hasProjectile(f: Fighter): boolean {
 export function aiInput(brain: AiBrain, m: MatchState): InputFrame {
   const input = emptyInput();
   const f = m.fighters[brain.side];
-  const o = m.fighters[brain.side === 0 ? 1 : 0];
-  if (m.phase !== 'fight' || f.state === 'ko' || f.stocks <= 0) return input;
+  if (!f || m.phase !== 'fight' || f.state === 'ko' || f.stocks <= 0) return input;
+  // In a team fight the CPU picks on whoever is closest; a brain never reads the clock.
+  const o = nearestFoe(m, f);
 
   const level = brain.level;
   const dx = o.x - f.x;

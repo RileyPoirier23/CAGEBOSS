@@ -118,8 +118,23 @@ export interface StageDef {
   universe: UniverseId;
   platforms: Platform[];
   blast: { left: number; right: number; top: number; bottom: number };
-  spawns: [{ x: number; y: number }, { x: number; y: number }];
+  /** One spawn per side; a match with more fighters than spawns spaces the rest along the main slab. */
+  spawns: { x: number; y: number }[];
   music: string;
+}
+
+/** How many fighters and who is on whose side. 1v1 is two teams of one. */
+export type MatchFormat = '1v1' | '2v2' | 'ffa';
+
+export function fighterCount(format: MatchFormat | undefined): number {
+  return format === '2v2' || format === 'ffa' ? 4 : 2;
+}
+
+/** Team per side: 2v2 seats sides 0 and 2 together against 1 and 3. */
+export function teamsFor(format: MatchFormat | undefined): number[] {
+  if (format === '2v2') return [0, 1, 0, 1];
+  if (format === 'ffa') return [0, 1, 2, 3];
+  return [0, 1];
 }
 
 export type PoseName =
@@ -375,7 +390,10 @@ export type FighterState =
   | 'victory';
 
 export interface Fighter {
-  side: 0 | 1;
+  /** Index into MatchState.fighters, and the input slot this fighter reads. */
+  side: number;
+  /** Fighters on the same team cannot hit each other. */
+  team: number;
   char: CharId;
   x: number;
   y: number;
@@ -417,8 +435,12 @@ export interface Fighter {
   parryTicks: number;
   armorStock: number;
   confuse: number;
-  lastHitBy: 0 | 1 | -1;
+  lastHitBy: number;
   lastHitMove: string;
+  /** Bit per side this move has already connected with (multi-target moves hit each foe once). */
+  hitMask: number;
+  /** Who this fighter is holding in a grab, or -1. */
+  grabTarget: number;
   perfectParry: number;
   gear: GearLook;
   buff: { damage: number; guard: number; drive: number; hp: number };
@@ -437,7 +459,7 @@ export interface Fighter {
 
 export interface Projectile {
   id: number;
-  owner: 0 | 1;
+  owner: number;
   char: CharId;
   kind: string;
   x: number;
@@ -461,7 +483,7 @@ export interface Projectile {
 
 export interface Trap {
   id: number;
-  owner: 0 | 1;
+  owner: number;
   char: CharId;
   kind: string;
   x: number;
@@ -489,8 +511,8 @@ export interface WorldItem {
   vy: number;
   grounded: boolean;
   life: number;
-  heldBy: 0 | 1 | -1;
-  thrower: 0 | 1 | -1;
+  heldBy: number;
+  thrower: number;
   spin: number;
 }
 
@@ -527,8 +549,8 @@ export interface MatchEvent {
     | 'spawn'
     | 'whiff';
   tick: number;
-  side?: 0 | 1;
-  other?: 0 | 1;
+  side?: number;
+  other?: number;
   x?: number;
   y?: number;
   vx?: number;
@@ -545,7 +567,7 @@ export interface MatchEvent {
 }
 
 export interface ComboTally {
-  side: 0 | 1;
+  side: number;
   hits: number;
   damage: number;
   max: number;
@@ -554,8 +576,9 @@ export interface ComboTally {
 }
 
 export interface FinisherState {
-  winner: 0 | 1;
-  loser: 0 | 1;
+  /** Sides, not teams: the renderer poses these two fighters. */
+  winner: number;
+  loser: number;
   name: string;
   move: string;
   panel: string;
@@ -573,17 +596,18 @@ export interface FinisherState {
   y: number;
 }
 
+/** Per-side tallies, indexed like MatchState.fighters. */
 export interface MatchStats {
-  damage: [number, number];
-  hits: [number, number];
-  maxCombo: [number, number];
-  ringouts: [number, number];
-  perfectParries: [number, number];
-  driveSpent: [number, number];
-  moveHits: [Record<string, number>, Record<string, number>];
-  dodgeAttempts: [number, number];
-  dodgeReads: [number, number];
-  supers: [number, number];
+  damage: number[];
+  hits: number[];
+  maxCombo: number[];
+  ringouts: number[];
+  perfectParries: number[];
+  driveSpent: number[];
+  moveHits: Record<string, number>[];
+  dodgeAttempts: number[];
+  dodgeReads: number[];
+  supers: number[];
   finisher: boolean;
 }
 
@@ -598,16 +622,20 @@ export interface MatchConfig {
   cpuChar: CharId;
   cpuLevel: number;
   modern: boolean;
-  gear: [GearLook, GearLook];
+  gear: GearLook[];
   training: boolean;
   /** Modern layout for the second fighter (local 2P). */
   modern2?: boolean;
   /** How many of each fighter's three finishers are unlocked (1..3). */
-  unlocked?: [number, number];
+  unlocked?: number[];
   /** Finisher Builder result per side; fires when a signature lands the final KO and no built-in matched. */
-  custom?: [CustomFinisher | null, CustomFinisher | null];
+  custom?: (CustomFinisher | null)[];
   /** Rift Ladder modifiers. damage is a percentage (130 = x1.3). */
   mods?: { damage?: number };
+  /** 2v2 and free-for-all seat four fighters: playerChar, cpuChar, then `chars[2..]`. */
+  format?: MatchFormat;
+  /** Every fighter in side order. When absent the match is playerChar vs cpuChar. */
+  chars?: CharId[];
 }
 
 export interface MatchState {
@@ -618,13 +646,14 @@ export interface MatchState {
   introTicks: number;
   hitstop: number;
   dramatic: number;
-  dramaticSide: 0 | 1 | -1;
+  dramaticSide: number;
   dramaticText: string;
   dramaticSub: string;
   stageId: string;
   mode: MatchConfig['mode'];
+  format: MatchFormat;
   platforms: Platform[];
-  fighters: [Fighter, Fighter];
+  fighters: Fighter[];
   projectiles: Projectile[];
   traps: Trap[];
   items: WorldItem[];
@@ -632,17 +661,18 @@ export interface MatchState {
   nextEntity: number;
   rng: number;
   stats: MatchStats;
-  combo: [ComboTally, ComboTally];
+  combo: ComboTally[];
   finisher: FinisherState | null;
-  winner: 0 | 1 | -1;
+  /** The winning team (a side in 1v1), or -1. */
+  winner: number;
   slowmo: number;
   training: boolean;
   gearBuffs: boolean;
   seed: number;
   /** Null's super corrupts the HUD for this many ticks. */
   uiCorrupt: number;
-  unlocked: [number, number];
-  custom: [CustomFinisher | null, CustomFinisher | null];
+  unlocked: number[];
+  custom: (CustomFinisher | null)[];
   mods: { damage?: number };
 }
 
@@ -660,6 +690,6 @@ export interface FrameEvent {
 
 export interface InputHistory {
   tick: number;
-  side: 0 | 1;
+  side: number;
   input: string;
 }

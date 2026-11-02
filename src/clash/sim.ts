@@ -24,7 +24,7 @@ import type {
   Trap,
   WorldItem,
 } from './types';
-import { SLOTS, customFinisherTicks, emptyInput } from './types';
+import { SLOTS, customFinisherTicks, emptyInput, fighterCount, teamsFor } from './types';
 
 export const TICK_RATE = 60;
 export const DEFAULT_STOCKS = 3;
@@ -112,6 +112,91 @@ function emit(m: MatchState, e: Omit<MatchEvent, 'tick'>): void {
   m.events.push({ ...e, tick: m.tick });
 }
 
+/* ------------------------------------------------------------------ teams -- */
+
+/** Everyone on another team. KO'd fighters are included; callers filter. */
+export function foesOf(m: MatchState, f: Fighter): Fighter[] {
+  const out: Fighter[] = [];
+  for (const o of m.fighters) if (o.team !== f.team) out.push(o);
+  return out;
+}
+
+/** The closest living foe, by horizontal distance. Falls back to any foe so 1v1 always has one. */
+export function nearestFoe(m: MatchState, f: Fighter): Fighter {
+  let best: Fighter | null = null;
+  let bestD = Infinity;
+  for (const o of m.fighters) {
+    if (o.team === f.team) continue;
+    const alive = o.stocks > 0 && o.state !== 'ko';
+    const d = Math.abs(o.x - f.x) + Math.abs(o.y - f.y) * 0.5 + (alive ? 0 : 1e6);
+    if (d < bestD) {
+      bestD = d;
+      best = o;
+    }
+  }
+  return best ?? m.fighters[f.side === 0 ? 1 : 0];
+}
+
+/** Teams that still have a stock on the board. */
+function aliveTeams(m: MatchState): number[] {
+  const out: number[] = [];
+  for (const f of m.fighters) if (f.stocks > 0 && !out.includes(f.team)) out.push(f.team);
+  return out;
+}
+
+function teamStocks(m: MatchState, team: number): number {
+  let n = 0;
+  for (const f of m.fighters) if (f.team === team) n += f.stocks;
+  return n;
+}
+
+function teamHp(m: MatchState, team: number): number {
+  let n = 0;
+  for (const f of m.fighters) if (f.team === team) n += f.hp;
+  return n;
+}
+
+/** Would losing this fighter's last stock end the match? Finishers only play on the final KO. */
+function wouldEnd(m: MatchState, def: Fighter): boolean {
+  for (const f of m.fighters) {
+    if (f === def) continue;
+    if (f.team === def.team && f.stocks > 0) return false;
+  }
+  return true;
+}
+
+function allTeams(m: MatchState): number[] {
+  const out: number[] = [];
+  for (const f of m.fighters) if (!out.includes(f.team)) out.push(f.team);
+  return out;
+}
+
+/** The team ahead on stocks, then on health; -1 for a dead heat. */
+function leadingTeam(m: MatchState): number {
+  let best = -1;
+  let bestStocks = -1;
+  let bestHp = -1;
+  let tie = false;
+  for (const t of allTeams(m)) {
+    const s = teamStocks(m, t);
+    const h = teamHp(m, t);
+    if (s > bestStocks || (s === bestStocks && h > bestHp)) {
+      best = t;
+      bestStocks = s;
+      bestHp = h;
+      tie = false;
+    } else if (s === bestStocks && h === bestHp) {
+      tie = true;
+    }
+  }
+  return tie ? -1 : best;
+}
+
+function anyOnTeam(m: MatchState, team: number): Fighter {
+  for (const f of m.fighters) if (f.team === team) return f;
+  return m.fighters[0];
+}
+
 /* ------------------------------------------------------------------ gear -- */
 
 export function sumGear(look: GearLook): GearStats {
@@ -142,7 +227,8 @@ function buffFor(look: GearLook, enabled: boolean): Fighter['buff'] {
 
 function makeFighter(
   char: CharId,
-  side: 0 | 1,
+  side: number,
+  team: number,
   spawn: { x: number; y: number },
   gear: GearLook,
   buff: Fighter['buff'],
@@ -150,6 +236,7 @@ function makeFighter(
   const hpMax = Math.round(100 * buff.hp);
   return {
     side,
+    team,
     char,
     x: spawn.x,
     y: spawn.y,
@@ -193,6 +280,8 @@ function makeFighter(
     confuse: 0,
     lastHitBy: -1,
     lastHitMove: '',
+    hitMask: 0,
+    grabTarget: -1,
     perfectParry: 0,
     gear,
     buff,
@@ -247,18 +336,25 @@ function spawnItem(m: MatchState, kind: string, x: number, y: number): void {
 export function createMatch(config: MatchConfig): MatchState {
   const stage = stageById(config.stageId);
   const gearBuffs = config.gearBuffs && config.mode !== 'ranked';
-  const b0 = buffFor(config.gear[0], gearBuffs);
-  const b1 = buffFor(config.gear[1], gearBuffs);
-  const f0 = makeFighter(config.playerChar, 0, stage.spawns[0], config.gear[0], b0);
-  const f1 = makeFighter(config.cpuChar, 1, stage.spawns[1], config.gear[1], b1);
+  const format = config.format ?? '1v1';
+  const n = fighterCount(format);
+  const teams = teamsFor(format);
+  const chars: CharId[] = [config.playerChar, config.cpuChar];
+  for (let i = 2; i < n; i++) chars.push(config.chars?.[i] ?? config.cpuChar);
   const stocks = config.training ? 99 : config.stocks;
-  f0.stocks = stocks;
-  f1.stocks = stocks;
-  f0.modern = !!config.modern;
-  f1.modern = !!config.modern2;
-
   const platforms: Platform[] = stage.platforms.map((p) => ({ ...p }));
   const main = platforms[0];
+  const fighters: Fighter[] = [];
+  for (let i = 0; i < n; i++) {
+    const gear = config.gear[i] ?? {};
+    const spawn = stage.spawns[i] ?? { x: main.x + (main.w * (i + 1)) / (n + 1), y: 320 };
+    const f = makeFighter(chars[i], i, teams[i], spawn, gear, buffFor(gear, gearBuffs));
+    f.stocks = stocks;
+    f.modern = i === 0 ? !!config.modern : i === 1 ? !!config.modern2 : false;
+    f.facing = spawn.x < 800 ? 1 : -1;
+    fighters.push(f);
+  }
+  const zeros = (): number[] => fighters.map(() => 0);
   const state: MatchState = {
     tick: 0,
     phase: 'intro',
@@ -272,8 +368,9 @@ export function createMatch(config: MatchConfig): MatchState {
     dramaticSub: '',
     stageId: stage.id,
     mode: config.mode,
+    format,
     platforms,
-    fighters: [f0, f1],
+    fighters,
     projectiles: [],
     traps: [],
     items: [],
@@ -281,22 +378,19 @@ export function createMatch(config: MatchConfig): MatchState {
     nextEntity: 1,
     rng: config.seed || 0x51ed270b,
     stats: {
-      damage: [0, 0],
-      hits: [0, 0],
-      maxCombo: [0, 0],
-      ringouts: [0, 0],
-      perfectParries: [0, 0],
-      driveSpent: [0, 0],
-      moveHits: [{}, {}],
-      dodgeAttempts: [0, 0],
-      dodgeReads: [0, 0],
-      supers: [0, 0],
+      damage: zeros(),
+      hits: zeros(),
+      maxCombo: zeros(),
+      ringouts: zeros(),
+      perfectParries: zeros(),
+      driveSpent: zeros(),
+      moveHits: fighters.map(() => ({})),
+      dodgeAttempts: zeros(),
+      dodgeReads: zeros(),
+      supers: zeros(),
       finisher: false,
     },
-    combo: [
-      { side: 0, hits: 0, damage: 0, max: 0, lastTick: -999, move: '' },
-      { side: 1, hits: 0, damage: 0, max: 0, lastTick: -999, move: '' },
-    ],
+    combo: fighters.map((f) => ({ side: f.side, hits: 0, damage: 0, max: 0, lastTick: -999, move: '' })),
     finisher: null,
     winner: -1,
     slowmo: 0,
@@ -304,8 +398,8 @@ export function createMatch(config: MatchConfig): MatchState {
     gearBuffs,
     seed: config.seed || 0x51ed270b,
     uiCorrupt: 0,
-    unlocked: config.unlocked ? [config.unlocked[0], config.unlocked[1]] : [3, 3],
-    custom: config.custom ? [config.custom[0], config.custom[1]] : [null, null],
+    unlocked: fighters.map((_, i) => config.unlocked?.[i] ?? 3),
+    custom: fighters.map((_, i) => config.custom?.[i] ?? null),
     mods: { ...(config.mods ?? {}) },
   };
 
@@ -320,7 +414,7 @@ export function cloneMatch(m: MatchState): MatchState {
 
 /* --------------------------------------------------------------- messages -- */
 
-function announce(m: MatchState, text: string, sub = '', side: 0 | 1 | -1 = -1): void {
+function announce(m: MatchState, text: string, sub = '', side = -1): void {
   emit(m, { type: 'announce', text, sub, side: side === -1 ? undefined : side });
   m.dramaticSide = side;
   m.dramaticText = text;
@@ -352,7 +446,7 @@ function dirY(input: InputFrame): number {
 }
 
 function faceOpponent(m: MatchState, f: Fighter): void {
-  const o = m.fighters[f.side === 0 ? 1 : 0];
+  const o = nearestFoe(m, f);
   if (o.x > f.x + 3) f.facing = 1;
   else if (o.x < f.x - 3) f.facing = -1;
 }
@@ -517,6 +611,7 @@ function startMove(m: MatchState, f: Fighter, key: MoveKey, ex: boolean, charge:
   f.moveFrame = 0;
   f.moveHit = false;
   f.moveHits = 0;
+  f.hitMask = 0;
   f.hitCooldown = 0;
   f.charging = !!(md.chargeable && charge);
   // Modern layout auto-charges: every signature starts a quarter charged.
@@ -557,7 +652,7 @@ function spawnProjectile(
   m: MatchState,
   f: Fighter | null,
   char: CharId,
-  owner: 0 | 1,
+  owner: number,
   kind: string,
   x: number,
   y: number,
@@ -617,7 +712,7 @@ function spawnTrap(
   meta = 0,
 ): Trap {
   const haloBonus = charDef(f.char).universe === 'chapel' &&
-    charDef(m.fighters[f.side === 0 ? 1 : 0].char).universe !== 'chapel';
+    charDef(nearestFoe(m, f).char).universe !== 'chapel';
   const id = m.nextEntity++;
   const t: Trap = {
     id,
@@ -667,7 +762,7 @@ function runMoveEffect(m: MatchState, f: Fighter, md: MoveDef, immediate: boolea
   switch (md.effect) {
     case 'teleportBehind': {
       if (!immediate) break;
-      const o = m.fighters[f.side === 0 ? 1 : 0];
+      const o = nearestFoe(m, f);
       f.x = o.x - f.facing * 58;
       f.y = o.y;
       f.grounded = o.grounded;
@@ -699,7 +794,7 @@ function runMoveEffect(m: MatchState, f: Fighter, md: MoveDef, immediate: boolea
       break;
     }
     case 'airstrike': {
-      const o = m.fighters[f.side === 0 ? 1 : 0];
+      const o = nearestFoe(m, f);
       spawnTrap(m, f, 'airstrike', o.x, gy - 4, 170, 42, 104, 17, 74, 7.4, 1.15);
       break;
     }
@@ -726,7 +821,7 @@ function runMoveEffect(m: MatchState, f: Fighter, md: MoveDef, immediate: boolea
       break;
     }
     case 'deletePlatform': {
-      const o = m.fighters[f.side === 0 ? 1 : 0];
+      const o = nearestFoe(m, f);
       let best = -1;
       let bestD = 1e9;
       for (let i = 1; i < m.platforms.length; i++) {
@@ -746,7 +841,7 @@ function runMoveEffect(m: MatchState, f: Fighter, md: MoveDef, immediate: boolea
       break;
     }
     case 'stealMeter': {
-      const o = m.fighters[f.side === 0 ? 1 : 0];
+      const o = nearestFoe(m, f);
       const taken = Math.min(2, o.drive);
       o.drive = Math.max(0, o.drive - taken);
       f.drive = Math.min(DRIVE_MAX, f.drive + taken);
@@ -1002,7 +1097,7 @@ function applyHit(
 
   if (lethal) {
     const fin = findFinisher(m, atk, def, opts);
-    if (fin && def.stocks <= 1) {
+    if (fin && def.stocks <= 1 && wouldEnd(m, def)) {
       startFinisher(m, atk, def, opts, fin);
     } else {
       koFighter(m, def, atk, opts.name);
@@ -1129,6 +1224,8 @@ function koFighter(m: MatchState, def: Fighter, atk: Fighter | null, move: strin
   m.phase = 'ko';
   m.phaseTicks = 82;
   m.hitstop = 0;
+  const alive = aliveTeams(m);
+  const ends = alive.length <= 1;
   emit(m, {
     type: 'ko',
     side: def.side,
@@ -1136,11 +1233,11 @@ function koFighter(m: MatchState, def: Fighter, atk: Fighter | null, move: strin
     x: def.x,
     y: def.y - 80,
     text: move,
-    tier: def.stocks <= 0 ? 3 : 0,
+    tier: ends ? 3 : 0,
     seed: (m.rng + def.x) | 0,
   });
-  if (def.stocks <= 0) {
-    m.winner = atk ? atk.side : (def.side === 0 ? 1 : 0);
+  if (ends) {
+    m.winner = alive[0] ?? (atk ? atk.team : -1);
     m.phaseTicks = 96;
   }
 }
@@ -1162,12 +1259,18 @@ function ringOut(m: MatchState, f: Fighter): void {
   f.stateTicks = 0;
   f.charging = false;
   f.move = null;
-  m.stats.ringouts[f.side === 0 ? 1 : 0]++;
-  const other = m.fighters[f.side === 0 ? 1 : 0];
+  // Credit whoever hit them last, if that was a foe; else the nearest one.
+  const hitter = f.lastHitBy >= 0 && m.fighters[f.lastHitBy]?.team !== f.team ? m.fighters[f.lastHitBy] : null;
+  const other = hitter ?? nearestFoe(m, f);
+  m.stats.ringouts[other.side]++;
   m.phase = 'ko';
   m.phaseTicks = 82;
   m.hitstop = 0;
-  if (f.stocks <= 0) m.winner = other.side;
+  const alive = aliveTeams(m);
+  if (alive.length <= 1) {
+    m.winner = alive[0] ?? other.team;
+    m.phaseTicks = 96;
+  }
   emit(m, {
     type: 'ringout',
     side: f.side,
@@ -1332,22 +1435,24 @@ function tryThrowOrPickup(m: MatchState, f: Fighter): boolean {
         return true;
       }
     }
-    // Universal grab if the opponent is close and grounded.
-    const o = m.fighters[f.side === 0 ? 1 : 0];
-    if (
-      o.stocks > 0 && o.state !== 'hitstun' && o.state !== 'ko' && o.invuln <= 0 &&
-      Math.abs(o.x - f.x) < 80 && Math.abs(o.y - f.y) < 100
-    ) {
-      f.state = 'grab';
-      f.stateTicks = 0;
-      f.move = 'throw';
-      o.state = 'grabbed';
-      o.hitstun = 0;
-      o.vx = 0;
-      o.vy = 0;
-      f.vx = 0;
-      emit(m, { type: 'throw', side: f.side, other: o.side, x: (f.x + o.x) / 2, y: f.y - 80, text: 'GRAB', seed: (m.rng + f.x) | 0 });
-      return true;
+    // Universal grab if a foe is close and grounded.
+    for (const o of foesOf(m, f)) {
+      if (
+        o.stocks > 0 && o.state !== 'hitstun' && o.state !== 'ko' && o.state !== 'grabbed' && o.invuln <= 0 &&
+        Math.abs(o.x - f.x) < 80 && Math.abs(o.y - f.y) < 100
+      ) {
+        f.state = 'grab';
+        f.stateTicks = 0;
+        f.move = 'throw';
+        f.grabTarget = o.side;
+        o.state = 'grabbed';
+        o.hitstun = 0;
+        o.vx = 0;
+        o.vy = 0;
+        f.vx = 0;
+        emit(m, { type: 'throw', side: f.side, other: o.side, x: (f.x + o.x) / 2, y: f.y - 80, text: 'GRAB', seed: (m.rng + f.x) | 0 });
+        return true;
+      }
     }
   }
   return false;
@@ -1399,7 +1504,7 @@ function startAttackIfAny(m: MatchState, f: Fighter, input: InputFrame): boolean
   return false;
 }
 
-function updateNeutral(m: MatchState, f: Fighter, other: Fighter, input: InputFrame): void {
+function updateNeutral(m: MatchState, f: Fighter, input: InputFrame): void {
   const x = dirX(input, f);
   if (f.state === 'land') {
     if (f.stateTicks >= 3) {
@@ -1434,7 +1539,7 @@ function updateNeutral(m: MatchState, f: Fighter, other: Fighter, input: InputFr
   f.stateTicks++;
 }
 
-function updateAttack(m: MatchState, f: Fighter, other: Fighter, input: InputFrame): void {
+function updateAttack(m: MatchState, f: Fighter, input: InputFrame): void {
   if (!f.move) {
     f.state = f.grounded ? 'idle' : 'fall';
     return;
@@ -1478,31 +1583,35 @@ function updateAttack(m: MatchState, f: Fighter, other: Fighter, input: InputFra
   }
 
   if (f.moveFrame >= activeStart && f.moveFrame < activeEnd) {
-    const canHit = !f.moveHit || (md.multi !== undefined && f.hitCooldown <= 0);
-    if (canHit) {
-      const box = hitboxOf(f, md);
+    const box = hitboxOf(f, md);
+    // One connection per foe per move; a multi-hit move re-arms on its own clock.
+    for (const other of foesOf(m, f)) {
+      const bit = 1 << other.side;
+      const canHit = !(f.hitMask & bit) || (md.multi !== undefined && f.hitCooldown <= 0);
+      if (!canHit) continue;
       const hb = hurtbox(other);
-      if (overlap(box, hb)) {
-        const x = (box.x + box.w / 2 + other.x) / 2;
-        const y = (box.y + box.h / 2 + other.y - 70) / 2;
-        if (applyHit(m, f, other, {
-          damage: md.damage,
-          angle: md.angle,
-          baseKb: md.baseKb,
-          growthKb: md.growthKb,
-          name: md.name,
-          key: md.key,
-          kind: md.kind,
-          charge: f.charge,
-          ex: f.ex,
-          source: 'melee',
-        }, x, y)) {
-          f.moveHit = true;
-          f.moveHits++;
-          f.hitCooldown = md.multi ?? 999;
-          f.stateTicks = 0;
-        }
+      if (!overlap(box, hb)) continue;
+      const x = (box.x + box.w / 2 + other.x) / 2;
+      const y = (box.y + box.h / 2 + other.y - 70) / 2;
+      if (applyHit(m, f, other, {
+        damage: md.damage,
+        angle: md.angle,
+        baseKb: md.baseKb,
+        growthKb: md.growthKb,
+        name: md.name,
+        key: md.key,
+        kind: md.kind,
+        charge: f.charge,
+        ex: f.ex,
+        source: 'melee',
+      }, x, y)) {
+        f.moveHit = true;
+        f.moveHits++;
+        f.hitMask |= bit;
+        f.hitCooldown = md.multi ?? 999;
+        f.stateTicks = 0;
       }
+      if (m.phase !== 'fight') break;
     }
   }
   if (f.hitCooldown > 0) f.hitCooldown--;
@@ -1610,11 +1719,17 @@ function updateHitstun(m: MatchState, f: Fighter, input: InputFrame): void {
     f.invuln = Math.max(f.invuln, 30);
     f.vx = 0;
     f.vy = -3;
-    const o = m.fighters[f.side === 0 ? 1 : 0];
-    o.vx = (o.x > f.x ? 1 : -1) * 5;
-    o.vy = -3;
-    o.state = 'hitstun';
-    o.hitstun = 16;
+    // The breaker shoves back every foe standing on top of you.
+    let o = nearestFoe(m, f);
+    for (const foe of foesOf(m, f)) {
+      if (foe.stocks <= 0 || foe.state === 'ko' || Math.abs(foe.x - f.x) > 140 || Math.abs(foe.y - f.y) > 140) continue;
+      foe.vx = (foe.x > f.x ? 1 : -1) * 5;
+      foe.vy = -3;
+      foe.state = 'hitstun';
+      foe.hitstun = 16;
+      foe.move = null;
+      o = foe;
+    }
     m.hitstop = Math.max(m.hitstop, 8);
     emit(m, { type: 'burst', side: f.side, other: o.side, x: f.x, y: f.y - 80, text: 'BREAKER', seed: (m.rng + f.x) | 0 });
     announce(m, 'BREAKER', 'Two pips. The combo is over.', f.side);
@@ -1628,7 +1743,16 @@ function updateHitstun(m: MatchState, f: Fighter, input: InputFrame): void {
   }
 }
 
-function updateGrab(m: MatchState, f: Fighter, other: Fighter, input: InputFrame): void {
+function updateGrab(m: MatchState, f: Fighter, input: InputFrame): void {
+  const other = m.fighters[f.grabTarget] ?? nearestFoe(m, f);
+  if (other.state !== 'grabbed') {
+    // The hold broke (a teammate hit them, a KO): let go.
+    f.state = f.grounded ? 'idle' : 'fall';
+    f.stateTicks = 0;
+    f.move = null;
+    f.grabTarget = -1;
+    return;
+  }
   f.stateTicks++;
   const dir = dirX(input, f);
   if (dir !== 0) f.facing = dir > 0 ? 1 : -1;
@@ -1658,15 +1782,17 @@ function updateGrab(m: MatchState, f: Fighter, other: Fighter, input: InputFrame
     f.state = f.grounded ? 'idle' : 'fall';
     f.stateTicks = 0;
     f.move = null;
+    f.grabTarget = -1;
     emit(m, { type: 'throw', side: f.side, other: other.side, x: other.x, y: other.y - 80, text: 'THROW', seed: (m.rng + f.x) | 0 });
   }
 }
 
-function updateFighter(m: MatchState, f: Fighter, other: Fighter, rawInput: InputFrame): void {
+function updateFighter(m: MatchState, f: Fighter, rawInput: InputFrame): void {
   f.px = f.x;
   f.py = f.y;
   const input = rawInput;
   const buff = f.buff;
+  const other = nearestFoe(m, f);
 
   if (f.invuln > 0) f.invuln--;
   if (f.dodgeCooldown > 0) f.dodgeCooldown--;
@@ -1709,7 +1835,7 @@ function updateFighter(m: MatchState, f: Fighter, other: Fighter, rawInput: Inpu
   }
 
   if (f.state === 'grab') {
-    updateGrab(m, f, other, input);
+    updateGrab(m, f, input);
     physics(m, f);
     return;
   }
@@ -1727,7 +1853,7 @@ function updateFighter(m: MatchState, f: Fighter, other: Fighter, rawInput: Inpu
   }
 
   if (f.state === 'attack' || f.state === 'super') {
-    updateAttack(m, f, other, input);
+    updateAttack(m, f, input);
     physics(m, f);
     return;
   }
@@ -1739,7 +1865,7 @@ function updateFighter(m: MatchState, f: Fighter, other: Fighter, rawInput: Inpu
   }
 
   // Idle / run / jump / fall / land.
-  updateNeutral(m, f, other, input);
+  updateNeutral(m, f, input);
   const stateNow: string = f.state;
   if (stateNow !== 'attack' && stateNow !== 'super' && stateNow !== 'dodge' && stateNow !== 'parry' && stateNow !== 'grab') {
     physics(m, f);
@@ -1752,7 +1878,7 @@ function updateFighter(m: MatchState, f: Fighter, other: Fighter, rawInput: Inpu
 
 function explode(
   m: MatchState,
-  owner: 0 | 1,
+  owner: number,
   char: CharId,
   x: number,
   y: number,
@@ -1765,10 +1891,6 @@ function explode(
   name: string,
 ): void {
   const atk = m.fighters[owner];
-  const def = m.fighters[owner === 0 ? 1 : 0];
-  const dx = def.x - x;
-  const dy = (def.y - 70) - y;
-  const d = hyp(dx, dy);
   emit(m, {
     type: 'impact',
     side: owner,
@@ -1779,7 +1901,9 @@ function explode(
     text: name,
     seed: (m.rng + x * 7 + y) | 0,
   });
-  if (d <= radius + 24) {
+  for (const def of foesOf(m, atk)) {
+    const d = hyp(def.x - x, (def.y - 70) - y);
+    if (d > radius + 24) continue;
     applyHit(m, atk, def, {
       damage,
       angle,
@@ -1791,6 +1915,7 @@ function explode(
       source: 'trap',
       char,
     }, x, y);
+    if (m.phase !== 'fight') break;
   }
 }
 
@@ -1805,11 +1930,18 @@ function updateProjectiles(m: MatchState): void {
     p.life--;
     if (p.kind === 'shockwave') p.vy = 0;
 
-    const def = m.fighters[p.owner === 0 ? 1 : 0];
     const atk = m.fighters[p.owner];
-    const hb = hurtbox(def);
     const box = { x: p.x - p.radius, y: p.y - p.radius, w: p.radius * 2, h: p.radius * 2 };
-    if (!p.hit && def.state !== 'ko' && overlap(box, hb)) {
+    let def: Fighter | null = null;
+    if (!p.hit) {
+      for (const o of foesOf(m, atk)) {
+        if (o.state !== 'ko' && o.stocks > 0 && overlap(box, hurtbox(o))) {
+          def = o;
+          break;
+        }
+      }
+    }
+    if (def) {
       p.hit = true;
       if (p.explode > 0) {
         explode(m, p.owner, p.char, p.x, p.y, p.explode, p.damage, p.angle, p.baseKb, p.growthKb, p.source as MoveKey, p.kind.toUpperCase());
@@ -1851,7 +1983,7 @@ function updateTraps(m: MatchState): void {
       continue;
     }
     const atk = m.fighters[t.owner];
-    const def = m.fighters[t.owner === 0 ? 1 : 0];
+    const def = nearestFoe(m, atk);
     if (t.life <= 0) continue;
     const dx = def.x - t.x;
     const dy = (def.y - 70) - t.y;
@@ -1903,7 +2035,7 @@ function updateItems(m: MatchState): void {
     item.px = item.x;
     item.py = item.y;
     if (item.heldBy >= 0) {
-      const f = m.fighters[item.heldBy as 0 | 1];
+      const f = m.fighters[item.heldBy];
       item.x = f.x + f.facing * 38;
       item.y = f.y - 82;
       item.vx = 0;
@@ -1933,10 +2065,11 @@ function updateItems(m: MatchState): void {
     const speed = hyp(item.vx, item.vy);
     if (speed > 4) {
       for (const f of m.fighters) {
-        if (f.state === 'ko') continue;
+        if (f.state === 'ko' || f.stocks <= 0) continue;
+        const thrower = item.thrower >= 0 ? item.thrower : (item.x < 800 ? 0 : 1);
+        const atk = m.fighters[thrower] ?? m.fighters[0];
+        if (atk.team === f.team) continue;
         if (overlap({ x: item.x - 22, y: item.y - 22, w: 44, h: 44 }, hurtbox(f))) {
-          const thrower = item.thrower >= 0 ? (item.thrower as 0 | 1) : (item.x < 800 ? 0 : 1);
-          const atk = m.fighters[thrower as 0 | 1];
           applyHit(m, atk, f, {
             damage: 10,
             angle: 40,
@@ -1965,7 +2098,7 @@ function updateItems(m: MatchState): void {
 
 function respawn(m: MatchState, f: Fighter): void {
   const stage = stageById(m.stageId);
-  const spawn = stage.spawns[f.side];
+  const spawn = stage.spawns[f.side] ?? stage.spawns[f.side % 2];
   f.x = spawn.x;
   f.y = spawn.y;
   f.vx = 0;
@@ -1989,43 +2122,41 @@ function respawn(m: MatchState, f: Fighter): void {
   emit(m, { type: 'spawn', side: f.side, x: f.x, y: f.y, text: 'RESPAWN', seed: (m.rng + f.side * 77) | 0 });
 }
 
+function teamLabel(m: MatchState, team: number): string {
+  const names = m.fighters.filter((f) => f.team === team).map((f) => charDef(f.char).name);
+  return names.join(' & ');
+}
+
 function endOfKoPhase(m: MatchState): void {
-  const f0 = m.fighters[0];
-  const f1 = m.fighters[1];
   if (m.winner >= 0 && m.timer <= 0) {
     m.phase = 'over';
     m.phaseTicks = 0;
     return;
   }
-  if (f0.stocks <= 0 || f1.stocks <= 0) {
-    m.winner = f0.stocks <= 0 && f1.stocks <= 0
-      ? (f0.hp >= f1.hp ? 0 : 1)
-      : f0.stocks <= 0 ? 1 : 0;
+  const alive = aliveTeams(m);
+  if (alive.length <= 1) {
+    // Everyone out at once (a double ring-out) goes to the healthier team.
+    m.winner = alive.length === 1 ? alive[0] : leadingTeam(m);
     m.phase = 'over';
     m.phaseTicks = 0;
-    announce(m, 'K.O.', `${charDef(m.fighters[m.winner].char).name} wins`, m.winner as 0 | 1);
+    if (m.winner >= 0) announce(m, 'K.O.', `${teamLabel(m, m.winner)} wins`, anyOnTeam(m, m.winner).side);
     return;
   }
-  if (f0.state === 'ko') respawn(m, f0);
-  if (f1.state === 'ko') respawn(m, f1);
+  for (const f of m.fighters) if (f.state === 'ko' && f.stocks > 0) respawn(m, f);
   m.phase = 'fight';
   m.phaseTicks = 0;
 }
 
 function timeOver(m: MatchState): void {
-  const f0 = m.fighters[0];
-  const f1 = m.fighters[1];
-  if (f0.stocks !== f1.stocks) m.winner = f0.stocks > f1.stocks ? 0 : 1;
-  else if (f0.hp !== f1.hp) m.winner = f0.hp > f1.hp ? 0 : 1;
-  else m.winner = -1;
+  m.winner = leadingTeam(m);
   m.phase = 'ko';
   m.phaseTicks = 100;
   const winner = m.winner;
   announce(
     m,
     'TIME',
-    winner >= 0 ? `${charDef(m.fighters[winner as 0 | 1].char).name} wins the clock` : 'Draw',
-    winner === -1 ? -1 : (winner as 0 | 1),
+    winner >= 0 ? `${teamLabel(m, winner)} wins the clock` : 'Draw',
+    winner === -1 ? -1 : anyOnTeam(m, winner).side,
   );
 }
 
@@ -2042,12 +2173,15 @@ export function drainEvents(m: MatchState): MatchEvent[] {
   return events;
 }
 
-export function stepMatch(m: MatchState, input0: InputFrame, input1: InputFrame): MatchState {
+/** One tick. Inputs are per side, in fighter order; a missing one is neutral. */
+export function stepMatch(m: MatchState, first: InputFrame | InputFrame[], second?: InputFrame, ...rest: InputFrame[]): MatchState {
+  const inputs: InputFrame[] = Array.isArray(first) ? first : [first, second ?? emptyInput(), ...rest];
+  const inputFor = (side: number): InputFrame => inputs[side] ?? emptyInput();
   if (m.phase === 'over') return m;
-  m.fighters[0].px = m.fighters[0].x;
-  m.fighters[0].py = m.fighters[0].y;
-  m.fighters[1].px = m.fighters[1].x;
-  m.fighters[1].py = m.fighters[1].y;
+  for (const f of m.fighters) {
+    f.px = f.x;
+    f.py = f.y;
+  }
   m.tick++;
 
   if (m.phase === 'finisher') {
@@ -2056,7 +2190,7 @@ export function stepMatch(m: MatchState, input0: InputFrame, input1: InputFrame)
     if (fin) {
       fin.ticks++;
       // The loser can skip the cinematic after half a second. Their choice, not the winner's.
-      const li = fin.loser === 0 ? input0 : input1;
+      const li = inputFor(fin.loser);
       const pressed = li.lightPressed || li.heavyPressed || li.jumpPressed || li.dodgePressed || li.throwPressed || li.superPressed;
       if (fin.ticks > 30 && pressed && !fin.skipped) {
         fin.skipped = true;
@@ -2065,7 +2199,7 @@ export function stepMatch(m: MatchState, input0: InputFrame, input1: InputFrame)
     }
     if (m.phaseTicks <= 0) {
       m.phase = 'over';
-      if (fin) m.winner = fin.winner;
+      if (fin) m.winner = m.fighters[fin.winner].team;
     }
     return m;
   }
@@ -2089,7 +2223,7 @@ export function stepMatch(m: MatchState, input0: InputFrame, input1: InputFrame)
   if (m.phase === 'intro') {
     m.phaseTicks--;
     for (const f of m.fighters) {
-      updateFighter(m, f, m.fighters[f.side === 0 ? 1 : 0], emptyInput());
+      updateFighter(m, f, emptyInput());
     }
     updateItems(m);
     if (m.phaseTicks <= 0) {
@@ -2104,7 +2238,7 @@ export function stepMatch(m: MatchState, input0: InputFrame, input1: InputFrame)
     m.phaseTicks--;
     for (const f of m.fighters) {
       if (f.state === 'ko') physics(m, f);
-      else if (f.state !== 'grabbed') updateFighter(m, f, m.fighters[f.side === 0 ? 1 : 0], emptyInput());
+      else if (f.state !== 'grabbed') updateFighter(m, f, emptyInput());
     }
     updateProjectiles(m);
     updateTraps(m);
@@ -2123,23 +2257,19 @@ export function stepMatch(m: MatchState, input0: InputFrame, input1: InputFrame)
     }
   }
 
-  // Player one acts first, then player two. Trades are allowed: the second
-  // update can still connect during the first player's active frames.
-  const i0 = m.fighters[0].confuse > 0
-    ? { ...input0, left: input0.right, right: input0.left }
-    : input0;
-  const i1 = m.fighters[1].confuse > 0
-    ? { ...input1, left: input1.right, right: input1.left }
-    : input1;
-
-  updateFighter(m, m.fighters[0], m.fighters[1], i0);
-  if (m.phase === 'fight') updateFighter(m, m.fighters[1], m.fighters[0], i1);
+  // Sides act in order. Trades are allowed: a later update can still connect
+  // during an earlier fighter's active frames.
+  for (const f of m.fighters) {
+    if (m.phase !== 'fight') break;
+    const raw = inputFor(f.side);
+    const input = f.confuse > 0 ? { ...raw, left: raw.right, right: raw.left } : raw;
+    updateFighter(m, f, input);
+  }
   updateProjectiles(m);
   updateTraps(m);
   updateItems(m);
 
-  for (const side of [0, 1] as const) {
-    const tally = m.combo[side];
+  for (const tally of m.combo) {
     if (m.tick - tally.lastTick > 60) {
       tally.hits = 0;
       tally.damage = 0;
@@ -2151,7 +2281,7 @@ export function stepMatch(m: MatchState, input0: InputFrame, input1: InputFrame)
 
 /* --------------------------------------------------------------- helpers -- */
 
-export function fighterById(m: MatchState, side: 0 | 1): Fighter {
+export function fighterById(m: MatchState, side: number): Fighter {
   return m.fighters[side];
 }
 

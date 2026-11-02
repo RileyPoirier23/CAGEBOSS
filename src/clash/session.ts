@@ -2,7 +2,11 @@
    A fixed 60 Hz match on top of the rollback core. Local play, the CPU, the
    attract mode and replays all go through the same path: inputs are stamped
    by tick, every simulated tick is snapshotted, and a late input can restore
-   a snapshot and replay. Nothing here touches the DOM. */
+   a snapshot and replay. Nothing here touches the DOM.
+
+   A session seats as many fighters as the match has. Side 0 is the local
+   player unless the session is a spectator feed; side 1 can be a second set
+   of keys (local 2P); every other seat is a CPU brain. */
 
 import { AiBrain, aiInput, createAi, resetAi } from './ai';
 import { Rollback, packInput, type ReplayFile } from './rollback';
@@ -11,7 +15,7 @@ import type { CharId, InputFrame, MatchConfig, MatchEvent, MatchState } from './
 import { emptyInput } from './types';
 
 export interface SessionOptions {
-  localSide?: 0 | 1;
+  localSide?: number;
   cpu?: boolean;
   spectator?: boolean;
   cpuLevel?: number;
@@ -25,7 +29,7 @@ export interface SessionOptions {
 export interface SessionSnapshot {
   tick: number;
   match: MatchState;
-  brains: [AiBrain, AiBrain];
+  brains: AiBrain[];
 }
 
 export interface AdvanceResult {
@@ -38,8 +42,8 @@ const HISTORY = 150;
 
 export class ClashSession {
   core: Rollback;
-  brains: [AiBrain, AiBrain];
-  localSide: 0 | 1;
+  brains: AiBrain[];
+  localSide: number;
   cpuEnabled: boolean;
   spectator: boolean;
   read: number;
@@ -54,7 +58,7 @@ export class ClashSession {
   constructor(config: MatchConfig, opts: SessionOptions = {}) {
     this.config = {
       ...config,
-      gear: [config.gear[0], config.gear[1]],
+      gear: config.gear.slice(),
     };
     this.delay = Math.max(0, Math.min(8, opts.delay ?? 0));
     this.core = new Rollback(createMatch(config), { delay: this.delay, maxRollback: HISTORY });
@@ -64,12 +68,10 @@ export class ClashSession {
     this.read = Math.max(0, Math.min(1, opts.read ?? 0));
     const seed = opts.seed ?? config.seed;
     const read = this.read;
-    const ai0 = opts.spectator || this.localSide === 1;
-    const ai1 = opts.spectator || this.localSide === 0;
-    this.brains = [
-      createAi(0, opts.cpuLevel ?? config.cpuLevel, seed + 17, ai0 ? read : 0),
-      createAi(1, opts.cpuLevel ?? config.cpuLevel, seed + 29, ai1 ? read : 0),
-    ];
+    this.brains = this.core.state.fighters.map((f) => {
+      const ai = opts.spectator || this.localSide !== f.side;
+      return createAi(f.side, opts.cpuLevel ?? config.cpuLevel, seed + 17 + f.side * 12, ai ? read : 0);
+    });
     this.capture();
   }
 
@@ -97,26 +99,25 @@ export class ClashSession {
     return this.core.confirmed;
   }
 
+  get players(): number {
+    return this.core.players;
+  }
+
   setP2(input: InputFrame | null): void {
     this.p2 = input;
   }
 
-  /** Inputs for this tick. The CPU side reads the match, never the clock. */
-  inputs(localInput: InputFrame): [InputFrame, InputFrame] {
+  /** Inputs for this tick, one per side. The CPU seats read the match, never the clock. */
+  inputs(localInput: InputFrame): InputFrame[] {
     const m = this.core.state;
-    let i0: InputFrame;
-    let i1: InputFrame;
-    if (this.spectator) {
-      i0 = aiInput(this.brains[0], m);
-      i1 = aiInput(this.brains[1], m);
-    } else if (this.localSide === 1) {
-      i0 = this.cpuEnabled ? aiInput(this.brains[0], m) : emptyInput();
-      i1 = localInput;
-    } else {
-      i0 = localInput;
-      i1 = this.cpuEnabled ? aiInput(this.brains[1], m) : (this.p2 ?? emptyInput());
-    }
-    return [i0, i1];
+    return m.fighters.map((f) => {
+      if (this.spectator) return aiInput(this.brains[f.side], m);
+      if (f.side === this.localSide) return localInput;
+      // Seat 1 is the second set of keys when the CPU is off for it.
+      if (f.side === 1 && !this.cpuEnabled) return this.p2 ?? emptyInput();
+      if (this.cpuEnabled || f.side !== 1) return aiInput(this.brains[f.side], m);
+      return emptyInput();
+    });
   }
 
   private stepCore(): MatchEvent[] {
@@ -130,10 +131,9 @@ export class ClashSession {
   /** Simulate one tick. Returns the events produced by it. */
   step(localInput: InputFrame): MatchEvent[] {
     if (this.over) return [];
-    const [i0, i1] = this.inputs(localInput);
+    const all = this.inputs(localInput);
     const t = this.core.stampTick;
-    this.core.addInput(0, t, packInput(i0));
-    this.core.addInput(1, t, packInput(i1));
+    for (let p = 0; p < all.length; p++) this.core.addInput(p, t, packInput(all[p]));
     return this.stepCore();
   }
 
@@ -143,7 +143,7 @@ export class ClashSession {
     const t = this.core.stampTick;
     while (cursor.i < log.length && log[cursor.i][0] <= t) {
       const [tick, player, packed] = log[cursor.i++];
-      this.core.addInput(player as 0 | 1, tick, packed);
+      this.core.addInput(player, tick, packed);
     }
     return this.stepCore();
   }
@@ -178,7 +178,7 @@ export class ClashSession {
     const snap: SessionSnapshot = {
       tick,
       match: this.core.snaps.get(tick) ?? this.core.state,
-      brains: [{ ...this.brains[0] }, { ...this.brains[1] }],
+      brains: this.brains.map((b) => ({ ...b })),
     };
     this.history.set(tick, snap);
     while (this.history.size > HISTORY) {
@@ -194,7 +194,7 @@ export class ClashSession {
   }
 
   /** Stand on the snapshot at `tick` and forget everything after it. */
-  rollback(tick: number, _inputs?: Map<number, [InputFrame, InputFrame]>): void {
+  rollback(tick: number, _inputs?: Map<number, InputFrame[]>): void {
     void _inputs;
     let best: SessionSnapshot | null = null;
     for (const [t, s] of this.history) {
@@ -202,13 +202,13 @@ export class ClashSession {
     }
     if (!best) return;
     if (!this.core.rewindTo(best.tick)) return;
-    this.brains = [{ ...best.brains[0] }, { ...best.brains[1] }];
+    this.brains = best.brains.map((b) => ({ ...b }));
     for (const t of Array.from(this.history.keys())) if (t > best.tick) this.history.delete(t);
     this.accumulator = 0;
   }
 
   /** A local prediction check: rollback and replay a list of stamped inputs. */
-  replay(fromTick: number, inputs: Map<number, [InputFrame, InputFrame]>): void {
+  replay(fromTick: number, inputs: Map<number, InputFrame[]>): void {
     this.rollback(fromTick, inputs);
   }
 
@@ -220,18 +220,17 @@ export class ClashSession {
     const cfg: MatchConfig = {
       ...this.config,
       cpuLevel: cpuLevel ?? this.brains[0].level,
-      gear: [this.config.gear[0], this.config.gear[1]],
+      gear: this.config.gear.slice(),
     };
     this.core = new Rollback(createMatch(cfg), { delay: this.delay, maxRollback: HISTORY });
-    resetAi(this.brains[0], cfg.cpuLevel, cfg.seed + 17, this.read);
-    resetAi(this.brains[1], cfg.cpuLevel, cfg.seed + 29, this.read);
+    for (const b of this.brains) resetAi(b, cfg.cpuLevel, cfg.seed + 17 + b.side * 12, this.read);
     this.history.clear();
     this.events = [];
     this.capture();
   }
 
   /** Build a fresh session from a match (used by rematches). */
-  static fromMatch(match: MatchState, localSide: 0 | 1 = 0, cpu = true, level = 3): ClashSession {
+  static fromMatch(match: MatchState, localSide = 0, cpu = true, level = 3): ClashSession {
     const cfg: MatchConfig = {
       stageId: match.stageId,
       mode: match.mode,
@@ -243,18 +242,36 @@ export class ClashSession {
       cpuChar: match.fighters[1].char,
       cpuLevel: level,
       modern: false,
-      gear: [match.fighters[0].gear, match.fighters[1].gear],
+      gear: match.fighters.map((f) => f.gear),
       training: match.training,
+      format: match.format,
+      chars: match.fighters.map((f) => f.char),
     };
     return new ClashSession(cfg, { localSide, cpu: cpu ? true : false, cpuLevel: level });
   }
 
-  /** A tiny presentation helper: who is currently ahead on stocks/damage. */
-  leader(): 0 | 1 | -1 {
-    const [a, b] = this.match.fighters;
-    if (a.stocks !== b.stocks) return a.stocks > b.stocks ? 0 : 1;
-    if (a.hp !== b.hp) return a.hp > b.hp ? 0 : 1;
-    return -1;
+  /** A tiny presentation helper: which team is ahead on stocks, then health; -1 for level. */
+  leader(): number {
+    const totals = new Map<number, { stocks: number; hp: number }>();
+    for (const f of this.match.fighters) {
+      const t = totals.get(f.team) ?? { stocks: 0, hp: 0 };
+      t.stocks += f.stocks;
+      t.hp += f.hp;
+      totals.set(f.team, t);
+    }
+    let best = -1;
+    let bestS = -1;
+    let bestH = -1;
+    let tie = false;
+    for (const [team, t] of totals) {
+      if (t.stocks > bestS || (t.stocks === bestS && t.hp > bestH)) {
+        best = team;
+        bestS = t.stocks;
+        bestH = t.hp;
+        tie = false;
+      } else if (t.stocks === bestS && t.hp === bestH) tie = true;
+    }
+    return tie ? -1 : best;
   }
 
   setChars(player: CharId, cpu: CharId): void {
@@ -264,7 +281,7 @@ export class ClashSession {
       ...this.config,
       playerChar: player,
       cpuChar: cpu,
-      gear: [m.fighters[0].gear, m.fighters[1].gear],
+      gear: m.fighters.map((f) => f.gear),
     };
     this.config = cfg;
     this.core = new Rollback(createMatch(cfg), { delay: this.delay, maxRollback: HISTORY });

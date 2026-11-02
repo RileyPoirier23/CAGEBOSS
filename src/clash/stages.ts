@@ -14,7 +14,7 @@ export const STAGES: StageDef[] = [
     theme: 'rooftop',
     universe: 'capital',
     blast,
-    spawns: [{ x: 670, y: 320 }, { x: 930, y: 320 }],
+    spawns: [{ x: 670, y: 320 }, { x: 930, y: 320 }, { x: 470, y: 320 }, { x: 1130, y: 320 }],
     platforms: [
       { id: 'main', x: 300, y: 650, w: 1000, h: 110, soft: false },
       { id: 'left', x: 430, y: 505, w: 220, h: 18, soft: true },
@@ -30,7 +30,7 @@ export const STAGES: StageDef[] = [
     theme: 'scroll',
     universe: 'oldink',
     blast,
-    spawns: [{ x: 670, y: 320 }, { x: 930, y: 320 }],
+    spawns: [{ x: 670, y: 320 }, { x: 930, y: 320 }, { x: 470, y: 320 }, { x: 1130, y: 320 }],
     platforms: [
       { id: 'main', x: 320, y: 650, w: 960, h: 110, soft: false },
       { id: 'left', x: 390, y: 498, w: 210, h: 14, soft: true },
@@ -46,7 +46,7 @@ export const STAGES: StageDef[] = [
     theme: 'cabinet',
     universe: 'arcade',
     blast,
-    spawns: [{ x: 670, y: 320 }, { x: 930, y: 320 }],
+    spawns: [{ x: 670, y: 320 }, { x: 930, y: 320 }, { x: 470, y: 320 }, { x: 1130, y: 320 }],
     platforms: [
       { id: 'main', x: 310, y: 650, w: 980, h: 110, soft: false },
       { id: 'left', x: 360, y: 492, w: 190, h: 18, soft: true },
@@ -62,7 +62,7 @@ export const STAGES: StageDef[] = [
     theme: 'crypt',
     universe: 'chapel',
     blast,
-    spawns: [{ x: 670, y: 320 }, { x: 930, y: 320 }],
+    spawns: [{ x: 670, y: 320 }, { x: 930, y: 320 }, { x: 470, y: 320 }, { x: 1130, y: 320 }],
     platforms: [
       { id: 'main', x: 330, y: 650, w: 940, h: 110, soft: false },
       { id: 'left', x: 465, y: 512, w: 200, h: 20, soft: true },
@@ -78,7 +78,7 @@ export const STAGES: StageDef[] = [
     theme: 'soundstage',
     universe: 'saturday',
     blast,
-    spawns: [{ x: 670, y: 320 }, { x: 930, y: 320 }],
+    spawns: [{ x: 670, y: 320 }, { x: 930, y: 320 }, { x: 470, y: 320 }, { x: 1130, y: 320 }],
     platforms: [
       { id: 'main', x: 290, y: 650, w: 1020, h: 110, soft: false },
       { id: 'left', x: 390, y: 490, w: 230, h: 20, soft: true },
@@ -94,7 +94,7 @@ export const STAGES: StageDef[] = [
     theme: 'hangar',
     universe: 'blacksite',
     blast,
-    spawns: [{ x: 670, y: 320 }, { x: 930, y: 320 }],
+    spawns: [{ x: 670, y: 320 }, { x: 930, y: 320 }, { x: 470, y: 320 }, { x: 1130, y: 320 }],
     platforms: [
       { id: 'main', x: 300, y: 650, w: 1000, h: 110, soft: false },
       { id: 'left', x: 405, y: 500, w: 210, h: 18, soft: true },

@@ -17,7 +17,7 @@ import { NetSim, Rollback, packInput, type ReplayFile } from './rollback';
 import { NET_PROTOCOL, OnlineMatch, PeerLink, type NetMessage } from './netplay';
 import { onlineHtml, type OnlineView } from './screens';
 import type { Action, KeyMap } from './profile';
-import type { CharId, CustomFinisher, Fighter, InputFrame, MatchConfig, MatchEvent, MatchState, MoveDef, MoveKey, PoseName, Rarity, Slot } from './types';
+import type { CharId, CustomFinisher, Fighter, InputFrame, MatchConfig, MatchEvent, MatchFormat, MatchState, MoveDef, MoveKey, PoseName, Rarity, Slot } from './types';
 import { CHAR_IDS, emptyInput } from './types';
 import {
   DEFAULT_KEYS,
@@ -83,7 +83,7 @@ const SUPER_SHOW_MS = 1150;
 const GHOST_TICKS = 600;
 
 type ScreenName = 'title' | 'select' | 'fight' | 'results' | 'roster' | 'vault' | 'options' | 'replays' | 'story' | 'rift' | 'builder' | 'editor' | 'progress' | 'online';
-type FightMode = MatchConfig['mode'] | 'net' | 'online';
+type FightMode = MatchConfig['mode'] | 'net' | 'online' | '2v2' | 'ffa';
 
 /** The real-netplay handshake: one link, the codes in flight, who is on the other end. */
 interface OnlineState {
@@ -229,8 +229,8 @@ export class ClashApp {
   private readonly padLast: [number, number] = [0, 0];
   private padPauseLast = false;
 
-  private hudEls: [HudSideEls, HudSideEls] | null = null;
-  private hudCombo: [HTMLElement, HTMLElement] | null = null;
+  private hudEls: HudSideEls[] | null = null;
+  private hudCombo: HTMLElement[] | null = null;
   private clockEl: HTMLElement | null = null;
   private calloutEl: HTMLElement | null = null;
   private toastMoveEl: HTMLElement | null = null;
@@ -238,7 +238,7 @@ export class ClashApp {
   private countEl: HTMLElement | null = null;
   private inputDisplayEl: HTMLElement | null = null;
   private corruptEl: HTMLElement | null = null;
-  private lastStocks: [number, number] = [3, 3];
+  private lastStocks: number[] = [3, 3];
   private lastStockMax = 3;
 
   private saveTimer: number | null = null;
@@ -640,16 +640,30 @@ export class ClashApp {
   private extras(): RenderExtras {
     const cfg = this.fightCfg;
     const tr = this.profile.options.training;
-    const names: [string, string] = [
-      this.spectator ? 'CPU' : 'P1',
-      this.spectator || (cfg && cfg.mode !== 'local' && this.fightMode !== 'net' && this.fightMode !== 'online') ? 'CPU' : 'P2',
-    ];
+    const names = this.sideLabels();
     return {
       training: cfg?.training ? { hitboxes: tr.hitboxes, frameData: tr.frameData, dodgeViz: tr.dodgeViz } : undefined,
       ghost: cfg?.training && tr.ghost && this.ghostRing.length >= GHOST_TICKS ? this.ghostRing[0] : null,
       names,
       spectator: this.spectator ? 'canvas feed // votes change presentation, never frame data' : null,
     };
+  }
+
+  /** Who sits in each seat, for the HUD tags and the KO panel. */
+  private sideLabels(): string[] {
+    const cfg = this.fightCfg;
+    const m = this.session?.match;
+    const n = m?.fighters.length ?? 2;
+    const p2Keys = !!cfg && (cfg.mode === 'local' || (this.net !== null && this.netP2 === 'keys') || this.fightMode === 'online');
+    const level = cfg?.cpuLevel ?? this.profile.cpuLevel;
+    const out: string[] = [];
+    for (let i = 0; i < n; i++) {
+      if (this.spectator) out.push(this.replay ? 'TAPE' : 'CPU');
+      else if (i === 0) out.push('P1');
+      else if (i === 1) out.push(p2Keys ? 'P2' : `CPU LV${level}`);
+      else out.push(m && m.fighters[i].team === m.fighters[0].team ? 'PARTNER' : `CPU LV${level}`);
+    }
+    return out;
   }
 
   private stepAttract(dt: number): void {
@@ -697,7 +711,7 @@ export class ClashApp {
       (net
         ? `NET PING ${this.profile.options.net.ping}MS JITTER ${this.profile.options.net.jitter}MS  |  PEER2 RB ${net.peers[1].rollbacks}  |  ${net.desync ? `DESYNC @${net.desyncTick}` : 'SYNC OK'}`
         : this.onlineMatch
-          ? `ONLINE P${this.onlineMatch.local + 1}  |  PING ${this.onlineMatch.link.rtt}MS  |  THEIRS ${this.onlineMatch.remoteConfirmed}  |  STALLS ${this.onlineMatch.stalled}  |  ${this.onlineMatch.desync ? `DESYNC @${this.onlineMatch.desyncTick}` : 'SYNC OK'}`
+          ? `ONLINE P${this.onlineMatch.local + 1}  |  PING ${this.onlineMatch.link.rtt}MS  |  THEIRS ${this.onlineMatch.remoteConfirmed}  |  STALLS ${this.onlineMatch.stalled}  |  SLOWED ${this.onlineMatch.slowed}  |  ${this.onlineMatch.desync ? `DESYNC @${this.onlineMatch.desyncTick}` : 'SYNC OK'}`
           : 'LOCAL');
   }
 
@@ -1203,7 +1217,7 @@ export class ClashApp {
   private setMode(mode: FightMode): void {
     this.arcadePending = false;
     this.fightMode = mode;
-    if (mode !== 'net' && mode !== 'online') this.profile.mode = mode;
+    if (mode !== 'net' && mode !== 'online' && mode !== '2v2' && mode !== 'ffa') this.profile.mode = mode;
     if (mode === 'ranked') this.profile.gearBuffs = false;
     this.saveSoon();
     this.showSelect();
@@ -1252,11 +1266,23 @@ export class ClashApp {
       return;
     }
     const mode = this.fightMode;
-    const cfg = this.buildConfig(mode, this.profile.selected, this.selectCpu);
+    const format: MatchFormat | undefined = mode === '2v2' ? '2v2' : mode === 'ffa' ? 'ffa' : undefined;
+    const base: MatchConfig['mode'] = mode === '2v2' || mode === 'ffa' ? 'casual' : mode;
+    const cfg = this.buildConfig(base, this.profile.selected, this.selectCpu, format);
     this.startFight(cfg);
   }
 
-  private buildConfig(mode: MatchConfig['mode'], player: CharId, cpu: CharId): MatchConfig {
+  private buildConfig(mode: MatchConfig['mode'], player: CharId, cpu: CharId, format?: MatchFormat): MatchConfig {
+    // Team fights draw the other two seats from the rest of the roster.
+    const chars: CharId[] = [player, cpu];
+    if (format && format !== '1v1') {
+      const pool = CHAR_IDS.filter((id) => id !== player && id !== cpu);
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      chars.push(pool[0] ?? cpu, pool[1] ?? player);
+    }
     return {
       stageId: this.profile.selectedStage,
       mode,
@@ -1268,16 +1294,12 @@ export class ClashApp {
       cpuChar: cpu,
       cpuLevel: this.profile.cpuLevel,
       modern: this.profile.options.modern,
-      gear: [
-        this.profile.loadouts[player] ?? {},
-        mode === 'local' ? {} : (this.profile.loadouts[cpu] ?? {}),
-      ],
+      gear: chars.map((id, i) => (i === 0 ? this.profile.loadouts[id] ?? {} : mode === 'local' && i === 1 ? {} : this.profile.loadouts[id] ?? {})),
       training: mode === 'training',
-      unlocked: [
-        finishersUnlocked(levelProgress(this.profile.xp[player]).level),
-        finishersUnlocked(levelProgress(this.profile.xp[cpu]).level),
-      ],
-      custom: [this.profile.custom[player] ?? null, mode === 'local' ? (this.profile.custom[cpu] ?? null) : null],
+      unlocked: chars.map((id) => finishersUnlocked(levelProgress(this.profile.xp[id]).level)),
+      custom: chars.map((id, i) => (i === 0 || (mode === 'local' && i === 1) ? this.profile.custom[id] ?? null : null)),
+      format: format ?? '1v1',
+      chars,
     };
   }
 
@@ -1880,43 +1902,38 @@ export class ClashApp {
     if (!cfg) return;
     const stage = stageById(cfg.stageId);
     this.hudEl.classList.remove('hidden');
+    const m = this.session?.match;
+    const fighters = m?.fighters ?? [];
+    const chars = fighters.length ? fighters.map((f) => f.char) : [cfg.playerChar, cfg.cpuChar];
+    const teams = fighters.length ? fighters.map((f) => f.team) : [0, 1];
     this.hudEl.innerHTML = hudHtml({
       profile: this.profile,
       mode: cfg.mode,
+      format: cfg.format ?? '1v1',
       stageName: stage.name,
       stageSub: stage.subtitle,
       stocks: cfg.mode === 'training' ? 1 : cfg.stocks,
       timerMinutes: cfg.mode === 'training' ? 0 : Math.round(cfg.timerTicks / 3600),
       modern: cfg.modern,
       spectator: this.spectator,
-      local: cfg.mode === 'local' || this.net !== null,
-      p1: cfg.playerChar,
-      p2: cfg.cpuChar,
+      chars,
+      teams,
+      labels: this.sideLabels(),
     }) + (this.replay ? `<div class="input-display">${inputDisplayHtml()}</div>` : '') + '<div class="hud-corrupt-line hidden" data-corrupt></div>';
     const q = (sel: string): HTMLElement => {
       const el = this.hudEl.querySelector<HTMLElement>(sel);
       if (!el) throw new Error(`Missing HUD element ${sel}`);
       return el;
     };
-    this.hudEls = [
-      {
-        name: q('[data-name="0"]'),
-        tag: q('[data-tag="0"]'),
-        hp: q('[data-hp="0"]'),
-        chip: q('[data-chip="0"]'),
-        stocks: q('[data-stocks="0"]'),
-        drive: q('[data-drive="0"]'),
-      },
-      {
-        name: q('[data-name="1"]'),
-        tag: q('[data-tag="1"]'),
-        hp: q('[data-hp="1"]'),
-        chip: q('[data-chip="1"]'),
-        stocks: q('[data-stocks="1"]'),
-        drive: q('[data-drive="1"]'),
-      },
-    ];
-    this.hudCombo = [q('[data-combo="0"]'), q('[data-combo="1"]')];
+    this.hudEls = chars.map((_, i) => ({
+      name: q(`[data-name="${i}"]`),
+      tag: q(`[data-tag="${i}"]`),
+      hp: q(`[data-hp="${i}"]`),
+      chip: q(`[data-chip="${i}"]`),
+      stocks: q(`[data-stocks="${i}"]`),
+      drive: q(`[data-drive="${i}"]`),
+    }));
+    this.hudCombo = chars.map((_, i) => q(`[data-combo="${i}"]`));
     this.clockEl = q('[data-clock]');
     this.calloutEl = q('[data-callout]');
     this.toastMoveEl = q('[data-movetoast]');
@@ -1926,7 +1943,7 @@ export class ClashApp {
     this.corruptEl = this.hudEl.querySelector<HTMLElement>('[data-corrupt]');
     this.paintPortraits(this.hudEl);
     this.lastStockMax = cfg.mode === 'training' ? 1 : cfg.stocks;
-    this.lastStocks = [cfg.stocks, cfg.stocks];
+    this.lastStocks = chars.map(() => cfg.stocks);
   }
 
   private stepFight(dt: number): void {
@@ -2149,8 +2166,12 @@ export class ClashApp {
       this.corruptEl.classList.toggle('hidden', !corrupt);
       if (corrupt) this.corruptEl.textContent = `UI CORRUPTED // HP BARS SWAPPED ${(m.uiCorrupt / 60).toFixed(1)}S`;
     }
-    for (const side of [0, 1] as const) {
-      const f = m.fighters[corrupt ? (side === 0 ? 1 : 0) : side];
+    const labels = this.sideLabels();
+    const n = Math.min(this.hudEls.length, m.fighters.length);
+    for (let side = 0; side < n; side++) {
+      // Null's corruption swaps the first two bars; the rest stay put.
+      const shown = corrupt && side < 2 ? (side === 0 ? 1 : 0) : side;
+      const f = m.fighters[shown];
       const els = this.hudEls[side];
       const ratio = clamp(f.hp / Math.max(1, f.hpMax), 0, 1);
       els.hp.style.transform = `scaleX(${ratio})`;
@@ -2168,13 +2189,7 @@ export class ClashApp {
       });
       els.drive.classList.toggle('burnout', f.burnout > 0);
       const own = m.fighters[side];
-      els.tag.textContent = this.spectator
-        ? `${this.replay ? 'TAPE' : 'CPU'} // ${charDef(own.char).universeShort}`
-        : side === 0
-          ? `P1 // ${charDef(own.char).universeShort}${own.modern ? ' // MODERN' : ''}`
-          : m.mode === 'local' || (this.net && this.netP2 === 'keys')
-            ? `P2 // ${charDef(own.char).universeShort}`
-            : `CPU LV${this.fightCfg?.cpuLevel ?? this.profile.cpuLevel} // ${charDef(own.char).universeShort}`;
+      els.tag.textContent = `${labels[side] ?? 'CPU'} // ${charDef(own.char).universeShort}${side === 0 && own.modern && !this.spectator ? ' // MODERN' : ''}`;
       this.lastStocks[side] = f.stocks;
     }
 
@@ -2183,7 +2198,7 @@ export class ClashApp {
       this.clockEl.classList.toggle('low', !m.training && m.timer <= 30 * 60);
     }
 
-    for (const side of [0, 1] as const) {
+    for (let side = 0; side < Math.min(this.hudCombo.length, m.combo.length); side++) {
       const tally = m.combo[side];
       const el = this.hudCombo[side];
       const show = tally.hits > 1 && m.tick - tally.lastTick < 70 && m.phase === 'fight';
@@ -2408,11 +2423,13 @@ export class ClashApp {
       rival: cfg.cpuChar,
       mode: this.net ? 'netplay sim' : this.replay ? 'replay' : cfg.mode,
       stageName: stageById(cfg.stageId).name,
-      winningSide: m.winner,
+      winningSide: m.winner === -1 ? -1 : m.winner === m.fighters[0].team ? 0 : 1,
       local: cfg.mode === 'local' || (this.net !== null && this.netP2 === 'keys'),
       spectator: this.spectator,
       training: !!cfg.training,
-      stocks: [m.fighters[0].stocks, m.fighters[1].stocks],
+      stocks: this.teamStockLine(m),
+      format: cfg.format ?? '1v1',
+      teamNames: this.teamNames(m),
       stats: m.stats,
       reward: data.reward,
       arcade: this.arcade
@@ -2429,11 +2446,33 @@ export class ClashApp {
     this.saveSoon();
   }
 
+  /** P1's team stocks against the best of the rest. */
+  private teamStockLine(m: MatchState): [number, number] {
+    const mine = m.fighters[0].team;
+    let ours = 0;
+    let theirs = 0;
+    const per = new Map<number, number>();
+    for (const f of m.fighters) {
+      if (f.team === mine) ours += f.stocks;
+      else per.set(f.team, (per.get(f.team) ?? 0) + f.stocks);
+    }
+    for (const v of per.values()) theirs = Math.max(theirs, v);
+    return [ours, theirs];
+  }
+
+  /** The names on each side of the score line: "KESTREL & PIP" vs the rest. */
+  private teamNames(m: MatchState): [string, string] {
+    const mine = m.fighters[0].team;
+    const ours = m.fighters.filter((f) => f.team === mine).map((f) => charDef(f.char).name.toUpperCase());
+    const others = m.fighters.filter((f) => f.team !== mine).map((f) => charDef(f.char).name.toUpperCase());
+    return [ours.join(' & '), others.join(m.format === 'ffa' ? ' / ' : ' & ')];
+  }
+
   private computeResult(): ResultData {
     const m = this.session!.match;
     const cfg = this.fightCfg!;
     const winner = m.winner;
-    const won = winner === 0;
+    const won = winner !== -1 && winner === m.fighters[0].team;
     const draw = winner === -1;
     let arcadeNext = false;
     let arcadeDone = false;

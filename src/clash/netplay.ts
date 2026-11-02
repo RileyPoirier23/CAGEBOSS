@@ -223,10 +223,38 @@ export class OnlineMatch {
     return this.core.tick - this.core.confirmed >= this.core.opts.maxRollback - 4;
   }
 
+  /** The newest tick the other side has stamped. Their clock, as far as we can see it. */
+  private remoteStamp = 0;
+  private skipBudget = 0;
+  /** Ticks given up to let the other machine catch up. */
+  slowed = 0;
+
+  /** Clock sync: if this machine is running ahead of the other, drop one tick in four
+      until the stamps line up again. The slower peer never has to catch up; the faster
+      one waits, so neither side ever burns through its rollback window. */
+  private aheadNow(): boolean {
+    if (this.remoteStamp <= 0) return false;
+    const lead = this.core.stampTick - this.remoteStamp;
+    if (lead <= 2) {
+      this.skipBudget = 0;
+      return false;
+    }
+    this.skipBudget += Math.min(1, (lead - 2) / 8);
+    if (this.skipBudget >= 1) {
+      this.skipBudget -= 1;
+      return true;
+    }
+    return false;
+  }
+
   /** One tick: stamp the local input, send it, step. Null when stalled (nothing stamped). */
   tick(input: InputFrame): MatchEvent[] | null {
     if (this.stalledNow) {
       this.stalled++;
+      return null;
+    }
+    if (this.aheadNow()) {
+      this.slowed++;
       return null;
     }
     this.pushLocal(input);
@@ -260,6 +288,7 @@ export class OnlineMatch {
       if (msg.p === this.local) return;
       for (let i = 0; i < msg.packed.length; i++) this.core.addInput(msg.p, msg.from + i, msg.packed[i]);
       this.remoteConfirmed = Math.max(this.remoteConfirmed, msg.from + msg.packed.length - 1);
+      this.remoteStamp = Math.max(this.remoteStamp, msg.from + msg.packed.length - 1);
     } else if (msg.t === 'cs') {
       this.theirs.set(msg.tick, msg.hash);
       this.compare();

@@ -12,6 +12,8 @@ import { STAGES } from './stages';
 import type {
   CharId,
   GearItem,
+  MatchFormat,
+  MatchStats,
   MoveKey,
   Rarity,
 } from './types';
@@ -87,15 +89,17 @@ function key(label: string): string {
 export interface HudArgs {
   profile: ClashProfile;
   mode: string;
+  format: MatchFormat;
   stageName: string;
   stageSub: string;
   stocks: number;
   timerMinutes: number;
   modern: boolean;
   spectator: boolean;
-  local: boolean;
-  p1: CharId;
-  p2: CharId;
+  /** Every seat in side order, its team, and the tag it wears (P1, P2, CPU LV3, PARTNER). */
+  chars: CharId[];
+  teams: number[];
+  labels: string[];
 }
 
 export function stocksHtml(count: number, max: number): string {
@@ -109,20 +113,23 @@ export function stocksHtml(count: number, max: number): string {
   return out;
 }
 
-function driveHtml(side: 0 | 1): string {
+function driveHtml(side: number): string {
   let out = `<div class="drive" data-drive="${side}">`;
   for (let i = 0; i < 6; i++) out += '<i></i>';
   out += '<span class="burnout-label">BURNOUT</span></div>';
   return out;
 }
 
-function hudSide(side: 0 | 1, args: HudArgs): string {
-  const id = side === 0 ? args.p1 : args.p2;
+function hudSide(side: number, args: HudArgs): string {
+  const id = args.chars[side];
   const def = charDef(id);
-  const who = side === 0 ? (args.local ? 'P1' : 'P1') : args.spectator ? 'CPU' : args.local ? 'P2' : `CPU LV${args.profile.cpuLevel}`;
+  const who = args.labels[side] ?? 'CPU';
+  const right = side % 2 === 1;
+  const compact = side >= 2;
+  const team = args.teams[side] ?? side;
   return `
-    <div class="hud-side ${side === 1 ? 'right' : ''}">
-      <div class="hud-portrait"><canvas data-portrait="${id}" data-portrait-crop="bust" data-portrait-face="${side === 1 ? -1 : 1}" width="96" height="96"></canvas></div>
+    <div class="hud-side ${right ? 'right' : ''} ${compact ? 'compact' : ''} team-${team}" data-side="${side}">
+      <div class="hud-portrait"><canvas data-portrait="${id}" data-portrait-crop="bust" data-portrait-face="${right ? -1 : 1}" width="96" height="96"></canvas></div>
       <div class="hud-bars">
         <div class="hud-name-row">
           <div class="hud-name" data-name="${side}">${esc(def.name)}</div>
@@ -141,27 +148,37 @@ function hudSide(side: 0 | 1, args: HudArgs): string {
     </div>`;
 }
 
+export function formatName(format: MatchFormat): string {
+  return format === '2v2' ? 'TAG 2V2' : format === 'ffa' ? 'FREE-FOR-ALL' : '';
+}
+
 export function hudHtml(args: HudArgs): string {
-  const mode = args.spectator ? 'SPECTATOR' : modeName(args.mode);
+  const fmt = formatName(args.format);
+  const mode = args.spectator ? 'SPECTATOR' : fmt || modeName(args.mode);
+  const n = args.chars.length;
+  // Even seats stack on the left, odd seats on the right; 1v1 is one card a side.
+  const left: number[] = [];
+  const right: number[] = [];
+  for (let i = 0; i < n; i++) (i % 2 === 0 ? left : right).push(i);
+  const combos = args.chars.map((_, i) => `<div class="combo ${i % 2 === 0 ? 'left' : 'right'} slot-${Math.floor(i / 2)}" data-combo="${i}"><b>0</b><span>HITS</span></div>`).join('');
   return `
-    <div class="hud-top">
-      ${hudSide(0, args)}
+    <div class="hud-top ${n > 2 ? 'four' : ''}">
+      <div class="hud-group left">${left.map((i) => hudSide(i, args)).join('')}</div>
       <div class="hud-center">
         <div class="clock-plate">
           <div class="round-label">${esc(mode)}</div>
           <div class="clock" data-clock>${args.mode === 'training' ? '∞' : `${args.timerMinutes}:00`}</div>
         </div>
       </div>
-      ${hudSide(1, args)}
+      <div class="hud-group right">${right.map((i) => hudSide(i, args)).join('')}</div>
     </div>
     <div class="hud-bottom">
       <div>${esc(args.stageName.toUpperCase())} // ${esc(args.stageSub.toUpperCase())}</div>
-      <div>${args.spectator ? 'NO INPUT · CANVAS FEED' : args.mode === 'training' ? 'DUMMY HOLDS STILL · PAUSE TO RESET' : `${args.stocks} STOCK · ${args.timerMinutes} MIN`}</div>
+      <div>${args.spectator ? 'NO INPUT · CANVAS FEED' : args.mode === 'training' ? 'DUMMY HOLDS STILL · PAUSE TO RESET' : `${fmt ? `${fmt} · ` : ''}${args.stocks} STOCK · ${args.timerMinutes} MIN`}</div>
       <div>${args.modern ? 'MODERN' : 'CLASSIC'} // F3 FRAME DATA</div>
     </div>
     <div class="count-in" data-countin><span></span></div>
-    <div class="combo left" data-combo="0"><b>0</b><span>HITS</span></div>
-    <div class="combo right" data-combo="1"><b>0</b><span>HITS</span></div>
+    ${combos}
     <div class="center-callout" data-callout><span class="big"></span><span class="small"></span></div>
     <div class="move-toast" data-movetoast></div>
     <div class="super-flash hidden" data-superflash><div class="name"></div><div class="who"></div></div>`;
@@ -280,15 +297,21 @@ export function selectHtml(args: SelectArgs): string {
   const player = charDef(p.selected);
   const rival = charDef(args.cpu);
   const stage = STAGES.find((s) => s.id === args.stageId) ?? STAGES[0];
-  const heading = args.arcade ? 'ARCADE <em>RUN</em>' : args.mode === 'training' ? 'TRAINING <em>ROOM</em>' : args.mode === 'net' ? 'NETPLAY <em>SIM</em>' : 'CHOOSE <em>YOUR</em> VERSE';
+  const team = args.mode === '2v2' || args.mode === 'ffa';
+  const heading = args.arcade ? 'ARCADE <em>RUN</em>' : args.mode === 'training' ? 'TRAINING <em>ROOM</em>' : args.mode === 'net' ? 'NETPLAY <em>SIM</em>' : args.mode === '2v2' ? 'TAG <em>TEAM</em>' : args.mode === 'ffa' ? 'FREE FOR <em>ALL</em>' : 'CHOOSE <em>YOUR</em> VERSE';
   const begin = args.arcade ? 'BEGIN RUN' : args.mode === 'training' ? 'ENTER THE LAB' : args.mode === 'net' ? 'CONNECT' : 'CLASH';
   const modes: { id: string; label: string }[] = [
     { id: 'casual', label: 'CASUAL' },
     { id: 'ranked', label: 'RANKED' },
     { id: 'training', label: 'TRAINING' },
     { id: 'local', label: 'LOCAL 2P' },
+    { id: '2v2', label: 'TAG 2V2' },
+    { id: 'ffa', label: 'FREE-FOR-ALL' },
     { id: 'net', label: 'NETPLAY SIM' },
   ];
+  const teamNote = team
+    ? `<div class="vault-note" style="color:var(--paper-3)">${args.mode === '2v2' ? 'Your partner and the second rival are drawn from the rest of the roster. Partners cannot hit each other.' : 'Four fighters, four teams, last one standing. The other two seats are drawn at random.'}</div>`
+    : '';
   return `
     <div class="screen-head">
       <div class="heading">
@@ -365,7 +388,7 @@ export function selectHtml(args: SelectArgs): string {
           <div class="tab-row">
             ${modes.map((m) => `<button class="tab ${args.mode === m.id && !args.arcade ? 'active' : ''}" data-action="mode" data-mode="${m.id}">${m.label}</button>`).join('')}
           </div>
-          ${args.extra ?? ''}
+          ${teamNote}${args.extra ?? ''}
           <div class="select-actions">
             <button class="btn primary" data-action="begin">${begin}</button>
             <button class="btn" data-action="back">BACK</button>
@@ -779,22 +802,15 @@ export interface ResultArgs {
   spectator: boolean;
   training: boolean;
   stocks: [number, number];
-  stats: MatchStateStats;
+  stats: MatchStats;
   reward: MatchReward | null;
   arcade: { wins: number; index: number; total: number; cleared: boolean } | null;
   arcadeNext: boolean;
   /** Ranked MMR, story or rift progress, the finisher that landed. */
   extraLine?: string;
-}
-
-export interface MatchStateStats {
-  damage: [number, number];
-  hits: [number, number];
-  maxCombo: [number, number];
-  ringouts: [number, number];
-  perfectParries: [number, number];
-  supers: [number, number];
-  driveSpent: [number, number];
+  format?: MatchFormat;
+  /** Names on each side of the score line when the match had teams. */
+  teamNames?: [string, string];
 }
 
 function statBox(label: string, value: string | number): string {
@@ -820,7 +836,10 @@ export function resultsHtml(args: ResultArgs): string {
       : args.local
         ? winner === 1 ? 'PLAYER 2 <em>WINS</em>' : 'PLAYER 1 <em>WINS</em>'
         : playerWon ? 'YOU <em>WIN</em>' : 'YOU <em>LOSE</em>';
-  const kicker = `${modeName(args.mode)} // ${esc(args.stageName.toUpperCase())} // ${args.training ? 'OPEN LAB' : `${p.stocks} STOCK`}`;
+  const fmt = args.format ? formatName(args.format) : '';
+  const kicker = `${fmt || modeName(args.mode)} // ${esc(args.stageName.toUpperCase())} // ${args.training ? 'OPEN LAB' : `${p.stocks} STOCK`}`;
+  const sideA = args.teamNames && fmt ? esc(args.teamNames[0]) : esc(def.name.toUpperCase());
+  const sideB = args.teamNames && fmt ? esc(args.teamNames[1]) : esc(charDef(args.rival).name.toUpperCase());
   const reward = args.reward;
   const arcadeLine = args.arcade
     ? args.arcade.cleared
@@ -830,7 +849,7 @@ export function resultsHtml(args: ResultArgs): string {
   return `<div class="panel results-card">
     <div class="result-kicker">${kicker}</div>
     <div class="result-win">${headline}</div>
-    <div class="result-sub">${esc(def.name.toUpperCase())} ${args.stocks[0]} — ${args.stocks[1]} ${esc(charDef(args.rival).name.toUpperCase())}${arcadeLine ? ` · ${arcadeLine}` : ''}</div>
+    <div class="result-sub">${sideA} ${args.stocks[0]} — ${args.stocks[1]} ${sideB}${arcadeLine ? ` · ${arcadeLine}` : ''}</div>
     ${args.extraLine ? `<div class="result-sub">${esc(args.extraLine)}</div>` : ''}
     <div class="result-stats">
       ${statBox('DAMAGE DEALT', Math.round(args.stats.damage[0]))}

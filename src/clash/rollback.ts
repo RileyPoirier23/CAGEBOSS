@@ -55,8 +55,10 @@ export interface RollbackOptions {
 export class Rollback {
   state: MatchState;
   readonly opts: RollbackOptions;
-  private inputs = new Map<number, [number, number]>();
-  private known = new Map<number, [boolean, boolean]>();
+  /** Input slots per tick, one per fighter side. */
+  readonly players: number;
+  private inputs = new Map<number, number[]>();
+  private known = new Map<number, boolean[]>();
   readonly snaps = new Map<number, MatchState>();
   private events = new Map<number, MatchEvent[]>();
   private checks = new Map<number, number>();
@@ -69,14 +71,14 @@ export class Rollback {
 
   constructor(state: MatchState, opts: Partial<RollbackOptions> = {}) {
     this.state = state;
+    this.players = Math.max(2, state.fighters.length);
     this.opts = { delay: 0, maxRollback: 150, ...opts };
     this.confirmed = state.tick;
     this.snaps.set(state.tick, cloneMatch(state));
     this.prev = this.snaps.get(state.tick)!;
     // The first `delay` ticks can never receive a stamped input: they are known-neutral.
     for (let t = state.tick + 1; t <= state.tick + this.opts.delay; t++) {
-      this.addInput(0, t, 0);
-      this.addInput(1, t, 0);
+      for (let p = 0; p < this.players; p++) this.addInput(p, t, 0);
     }
   }
 
@@ -89,18 +91,19 @@ export class Rollback {
     return this.state.tick + 1 + this.opts.delay;
   }
 
-  private row(t: number): [number, number] {
+  private row(t: number): number[] {
     let r = this.inputs.get(t);
     if (!r) {
-      r = [0, 0];
+      r = new Array<number>(this.players).fill(0);
       this.inputs.set(t, r);
-      this.known.set(t, [false, false]);
+      this.known.set(t, new Array<boolean>(this.players).fill(false));
     }
     return r;
   }
 
   /** Input for `player` at `tick` becomes known. Returns true if it caused a rollback. */
-  addInput(player: 0 | 1, tick: number, packed: number): boolean {
+  addInput(player: number, tick: number, packed: number): boolean {
+    if (player < 0 || player >= this.players) return false;
     const r = this.row(tick);
     const k = this.known.get(tick)!;
     if (k[player]) return false;
@@ -122,10 +125,12 @@ export class Rollback {
 
   allKnown(tick: number): boolean {
     const k = this.known.get(tick);
-    return !!k && k[0] && k[1];
+    if (!k) return false;
+    for (let p = 0; p < this.players; p++) if (!k[p]) return false;
+    return true;
   }
 
-  private lastKnown(player: 0 | 1, tick: number): number {
+  private lastKnown(player: number, tick: number): number {
     for (let t = tick - 1; t >= tick - 64; t--) {
       const k = this.known.get(t);
       if (k && k[player]) return this.inputs.get(t)![player];
@@ -133,11 +138,11 @@ export class Rollback {
     return 0;
   }
 
-  private inputsFor(tick: number): [number, number] {
+  private inputsFor(tick: number): number[] {
     const r = this.row(tick);
     const k = this.known.get(tick)!;
-    const out: [number, number] = [0, 0];
-    for (const p of [0, 1] as const) {
+    const out: number[] = new Array<number>(this.players).fill(0);
+    for (let p = 0; p < this.players; p++) {
       if (k[p]) out[p] = r[p];
       else {
         out[p] = predictFrom(this.lastKnown(p, tick));
@@ -164,9 +169,9 @@ export class Rollback {
   /** Simulate one tick with whatever is known or predicted for it. */
   step(): MatchEvent[] {
     const t = this.state.tick + 1;
-    const [a, b] = this.inputsFor(t);
+    const packed = this.inputsFor(t);
     this.prev = this.snaps.get(this.state.tick) ?? this.prev;
-    stepMatch(this.state, unpackInput(a), unpackInput(b));
+    stepMatch(this.state, packed.map(unpackInput));
     const ev = drainEvents(this.state);
     this.snaps.set(t, cloneMatch(this.state));
     this.events.set(t, ev);
@@ -209,7 +214,7 @@ export class Rollback {
   exportReplay(cfg: MatchConfig): ReplayFile {
     return {
       v: 1,
-      cfg: { ...cfg, gear: [cfg.gear[0], cfg.gear[1]] },
+      cfg: { ...cfg, gear: cfg.gear.slice() },
       inputs: this.record.filter((r) => r[0] <= this.state.tick),
       ticks: this.state.tick,
     };

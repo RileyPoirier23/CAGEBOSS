@@ -65,7 +65,7 @@ export const DEFAULT_RENDER: RenderOpts = {
 export interface RenderExtras {
   training?: { hitboxes: boolean; frameData: boolean; dodgeViz: boolean };
   ghost?: Fighter | null;
-  names?: [string, string];
+  names?: string[];
   /** Spectator Canvas line, drawn along the bottom. */
   spectator?: string | null;
 }
@@ -309,6 +309,10 @@ export class ClashRenderer {
   addEvent(e: MatchEvent, m: MatchState): void {
     const char = e.char ? charDef(e.char) : null;
     const color = e.color ?? (char ? charDef(e.char!).art.accent : '#d8242c');
+    // MatchEvent carries loose numbers; impact silhouettes index the fighter
+    // tuple, so normalise here instead of casting at every call site.
+    const side = (fallback: 0 | 1 = 0): 0 | 1 => ((e.side ?? fallback) === 1 ? 1 : 0);
+    const other = (fallback: 0 | 1 = 0): 0 | 1 => ((e.other ?? fallback) === 1 ? 1 : 0);
     if (e.type === 'hit' || e.type === 'perfect' || e.type === 'clash' || e.type === 'shield') {
       const tier = e.tier ?? 0;
       const x = e.x ?? 800;
@@ -316,7 +320,7 @@ export class ClashRenderer {
       if (e.type === 'hit') {
         const scale = 1 + Math.min(1.3, (e.value ?? 6) / 18);
         this.burst(x, y, e.seed ?? 1, color, tier, scale, e.char ?? null);
-        this.pushImpact(tier, x, y, e.seed ?? 1, e.text ?? '', color, e.side ?? 0, e.other ?? 1, false);
+        this.pushImpact(tier, x, y, e.seed ?? 1, e.text ?? '', color, side(), other(1), false);
         // The sound effect, lettered. Light taps whisper, heavies shout.
         const seed = e.seed ?? 1;
         const pool = YELLS[Math.min(3, Math.max(0, tier))];
@@ -423,7 +427,7 @@ export class ClashRenderer {
     } else if (e.type === 'finisher') {
       this.flash = 1;
       this.cam.shake = Math.max(this.cam.shake, 26 * this.opts.shake);
-      this.pushImpact(3, e.x ?? 800, e.y ?? 500, e.seed ?? 1, e.text ?? 'FINISHER', '#d8242c', e.side ?? 0, e.other ?? 1, true);
+      this.pushImpact(3, e.x ?? 800, e.y ?? 500, e.seed ?? 1, e.text ?? 'FINISHER', '#d8242c', side(), other(1), true);
       this.rings.push({ x: e.x ?? 800, y: e.y ?? 500, radius: 40, life: 70, maxLife: 70, color: '#ffffff', width: 12 });
       for (let i = 0; i < 40; i++) {
         const a = rand(e.seed ?? 1, i) * Math.PI * 2;
@@ -446,10 +450,10 @@ export class ClashRenderer {
       this.rings.push({ x: e.x ?? 800, y: e.y ?? 600, radius: 30, life: 40, maxLife: 40, color: '#d8242c', width: 8 });
       if (e.type === 'ringout') {
         this.scars.push({ x: e.x ?? 800, y: FLOOR_Y, seed: e.seed ?? 1, kind: 'crack', theme: m.stageId });
-        this.pushImpact(2, e.x ?? 800, e.y ?? 600, e.seed ?? 1, 'RING OUT', '#d8242c', e.other ?? 0, e.side ?? 1, false);
-        this.koPanel = { ticks: 36, text: 'RING OUT', sub: 'BLAST ZONE', side: e.side ?? 1 };
+        this.pushImpact(2, e.x ?? 800, e.y ?? 600, e.seed ?? 1, 'RING OUT', '#d8242c', other(), side(1), false);
+        this.koPanel = { ticks: 36, text: 'RING OUT', sub: 'BLAST ZONE', side: side(1) };
       } else if (m.phase !== 'finisher') {
-        this.koPanel = { ticks: 36, text: 'K.O.', sub: (e.text ?? '').toUpperCase(), side: e.side ?? 1 };
+        this.koPanel = { ticks: 36, text: 'K.O.', sub: (e.text ?? '').toUpperCase(), side: side(1) };
       }
     } else if (e.type === 'scar') {
       const stage = stageById(m.stageId);
@@ -677,10 +681,11 @@ export class ClashRenderer {
 
   /** Universe Clash: a foreign fighter's treatment bleeds into the stage backdrop. */
   private drawBackdrop(ctx: CanvasRenderingContext2D, m: MatchState, stage: StageDef): void {
-    const a = charDef(m.fighters[0].char).universe;
-    const b = charDef(m.fighters[1].char).universe;
-    const foreign = a !== b ? (a !== stage.universe ? m.fighters[0].char : b !== stage.universe ? m.fighters[1].char : null) : null;
-    const treat: Treatment = foreign ? treatmentOf(foreign) : 'none';
+    // A mirror match has no Clash; otherwise the first foreign universe bleeds in.
+    const universes = m.fighters.map((f) => charDef(f.char).universe);
+    const mirror = universes.every((u) => u === universes[0]);
+    const foreignF = mirror ? null : m.fighters.find((f) => charDef(f.char).universe !== stage.universe) ?? null;
+    const treat: Treatment = foreignF ? treatmentOf(foreignF.char) : 'none';
     // Parallax: the backdrop drifts a little slower than the platforms so the
     // skyline sits behind the fight instead of on it.
     ctx.save();
@@ -897,16 +902,31 @@ export class ClashRenderer {
   /* ----------------------------------------------------------------- camera -- */
 
   private updateCamera(m: MatchState, alpha: number, dt: number): void {
-    const f0 = m.fighters[0];
-    const f1 = m.fighters[1];
-    const x0 = f0.px + (f0.x - f0.px) * alpha;
-    const x1 = f1.px + (f1.x - f1.px) * alpha;
-    const y0 = f0.py + (f0.y - f0.py) * alpha;
-    const y1 = f1.py + (f1.y - f1.py) * alpha;
-    let midX = (x0 + x1) / 2;
-    let midY = (y0 + y1) / 2 - 60;
-    const spreadX = Math.abs(x0 - x1);
-    const spreadY = Math.abs(y0 - y1);
+    // Frame everyone still in the match; a fighter past the blast zone is let go.
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    let count = 0;
+    for (const f of m.fighters) {
+      if (f.stocks <= 0 && m.fighters.length > 2) continue;
+      const x = f.px + (f.x - f.px) * alpha;
+      const y = f.py + (f.y - f.py) * alpha;
+      if (x < -200 || x > 1800 || y > 950) continue;
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+      count++;
+    }
+    if (count === 0) {
+      minX = maxX = 800;
+      minY = maxY = 560;
+    }
+    let midX = (minX + maxX) / 2;
+    let midY = (minY + maxY) / 2 - 60;
+    const spreadX = maxX - minX;
+    const spreadY = maxY - minY;
     let wantZoom = 1.3;
 
     if (m.phase === 'intro') {
@@ -1302,7 +1322,7 @@ export class ClashRenderer {
 
   /* --------------------------------------------------------------- KO panel -- */
 
-  private drawKoPanel(ctx: CanvasRenderingContext2D, m: MatchState, w: number, h: number, names?: [string, string]): void {
+  private drawKoPanel(ctx: CanvasRenderingContext2D, m: MatchState, w: number, h: number, names?: string[]): void {
     const kp = this.koPanel;
     if (!kp || m.phase === 'finisher') return;
     const f = m.fighters[kp.side];
@@ -1747,8 +1767,8 @@ export class ClashRenderer {
     ctx.textAlign = 'left';
     m.fighters.forEach((f, i) => {
       const md = (f.state === 'attack' || f.state === 'super') && f.move ? moveOf(f.char, f.move) : null;
-      const x = i === 0 ? 20 * s : w - 320 * s;
-      const y = h - 130 * s;
+      const x = i % 2 === 0 ? 20 * s : w - 320 * s;
+      const y = h - 130 * s - Math.floor(i / 2) * 120 * s;
       ctx.fillStyle = 'rgba(0,0,0,0.6)';
       ctx.fillRect(x, y, 300 * s, 110 * s);
       ctx.fillStyle = '#efe6d2';

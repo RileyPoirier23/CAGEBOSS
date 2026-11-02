@@ -559,6 +559,14 @@ html, body {
   padding: 10px clamp(8px, 1.8vw, 28px) 0;
 }
 
+.hud-group {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .hud-side {
   flex: 1;
   display: flex;
@@ -568,6 +576,22 @@ html, body {
 }
 
 .hud-side.right { flex-direction: row-reverse; }
+
+/* Seats three and four: a slimmer card under the first, same colours as its team. */
+.hud-side.compact { width: 78%; }
+.hud-group.right .hud-side.compact { align-self: flex-end; }
+.hud-side.compact .hud-portrait { width: clamp(38px, 4.2vw, 60px); height: clamp(38px, 4.2vw, 60px); }
+.hud-side.compact .hud-name { font-size: clamp(15px, 1.7vw, 24px); }
+.hud-side.compact .health-frame { height: clamp(14px, 1.8vw, 20px); }
+.hud-side.compact .hud-tag { font-size: 9px; padding: 2px 5px 1px; }
+.hud-top.four .hud-side.team-0 .health-fill { background: repeating-linear-gradient(90deg, transparent 0 22px, rgba(15, 13, 12, 0.22) 22px 25px), var(--blood); }
+.hud-top.four .hud-side.team-1 .health-fill { background: repeating-linear-gradient(90deg, transparent 0 22px, rgba(15, 13, 12, 0.22) 22px 25px), var(--sky); }
+.hud-top.four .hud-side.team-2 .health-fill { background: repeating-linear-gradient(90deg, transparent 0 22px, rgba(15, 13, 12, 0.22) 22px 25px), var(--moss); }
+.hud-top.four .hud-side.team-3 .health-fill { background: repeating-linear-gradient(90deg, transparent 0 22px, rgba(15, 13, 12, 0.22) 22px 25px), var(--purple); }
+.hud-top.four .hud-side.team-1 .hud-tag { background: var(--cyan); }
+.hud-top.four .hud-side.team-2 .hud-tag { background: var(--mint); }
+.hud-top.four .hud-side.team-3 .hud-tag { background: #c9a6ff; }
+.combo.slot-1 { top: 30%; }
 
 .hud-portrait {
   flex: none;
@@ -969,6 +993,11 @@ html, body {
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--blood) transparent;
+  /* The page root uses touch-action:none to protect the canvas. Menu bodies
+     have to opt back into vertical panning or phones cannot scroll them. */
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .tab-row {
@@ -1755,26 +1784,70 @@ html, body {
    -------------------------------------------------------------------------- */
 
 @media (max-width: 900px) {
-  .select-layout { grid-template-columns: 1fr; overflow: auto; }
+  /* Phones and portrait tablets: let the title scroll instead of clipping the
+     lockup against the menu, and give the character select a real touch
+     scroller rather than a fixed canvas-height panel. */
+  .title-screen { overflow-y: auto; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+  .title-main { grid-template-columns: 1fr; flex: 0 0 auto; }
+  .title-left { justify-content: flex-start; }
+  /* One column: let the layout grow to its content and scroll in
+     .screen-body. Keeping flex:1 here squeezes the side panel to a sliver
+     and hides the picked fighter, stage and mode controls. */
+  .select-layout {
+    grid-template-columns: 1fr;
+    flex: 0 0 auto;
+    align-self: flex-start;
+    width: 100%;
+    min-width: 0;
+    min-height: auto;
+    overflow: visible;
+    touch-action: pan-y;
+  }
   .roster-grid { grid-template-columns: repeat(4, 1fr); }
-  .select-side { min-height: 300px; }
+  .select-side { min-height: 0; flex: 0 0 auto; }
   .roster-main { grid-template-columns: 1fr; }
   .roster-list { width: 150px; }
   .vault-layout, .store-grid { grid-template-columns: 1fr; }
-  .title-main { grid-template-columns: 1fr; }
   .title-cover { display: none; }
   .title-menu { grid-template-columns: 1fr 1fr; width: 100%; }
 }
 
 @media (max-width: 620px) {
-  .screen-head { padding: 14px 14px 6px; }
+  .title-screen { padding: 12px 14px 18px; }
+  .title-top .issue:last-child { display: none; }
+  .title-left { gap: 12px; }
+  .logo-universe { font-size: clamp(52px, 16vw, 78px); }
+  .logo-clash { font-size: clamp(64px, 21vw, 100px); }
+  .title-tag { margin-top: 8px; font-size: 13px; }
+  .title-menu { gap: 6px 8px; }
+  .title-menu .btn { min-height: 36px; font-size: 15px; padding: 5px 9px 4px; }
+  .title-menu .btn.primary { min-height: 52px; font-size: 30px; }
+  .title-foot { display: none; }
+
+  .screen-head { padding: 14px 14px 6px; flex-wrap: wrap; gap: 10px; }
+  .screen-head h1 { font-size: clamp(38px, 12vw, 54px); }
+  .screen-head .head-actions { width: 100%; justify-content: space-between; }
   .screen-body { padding: 4px 14px 16px; }
   .roster-grid { grid-template-columns: repeat(3, 1fr); }
   .options-screen .screen-body { grid-template-columns: 1fr; }
   .result-stats { grid-template-columns: 1fr 1fr; }
   .rival-panel { grid-template-columns: 1fr; }
-  .logo-universe { font-size: 17vw; }
-  .logo-clash { font-size: 22vw; }
+
+  /* Keep CLASH/BACK reachable without scrolling the whole roster first. */
+  .select-side { padding-bottom: 84px; }
+  .select-actions {
+    position: fixed;
+    left: 14px;
+    right: 14px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    z-index: 30;
+    padding: 7px;
+    background: var(--paper);
+    border: 4px solid var(--ink);
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+  .select-actions .btn.primary { font-size: 26px; }
+
   .hud-top { padding-inline: 6px; }
   .hud-portrait { display: none; }
   .hud-name { font-size: 16px; }
