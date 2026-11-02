@@ -10,7 +10,7 @@ import { CHAR_BY_ID, charDef, moveOf } from './characters';
 import { STAGES, stageById } from './stages';
 import { ClashSession } from './session';
 import { aiInput } from './ai';
-import { ClashRenderer, type RenderExtras } from './render';
+import { ClashRenderer, type RenderExtras, type Treatment } from './render';
 import { ClashAudio } from './audio';
 import { drawPortrait, type ArtOpts } from './art';
 import { NetSim, Rollback, packInput, type ReplayFile } from './rollback';
@@ -50,6 +50,9 @@ import {
 import {
   fmtClock,
   hudHtml,
+  CANVAS_CATEGORIES,
+  canvasHtml,
+  type CanvasView,
   optionsHtml,
   pauseHtml,
   resultsHtml,
@@ -98,6 +101,23 @@ interface OnlineState {
   pendingCfg: MatchConfig | null;
 }
 type Dummy = 'stand' | 'jump' | 'dodge' | 'cpu';
+
+interface CanvasState {
+  viewers: number;
+  round: number;
+  roundEndsAt: number;
+  nextCrowdAt: number;
+  nextPaintAt: number;
+  tallies: Record<string, number>;
+  applied: Record<string, string>;
+  mine: Record<string, string>;
+  /** Each round the simulated crowd leans one way per ballot. */
+  favourite: Record<string, string>;
+  treat: Treatment | null;
+  zoomBias: number;
+}
+
+const CANVAS_ROUND_MS = 15000;
 
 interface ArcadeRun {
   queue: CharId[];
@@ -240,6 +260,9 @@ export class ClashApp {
   private corruptEl: HTMLElement | null = null;
   private lastStocks: number[] = [3, 3];
   private lastStockMax = 3;
+  /** The Spectator Canvas: the crowd's ballots and what they changed. Presentation only. */
+  private crowd: CanvasState | null = null;
+  private canvasEl: HTMLElement | null = null;
 
   private saveTimer: number | null = null;
   private toastTimer: number | null = null;
@@ -364,6 +387,7 @@ export class ClashApp {
     this.hudEl.innerHTML = '';
     this.hudEls = null;
     this.hudCombo = null;
+    this.canvasEl = null;
     this.clockEl = null;
     this.calloutEl = null;
     this.toastMoveEl = null;
@@ -380,6 +404,7 @@ export class ClashApp {
     this.replay = null;
     this.fightCfg = null;
     this.spectator = false;
+    this.crowd = null;
     this.storyChapter = -1;
     this.riftRung = -1;
     this.trial = null;
@@ -628,6 +653,7 @@ export class ClashApp {
 
     if (this.screen === 'fight' && this.session) {
       if (!this.paused) this.stepFight(dt);
+      if (this.crowd && !this.paused) this.updateCanvas(now);
       this.renderer.render(this.session.match, this.alpha, now, this.extras());
       this.updateHud();
       if (!this.paused) this.watchEnd(now);
@@ -646,7 +672,116 @@ export class ClashApp {
       ghost: cfg?.training && tr.ghost && this.ghostRing.length >= GHOST_TICKS ? this.ghostRing[0] : null,
       names,
       spectator: this.spectator ? 'canvas feed // votes change presentation, never frame data' : null,
+      canvas: this.crowd ? { treat: this.crowd.treat, zoomBias: this.crowd.zoomBias } : null,
     };
+  }
+
+  /* ------------------------------------------------------ spectator canvas -- */
+
+  private openCanvas(): void {
+    this.crowd = {
+      viewers: 900 + Math.floor(Math.random() * 600),
+      round: 1,
+      roundEndsAt: this.now + CANVAS_ROUND_MS,
+      nextCrowdAt: this.now + 400,
+      nextPaintAt: 0,
+      tallies: {},
+      applied: {},
+      mine: {},
+      favourite: this.pickFavourites(),
+      treat: null,
+      zoomBias: 1,
+    };
+  }
+
+  private pickFavourites(): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const cat of CANVAS_CATEGORIES) {
+      const opt = cat.options[Math.floor(Math.random() * cat.options.length)];
+      out[cat.id] = opt[0];
+    }
+    return out;
+  }
+
+  private canvasView(): CanvasView {
+    const c = this.crowd!;
+    return {
+      viewers: c.viewers,
+      round: c.round,
+      secondsLeft: Math.max(0, Math.ceil((c.roundEndsAt - this.now) / 1000)),
+      tallies: c.tallies,
+      applied: c.applied,
+      mine: c.mine,
+    };
+  }
+
+  private paintCanvas(): void {
+    if (!this.crowd) return;
+    if (!this.canvasEl) {
+      const host = document.createElement('div');
+      this.hudEl.appendChild(host);
+      this.canvasEl = host;
+    }
+    this.canvasEl.innerHTML = canvasHtml(this.canvasView());
+  }
+
+  /** One ballot from this viewer. Replaces their earlier vote in that category. */
+  private castCanvasVote(cat: string, vote: string): void {
+    const c = this.crowd;
+    if (!c) return;
+    const prev = c.mine[cat];
+    if (prev) c.tallies[`${cat}:${prev}`] = Math.max(0, (c.tallies[`${cat}:${prev}`] ?? 0) - 1);
+    c.mine[cat] = vote;
+    c.tallies[`${cat}:${vote}`] = (c.tallies[`${cat}:${vote}`] ?? 0) + 1;
+    c.nextPaintAt = 0;
+  }
+
+  /** The crowd votes on a clock; the round closes and the leaders apply. Nothing here touches the sim. */
+  private updateCanvas(now: number): void {
+    const c = this.crowd;
+    if (!c) return;
+    if (now >= c.nextCrowdAt) {
+      c.nextCrowdAt = now + 350 + Math.random() * 300;
+      c.viewers = Math.max(200, Math.round(c.viewers + (Math.random() - 0.48) * 40));
+      const ballots = 2 + Math.floor(Math.random() * 6);
+      for (let i = 0; i < ballots; i++) {
+        const cat = CANVAS_CATEGORIES[Math.floor(Math.random() * CANVAS_CATEGORIES.length)];
+        const fav = c.favourite[cat.id];
+        const opt = Math.random() < 0.55 ? fav : cat.options[Math.floor(Math.random() * cat.options.length)][0];
+        c.tallies[`${cat.id}:${opt}`] = (c.tallies[`${cat.id}:${opt}`] ?? 0) + 1;
+      }
+    }
+    if (now >= c.roundEndsAt) {
+      for (const cat of CANVAS_CATEGORIES) {
+        let lead = cat.options[0][0];
+        let leadN = -1;
+        for (const [id] of cat.options) {
+          const n = c.tallies[`${cat.id}:${id}`] ?? 0;
+          if (n > leadN) {
+            leadN = n;
+            lead = id;
+          }
+        }
+        c.applied[cat.id] = lead;
+      }
+      c.treat = c.applied.look === 'stage' ? null : (c.applied.look as Treatment);
+      c.zoomBias = c.applied.camera === 'tight' ? 1.14 : c.applied.camera === 'wide' ? 0.86 : 1;
+      if (c.applied.crowd === 'cheer') {
+        this.renderer.cheer((now | 0) % 100000, 1);
+        this.audio.play('score');
+      }
+      this.toast(`THE CANVAS SAYS: ${CANVAS_CATEGORIES.map((cat) => cat.options.find(([id]) => id === c.applied[cat.id])?.[1] ?? '').join(' · ')}`);
+      c.round++;
+      c.roundEndsAt = now + CANVAS_ROUND_MS;
+      c.tallies = {};
+      c.mine = {};
+      c.favourite = this.pickFavourites();
+      c.nextPaintAt = 0;
+    }
+    if (now >= c.nextPaintAt) {
+      c.nextPaintAt = now + 500;
+      this.paintCanvas();
+    }
   }
 
   /** Who sits in each seat, for the HUD tags and the KO panel. */
@@ -742,7 +877,10 @@ export class ClashApp {
   };
 
   private onModalClick = (ev: MouseEvent): void => {
-    if (!this.modalEl || !this.modalEl.contains(ev.target as Node)) return;
+    const node = ev.target as Node;
+    const inModal = !!this.modalEl && this.modalEl.contains(node);
+    const inHud = this.hudEl.contains(node);
+    if (!inModal && !inHud) return;
     const target = (ev.target as HTMLElement).closest<HTMLElement>('[data-action]');
     if (!target?.dataset.action) return;
     ev.preventDefault();
@@ -920,6 +1058,9 @@ export class ClashApp {
         break;
       case 'spectate':
         this.startSpectate();
+        break;
+      case 'canvas-vote':
+        if (data.cat && data.vote) this.castCanvasVote(data.cat, data.vote);
         break;
       case 'roster':
         this.rosterChar = this.profile.selected;
@@ -1528,6 +1669,7 @@ export class ClashApp {
     this.onlineMatch = null;
     this.replay = null;
     this.spectator = false;
+    this.crowd = null;
     this.fightCfg = cfg;
     this.session = new ClashSession(cfg, {
       localSide: 0,
@@ -1842,8 +1984,15 @@ export class ClashApp {
   private startSpectate(): void {
     const stage = STAGES[Math.floor(Math.random() * STAGES.length)];
     const pool = CHAR_IDS.slice();
-    const a = pool[Math.floor(Math.random() * pool.length)];
-    const b = pool.filter((id) => id !== a)[Math.floor(Math.random() * (pool.length - 1))];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    // The feed shows every format: mostly duels, sometimes a tag match or a brawl.
+    const roll = Math.random();
+    const format: MatchFormat = roll < 0.6 ? '1v1' : roll < 0.8 ? '2v2' : 'ffa';
+    const n = format === '1v1' ? 2 : 4;
+    const chars = pool.slice(0, n);
     const cfg: MatchConfig = {
       stageId: stage.id,
       mode: 'casual',
@@ -1851,12 +2000,14 @@ export class ClashApp {
       stocks: 3,
       timerTicks: 4 * 60 * 60,
       gearBuffs: false,
-      playerChar: a,
-      cpuChar: b,
+      playerChar: chars[0],
+      cpuChar: chars[1],
       cpuLevel: 4,
       modern: this.profile.options.modern,
-      gear: [{}, {}],
+      gear: chars.map(() => ({})),
       training: false,
+      format,
+      chars,
     };
     this.net = null;
     this.onlineMatch = null;
@@ -1865,6 +2016,8 @@ export class ClashApp {
     this.fightCfg = cfg;
     this.session = new ClashSession(cfg, { spectator: true, seed: cfg.seed, cpuLevel: 4 });
     this.beginFightScreen();
+    this.openCanvas();
+    this.paintCanvas();
   }
 
   private beginFightScreen(): void {

@@ -68,6 +68,8 @@ export interface RenderExtras {
   names?: string[];
   /** Spectator Canvas line, drawn along the bottom. */
   spectator?: string | null;
+  /** What the Spectator Canvas voted: a treatment over the stage's own, a zoom bias. */
+  canvas?: { treat: Treatment | null; zoomBias: number } | null;
 }
 
 /* The per-universe look, keyed by the art pattern a character carries. */
@@ -213,6 +215,7 @@ export class ClashRenderer {
   private yells: Yell[] = [];
   private lines: SpeedLine[] = [];
   private zoomKick = 0;
+  private canvasTreat: Treatment | null = null;
   private impacts: Impact[] = [];
   private scars: ScarMark[] = [];
   private opts: RenderOpts = { ...DEFAULT_RENDER };
@@ -522,7 +525,8 @@ export class ClashRenderer {
     ctx.fillRect(0, 0, w, h);
 
     const stage = stageById(m.stageId);
-    this.updateCamera(m, alpha, dt);
+    this.canvasTreat = extras.canvas?.treat ?? null;
+    this.updateCamera(m, alpha, dt, extras.canvas?.zoomBias ?? 1);
     const k = Math.min(w / 1600, h / 900) * (this.cam.zoom + this.zoomKick);
     const shakeX = this.cam.shakeX * this.opts.shake;
     const shakeY = this.cam.shakeY * this.opts.shake;
@@ -685,7 +689,7 @@ export class ClashRenderer {
     const universes = m.fighters.map((f) => charDef(f.char).universe);
     const mirror = universes.every((u) => u === universes[0]);
     const foreignF = mirror ? null : m.fighters.find((f) => charDef(f.char).universe !== stage.universe) ?? null;
-    const treat: Treatment = foreignF ? treatmentOf(foreignF.char) : 'none';
+    const treat: Treatment = this.canvasTreat ?? (foreignF ? treatmentOf(foreignF.char) : 'none');
     // Parallax: the backdrop drifts a little slower than the platforms so the
     // skyline sits behind the fight instead of on it.
     ctx.save();
@@ -901,7 +905,29 @@ export class ClashRenderer {
 
   /* ----------------------------------------------------------------- camera -- */
 
-  private updateCamera(m: MatchState, alpha: number, dt: number): void {
+  /** The crowd throws paper: confetti from the top of the frame, screen-wide. */
+  cheer(seed: number, amount = 1): void {
+    if (this.opts.particles <= 0) return;
+    const n = Math.round(70 * amount * this.opts.particles);
+    const halfW = 820 / Math.max(0.6, this.cam.zoom);
+    for (let i = 0; i < n; i++) {
+      this.particles.push({
+        x: this.cam.x + (rand(seed, i) - 0.5) * halfW * 2,
+        y: this.cam.y - 520 + rand(seed + 1, i) * 120,
+        vx: (rand(seed + 2, i) - 0.5) * 3,
+        vy: 1 + rand(seed + 3, i) * 3,
+        life: 120 + rand(seed + 4, i) * 90,
+        maxLife: 210,
+        size: 3 + rand(seed + 5, i) * 4,
+        color: i % 3 === 0 ? '#e1212b' : i % 3 === 1 ? '#ffc52e' : '#22d3e3',
+        kind: 'paper',
+        grav: 0.03,
+        spin: rand(seed + 6, i) * 0.4,
+      });
+    }
+  }
+
+  private updateCamera(m: MatchState, alpha: number, dt: number, zoomBias = 1): void {
     // Frame everyone still in the match; a fighter past the blast zone is let go.
     let minX = Infinity;
     let maxX = -Infinity;
@@ -962,7 +988,7 @@ export class ClashRenderer {
     const cam = this.cam;
     cam.tx = midX;
     cam.ty = midY;
-    cam.tzoom = wantZoom;
+    cam.tzoom = wantZoom * zoomBias;
     const ease = 1 - Math.pow(0.002, dt);
     cam.x += (cam.tx - cam.x) * ease;
     cam.y += (cam.ty - cam.y) * ease;

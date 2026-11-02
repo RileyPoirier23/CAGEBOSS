@@ -185,6 +185,66 @@ export function hudHtml(args: HudArgs): string {
 }
 
 /* --------------------------------------------------------------------------
+   Spectator Canvas: the crowd votes on how the fight is shown, never on how
+   it plays. Three ballots a round; the leader of each applies when the round
+   closes.
+   -------------------------------------------------------------------------- */
+
+export interface CanvasCategory {
+  id: string;
+  label: string;
+  options: [string, string][];
+}
+
+export const CANVAS_CATEGORIES: CanvasCategory[] = [
+  { id: 'look', label: 'THE LOOK', options: [['stage', 'AS DRAWN'], ['noir', 'NOIR'], ['pixel', 'PIXEL'], ['toon', 'TOON'], ['oldink', 'OLD INK'], ['glitch', 'GLITCH']] },
+  { id: 'camera', label: 'THE CAMERA', options: [['normal', 'NORMAL'], ['tight', 'TIGHT'], ['wide', 'WIDE']] },
+  { id: 'crowd', label: 'THE CROWD', options: [['cheer', 'CHEER'], ['hush', 'HUSH']] },
+];
+
+export interface CanvasView {
+  viewers: number;
+  round: number;
+  secondsLeft: number;
+  /** Votes this round, keyed "category:option". */
+  tallies: Record<string, number>;
+  /** What the last round applied, by category. */
+  applied: Record<string, string>;
+  /** This viewer's current vote, by category. */
+  mine: Record<string, string>;
+}
+
+export function canvasHtml(v: CanvasView): string {
+  const cats = CANVAS_CATEGORIES.map((cat) => {
+    const total = cat.options.reduce((n, [id]) => n + (v.tallies[`${cat.id}:${id}`] ?? 0), 0) || 1;
+    let lead = '';
+    let leadN = -1;
+    for (const [id] of cat.options) {
+      const n = v.tallies[`${cat.id}:${id}`] ?? 0;
+      if (n > leadN) {
+        leadN = n;
+        lead = id;
+      }
+    }
+    const rows = cat.options.map(([id, label]) => {
+      const n = v.tallies[`${cat.id}:${id}`] ?? 0;
+      const pct = Math.round((n / total) * 100);
+      const mine = v.mine[cat.id] === id;
+      const on = v.applied[cat.id] === id;
+      return `<button class="cv-opt ${mine ? 'mine' : ''} ${id === lead ? 'lead' : ''} ${on ? 'on' : ''}" data-action="canvas-vote" data-cat="${cat.id}" data-vote="${id}">
+        <i style="width:${pct}%"></i><span>${esc(label)}</span><b>${n}</b>
+      </button>`;
+    }).join('');
+    return `<div class="cv-cat"><div class="cv-label">${esc(cat.label)}${v.applied[cat.id] ? ` <em>// ${esc(cat.options.find(([id]) => id === v.applied[cat.id])?.[1] ?? '')}</em>` : ''}</div>${rows}</div>`;
+  }).join('');
+  return `<div class="canvas-panel">
+    <div class="cv-head"><b>SPECTATOR CANVAS</b><span>${v.viewers.toLocaleString()} WATCHING</span><span>ROUND ${v.round} · ${v.secondsLeft}S</span></div>
+    ${cats}
+    <div class="cv-foot">VOTES CHANGE THE PICTURE, NEVER THE FRAME DATA.</div>
+  </div>`;
+}
+
+/* --------------------------------------------------------------------------
    Title
    -------------------------------------------------------------------------- */
 

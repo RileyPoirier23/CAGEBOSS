@@ -1737,6 +1737,54 @@ html, body {
 @keyframes corrupt-jitter { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
 .hud-corrupt-line { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); font: 800 12px var(--mono); letter-spacing: 0.1em; color: var(--cyan); background: var(--ink); padding: 3px 9px; z-index: 3; }
 
+/* ------------------------------------------------------- spectator canvas -- */
+.canvas-panel {
+  position: absolute;
+  right: clamp(10px, 1.8vw, 28px);
+  top: 50%;
+  transform: translateY(-46%) rotate(0.6deg);
+  width: clamp(190px, 17vw, 250px);
+  pointer-events: auto;
+  background: var(--paper);
+  border: 4px solid var(--ink);
+  box-shadow: var(--hard-sm);
+  padding: 8px 10px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--body);
+}
+.cv-head { display: flex; flex-direction: column; gap: 1px; font: 800 10px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); border-bottom: 3px solid var(--ink); padding-bottom: 5px; }
+.cv-head b { font: 400 20px/1 var(--display); color: var(--blood); letter-spacing: 0.03em; }
+.cv-cat { display: flex; flex-direction: column; gap: 3px; }
+.cv-label { font: 800 10px var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink); }
+.cv-label em { font-style: normal; color: var(--blood); }
+.cv-opt {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 3px 7px 2px;
+  border: 2px solid var(--ink);
+  background: var(--paper-2);
+  font: 700 11px var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  overflow: hidden;
+  color: var(--ink);
+}
+.cv-opt i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--sun); opacity: 0.6; transition: width 300ms steps(6); }
+.cv-opt span, .cv-opt b { position: relative; }
+.cv-opt b { font: 400 13px var(--display); }
+.cv-opt:hover { background: var(--paper-3); }
+.cv-opt.mine { border-color: var(--blood); box-shadow: inset 0 0 0 2px var(--blood); }
+.cv-opt.lead span::after { content: " ◄"; color: var(--blood); }
+.cv-opt.on { background: var(--ink); color: var(--paper); }
+.cv-opt.on i { opacity: 0.35; }
+.cv-foot { font: 700 9px var(--mono); letter-spacing: 0.12em; color: var(--ink-3); text-transform: uppercase; margin-top: 2px; }
+
 /* ---------------------------------------------------------------- online -- */
 .online-screen .screen-body { flex-direction: column; gap: 10px; }
 .online-card { width: min(760px, 100%); padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; }
